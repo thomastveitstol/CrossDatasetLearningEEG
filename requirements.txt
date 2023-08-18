@@ -1,0 +1,4 @@
+mne==1.5.0
+numpy==1.25.2
+matplotlib==3.7.2
+setuptools==65.5.1
