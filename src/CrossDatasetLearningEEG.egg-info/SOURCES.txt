@@ -10,6 +10,8 @@ src/CrossDatasetLearningEEG.egg-info/requires.txt
 src/CrossDatasetLearningEEG.egg-info/top_level.txt
 src/cdl_eeg/__init__.py
 src/cdl_eeg/py.typed
+src/cdl_eeg/data/__init__.py
+src/cdl_eeg/data/paths.py
 src/cdl_eeg/models/__init__.py
 src/cdl_eeg/models/dummy_test.py
 src/cdl_eeg/models/transformations/__init__.py
