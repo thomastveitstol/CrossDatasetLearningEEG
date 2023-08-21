@@ -1,7 +1,8 @@
 """
 Script for plotting the preprocessed version of the Yulin Wang dataset, using tools from MNE.
 
-Conclusion: The data does not look good, and needs further preprocessing
+Conclusion: The data does not look good, and needs further preprocessing. Simply applying some filtering made it look
+far better
 """
 import os
 import pathlib
