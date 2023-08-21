@@ -3,8 +3,8 @@ Script for downloading the dataset provided at https://openneuro.org/datasets/ds
 
 References:
     Alexander P. Rockhill and Nicko Jackson and Jobi George and Adam Aron and Nicole C. Swann (2021). UC San Diego
-    Resting State EEG Data from Patients with Parkinson's Disease. OpenNeuro. [Dataset] doi:
-    doi:10.18112/openneuro.ds002778.v1.0.5
+        Resting State EEG Data from Patients with Parkinson's Disease. OpenNeuro. [Dataset] doi:
+        doi:10.18112/openneuro.ds002778.v1.0.5
 
 Notes:
     The authors want additional acknowledgement
