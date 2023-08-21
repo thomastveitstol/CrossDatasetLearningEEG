@@ -1,5 +1,3 @@
-import numpy
-
 
 def chunk_eeg(*, data, k, chunk_duration, delta_t):
     """Function for splitting EEG data into chunks
@@ -14,7 +12,7 @@ def chunk_eeg(*, data, k, chunk_duration, delta_t):
     chunk_duration : int
         The duration of the EEG chunks (in number of timesteps)
 
-    delta_t : int:
+    delta_t : int
         time duration between the chunks, in number of timesteps
 
     Returns
