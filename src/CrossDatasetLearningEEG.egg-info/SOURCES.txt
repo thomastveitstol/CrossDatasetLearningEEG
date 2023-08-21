@@ -12,3 +12,5 @@ src/cdl_eeg/__init__.py
 src/cdl_eeg/py.typed
 src/cdl_eeg/models/__init__.py
 src/cdl_eeg/models/dummy_test.py
+src/cdl_eeg/models/transformations/__init__.py
+src/cdl_eeg/models/transformations/utils.py
