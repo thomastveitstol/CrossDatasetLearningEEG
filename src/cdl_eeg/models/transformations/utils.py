@@ -23,7 +23,7 @@ def chunk_eeg(*, data, k, chunk_duration, delta_t):
         The EEG data split into chunks
 
     """
-    # Add the first chuck
+    # Add the first chunk
     chunk = [data[..., 0:chunk_duration]]
 
     # Append all the other chunks
