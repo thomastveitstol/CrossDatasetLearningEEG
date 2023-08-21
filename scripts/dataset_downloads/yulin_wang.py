@@ -15,9 +15,13 @@ from cdl_eeg.data.paths import get_raw_data_storage_path
 
 
 def main() -> None:
-    # Download from OpenNeuro
+    # Make directory
     folder_name = "yulin_wang"
-    openneuro.download(dataset="ds004148", target_dir=os.path.join(get_raw_data_storage_path(), folder_name))
+    path = os.path.join(get_raw_data_storage_path(), folder_name)
+    os.mkdir(path)
+
+    # Download from OpenNeuro
+    openneuro.download(dataset="ds004148", target_dir=path)
 
 
 if __name__ == "__main__":
