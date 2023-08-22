@@ -10,6 +10,7 @@ def test_chuck_eeg():
     # ------------------------
     data = tuple(numpy.ones(shape=(10, 25, 300)) * (j + 1) for j in range(4))
     intervals = tuple(numpy.zeros(shape=(10, 25, 200)) for _ in range(3))
+    unused_data = numpy.random.normal(loc=0, scale=5, size=(10, 25, 500))
 
     # Stack them
     chunked_data = [data[0]]
@@ -18,6 +19,9 @@ def test_chuck_eeg():
         chunked_data.append(chunk)
 
     chunked_data = numpy.concatenate(chunked_data, axis=-1)
+
+    # Add unused data from both sides (in temporal dimension)
+    chunked_data = numpy.concatenate((unused_data, chunked_data, unused_data), axis=-1)
 
     # ------------------------
     # Compare actual with expected

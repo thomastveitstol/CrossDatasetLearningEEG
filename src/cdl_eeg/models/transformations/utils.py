@@ -24,12 +24,22 @@ def chunk_eeg(data, *, k, chunk_duration, delta_t):
         The EEG data split into chunks
 
     """
+    # Extracting EEG chunks 'from the centre' is achieved by starting at residue / 2, where residue is the difference
+    # between total number of time steps of the EEG data and the amount of EEG data used in the chunks
+    expected_used_eeg = chunk_duration * k + delta_t * (k - 1)
+    total_num_timesteps = data.shape[-1]
+
+    assert total_num_timesteps >= expected_used_eeg, (f"The specified hyperparameters require EEG data with "
+                                                      f"{expected_used_eeg} number of time steps, but only "
+                                                      f"{total_num_timesteps} are available.")
+    chunk_start = (total_num_timesteps - expected_used_eeg) // 2
+
     # Add the first chunk
-    chunk = [data[..., 0:chunk_duration]]
+    chunk = [data[..., chunk_start:(chunk_start + chunk_duration)]]
 
     # Append all the other chunks
     for i in range(1, k):
-        i0 = i * (delta_t + chunk_duration)
+        i0 = i * (delta_t + chunk_duration) + chunk_start
         chunk.append(data[..., i0:(i0+chunk_duration)])
 
     return tuple(chunk)
