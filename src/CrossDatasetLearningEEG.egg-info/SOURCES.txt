@@ -15,4 +15,6 @@ src/cdl_eeg/data/paths.py
 src/cdl_eeg/models/__init__.py
 src/cdl_eeg/models/dummy_test.py
 src/cdl_eeg/models/transformations/__init__.py
+src/cdl_eeg/models/transformations/base.py
+src/cdl_eeg/models/transformations/phase_consistency.py
 src/cdl_eeg/models/transformations/utils.py
