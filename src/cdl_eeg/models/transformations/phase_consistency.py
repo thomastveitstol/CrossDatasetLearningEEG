@@ -63,7 +63,7 @@ class BivariatePhaseShift(TransformationBase):
         # Hyperparameters of the chunking of EEG
         self._num_chunks = num_chunks
         self._chunk_duration = chunk_duration
-        self._chunk_duration = chunk_time_delay
+        self._chunk_time_delay = chunk_time_delay
 
     @staticmethod
     def _check_input(dist_param, distribution):
