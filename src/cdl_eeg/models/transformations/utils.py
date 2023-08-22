@@ -3,7 +3,7 @@ import abc
 import numpy.random
 
 
-def chunk_eeg(*, data, k, chunk_duration, delta_t):
+def chunk_eeg(data, *, k, chunk_duration, delta_t):
     """Function for splitting EEG data into chunks
 
     (unittest in test folder)
