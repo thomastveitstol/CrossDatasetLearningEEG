@@ -6,7 +6,7 @@ import random
 import numpy
 
 from cdl_eeg.models.transformations.base import TransformationBase, transformation_method
-from cdl_eeg.models.transformations.utils import UnivariateUniform, UnivariateNormal, chunk_eeg
+from cdl_eeg.models.transformations.utils import UnivariateUniform, UnivariateNormal, chunk_eeg, RandomBase
 
 
 class BivariatePhaseShift(TransformationBase):
@@ -51,14 +51,16 @@ class BivariatePhaseShift(TransformationBase):
         # Set attributes
         # ----------------
         # For the permutation
+        sample_distribution: RandomBase
         if distribution == "uniform":
-            # Using mean = 0
             high = dist_param / 2
-            self._distribution = UnivariateUniform(lower=-high, upper=high)
+            sample_distribution = UnivariateUniform(lower=-high, upper=high)  # Using mean = 0
         elif distribution == "normal":
-            self._distribution = UnivariateNormal(mean=0, std=dist_param)
+            sample_distribution = UnivariateNormal(mean=0, std=dist_param)
         else:
             raise AssertionError("This should never happen, please contact the developers")
+
+        self._distribution = sample_distribution
 
         # Hyperparameters of the chunking of EEG
         self._num_chunks = num_chunks
