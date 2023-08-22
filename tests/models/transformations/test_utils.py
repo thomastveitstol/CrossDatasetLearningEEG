@@ -1,10 +1,14 @@
 import numpy
+import pytest
 
 from cdl_eeg.models.transformations.utils import chunk_eeg
 
 
+# -----------------------
+# Tests for chunking EEG
+# -----------------------
 def test_chuck_eeg():
-    """Test if the chunk_eeg function works properly"""
+    """Test if the chunk_eeg function works properly (returns correct data in a simple case)"""
     # ------------------------
     # Generate data todo: config file
     # ------------------------
@@ -32,3 +36,16 @@ def test_chuck_eeg():
                                              f"{len(actual_chunks)}")
     assert all(numpy.array_equal(actual, expected) for actual, expected in zip(actual_chunks, data)), \
         "The arrays were not as expected"
+
+
+def test_chunk_eeg_error():
+    """Test if an error is properly raised when the expected number of time steps for chunking exceeds the number of
+    time steps available"""
+    # Generate dummy data
+    data = numpy.random.normal(size=(10, 25, 1250))
+
+    # Check if the error is correctly raised
+    expected_msg = ("The specified hyperparameters require EEG data with 1300 number of time steps, but only 1250 are "
+                    "available.")
+    with pytest.raises(AssertionError, match=expected_msg):
+        chunk_eeg(data, k=4, chunk_duration=250, delta_t=100)
