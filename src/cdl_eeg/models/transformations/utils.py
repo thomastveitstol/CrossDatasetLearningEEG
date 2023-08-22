@@ -15,7 +15,6 @@ def chunk_eeg(data, *, k, chunk_duration, delta_t):
         Number of EEG chunks
     chunk_duration : int
         The duration of the EEG chunks (in number of timesteps)
-
     delta_t : int
         time duration between the chunks, in number of timesteps
 
