@@ -3,7 +3,7 @@ import abc
 import numpy.random
 
 
-def chunk_eeg(data, *, k, chunk_duration, delta_t):
+def chunk_eeg(data, *, k, chunk_duration, delta_t, chunk_start_shift=0):
     """Function for splitting EEG data into chunks
 
     (unittest in test folder)
@@ -17,6 +17,9 @@ def chunk_eeg(data, *, k, chunk_duration, delta_t):
         The duration of the EEG chunks (in number of timesteps)
     delta_t : int
         time duration between the chunks, in number of timesteps
+    chunk_start_shift : int, optional
+        The first chunk is started such that the chunks are centred. However, this may be changed på this parameter
+        todo: make/improve input checks
 
     Returns
     -------
@@ -32,7 +35,7 @@ def chunk_eeg(data, *, k, chunk_duration, delta_t):
     assert total_num_timesteps >= expected_used_eeg, (f"The specified hyperparameters require EEG data with "
                                                       f"{expected_used_eeg} number of time steps, but only "
                                                       f"{total_num_timesteps} are available.")
-    chunk_start = (total_num_timesteps - expected_used_eeg) // 2
+    chunk_start = (total_num_timesteps - expected_used_eeg) // 2 + chunk_start_shift
 
     # Add the first chunk
     chunk = [data[..., chunk_start:(chunk_start + chunk_duration)]]
