@@ -68,6 +68,7 @@ def main():
     # -----------------
     # Extract two channels as numpy array (with batch dimension)
     data = numpy.expand_dims(eeg.get_data()[[ch_0, ch_1]], axis=0)
+    data = (data - numpy.mean(data, axis=-1, keepdims=True)) / (numpy.std(data, axis=-1, keepdims=True) + 1e-8)
 
     # Chunk, both original and permuted
     original_chunks = chunk_eeg(data, k=num_chunks, chunk_duration=chunk_duration, delta_t=chunk_time_delay)
@@ -98,15 +99,15 @@ def main():
 
     # Plot
     if verbose:
-        original_epochs.plot(picks="all", title="Original", events=False)
-        permuted_epochs.plot(picks="all", title="Permuted", events=False)
+        original_epochs.plot(picks="all", title="Original", events=False, scalings=15)
+        permuted_epochs.plot(picks="all", title="Permuted", events=False, scalings=15)
 
         pyplot.show()
     else:
         # Redirect to an unused StringIO object
         with contextlib.redirect_stdout(io.StringIO()):
-            original_epochs.plot(picks="all", title="Original", events=False)
-            permuted_epochs.plot(picks="all", title="Permuted", events=False)
+            original_epochs.plot(picks="all", title="Original", events=False, scalings=15)
+            permuted_epochs.plot(picks="all", title="Permuted", events=False, scalings=15)
 
             pyplot.show()
 
