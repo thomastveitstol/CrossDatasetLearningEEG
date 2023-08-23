@@ -81,7 +81,7 @@ def main():
     original_chunks = tuple(numpy.squeeze(chunk, axis=0) for chunk in original_chunks)
     permuted_chunks = tuple(numpy.squeeze(chunk, axis=0) for chunk in permuted_chunks)
 
-    # Create MNe objects
+    # Create MNE objects
     original_epochs = eeg_chunks_to_mne_epochs(original_chunks, sampling_freq=eeg.info["sfreq"], verbose=verbose)
     permuted_epochs = eeg_chunks_to_mne_epochs(permuted_chunks, sampling_freq=eeg.info["sfreq"], verbose=verbose)
 
