@@ -98,7 +98,8 @@ class RandomBase(abc.ABC):
 
         Returns
         -------
-        A sample from the distribution
+        float
+            A sample from the distribution
         """
 
 
