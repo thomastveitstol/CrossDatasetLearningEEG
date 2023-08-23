@@ -186,3 +186,14 @@ class UnivariateUniform(RandomBase):
 
         # Draw a sample from the distribution and return
         return numpy.random.uniform(low=self._lower, high=self._upper)
+
+    # --------------
+    # Properties
+    # --------------
+    @property
+    def lower(self):
+        return self._lower
+
+    @property
+    def upper(self):
+        return self._upper
