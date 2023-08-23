@@ -141,6 +141,3 @@ class BivariateAmplitudeEnvelopePermutation(TransformationBase):
         # Return chunks, index of permuted chunk, t0, sigma, and amplitude
         # ----------------
         return eeg_chunks, permuted_chunk, t0, sigma, amplitude
-
-
-
