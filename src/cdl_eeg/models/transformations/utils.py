@@ -84,6 +84,8 @@ def eeg_chunks_to_mne_epochs(chunks, info=None, *, sampling_freq=None, ch_names=
 # -------------------------
 class RandomBase(abc.ABC):
 
+    __slots__ = ()
+
     @abc.abstractmethod
     def draw(self, seed=None):
         """
