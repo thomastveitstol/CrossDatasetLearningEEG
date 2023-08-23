@@ -98,9 +98,9 @@ class BivariatePhaseShift(TransformationBase):
 
         Returns
         -------
-        tuple[tuple[numpy.ndarray, ...], float]
-            A tuple, containing the EEG chunks (one is permuted by phase shift in one of the channels) and the phase
-            shift value
+        tuple[tuple[numpy.ndarray, ...], int, float]
+            A tuple, containing the EEG chunks (one is permuted by phase shift in one of the channels), the index
+            indicating which chunk was permuted, and the phase shift value
         """
         # ----------------
         # Input checks
@@ -146,6 +146,7 @@ class BivariatePhaseShift(TransformationBase):
         eeg_chunks[permuted_chunk][:, permuted_channel] = phase_shifted_chunks[permuted_chunk][:, permuted_channel]
 
         # ----------------
-        # Return permuted chunks, and phase shift
+        # Return permuted chunks, index of permuted chunk,
+        # and phase shift
         # ----------------
-        return eeg_chunks, phase_shift
+        return eeg_chunks, permuted_chunk, phase_shift
