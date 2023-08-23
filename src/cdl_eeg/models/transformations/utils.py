@@ -1,5 +1,6 @@
 import abc
 
+import mne
 import numpy.random
 
 
@@ -17,7 +18,7 @@ def chunk_eeg(data, *, k, chunk_duration, delta_t, chunk_start_shift=0):
         The duration of the EEG chunks (in number of timesteps)
     delta_t : int
         time duration between the chunks, in number of timesteps
-    chunk_start_shift : int, optional
+    chunk_start_shift : int
         The first chunk is started such that the chunks are centred. However, this may be changed på this parameter
         todo: make/improve input checks
 
@@ -46,6 +47,36 @@ def chunk_eeg(data, *, k, chunk_duration, delta_t, chunk_start_shift=0):
         chunk.append(data[..., i0:(i0+chunk_duration)])
 
     return tuple(chunk)
+
+
+def eeg_chunks_to_mne_epochs(chunks, info=None, *, sampling_freq=None, ch_names=None, verbose=None):
+    """
+    Convert from EEG numpy chunks to MNE epochs object.
+    Parameters
+    ----------
+    chunks : tuple[numpy.ndarray, ...]
+        Chunks of EEG, as returned by chunk_eeg function
+    info : mne.Info, optional
+    sampling_freq : float, optional
+        Sampling frequency. Required if 'info' argument is not passed, ignored if 'info' is passed
+    ch_names : tuple[str, ...], optional
+        Channel names. Ignored if 'info' is specified. If None is passed, the channel names will be ('Ch1', 'Ch2', ...)
+    verbose : bool, optional
+        To print from the MNE operations (True) or not (False)
+
+    Returns
+    -------
+    mne.EpochsArray
+        mne.EpochsArray object with the chunked EEG
+    """
+    # (Maybe) create info object
+    if info is None:
+        # Maybe set default channel names
+        ch_names = chunks[0].shape[0] if ch_names is None else list(ch_names)
+        info = mne.create_info(ch_names=ch_names, sfreq=sampling_freq, verbose=verbose)
+
+    # Create EpochsArray object and return
+    return mne.EpochsArray(data=numpy.array(chunks), info=info, verbose=verbose)
 
 
 # -------------------------
