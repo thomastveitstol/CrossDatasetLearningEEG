@@ -92,15 +92,15 @@ def main():
 
     # Plot
     if verbose:
-        original_epochs.plot(picks="all", title="Original")
-        permuted_epochs.plot(picks="all", title="Permuted")
+        original_epochs.plot(picks="all", title="Original", events=False)
+        permuted_epochs.plot(picks="all", title="Permuted", events=False)
 
         pyplot.show()
     else:
         # Redirect to an unused StringIO object
         with contextlib.redirect_stdout(io.StringIO()):
-            original_epochs.plot(picks="all", title="Original")
-            permuted_epochs.plot(picks="all", title="Permuted")
+            original_epochs.plot(picks="all", title="Original", events=False)
+            permuted_epochs.plot(picks="all", title="Permuted", events=False)
 
             pyplot.show()
 
