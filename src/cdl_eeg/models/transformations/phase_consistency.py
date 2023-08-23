@@ -8,6 +8,8 @@ import numpy
 from cdl_eeg.models.transformations.base import TransformationBase, transformation_method
 from cdl_eeg.models.transformations.utils import UnivariateUniform, UnivariateNormal, chunk_eeg, RandomBase
 
+# todo: add EEGChunk as type
+
 
 class BivariatePhaseShift(TransformationBase):
     """
