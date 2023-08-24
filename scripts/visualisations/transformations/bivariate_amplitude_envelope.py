@@ -92,7 +92,7 @@ def main():
     original_epochs = eeg_chunks_to_mne_epochs(original_chunks, sampling_freq=eeg.info["sfreq"], verbose=verbose)
     permuted_epochs = eeg_chunks_to_mne_epochs(permuted_chunks, sampling_freq=eeg.info["sfreq"], verbose=verbose)
 
-    # Print permuted chunk and phase shift
+    # Print permutation details
     print("\n----- Permutation details -----")
     print(f"Permuted chunk (index): {idx}")
     print(f"Time t0: {t0 / eeg.info['sfreq']:.2f}s")
