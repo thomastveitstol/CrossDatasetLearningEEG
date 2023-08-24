@@ -3,7 +3,7 @@ Tests for the phase consistency transformations
 """
 import numpy.random
 
-from cdl_eeg.models.transformations.phase_consistency import BivariatePhaseShift
+from cdl_eeg.models.transformations.phase_consistency import BivariateTimeShift
 from cdl_eeg.models.transformations.utils import chunk_eeg
 
 
@@ -29,8 +29,8 @@ def test_bivariate_phase_consistency():
     # Perform bivariate phase consistency
     # transformation
     # -------------------
-    transformation = BivariatePhaseShift(std, distribution, num_chunks=num_chunks, chunk_duration=chunk_duration,
-                                         chunk_time_delay=chunk_time_delay)
+    transformation = BivariateTimeShift(std, distribution, num_chunks=num_chunks, chunk_duration=chunk_duration,
+                                        chunk_time_delay=chunk_time_delay)
 
     data = numpy.concatenate((numpy.expand_dims(x0, axis=1), numpy.expand_dims(x1, axis=1)), axis=1).copy()
     original = chunk_eeg(data, k=num_chunks, chunk_duration=chunk_duration, delta_t=chunk_time_delay,
