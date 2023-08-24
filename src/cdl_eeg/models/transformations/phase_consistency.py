@@ -11,15 +11,16 @@ from cdl_eeg.models.transformations.utils import UnivariateUniform, UnivariateNo
 # todo: add EEGChunk as type
 
 
-class BivariatePhaseShift(TransformationBase):
+class BivariateTimeShift(TransformationBase):
     """
-    Transformation class for Phase shifting on chunked EEG, when there are only two channels
+    Transformation class for Phase shifting on chunked EEG, when there are only two channels, by simply shifting the
+    time parameter
 
     Examples:
     ----------
-    >>> _ = BivariatePhaseShift(2, "normal", num_chunks=3, chunk_duration=300, chunk_time_delay=200)  # Normal
+    >>> _ = BivariateTimeShift(2, "normal", num_chunks=3, chunk_duration=300, chunk_time_delay=200)  # Normal
     ... # distribution with std=2 and mean=0
-    >>> _ = BivariatePhaseShift(6, "uniform", num_chunks=5, chunk_duration=300, chunk_time_delay=200)  # Uniform
+    >>> _ = BivariateTimeShift(6, "uniform", num_chunks=5, chunk_duration=300, chunk_time_delay=200)  # Uniform
     ... # distribution with low=-3 and high=3
     """
 

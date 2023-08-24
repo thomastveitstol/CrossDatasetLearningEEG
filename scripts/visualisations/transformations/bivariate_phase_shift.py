@@ -12,7 +12,7 @@ import numpy
 from matplotlib import pyplot
 
 from cdl_eeg.data.paths import get_raw_data_storage_path
-from cdl_eeg.models.transformations.phase_consistency import BivariatePhaseShift
+from cdl_eeg.models.transformations.phase_consistency import BivariateTimeShift
 from cdl_eeg.models.transformations.utils import chunk_eeg, eeg_chunks_to_mne_epochs
 
 
@@ -73,8 +73,8 @@ def main():
     # Chunk, both original and permuted
     original_chunks = chunk_eeg(data, k=num_chunks, chunk_duration=chunk_duration, delta_t=chunk_time_delay)
 
-    transformation = BivariatePhaseShift(std, distribution, num_chunks=num_chunks, chunk_duration=chunk_duration,
-                                         chunk_time_delay=chunk_time_delay)
+    transformation = BivariateTimeShift(std, distribution, num_chunks=num_chunks, chunk_duration=chunk_duration,
+                                        chunk_time_delay=chunk_time_delay)
     permuted_chunks, idx, shift = transformation.phase_shift(x0=data[:, 0], x1=data[:, 1], permute_first_channel=True)
 
     # -----------------
