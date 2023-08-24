@@ -1,5 +1,5 @@
 """
-Script for plotting the results of the Bivariate Phase Consistency transform
+Script for plotting the results of the Bivariate time shift transform
 
 todo: too long and similar to the original visualisation. Start making the Dataset classes
 """
