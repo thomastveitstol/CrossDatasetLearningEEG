@@ -251,7 +251,7 @@ class BivariatePhaseShift(TransformationBase):
         # Concatenate the EEG signals. The resulting bivariate EEG will have shape=(batch, 2, time_steps)
         data = numpy.concatenate((numpy.expand_dims(x0, axis=1), numpy.expand_dims(x1, axis=1)), axis=1)
 
-        # Create non-permuted EEG chunks
+        # Create non-permuted EEG chunks  todo: to copy or not to copy the numpy data
         eeg_chunks = chunk_eeg(data=data, k=self._num_chunks, chunk_duration=self._chunk_duration,
                                delta_t=self._chunk_time_delay, chunk_start_shift=0)
 
@@ -269,8 +269,8 @@ class BivariatePhaseShift(TransformationBase):
         phase_data += phase_shift
 
         # Compute the modified data and insert it
-        modified_eeg_data = numpy.real(numpy.abs(analytic_signal[channel]) * numpy.exp(1j * phase_data))
-        eeg_chunks[permuted_chunk][channel] = modified_eeg_data
+        modified_eeg_data = numpy.real(numpy.abs(analytic_signal) * numpy.exp(1j * phase_data))
+        eeg_chunks[permuted_chunk][:, channel] = modified_eeg_data
 
         # ----------------
         # Return permuted chunks, index of permuted chunk,
