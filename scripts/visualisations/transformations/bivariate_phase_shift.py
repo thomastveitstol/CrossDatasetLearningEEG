@@ -6,7 +6,6 @@ todo: too long and similar to the original visualisation. Start making the Datas
 import contextlib
 import io
 import os
-import random
 
 import mne
 import numpy
@@ -18,12 +17,6 @@ from cdl_eeg.models.transformations.utils import chunk_eeg, eeg_chunks_to_mne_ep
 
 
 def main():
-    # Make reproducible
-    meaning_of_life = 42
-
-    random.seed(meaning_of_life)
-    numpy.random.seed(meaning_of_life)
-
     # -----------------
     # Hyperparameters
     # -----------------
