@@ -11,6 +11,8 @@ from cdl_eeg.models.transformations.utils import chunk_eeg, UnivariateNormal
 # Bivariate Time Consistency
 # ------------------------------
 def test_bivariate_time_consistency():
+    """Test of transformation. Testing type, output shapes, that the correct chunks are permuted, and that no in-place
+    operations altered the input"""
     # -------------------
     # Hyperparameters
     # -------------------
