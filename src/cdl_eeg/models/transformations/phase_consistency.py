@@ -90,8 +90,10 @@ class BivariateTimeShift(TransformationBase):
     @transformation_method
     def phase_shift(self, x0, x1, permute_first_channel):
         """
-        Transformation by shifting (permuting the time parameter of) a single channel in a single EEG chunk
+        Transformation by shifting (permuting the time parameter of) a single channel in a single EEG chunk. No in-place
+        operations alters the input objects
 
+        (unittests in test folder)
         Parameters
         ----------
         x0 : numpy.ndarray
@@ -212,8 +214,10 @@ class BivariatePhaseShift(TransformationBase):
     @transformation_method
     def phase_shift(self, x0, x1, permute_first_channel):
         """
-        Transformation by shifting the phase of a single channel in a single EEG chunk
+        Transformation by shifting the phase of a single channel in a single EEG chunk. No in-place operations alters
+        the input objects
 
+        (unittests in test folder)
         Parameters
         ----------
         x0 : numpy.ndarray
@@ -251,7 +255,7 @@ class BivariatePhaseShift(TransformationBase):
         # Concatenate the EEG signals. The resulting bivariate EEG will have shape=(batch, 2, time_steps)
         data = numpy.concatenate((numpy.expand_dims(x0, axis=1), numpy.expand_dims(x1, axis=1)), axis=1)
 
-        # Create non-permuted EEG chunks  todo: to copy or not to copy the numpy data
+        # Create non-permuted EEG chunks
         eeg_chunks = chunk_eeg(data=data, k=self._num_chunks, chunk_duration=self._chunk_duration,
                                delta_t=self._chunk_time_delay, chunk_start_shift=0)
 
