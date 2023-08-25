@@ -10,7 +10,7 @@ from cdl_eeg.models.transformations.utils import chunk_eeg
 # ------------------------------
 # Bivariate Phase Consistency
 # ------------------------------
-def test_bivariate_phase_consistency():
+def test_bivariate_time_consistency():
     # -------------------
     # Hyperparameters
     # -------------------
