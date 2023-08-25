@@ -27,7 +27,7 @@ def main():
     ch_0, ch_1 = 0, 7
 
     # Permutation
-    phase_shift_distribution = UnivariateUniform(numpy.pi, 2*numpy.pi)
+    phase_shift_distribution = UnivariateUniform(numpy.pi/2, 3*numpy.pi/2)
 
     # Data
     subject = 24
