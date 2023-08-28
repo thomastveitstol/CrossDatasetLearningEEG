@@ -281,3 +281,92 @@ class BivariatePhaseShift(TransformationBase):
         # and phase shift
         # ----------------
         return eeg_chunks, permuted_chunk, phase_shift
+
+
+class PhaseReplacement(TransformationBase):
+    """
+    Transformation class for replacing the phase of a chunk in chunked EEG, when there are only two channels
+
+    >>> _ = PhaseReplacement(num_chunks=5, chunk_duration=2000, chunk_time_delay=1000)
+    """
+
+    def __init__(self, *, num_chunks, chunk_duration, chunk_time_delay):
+        """
+        Initialisation method
+
+        Parameters
+        ----------
+        num_chunks : int
+            Number of EEG chunks (see chunk_eeg)
+        chunk_duration : int
+            Duration of each EEG chunk (see chunk_eeg)
+        chunk_time_delay : int
+            Duration between each EEG chunk (see chunk_eeg)
+        """
+        # ----------------
+        # Set attributes
+        # ----------------
+        # For chunking of EEG
+        self._num_chunks = num_chunks
+        self._chunk_duration = chunk_duration
+        self._chunk_time_delay = chunk_time_delay
+
+    @transformation_method
+    def phase_replacement(self, original_data, replacement_data):
+        """
+        Transformation by replacing the phase of a chunk of the original data with the phase of the replacement data
+        Parameters
+        ----------
+        original_data : numpy.ndarray
+            EEG with shape=(batch, channels, time steps)
+        replacement_data : numpy.ndarray
+            EEG with shape=(batch, channels, time steps)
+
+        Returns
+        -------
+        tuple[tuple[numpy.ndarray, ...], int]
+            A tuple containing the EEG chunks  and the index indicating which chunk was permuted
+        """
+        # ----------------
+        # Input checks  todo: too similar to the other classes
+        # ----------------
+        # Dimensions of the EEG channels
+        if any(x.ndim != 3 for x in (original_data, replacement_data)):
+            raise ValueError(f"Expected the EEG channels to have three dimensions, but received original and "
+                             f"replacement EEG dims = {original_data.ndim, replacement_data.ndim}")
+
+        # Shape of the EEG channels
+        if original_data.shape[1] != replacement_data.shape[1]:
+            raise ValueError(f"Expected the EEG data to have the same number of channel, but received "
+                             f"{original_data.shape[1]} and {replacement_data.shape[1]}")
+
+        # ----------------
+        # Chunk the EEG
+        # ----------------
+        # Create non-permuted EEG chunks of original data
+        eeg_chunks = list(chunk_eeg(data=original_data, k=self._num_chunks, chunk_duration=self._chunk_duration,
+                                    delta_t=self._chunk_time_delay, chunk_start_shift=0))
+
+        # Create non-permuted EEG chunks of replacement data
+        eeg_chunks_replacement = chunk_eeg(data=replacement_data, k=self._num_chunks,
+                                           chunk_duration=self._chunk_duration, delta_t=self._chunk_time_delay,
+                                           chunk_start_shift=0)  # todo: the chunking doesn't need same hyperparameters
+
+        # ----------------
+        # Create permutation
+        # ----------------
+        # Apply Hilbert transformation to the selected channel and chunk to obtain the analytic signal and phase
+        permuted_chunk = random.randint(0, self._num_chunks - 1)  # Selected chunk
+        original_analytic_signal = hilbert(eeg_chunks[permuted_chunk])
+        replacement_analytic_signal = hilbert(eeg_chunks_replacement[permuted_chunk])
+
+        replacement_phase = numpy.angle(replacement_analytic_signal)
+
+        # Compute the modified data (phase of the replaced signal, amplitude of the original) and insert it
+        modified_eeg_data = numpy.real(numpy.abs(original_analytic_signal) * numpy.exp(1j * replacement_phase))
+        eeg_chunks[permuted_chunk] = modified_eeg_data
+
+        # ----------------
+        # Return permuted chunks and index of permuted chunk
+        # ----------------
+        return tuple(eeg_chunks), permuted_chunk
