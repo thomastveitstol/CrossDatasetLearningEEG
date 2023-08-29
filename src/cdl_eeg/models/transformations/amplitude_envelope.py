@@ -149,7 +149,7 @@ class BivariateAmplitudeEnvelopeTimeShift(TransformationBase):
     Transformation where the amplitude envelope is shifted in time
 
     >>> from cdl_eeg.models.transformations.utils import UnivariateNormal, UnivariateUniform
-    >>> _ = BivariateAmplitudeEnvelopeTimeShift(UnivariateNormal(250, 50), num_chunks=5, chunk_duration=2000,
+    >>> _ = BivariateAmplitudeEnvelopeTimeShift(UnivariateNormal(0, 100), num_chunks=5, chunk_duration=2000,
     ...                                         chunk_time_delay=1000)
     """
 
