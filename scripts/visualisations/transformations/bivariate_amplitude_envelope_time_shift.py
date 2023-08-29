@@ -3,7 +3,8 @@ Script for plotting the results of the Bivariate Amplitude Envelope Time Shift t
 
 todo: too long and similar to the original visualisation. Start making the Dataset classes
 
-The signals look rather strange. May work better for beta band than alpha
+The signals look rather strange. May work better for beta band than alpha. Seems like it works better for smaller time
+shifts
 """
 import contextlib
 import io
@@ -37,7 +38,7 @@ def main():
     ch_0, ch_1 = 0, 7
 
     # Permutation
-    time_shift = UnivariateUniform(-500, 500)
+    time_shift = UnivariateUniform(-100, 100)
     permute_first_channel = True
 
     # Data
