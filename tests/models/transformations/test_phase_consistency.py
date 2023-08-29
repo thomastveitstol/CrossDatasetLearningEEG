@@ -1,6 +1,8 @@
 """
 Tests for the phase consistency transformations
 """
+import random
+
 import numpy.random
 
 from cdl_eeg.models.transformations.phase_consistency import BivariateTimeShift, BivariatePhaseShift
@@ -13,6 +15,10 @@ from cdl_eeg.models.transformations.utils import chunk_eeg, UnivariateNormal
 def test_bivariate_time_consistency():
     """Test of transformation. Testing type, output shapes, that the correct chunks are permuted, and that no in-place
     operations altered the input"""
+    # Make reproducible
+    random.seed(1)
+    numpy.random.seed(2)
+
     # -------------------
     # Hyperparameters
     # -------------------
@@ -80,6 +86,10 @@ def test_bivariate_time_consistency():
 def test_bivariate_phase_shift_transformation():
     """Test of transformation. Testing type, output shapes, that the correct chunks are permuted, and that no in-place
     operations altered the input"""
+    # Make reproducible
+    random.seed(1)
+    numpy.random.seed(2)
+
     # -------------------
     # Hyperparameters
     # -------------------
