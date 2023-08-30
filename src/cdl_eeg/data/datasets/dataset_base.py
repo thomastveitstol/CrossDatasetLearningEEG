@@ -142,7 +142,7 @@ class EEGDatasetBase(abc.ABC):
         # Prepare directory and logging
         # ------------------
         # Make directory
-        path = os.path.join(get_numpy_data_storage_path(), self.name)
+        path = self.get_numpy_arrays_path()
         os.mkdir(path)
 
         # Log the hyperparameters
@@ -203,6 +203,10 @@ class EEGDatasetBase(abc.ABC):
     @path_method
     def get_mne_path(self):
         return os.path.join(get_raw_data_storage_path(), self.name)
+
+    @path_method
+    def get_numpy_arrays_path(self):
+        return os.path.join(get_numpy_data_storage_path(), self.name)
 
     @path_method
     def get_participants_tsv_path(self):
