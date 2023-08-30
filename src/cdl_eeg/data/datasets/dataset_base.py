@@ -112,9 +112,9 @@ class EEGDatasetBase(abc.ABC):
             See pre_process
         resample : float, optional
         notch_filter : float, optional
-        num_time_steps : int
+        num_time_steps : int, optional
             Length of the numpy array, with unit number of time steps
-        time_series_start : int
+        time_series_start : int, optional
             Starting point for saving the numpy array, with unit number of time steps. Indicates the number of time
             steps to skip
 
