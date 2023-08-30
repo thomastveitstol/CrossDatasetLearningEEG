@@ -30,4 +30,4 @@ def get_numpy_data_storage_path():
         The path to where the data is stored as numpy arrays, or to be stored (e.g. in the scripts for saving as numpy
         arrays)
     """
-    return os.path.join(get_raw_data_storage_path(), "numpy")
+    return os.path.join(get_raw_data_storage_path(), "numpy_arrays")
