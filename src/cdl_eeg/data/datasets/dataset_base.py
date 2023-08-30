@@ -123,7 +123,6 @@ class EEGDatasetBase(abc.ABC):
         None
         """
         subject_ids = self.get_subject_ids() if subject_ids is None else subject_ids
-
         # ------------------
         # Input checks
         # ------------------
@@ -134,8 +133,8 @@ class EEGDatasetBase(abc.ABC):
                              f"subject IDs which were passed more than once")
 
         # Check if all subjects are actually available
-        if not all(sub_id not in subject_ids for sub_id in self.get_subject_ids()):
-            _unexpected_subjects = tuple(sub_id not in subject_ids for sub_id in self.get_subject_ids())
+        if not all(sub_id in subject_ids for sub_id in self.get_subject_ids()):
+            _unexpected_subjects = tuple(sub_id for sub_id in self.get_subject_ids() if sub_id not in subject_ids)
             raise ValueError(f"Unexpected subject IDs (N={len(_unexpected_subjects)}): {_unexpected_subjects}")
 
         # ------------------
@@ -145,7 +144,11 @@ class EEGDatasetBase(abc.ABC):
         path = self.get_numpy_arrays_path()
         os.mkdir(path)
 
-        # Log the hyperparameters
+        # Log the process
+        logging.basicConfig(filename=os.path.join(path, f"{self.name}.log"),
+                            level=logging.INFO, format='%(asctime)s :: %(levelname)s -> %(message)s')
+
+        logging.getLogger().addHandler(logging.StreamHandler())
         logger = logging.getLogger(__name__)
         logger.info(f"===== Saving data from the {self.name} dataset as numpy arrays =====")
 
