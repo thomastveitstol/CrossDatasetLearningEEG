@@ -1,6 +1,7 @@
 import abc
 import logging
 import os
+from typing import Tuple
 
 import inflection
 import numpy
@@ -183,7 +184,7 @@ class EEGDatasetBase(abc.ABC):
 
         logger.info("===== Saving complete =====")
 
-    def get_subject_ids(self) -> tuple[str, ...]:
+    def get_subject_ids(self) -> Tuple[str, ...]:
         """Get the subject IDs available. Unless this method is overridden, it will collect the IDs from the
         participants.tsv file"""
         return tuple(pandas.read_csv(self.get_participants_tsv_path(), sep="\t")["participant_id"])

@@ -12,6 +12,9 @@ src/cdl_eeg/__init__.py
 src/cdl_eeg/py.typed
 src/cdl_eeg/data/__init__.py
 src/cdl_eeg/data/paths.py
+src/cdl_eeg/data/datasets/__init__.py
+src/cdl_eeg/data/datasets/dataset_base.py
+src/cdl_eeg/data/datasets/miltiadous_dataset.py
 src/cdl_eeg/models/__init__.py
 src/cdl_eeg/models/transformations/__init__.py
 src/cdl_eeg/models/transformations/amplitude_envelope.py
