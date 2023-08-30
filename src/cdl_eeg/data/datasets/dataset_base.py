@@ -76,7 +76,7 @@ class EEGDatasetBase(abc.ABC):
         if filtering is not None:
             eeg_data.filter(*filtering)
 
-        # Notch filter:
+        # Notch filter todo: add re-referencing
         if notch_filter is not None:
             eeg_data.notch_filter(notch_filter)
 
