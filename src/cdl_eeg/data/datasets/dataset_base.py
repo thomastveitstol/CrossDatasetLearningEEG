@@ -45,7 +45,7 @@ class EEGDatasetBase(abc.ABC):
         name : str, optional
             Name of the EEG dataset
         """
-        self._name = inflection.underscore(self.__class__.__name__) if name is None else name
+        self._name: str = inflection.underscore(self.__class__.__name__) if name is None else name
         self._channel_system = channel_system
 
     @staticmethod
