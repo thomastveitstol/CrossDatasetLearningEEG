@@ -150,19 +150,22 @@ class EEGDatasetBase(abc.ABC):
 
         logging.getLogger().addHandler(logging.StreamHandler())
         logger = logging.getLogger(__name__)
-        logger.info("=====================================================================")
-        logger.info(f"===== Saving data from the {self.name} dataset as numpy arrays =====")
 
-        logger.info("----------------------------------")
+        msg = f"Saving data from the {self.name} dataset as numpy arrays"
+        logger.info(f"{'=' * (len(msg) + 12)}")
+        logger.info(f"===== {msg} =====")
+        logger.info("...")
+
         logger.info("----- Pre-processing details -----")
         logger.info(f"Re-sampling: {'Skipped' if resample is None else resample}")
         logger.info(f"Filtering: {'Skipped' if filtering is None else filtering}")
         logger.info(f"Notch-filter: {'Skipped' if notch_filter is None else notch_filter}")
+        logger.info("...")
 
-        logger.info("-----------------------------------")
         logger.info("----- Signal cropping details -----")
         logger.info(f"Time series start [time steps]: {'Skipped' if time_series_start is None else time_series_start}")
         logger.info(f"Time series length [time steps]: {'Skipped' if num_time_steps is None else num_time_steps}")
+        logger.info("...")
 
         # ------------------
         # Loop through all subjects
