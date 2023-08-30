@@ -151,7 +151,7 @@ class EEGDatasetBase(abc.ABC):
         logging.getLogger().addHandler(logging.StreamHandler())
         logger = logging.getLogger(__name__)
 
-        msg = f"Saving data from the {self.name} dataset as numpy arrays"
+        msg = f"Saving data from the '{self.name}' dataset as numpy arrays"
         logger.info(f"{'=' * (len(msg) + 12)}")
         logger.info(f"===== {msg} =====")
         logger.info("...")
