@@ -152,7 +152,7 @@ class EEGDatasetBase(abc.ABC):
         logger = logging.getLogger(__name__)
         logger.info(f"===== Saving data from the {self.name} dataset as numpy arrays =====")
 
-        logger.info("----- Pre-processing details -----")
+        logger.info("\n----- Pre-processing details -----")
         logger.info(f"Re-sampling: {'Skipped' if resample is None else resample}")
         logger.info(f"Filtering: {'Skipped' if filtering is None else filtering}")
         logger.info(f"Notch-filter: {'Skipped' if notch_filter is None else notch_filter}")
@@ -185,7 +185,7 @@ class EEGDatasetBase(abc.ABC):
             # Save the EEG data as numpy arrays
             numpy.save(os.path.join(path, sub_id), arr=eeg_data)
 
-        logger.info("===== Saving complete =====")
+        logger.info("\n===== Saving complete =====")
 
     def get_subject_ids(self) -> Tuple[str, ...]:
         """Get the subject IDs available. Unless this method is overridden, it will collect the IDs from the
