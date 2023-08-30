@@ -2,7 +2,6 @@ import abc
 import logging
 import os
 
-from mne.io.base import BaseRaw
 import inflection
 import numpy
 import pandas
@@ -55,14 +54,14 @@ class EEGDatasetBase(abc.ABC):
 
         Parameters
         ----------
-        eeg_data : BaseRaw
+        eeg_data : mne.io.base.BaseRaw
         filtering : tuple[float, float], optional
         resample : float, optional
         notch_filter : float, optional
 
         Returns
         -------
-        BaseRaw
+        mne.io.base.BaseRaw
             The pre-processed MNE raw object
         """
         # TODO: Such shared pre processing steps is not optimal. The EEG data may e.g. contain boundary events or have
@@ -182,7 +181,7 @@ class EEGDatasetBase(abc.ABC):
             # Save the EEG data as numpy arrays
             numpy.save(os.path.join(path, sub_id), arr=eeg_data)
 
-        logger.info(f"===== Saving complete =====")
+        logger.info("===== Saving complete =====")
 
     def get_subject_ids(self) -> tuple[str, ...]:
         """Get the subject IDs available. Unless this method is overridden, it will collect the IDs from the

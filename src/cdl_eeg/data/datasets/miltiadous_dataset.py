@@ -9,4 +9,3 @@ class Miltiadous(EEGDatasetBase):
 
     def __init__(self):
         super().__init__(channel_system=MiltiadousChannelSystem())
-
