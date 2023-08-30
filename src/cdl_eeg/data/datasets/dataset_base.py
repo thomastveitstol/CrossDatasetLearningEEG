@@ -150,16 +150,16 @@ class EEGDatasetBase(abc.ABC):
 
         logging.getLogger().addHandler(logging.StreamHandler())
         logger = logging.getLogger(__name__)
-        logger.info(f"===== Saving data from the {self.name} dataset as numpy arrays =====")
+        logger.info(f"===== Saving data from the {self.name} dataset as numpy arrays =====\n")
 
-        logger.info("\n----- Pre-processing details -----")
+        logger.info("----- Pre-processing details -----")
         logger.info(f"Re-sampling: {'Skipped' if resample is None else resample}")
         logger.info(f"Filtering: {'Skipped' if filtering is None else filtering}")
-        logger.info(f"Notch-filter: {'Skipped' if notch_filter is None else notch_filter}")
+        logger.info(f"Notch-filter: {'Skipped' if notch_filter is None else notch_filter}\n")
 
-        logger.info("\n----- Signal cropping details -----")
+        logger.info("----- Signal cropping details -----")
         logger.info(f"Time series start [time steps]: {'Skipped' if time_series_start is None else time_series_start}")
-        logger.info(f"Time series length [time steps]: {'Skipped' if num_time_steps is None else num_time_steps}")
+        logger.info(f"Time series length [time steps]: {'Skipped' if num_time_steps is None else num_time_steps}\n")
 
         # ------------------
         # Loop through all subjects
@@ -185,7 +185,7 @@ class EEGDatasetBase(abc.ABC):
             # Save the EEG data as numpy arrays
             numpy.save(os.path.join(path, sub_id), arr=eeg_data)
 
-        logger.info("\n===== Saving complete =====")
+        logger.info("===== Saving complete =====")
 
     def get_subject_ids(self) -> Tuple[str, ...]:
         """Get the subject IDs available. Unless this method is overridden, it will collect the IDs from the
