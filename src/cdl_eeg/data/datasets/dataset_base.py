@@ -95,7 +95,7 @@ class EEGDatasetBase(abc.ABC):
 
         Returns
         -------
-        BaseRaw
+        mne.io.base.BaseRaw
             MNE object of the subject
         """
 
