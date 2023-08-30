@@ -20,4 +20,4 @@ class Miltiadous(EEGDatasetBase):
         path = os.path.join(self.get_mne_path(), subject_id, "eeg", f"{subject_id}_task-eyesclosed_eeg.set")
 
         # Load MNE object and return
-        return mne.io.read_raw_eeglab(input_fname=path, preload=True)
+        return mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)

@@ -70,15 +70,15 @@ class EEGDatasetBase(abc.ABC):
         # todo: Maybe try out AutoReject and use spherical spline interpolation?
         # Resampling
         if resample is not None:
-            eeg_data.resample(resample)
+            eeg_data.resample(resample, verbose=False)
 
         # Filtering
         if filtering is not None:
-            eeg_data.filter(*filtering)
+            eeg_data.filter(*filtering, verbose=False)
 
         # Notch filter todo: add re-referencing
         if notch_filter is not None:
-            eeg_data.notch_filter(notch_filter)
+            eeg_data.notch_filter(notch_filter, verbose=False)
 
         # Return the MNE object
         return eeg_data
