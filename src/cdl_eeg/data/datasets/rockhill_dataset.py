@@ -24,7 +24,8 @@ class Rockhill(EEGDatasetBase):
 
     @staticmethod
     def pre_process(eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False):
-        """See the parent class implementation for details. This overriding method further excludes non-EEG channels"""
+        """See the parent class implementation for details. This overriding method excludes non-EEG channels prior to
+        pre-processing"""
         # Keep EEG channels only
         non_eeg_channels = [ch_name for ch_name in eeg_data.ch_names if ch_name[:3] == "EXG"]
         eeg_data = eeg_data.pick(picks="eeg", exclude=non_eeg_channels)
