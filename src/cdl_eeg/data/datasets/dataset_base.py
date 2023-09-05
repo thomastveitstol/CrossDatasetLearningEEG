@@ -86,6 +86,9 @@ class EEGDatasetBase(abc.ABC):
         # Return the MNE object
         return eeg_data
 
+    # ----------------
+    # Loading methods
+    # ----------------
     def load_single_mne_object(self, subject_id, derivatives=False, **kwargs):
         """
         Method for loading MNE raw object of a single subject
@@ -254,6 +257,9 @@ class EEGDatasetBase(abc.ABC):
         participants.tsv file"""
         return tuple(pandas.read_csv(self.get_participants_tsv_path(), sep="\t")["participant_id"])
 
+    # ----------------
+    # Properties
+    # ----------------
     @property
     def name(self) -> str:
         return self._name
