@@ -140,7 +140,7 @@ class EEGDatasetBase(abc.ABC):
         raise NotImplementedError("A cleaned version is not available for this class.")
 
     def save_eeg_as_numpy_arrays(self, subject_ids=None, *, filtering=None, resample=None, notch_filter=None,
-                                 avg_reference=False, num_time_steps=None, time_series_start=None):
+                                 avg_reference=False, num_time_steps=None, time_series_start=None, **kwargs):
         """
         Method for saving data as numpy arrays
 
@@ -158,6 +158,8 @@ class EEGDatasetBase(abc.ABC):
         time_series_start : int, optional
             Starting point for saving the numpy array, with unit number of time steps. Indicates the number of time
             steps to skip
+        kwargs
+            Keyword arguments, which will be passed to load_single_mne_object
 
         Returns
         -------
@@ -207,6 +209,14 @@ class EEGDatasetBase(abc.ABC):
         logger.info("----- Signal cropping details -----")
         logger.info(f"Time series start [time steps]: {'Skipped' if time_series_start is None else time_series_start}")
         logger.info(f"Time series length [time steps]: {'Skipped' if num_time_steps is None else num_time_steps}")
+        logger.info("...")
+
+        logger.info("----- Additional keyword arguments -----")
+        if kwargs:
+            for key, value in kwargs.items():
+                logger.info(f"Argument '{key}': {value}")
+        else:
+            logger.info("None passed")
         logger.info("...")
 
         # ------------------
