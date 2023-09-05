@@ -263,7 +263,7 @@ class EEGDatasetBase(abc.ABC):
         return self._channel_system
 
     # ----------------
-    # Path functions
+    # Path methods
     # ----------------
     @path_method
     def get_mne_path(self):
