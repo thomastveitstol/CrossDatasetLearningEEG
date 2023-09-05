@@ -12,6 +12,12 @@ class MiltiadousChannelSystem(ChannelSystemBase):
 class Miltiadous(EEGDatasetBase):
 
     def __init__(self):
+        """
+        Examples:
+        ----------
+        >>> Miltiadous().name
+        'miltiadous'
+        """
         super().__init__(channel_system=MiltiadousChannelSystem())
 
     def load_single_mne_object(self, subject_id):
