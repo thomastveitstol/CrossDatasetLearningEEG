@@ -221,7 +221,7 @@ class EEGDatasetBase(abc.ABC):
             for key, value in kwargs.items():
                 logger.info(f"Argument '{key}': {value}")
         else:
-            logger.info("None passed")
+            logger.info("No additional keyword arguments were passed")
         logger.info("...")
 
         # ------------------
