@@ -49,7 +49,7 @@ class EEGDatasetBase(abc.ABC):
         self._channel_system = channel_system
 
     @staticmethod
-    def pre_process(eeg_data, *, filtering, resample, notch_filter):
+    def pre_process(eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False):
         """
         Method for pre-processing EEG data
 
@@ -59,6 +59,7 @@ class EEGDatasetBase(abc.ABC):
         filtering : tuple[float, float], optional
         resample : float, optional
         notch_filter : float, optional
+        avg_reference : bool
 
         Returns
         -------
@@ -76,9 +77,13 @@ class EEGDatasetBase(abc.ABC):
         if filtering is not None:
             eeg_data.filter(*filtering, verbose=False)
 
-        # Notch filter todo: add re-referencing
+        # Notch filter
         if notch_filter is not None:
             eeg_data.notch_filter(notch_filter, verbose=False)
+
+        # Re-referencing
+        if avg_reference:
+            eeg_data.set_eeg_reference(ref_channels="average")
 
         # Return the MNE object
         return eeg_data
