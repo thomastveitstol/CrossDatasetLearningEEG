@@ -224,7 +224,7 @@ class EEGDatasetBase(abc.ABC):
         # ------------------
         for sub_id in subject_ids:
             # Load the EEG data as MNE object
-            raw = self.load_single_mne_object(subject_id=sub_id)
+            raw = self.load_single_mne_object(subject_id=sub_id, **kwargs)
 
             # Pre-process
             raw = self.pre_process(raw, filtering=filtering, resample=resample, notch_filter=notch_filter)
