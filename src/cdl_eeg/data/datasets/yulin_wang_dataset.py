@@ -11,6 +11,14 @@ class YulinWangChannelSystem(ChannelSystemBase):
 
 
 class YulinWang(EEGDatasetBase):
+    """
+        Examples:
+        ----------
+        >>> YulinWang().name
+        'yulin_wang'
+        """
+
+    __slots__ = ()
 
     def __init__(self):
         super().__init__(channel_system=YulinWangChannelSystem())
