@@ -39,7 +39,7 @@ class YulinWang(EEGDatasetBase):
 
         # Create path
         path_to_cleaned = "derivatives/preprocessed data/preprocessed_data"
-        subject_path = pathlib.Path(f"sub{str(subject_id).zfill(2)}_{str(visit).zfill(2)}_{recording}")
+        subject_path = pathlib.Path(f"{str(subject_id).zfill(2).replace('-', '')}_{str(visit).zfill(2)}_{recording}")
         subject_path = subject_path.with_suffix(".set")
         path = os.path.join(self.get_mne_path(), path_to_cleaned, subject_path)
 
