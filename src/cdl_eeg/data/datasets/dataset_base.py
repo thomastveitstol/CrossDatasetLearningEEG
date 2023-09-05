@@ -27,9 +27,7 @@ class ChannelSystemBase(abc.ABC):
 
 class EEGDatasetBase(abc.ABC):
     """
-    Base class for all datasets to be used. Classes for datasets such as ChildMindInstitute Dataset (although other
-    datasets are not used in the paper, I decided it would be smart to make it scalable from the beginning), should
-    inherit from this class
+    Base class for all datasets to be used
     """
 
     __slots__ = "_name", "_channel_system"
