@@ -20,6 +20,9 @@ class Miltiadous(EEGDatasetBase):
         """
         super().__init__(channel_system=MiltiadousChannelSystem())
 
+    # ----------------
+    # Methods for loading
+    # ----------------
     def _load_single_raw_mne_object(self, subject_id, **_):
         # todo: there have to be better ways of handling the input data than **_
         # Create path
