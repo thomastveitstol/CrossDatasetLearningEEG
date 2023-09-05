@@ -105,7 +105,7 @@ class EEGDatasetBase(abc.ABC):
         """
 
     def save_eeg_as_numpy_arrays(self, subject_ids=None, *, filtering=None, resample=None, notch_filter=None,
-                                 num_time_steps=None, time_series_start=None):
+                                 avg_reference=False, num_time_steps=None, time_series_start=None):
         """
         Method for saving data as numpy arrays
 
@@ -117,6 +117,7 @@ class EEGDatasetBase(abc.ABC):
             See pre_process
         resample : float, optional
         notch_filter : float, optional
+        avg_reference : bool
         num_time_steps : int, optional
             Length of the numpy array, with unit number of time steps
         time_series_start : int, optional
@@ -165,6 +166,7 @@ class EEGDatasetBase(abc.ABC):
         logger.info(f"Re-sampling: {'Skipped' if resample is None else resample}")
         logger.info(f"Filtering: {'Skipped' if filtering is None else filtering}")
         logger.info(f"Notch-filter: {'Skipped' if notch_filter is None else notch_filter}")
+        logger.info(f"Average referencing: {avg_reference}")
         logger.info("...")
 
         logger.info("----- Signal cropping details -----")
