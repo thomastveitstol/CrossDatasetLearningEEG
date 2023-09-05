@@ -22,8 +22,7 @@ class Rockhill(EEGDatasetBase):
     def __init__(self):
         super().__init__(channel_system=RockhillChannelSystem())
 
-    @staticmethod
-    def pre_process(eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False):
+    def pre_process(self, eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False):
         """See the parent class implementation for details. This overriding method excludes non-EEG channels prior to
         pre-processing"""
         # Keep EEG channels only
