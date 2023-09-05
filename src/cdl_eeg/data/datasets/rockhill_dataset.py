@@ -10,6 +10,14 @@ class RockhillChannelSystem(ChannelSystemBase):
 
 
 class Rockhill(EEGDatasetBase):
+    """
+    Examples:
+    ----------
+    >>> Rockhill().name
+    'rockhill'
+    """
+
+    __slots__ = ()
 
     def __init__(self):
         super().__init__(channel_system=RockhillChannelSystem())
