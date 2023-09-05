@@ -10,14 +10,16 @@ class MiltiadousChannelSystem(ChannelSystemBase):
 
 
 class Miltiadous(EEGDatasetBase):
+    """
+    Examples:
+    ----------
+    >>> Miltiadous().name
+    'miltiadous'
+    """
+
+    __slots__ = ()
 
     def __init__(self):
-        """
-        Examples:
-        ----------
-        >>> Miltiadous().name
-        'miltiadous'
-        """
         super().__init__(channel_system=MiltiadousChannelSystem())
 
     # ----------------
