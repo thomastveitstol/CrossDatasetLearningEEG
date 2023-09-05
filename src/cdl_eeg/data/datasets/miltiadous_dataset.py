@@ -20,7 +20,7 @@ class Miltiadous(EEGDatasetBase):
         """
         super().__init__(channel_system=MiltiadousChannelSystem())
 
-    def load_single_mne_object(self, subject_id):
+    def _load_single_raw_mne_object(self, subject_id):
         # TODO: add derivatives functionality
         # Create path
         path = os.path.join(self.get_mne_path(), subject_id, "eeg", f"{subject_id}_task-eyesclosed_eeg.set")

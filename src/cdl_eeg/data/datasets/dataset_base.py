@@ -88,10 +88,44 @@ class EEGDatasetBase(abc.ABC):
         # Return the MNE object
         return eeg_data
 
-    @abc.abstractmethod
-    def load_single_mne_object(self, subject_id):
+    def load_single_mne_object(self, subject_id, derivatives=False):
         """
         Method for loading MNE raw object of a single subject
+
+        Parameters
+        ----------
+        subject_id : str
+            Subject ID
+        derivatives : bool
+            For datasets where an already cleaned version is available. If True, the cleaned version will be used,
+            otherwise the non-cleaned data is loaded
+
+        Returns
+        -------
+        mne.io.base.BaseRaw
+            MNE object of the subject
+        """
+        return self._load_single_cleaned_mne_object(subject_id) if derivatives \
+            else self._load_single_raw_mne_object(subject_id)
+
+    @abc.abstractmethod
+    def _load_single_raw_mne_object(self, subject_id):
+        """
+        Method for loading raw data
+
+        Parameters
+        ----------
+        subject_id : str
+            Subject ID
+        Returns
+        -------
+        mne.io.base.BaseRaw
+            MNE object of the subject
+        """
+
+    def _load_single_cleaned_mne_object(self, subject_id):
+        """
+        Method for loading existing pre-processed data (only relevant for some datasets)
 
         Parameters
         ----------
@@ -103,6 +137,7 @@ class EEGDatasetBase(abc.ABC):
         mne.io.base.BaseRaw
             MNE object of the subject
         """
+        raise NotImplementedError
 
     def save_eeg_as_numpy_arrays(self, subject_ids=None, *, filtering=None, resample=None, notch_filter=None,
                                  avg_reference=False, num_time_steps=None, time_series_start=None):
