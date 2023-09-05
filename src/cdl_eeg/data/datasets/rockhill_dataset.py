@@ -112,4 +112,4 @@ class Rockhill(EEGDatasetBase):
         path = os.path.join(self.get_mne_path(), subject_path)
 
         # Make MNE raw object
-        return mne.io.read_raw_bdf(input_fname=path, preload=True)
+        return mne.io.read_raw_bdf(input_fname=path, preload=True, verbose=False)
