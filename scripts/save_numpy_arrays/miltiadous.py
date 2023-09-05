@@ -7,18 +7,18 @@ def main():
     # ----------------
     # Pre-processing
     filtering = (1, 40)
-    resample = 500
+    sampling_freq = 500
     notch_filter = 50
     avg_reference = True
 
     # Cropping
-    num_time_steps = resample * 16
-    time_series_start = resample * 10
+    num_time_steps = sampling_freq * 16
+    time_series_start = sampling_freq * 10
 
     # ----------------
     # Saving
     # ----------------
-    Miltiadous().save_eeg_as_numpy_arrays(subject_ids=None, filtering=filtering, resample=resample,
+    Miltiadous().save_eeg_as_numpy_arrays(subject_ids=None, filtering=filtering, resample=sampling_freq,
                                           notch_filter=notch_filter, avg_reference=avg_reference,
                                           num_time_steps=num_time_steps, time_series_start=time_series_start)
 
