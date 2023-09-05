@@ -140,7 +140,8 @@ class EEGDatasetBase(abc.ABC):
         raise NotImplementedError("A cleaned version is not available for this class.")
 
     def save_eeg_as_numpy_arrays(self, subject_ids=None, *, filtering=None, resample=None, notch_filter=None,
-                                 avg_reference=False, num_time_steps=None, time_series_start=None, **kwargs):
+                                 avg_reference=False, num_time_steps=None, time_series_start=None, derivatives=False,
+                                 **kwargs):
         """
         Method for saving data as numpy arrays
 
@@ -158,6 +159,9 @@ class EEGDatasetBase(abc.ABC):
         time_series_start : int, optional
             Starting point for saving the numpy array, with unit number of time steps. Indicates the number of time
             steps to skip
+        derivatives : bool
+            For datasets where an already cleaned version is available. If True, the cleaned version will be used,
+            otherwise the non-cleaned data is loaded
         kwargs
             Keyword arguments, which will be passed to load_single_mne_object
 
@@ -200,6 +204,7 @@ class EEGDatasetBase(abc.ABC):
         logger.info("...")
 
         logger.info("----- Pre-processing details -----")
+        logger.info(f"Derivatives: {derivatives}")
         logger.info(f"Re-sampling: {'Skipped' if resample is None else resample}")
         logger.info(f"Filtering: {'Skipped' if filtering is None else filtering}")
         logger.info(f"Notch-filter: {'Skipped' if notch_filter is None else notch_filter}")
@@ -224,7 +229,7 @@ class EEGDatasetBase(abc.ABC):
         # ------------------
         for sub_id in subject_ids:
             # Load the EEG data as MNE object
-            raw = self.load_single_mne_object(subject_id=sub_id, **kwargs)
+            raw = self.load_single_mne_object(subject_id=sub_id, derivatives=derivatives, **kwargs)
 
             # Pre-process
             raw = self.pre_process(raw, filtering=filtering, resample=resample, notch_filter=notch_filter)
