@@ -88,7 +88,7 @@ class EEGDatasetBase(abc.ABC):
         # Return the MNE object
         return eeg_data
 
-    def load_single_mne_object(self, subject_id, derivatives=False):
+    def load_single_mne_object(self, subject_id, derivatives=False, **kwargs):
         """
         Method for loading MNE raw object of a single subject
 
@@ -105,11 +105,11 @@ class EEGDatasetBase(abc.ABC):
         mne.io.base.BaseRaw
             MNE object of the subject
         """
-        return self._load_single_cleaned_mne_object(subject_id) if derivatives \
-            else self._load_single_raw_mne_object(subject_id)
+        return self._load_single_cleaned_mne_object(subject_id, **kwargs) if derivatives \
+            else self._load_single_raw_mne_object(subject_id, **kwargs)
 
     @abc.abstractmethod
-    def _load_single_raw_mne_object(self, subject_id):
+    def _load_single_raw_mne_object(self, subject_id, **kwargs):
         """
         Method for loading raw data
 
@@ -123,7 +123,7 @@ class EEGDatasetBase(abc.ABC):
             MNE object of the subject
         """
 
-    def _load_single_cleaned_mne_object(self, subject_id):
+    def _load_single_cleaned_mne_object(self, subject_id, **kwargs):
         """
         Method for loading existing pre-processed data (only relevant for some datasets)
 
