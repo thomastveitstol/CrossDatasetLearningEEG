@@ -137,7 +137,7 @@ class EEGDatasetBase(abc.ABC):
         mne.io.base.BaseRaw
             MNE object of the subject
         """
-        raise NotImplementedError
+        raise NotImplementedError("A cleaned version is not available for this class.")
 
     def save_eeg_as_numpy_arrays(self, subject_ids=None, *, filtering=None, resample=None, notch_filter=None,
                                  avg_reference=False, num_time_steps=None, time_series_start=None):
