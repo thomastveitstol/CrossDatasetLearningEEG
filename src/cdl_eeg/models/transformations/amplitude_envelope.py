@@ -253,7 +253,7 @@ class BivariateAmplitudeEnvelopeTimeShift(TransformationBase):
         shifted_amplitude_envelope = numpy.abs(shifted_analytic_signal)
 
         # Insert a new signal where the phase is maintained, but the amplitude envelope is time shifted
-        modified_signal = numpy.real(numpy.abs(shifted_amplitude_envelope) * numpy.exp(1j * original_phase))
+        modified_signal = numpy.real(shifted_amplitude_envelope * numpy.exp(1j * original_phase))
         eeg_chunks[permuted_chunk][:, channel] = modified_signal
 
         # ----------------
