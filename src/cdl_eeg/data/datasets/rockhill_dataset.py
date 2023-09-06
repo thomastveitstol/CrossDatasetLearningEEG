@@ -15,6 +15,9 @@ class Rockhill(EEGDatasetBase):
 
     __slots__ = ()
 
+    _channel_names = ("Fp1", "Fp2", "F7", "F3", "Fz", "F4", "F8", "T3", "C3", "Cz", "C4", "T4", "T5", "P3", "Pz", "P4",
+                      "T6", "O1", "O2")
+
     def __init__(self):
         super().__init__()
 
@@ -115,5 +118,16 @@ class Rockhill(EEGDatasetBase):
     # ----------------
     # Methods for channel system
     # ----------------
+    def _get_electrode_positions(self, subject_id=None):
+        raise NotImplementedError
+
+    def _get_template_electrode_positions(self):
+        # Following the international 10-20 system according to the README file. Thus using MNE default
+        montage = mne.channels.make_standard_montage("standard_1020")
+        channel_positions = montage.get_positions()["ch_pos"]
+
+        # Return dict with channel positions, keeping only the ones in the data
+        return {ch_name: tuple(pos) for ch_name, pos in channel_positions.items() if ch_name in self._channel_names}
+
     def channel_name_to_index(self):
         raise NotImplementedError
