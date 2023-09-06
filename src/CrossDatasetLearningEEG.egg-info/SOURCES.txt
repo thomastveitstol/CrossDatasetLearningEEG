@@ -14,6 +14,7 @@ src/cdl_eeg/data/__init__.py
 src/cdl_eeg/data/paths.py
 src/cdl_eeg/data/datasets/__init__.py
 src/cdl_eeg/data/datasets/dataset_base.py
+src/cdl_eeg/data/datasets/hatlestad_hall_dataset.py
 src/cdl_eeg/data/datasets/miltiadous_dataset.py
 src/cdl_eeg/data/datasets/rockhill_dataset.py
 src/cdl_eeg/data/datasets/yulin_wang_dataset.py
