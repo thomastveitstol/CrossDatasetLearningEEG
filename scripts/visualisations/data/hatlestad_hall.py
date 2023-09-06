@@ -1,6 +1,6 @@
 from matplotlib import pyplot
 
-from cdl_eeg.data.datasets.hatlestad_hall import HatlestadHall
+from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 
 
 def main():
