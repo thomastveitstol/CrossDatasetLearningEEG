@@ -2,7 +2,7 @@ import os
 
 import mne
 
-from cdl_eeg.data.datasets.dataset_base import ChannelSystemBase, EEGDatasetBase
+from cdl_eeg.data.datasets.dataset_base import ChannelSystemBase, EEGDatasetBase, path_method
 
 
 class RockhillChannelSystem(ChannelSystemBase):
@@ -37,6 +37,7 @@ class Rockhill(EEGDatasetBase):
     # Methods for different paths
     # ----------------
     @staticmethod
+    @path_method
     def _path_to_pd_subject(subject_id, on):
         """
         Get the subject path of a subject with Parkinson's disease
@@ -59,6 +60,7 @@ class Rockhill(EEGDatasetBase):
         return os.path.join(subject_id, session, "eeg", f"{subject_id}_{session}_task-rest_eeg.bdf")
 
     @staticmethod
+    @path_method
     def _path_to_hc_subject(subject_id):
         """
         Get the subject path of a healthy control subject
