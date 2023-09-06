@@ -193,8 +193,8 @@ class EEGDatasetBase(abc.ABC):
         os.mkdir(path)
 
         # Log the process
-        logging.basicConfig(filename=os.path.join(path, f"{self.name}.log"),
-                            level=logging.INFO, format='%(asctime)s :: %(levelname)s -> %(message)s')
+        logging.basicConfig(filename=os.path.join(path, f"{self.name}.log"), level=logging.INFO,
+                            format='%(asctime)s :: %(levelname)s -> %(message)s')
 
         logging.getLogger().addHandler(logging.StreamHandler())
         logger = logging.getLogger(__name__)
