@@ -3,11 +3,7 @@ import pathlib
 
 import mne
 
-from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, ChannelSystemBase
-
-
-class YulinWangChannelSystem(ChannelSystemBase):
-    ...
+from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase
 
 
 class YulinWang(EEGDatasetBase):
@@ -21,7 +17,7 @@ class YulinWang(EEGDatasetBase):
     __slots__ = ()
 
     def __init__(self):
-        super().__init__(channel_system=YulinWangChannelSystem())
+        super().__init__()
 
     # ----------------
     # Methods for loading

@@ -21,30 +21,23 @@ def path_method(func):
 # --------------------
 # Base classes
 # --------------------
-class ChannelSystemBase(abc.ABC):
-    ...
-
-
 class EEGDatasetBase(abc.ABC):
     """
     Base class for all datasets to be used
     """
 
-    __slots__ = "_name", "_channel_system"
+    __slots__ = "_name"
 
-    def __init__(self, channel_system, name=None):
+    def __init__(self, name=None):
         """
         Initialisation method
 
         Parameters
         ----------
-        channel_system : ChannelSystemBase
-            The channel system used for the EEG dataset
         name : str, optional
             Name of the EEG dataset
         """
         self._name: str = inflection.underscore(self.__class__.__name__) if name is None else name
-        self._channel_system = channel_system
 
     @staticmethod
     def pre_process(eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False):
@@ -263,10 +256,6 @@ class EEGDatasetBase(abc.ABC):
     @property
     def name(self) -> str:
         return self._name
-
-    @property
-    def channel_system(self):
-        return self._channel_system
 
     # ----------------
     # Path methods

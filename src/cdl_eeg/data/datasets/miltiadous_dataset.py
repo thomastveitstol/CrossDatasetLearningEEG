@@ -2,11 +2,7 @@ import os
 
 import mne
 
-from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, ChannelSystemBase
-
-
-class MiltiadousChannelSystem(ChannelSystemBase):
-    ...
+from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase
 
 
 class Miltiadous(EEGDatasetBase):
@@ -20,7 +16,7 @@ class Miltiadous(EEGDatasetBase):
     __slots__ = ()
 
     def __init__(self):
-        super().__init__(channel_system=MiltiadousChannelSystem())
+        super().__init__()
 
     # ----------------
     # Methods for loading
