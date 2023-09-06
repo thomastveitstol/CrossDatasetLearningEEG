@@ -36,3 +36,9 @@ class Miltiadous(EEGDatasetBase):
 
         # Load MNE object and return
         return mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)
+
+    # ----------------
+    # Methods for channel system
+    # ----------------
+    def channel_name_to_index(self):
+        raise NotImplementedError

@@ -49,3 +49,9 @@ class YulinWang(EEGDatasetBase):
 
         # Make MNE raw object
         return mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)
+
+    # ----------------
+    # Methods for channel system
+    # ----------------
+    def channel_name_to_index(self):
+        raise NotImplementedError
