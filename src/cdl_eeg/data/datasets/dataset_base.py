@@ -283,3 +283,68 @@ class EEGDatasetBase(abc.ABC):
     def get_participants_tsv_path(self):
         """Get the path to the participants.tsv file"""
         return os.path.join(self.get_mne_path(), "participants.tsv")
+
+    # ----------------
+    # Channel system
+    # ----------------
+    def get_electrode_positions(self, subject_id=None):
+        """
+        Method for getting the electrode positions (cartesian coordinates) of a specified subject. If this method is not
+        overridden or None is passed, a template is used instead
+        Parameters
+        ----------
+        subject_id : str, optional
+            Subject ID
+
+        Returns
+        -------
+        dict[str, tuple[float, float, float]]
+            Cartesian coordinates of the channels. Keys are channel names
+        """
+        if subject_id is None:
+            return self._get_template_electrode_positions()
+        else:
+            # Use subject specific coordinates. If not implemented, use template instead
+            try:
+                return self._get_electrode_positions(subject_id)
+            except NotImplementedError:
+                # todo: consider raising a warning here
+                return self._get_template_electrode_positions()
+
+    def _get_electrode_positions(self, subject_id=None):
+        """
+        Method for getting the electrode positions (cartesian coordinates) of a specified subject.
+
+        Parameters
+        ----------
+        subject_id : str, optional
+            Subject ID
+
+        Returns
+        -------
+        dict[str, tuple[float, float, float]]
+            Cartesian coordinates of the channels. Keys are channel names
+        """
+        raise NotImplementedError
+
+    def _get_template_electrode_positions(self):
+        """
+        Method for getting the template electrode positions (cartesian coordinates)
+
+        Returns
+        -------
+        dict[str, tuple[float, float, float]]
+            Cartesian coordinates of the channels. Keys are channel names
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def channel_name_to_index(self):
+        """
+        Get the mapping from channel name to index
+
+        Returns
+        -------
+        dict[str, int]
+            Keys are channel name, value is the row-position in the data matrix
+        """
