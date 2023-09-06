@@ -81,13 +81,6 @@ class HatlestadHall(EEGDatasetBase):
     # Channel system
     # ----------------
     def _get_template_electrode_positions(self):
-        """
-
-        Examples
-        -------
-        >>> HatlestadHall()._get_template_electrode_positions()["FT8"]
-        (85.7567, 27.8641, -3.1488)
-        """
         # Create path
         path = os.path.join(self.get_mne_path(), "code", "bidsify-srm-restingstate", "chanlocs",
                             "BioSemi_SRM_template_64_locs.xyz")
@@ -107,13 +100,6 @@ class HatlestadHall(EEGDatasetBase):
         return {ch_name: (x, y, z) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
 
     def channel_name_to_index(self):
-        """
-
-        Examples
-        -------
-        >>> HatlestadHall().channel_name_to_index()["FT8"]
-        42
-        """
         # Create path
         path = os.path.join(self.get_mne_path(), "code", "bidsify-srm-restingstate", "chanlocs",
                             "BioSemi_SRM_template_64_locs.xyz")
