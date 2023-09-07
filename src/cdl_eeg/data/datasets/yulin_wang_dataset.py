@@ -90,7 +90,7 @@ class YulinWang(EEGDatasetBase):
         z_vals = ch_positions["Z"]
 
         # Convert to dict and return
-        return {ch_name: (x, y, x) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
+        return {ch_name: (x, y, z) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
 
     def channel_name_to_index(self):
         # todo: make tests
