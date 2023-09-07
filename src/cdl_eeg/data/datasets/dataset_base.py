@@ -345,7 +345,7 @@ class EEGDatasetBase(abc.ABC):
 
         Parameters
         ----------
-        subject_id : str
+        subject_id : str, optional
             Subject ID
         annotate : bool
             To annotate the points with channel names (True) or not (False)
