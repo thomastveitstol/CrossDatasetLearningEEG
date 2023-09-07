@@ -6,6 +6,7 @@ from typing import Tuple
 import inflection
 import numpy
 import pandas
+from matplotlib import pyplot
 
 from cdl_eeg.data.paths import get_raw_data_storage_path, get_numpy_data_storage_path
 
@@ -337,3 +338,44 @@ class EEGDatasetBase(abc.ABC):
         dict[str, int]
             Keys are channel name, value is the row-position in the data matrix
         """
+
+    def plot_electrode_positions(self, subject_id=None, annotate=True):
+        """
+        Method for 3D plotting the electrode positions.
+
+        Parameters
+        ----------
+        subject_id : str
+            Subject ID
+        annotate : bool
+            To annotate the points with channel names (True) or not (False)
+
+        Returns
+        -------
+        None
+        """
+        # Get electrode positions
+        electrode_positions = self.get_electrode_positions(subject_id=subject_id)  # todo: mypy thinks this is a float
+
+        # Extract coordinates
+        channel_names = []
+        x_vals = []
+        y_vals = []
+        z_vals = []
+        for ch_name, (x, y, z) in electrode_positions.items():  # type: ignore
+            channel_names.append(ch_name)
+            x_vals.append(x)
+            y_vals.append(y)
+            z_vals.append(z)
+
+        # Make new figure
+        fig = pyplot.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Plot
+        ax.scatter(x_vals, y_vals, z_vals)
+
+        # Annotate the channels with channel names (if desired)
+        if annotate:
+            for x, y, z, channel in zip(x_vals, y_vals, z_vals, channel_names):
+                ax.text(x=x, y=y, z=z, s=channel)
