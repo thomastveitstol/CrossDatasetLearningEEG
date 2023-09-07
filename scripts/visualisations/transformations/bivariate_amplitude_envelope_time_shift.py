@@ -117,14 +117,25 @@ def main():
     original_amplitude = numpy.abs(hilbert(original_chunks[idx][channel]))
     time_shifted_amplitude = numpy.abs(hilbert(permuted_chunks[idx][channel]))
 
-    ax1.plot(original_amplitude, label="Original Envelope", linewidth=lw)
-    ax1.plot(original_chunks[idx][channel], label="Original Signal", linewidth=lw)
+    time = numpy.linspace(start=0, stop=chunk_duration/eeg.info["sfreq"], num=chunk_duration)
 
-    ax2.plot(time_shifted_amplitude, label="Time Shifted Envelope", linewidth=lw)
-    ax2.plot(permuted_chunks[idx][channel], label="Envelope Time Shifted Signal", linewidth=lw)
+    ax1.plot(time, original_amplitude, label="Original Envelope", linewidth=lw)
+    ax1.plot(time, original_chunks[idx][channel], label="Original Signal", linewidth=lw)
 
-    ax1.legend()
-    ax2.legend()
+    ax2.plot(time, time_shifted_amplitude, label="Time Shifted Envelope", linewidth=lw)
+    ax2.plot(time, permuted_chunks[idx][channel], label="Envelope Time Shifted Signal", linewidth=lw)
+
+    # Cosmetics
+    fs = 15
+
+    ax1.set_xlabel("t [s]", fontsize=fs)
+    ax2.set_xlabel("t [s]", fontsize=fs)
+
+    ax1.tick_params(labelsize=fs)
+    ax2.tick_params(labelsize=fs)
+
+    ax1.legend(fontsize=fs)
+    ax2.legend(fontsize=fs)
 
     if verbose:
         # MNE plots
