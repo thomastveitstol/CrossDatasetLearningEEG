@@ -2,6 +2,8 @@ import os
 import pathlib
 
 import mne
+import pandas
+from pymatreader import read_mat
 
 from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase
 
@@ -53,5 +55,43 @@ class YulinWang(EEGDatasetBase):
     # ----------------
     # Methods for channel system
     # ----------------
+    def _get_electrode_positions(self, subject_id=None):
+        # todo: does not contain CPz
+
+        # Create path to .tsv file  todo: hard-coding session 1 and recording
+        subject_path = f"{subject_id}/ses-session1/eeg/{subject_id}_ses-session1_electrodes.tsv"
+        path = os.path.join(self.get_mne_path(), subject_path)
+
+        # Load .tsv file
+        df = pandas.read_csv(path, delimiter="\t")
+
+        # Extract channel names and coordinates
+        ch_names = df["name"]
+        x_vals = df["x"]
+        y_vals = df["y"]
+        z_vals = df["z"]
+
+        # Make it a dict and return it
+        return {ch_name: (x, y, z) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
+
+    def _get_template_electrode_positions(self):
+        # Using the positions from the chanlocs62.mat file in derivatives folder
+        path = os.path.join(self.get_mne_path(), "derivatives", "preprocessed data", "chanlocs62.mat")
+
+        # Load the file
+        mat_file = read_mat(path)
+
+        # Extract positions
+        ch_positions = mat_file["chanlocs"]
+
+        ch_names = ch_positions["labels"]
+        x_vals = ch_positions["X"]
+        y_vals = ch_positions["Y"]
+        z_vals = ch_positions["Z"]
+
+        # Convert to dict and return
+        return {ch_name: (x, y, x) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
+
     def channel_name_to_index(self):
+        # todo: make tests
         raise NotImplementedError
