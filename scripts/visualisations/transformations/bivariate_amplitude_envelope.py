@@ -22,7 +22,7 @@ def main():
     # Hyperparameters
     # -----------------
     # Chunking
-    num_chunks = 10
+    num_chunks = 4
     chunk_duration = 2000
     chunk_time_delay = 1000
     ch_0, ch_1 = 0, 7
