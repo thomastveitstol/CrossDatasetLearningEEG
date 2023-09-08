@@ -3,6 +3,7 @@ import os
 import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
+import mne
 
 from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase
 
@@ -23,8 +24,12 @@ class MPILemon(EEGDatasetBase):
     # ----------------
     # Loading methods
     # ----------------
-    def _load_single_raw_mne_object(self, subject_id, **kwargs):
-        raise NotImplementedError
+    def _load_single_raw_mne_object(self, subject_id, **_):
+        # Create path
+        path = os.path.join(self.get_mne_path(), subject_id, f"{subject_id}.set")
+
+        # Load MNE object and return
+        return mne.io.read_raw_eeglab(path, preload=True, verbose=False)
 
     def download(self, to_path=None):
         """
@@ -84,5 +89,8 @@ class MPILemon(EEGDatasetBase):
     # ----------------
     # Channel system
     # ----------------
+    def _get_template_electrode_positions(self):
+        raise NotImplementedError  # todo
+
     def channel_name_to_index(self):
-        raise NotImplementedError
+        raise NotImplementedError  # todo
