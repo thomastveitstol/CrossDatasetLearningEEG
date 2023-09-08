@@ -18,9 +18,6 @@ class YulinWang(EEGDatasetBase):
 
     __slots__ = ()
 
-    def __init__(self):
-        super().__init__()
-
     # ----------------
     # Methods for loading
     # ----------------

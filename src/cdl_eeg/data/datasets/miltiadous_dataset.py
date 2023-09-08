@@ -18,9 +18,6 @@ class Miltiadous(EEGDatasetBase):
     _channel_names = ("Fp1", "Fp2", "F3", "F4", "C3", "C4", "P3", "P4", "O1", "O2", "F7", "F8", "T3", "T4", "T5", "T6",
                       "Fz", "Cz", "Pz")
 
-    def __init__(self):
-        super().__init__()
-
     # ----------------
     # Methods for loading
     # ----------------

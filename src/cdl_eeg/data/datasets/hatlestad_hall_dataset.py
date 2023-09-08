@@ -17,9 +17,6 @@ class HatlestadHall(EEGDatasetBase):
 
     __slots__ = ()
 
-    def __init__(self):
-        super().__init__()
-
     # ----------------
     # Loading methods
     # ----------------

@@ -19,9 +19,6 @@ class Rockhill(EEGDatasetBase):
                       'Oz', 'O2', 'PO4', 'P4', 'P8', 'CP6', 'CP2', 'C4', 'T8', 'FC6', 'FC2', 'F4', 'F8', 'AF4', 'Fp2',
                       'Fz', 'Cz')  # Removed EXG channels, as these channel names are supposed to match numpy arrays
 
-    def __init__(self):
-        super().__init__()
-
     def pre_process(self, eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False):
         """See the parent class implementation for details. This overriding method excludes non-EEG channels prior to
         pre-processing"""
