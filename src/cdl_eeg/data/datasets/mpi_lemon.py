@@ -19,6 +19,12 @@ class MPILemon(EEGDatasetBase):
 
     __slots__ = ()
 
+    _channel_names = ("Fp1", "Fp2", "F7", "F3", "Fz", "F4", "F8", "FC5", "FC1", "FC2", "FC6", "T7", "C3", "Cz", "C4",
+                      "T8", "CP5", "CP1", "CP2", "CP6", "AFz", "P7", "P3", "Pz", "P4", "P8", "PO9", "O1", "Oz", "O2",
+                      "PO10", "AF7", "AF3", "AF4", "AF8", "F5", "F1", "F2", "F6", "FT7", "FC3", "FC4", "FT8", "C5",
+                      "C1", "C2", "C6", "TP7", "CP3", "CPz", "CP4", "TP8", "P5", "P1", "P2", "P6", "PO7", "PO3", "POz",
+                      "PO4", "PO8")  # TODO: This is inconsistent!!!
+
     def __init__(self):
         super().__init__(name="mpi_lemon")
 
@@ -94,8 +100,33 @@ class MPILemon(EEGDatasetBase):
     # ----------------
     # Channel system
     # ----------------
+    def _get_electrode_positions(self, subject_id=None):
+        # -----------------
+        # Get electrodes from .fdt file
+        # -----------------
+        # Create path
+        path = os.path.join(self.get_mne_path(), subject_id, f"{subject_id}.set")
+
+        # Load MNE object and return
+        ch_names = mne.io.read_raw_eeglab(path, preload=False, verbose=False).info["ch_names"]
+
+        # Use MNE montage
+        montage = mne.channels.make_standard_montage("standard_1020")
+        channel_positions = montage.get_positions()["ch_pos"]
+
+        # Return dict with channel positions, keeping only the ones in the data
+        return {ch_name: tuple(pos) for ch_name, pos in channel_positions.items() if ch_name in ch_names}
+
     def _get_template_electrode_positions(self):
-        raise NotImplementedError  # todo
+        # TODO: verify that it is the international 10-20 system
+        # TODO: channel present in the data is inconsistent!!!
+        montage = mne.channels.make_standard_montage("standard_1020")
+        channel_positions = montage.get_positions()["ch_pos"]
+
+        # Return dict with channel positions, keeping only the ones in the data
+        return {ch_name: tuple(pos) for ch_name, pos in channel_positions.items() if ch_name in self._channel_names}
 
     def channel_name_to_index(self):
-        raise NotImplementedError  # todo
+        # todo: make tests
+        # TODO: channel present in the data is inconsistent!!!
+        return {ch_name: i for i, ch_name in enumerate(self._channel_names)}
