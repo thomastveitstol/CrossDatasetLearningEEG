@@ -86,5 +86,3 @@ class MPILemon(EEGDatasetBase):
     # ----------------
     def channel_name_to_index(self):
         raise NotImplementedError
-
-
