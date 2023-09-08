@@ -1,4 +1,5 @@
 import os
+from typing import Tuple
 
 import boto3
 from botocore import UNSIGNED
@@ -24,6 +25,10 @@ class MPILemon(EEGDatasetBase):
     # ----------------
     # Loading methods
     # ----------------
+    def get_subject_ids(self) -> Tuple[str, ...]:
+        # TODO: I think that MPI Lemon has a participants.tsv file as well
+        return tuple(os.listdir(self.get_mne_path()))
+
     def _load_single_raw_mne_object(self, subject_id, **_):
         # Create path
         path = os.path.join(self.get_mne_path(), subject_id, f"{subject_id}.set")
