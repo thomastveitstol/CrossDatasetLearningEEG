@@ -75,7 +75,7 @@ class EEGDatasetBase(abc.ABC):
 
         # Re-referencing
         if avg_reference:
-            eeg_data.set_eeg_reference(ref_channels="average")
+            eeg_data.set_eeg_reference(ref_channels="average", verbose=False)
 
         # Return the MNE object
         return eeg_data
