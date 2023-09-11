@@ -108,7 +108,7 @@ class MPILemon(EEGDatasetBase):
         # Create path
         path = os.path.join(self.get_mne_path(), subject_id, f"{subject_id}.set")
 
-        # Load MNE object and return
+        # Load MNE object, but not the data. The 'info' object should contain information from the .tsv file
         ch_names = mne.io.read_raw_eeglab(path, preload=False, verbose=False).info["ch_names"]
 
         # Use MNE montage
