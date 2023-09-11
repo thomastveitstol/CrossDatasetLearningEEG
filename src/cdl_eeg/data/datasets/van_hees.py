@@ -10,6 +10,7 @@ from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, path_method
 class VanHees(EEGDatasetBase):
     """
     https://www.biorxiv.org/content/10.1101/324954v1
+    https://zenodo.org/record/1252141
 
     Examples:
     ----------
