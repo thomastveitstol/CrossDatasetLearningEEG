@@ -89,7 +89,8 @@ class MPILemon(EEGDatasetBase):
                     subject_id = file_path.split("/")[-2]
                     file_type = file_path.split(".")[-1]  # either .set or .fdt
 
-                    # (Maybe) make folder. The .set and .fdt of a single subject must be placed in the same folder
+                    # (Maybe) make folder. The .set and .fdt of a single subject must be placed in the same folder (a
+                    # requirement from MNE when loading)
                     path = os.path.join(to_path, subject_id)
                     if not os.path.isdir(path):
                         os.mkdir(path)

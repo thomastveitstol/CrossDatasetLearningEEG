@@ -13,7 +13,7 @@ from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
 def main():
     # Select dataset
     name = "MPILemon"
-    subject_id = None
+    subject_id = "sub-032402"
 
     # Get dataset
     available_datasets = (HatlestadHall, Rockhill, YulinWang, Miltiadous, MPILemon)

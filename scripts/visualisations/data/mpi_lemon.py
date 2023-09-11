@@ -8,7 +8,7 @@ def main():
     # Hyperparameters
     # -----------------
     # Data
-    subject_number = 2
+    subject_number = 90
     derivatives = False
 
     # Pre-processing
