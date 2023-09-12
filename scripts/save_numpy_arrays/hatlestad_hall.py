@@ -13,7 +13,7 @@ def main():
     filtering = None
     sampling_freq = 500
     notch_filter = None
-    avg_reference = False
+    avg_reference = False  # Not needed, as already done in the pipeline
 
     # Cropping
     num_time_steps = sampling_freq * 16
