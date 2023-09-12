@@ -8,6 +8,8 @@ This implementation was authored by Thomas Tveitstøl (Oslo University Hospital)
 (https://github.com/thomastveitstol/RegionBasedPoolingEEG/), although some minor changes mainly in the documentation
 have been made
 """
+from typing import Optional
+
 import torch
 import torch.nn as nn
 
@@ -56,6 +58,7 @@ class _InceptionModule(nn.Module):
         # Define Conv layer maybe operating on
         # the input
         # -------------------------------
+        self._input_conv: Optional[nn.Module]
         if use_bottleneck:
             self._input_conv = nn.Conv1d(in_channels, out_channels=32, kernel_size=1, padding="same", bias=False)
             out_channels = 32
@@ -232,6 +235,7 @@ class InceptionTime(MTSClassifierBase):
         # -----------------------------
         # Define Shortcut layers
         # -----------------------------
+        self._shortcut_layers: Optional[nn.ModuleList]
         if use_residual:
             # A shortcut layer should be used for every third inception module
             self._shortcut_layers = nn.ModuleList([_ShortcutLayer(in_channels=in_channels,
@@ -245,10 +249,9 @@ class InceptionTime(MTSClassifierBase):
         # average pooling is implemented in
         # forward method)
         # -----------------------------
-        self._fc_layer = nn.Linear(in_features=output_channels,
-                                   out_features=num_classes)
+        self._fc_layer = nn.Linear(in_features=output_channels, out_features=num_classes)
 
-    def forward(self, input_tensor: torch.Tensor, return_features: bool = False) -> torch.Tensor:
+    def forward(self, input_tensor, return_features):
         """
         Forward method of Inception
 
@@ -262,6 +265,7 @@ class InceptionTime(MTSClassifierBase):
 
         Returns
         -------
+        torch.Tensor
             Predictions without activation function or features after computing Global Average Pooling in the temporal
             dimension
 
