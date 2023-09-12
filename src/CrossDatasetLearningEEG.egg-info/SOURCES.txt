@@ -22,6 +22,9 @@ src/cdl_eeg/data/datasets/rockhill_dataset.py
 src/cdl_eeg/data/datasets/van_hees.py
 src/cdl_eeg/data/datasets/yulin_wang_dataset.py
 src/cdl_eeg/models/__init__.py
+src/cdl_eeg/models/mts_classifiers/__init__.py
+src/cdl_eeg/models/mts_classifiers/inception_time.py
+src/cdl_eeg/models/mts_classifiers/mts_classifier_base.py
 src/cdl_eeg/models/transformations/__init__.py
 src/cdl_eeg/models/transformations/amplitude_envelope.py
 src/cdl_eeg/models/transformations/base.py
