@@ -10,14 +10,14 @@ def main():
 
     # Pre-processing
     derivatives = True
-    filtering = None
+    filtering = (1, 40)
     sampling_freq = 500
     notch_filter = None
     avg_reference = False  # Not needed, as already done in the pipeline
 
     # Cropping
-    num_time_steps = sampling_freq * 16
-    time_series_start = sampling_freq * 10
+    num_time_steps = sampling_freq * 25
+    time_series_start = sampling_freq * 30
 
     # ----------------
     # Saving
