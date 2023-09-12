@@ -12,8 +12,8 @@ def main():
     avg_reference = True
 
     # Cropping
-    num_time_steps = sampling_freq * 16
-    time_series_start = sampling_freq * 10
+    num_time_steps = sampling_freq * 25
+    time_series_start = sampling_freq * 30
 
     # ----------------
     # Saving
