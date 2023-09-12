@@ -1,4 +1,5 @@
 import os
+from typing import Tuple
 
 import mne
 import numpy
@@ -20,12 +21,25 @@ class VanHees(EEGDatasetBase):
     """
 
     __slots__ = ()
+
     _channel_names = "AF3", "AF4", "F3", "F4", "F7", "F8", "FC5", "FC6", "O1", "O2", "P7", "P8", "T7", "T8"
     _sampling_freq = 128  # See Sec. 2.4 in the paper
 
     # ----------------
     # Methods for different paths
     # ----------------
+    def get_subject_ids(self) -> Tuple[str, ...]:
+        # Extract by file names,
+        gb_folder = os.listdir(os.path.join(self.get_mne_path(), "EEGs_Guinea-Bissau"))
+        ni_folder = os.listdir(os.path.join(self.get_mne_path(), "EEGs_Nigeria"))
+
+        # Removing .csv.gz
+        gb_subjects = tuple(file_name[:-7] for file_name in gb_folder)
+        ni_subjects = tuple(file_name[:-7] for file_name in ni_folder)
+
+        # Merge them
+        return gb_subjects + ni_subjects
+
     @staticmethod
     def _get_subject_location(subject_id):
         """
