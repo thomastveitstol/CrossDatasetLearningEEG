@@ -28,5 +28,6 @@ src/cdl_eeg/models/mts_classifiers/mts_classifier_base.py
 src/cdl_eeg/models/transformations/__init__.py
 src/cdl_eeg/models/transformations/amplitude_envelope.py
 src/cdl_eeg/models/transformations/base.py
+src/cdl_eeg/models/transformations/frequency_slowing.py
 src/cdl_eeg/models/transformations/phase_consistency.py
 src/cdl_eeg/models/transformations/utils.py
