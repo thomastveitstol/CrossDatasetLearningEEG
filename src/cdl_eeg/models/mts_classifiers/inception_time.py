@@ -251,7 +251,7 @@ class InceptionTime(MTSClassifierBase):
         # -----------------------------
         self._fc_layer = nn.Linear(in_features=output_channels, out_features=num_classes)
 
-    def forward(self, input_tensor, return_features):
+    def forward(self, input_tensor, return_features=False):
         """
         Forward method of Inception
 
