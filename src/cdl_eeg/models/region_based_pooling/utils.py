@@ -3,8 +3,13 @@ from typing import Dict, NamedTuple, Tuple
 
 
 # --------------------
-# Convenient classes for regions
+# Convenient classes for regions and channels
 # --------------------
+class CartCoord(NamedTuple):
+    """Class for cartesian coordinates, such as electrode positions"""
+    coordinates: Tuple[float, float, float]
+
+
 @dataclasses.dataclass(frozen=True)
 class RegionID:
     id: int
