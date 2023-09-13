@@ -12,7 +12,8 @@ class SingleRegionPoolingBase(nn.Module, abc.ABC):
 
 class MultiRegionPoolingBase(nn.Module, abc.ABC):
     """
-    Base class for pooling modules operating on a subset of regions in a single channel split.
+    Base class for pooling modules operating on a subset of regions in a single channel split. If the idea is to operate
+    on all regions in a region/channel split, inherit from SingleChannelSplitPoolingBase instead
     """
 
 
