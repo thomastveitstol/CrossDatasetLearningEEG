@@ -5,7 +5,7 @@ import torch.nn as nn
 
 class SingleRegionPoolingBase(nn.Module, abc.ABC):
     """
-    Base class for pooling modules operating on a single region. This offers great flexibility, but typically comes at a
+    Base class for pooling modules operating on a single region. This offers great flexibility, but may come at a
     computational cost (for-loops are slow)
     """
 
