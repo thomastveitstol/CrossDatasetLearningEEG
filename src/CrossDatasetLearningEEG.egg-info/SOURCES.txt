@@ -25,6 +25,15 @@ src/cdl_eeg/models/__init__.py
 src/cdl_eeg/models/mts_classifiers/__init__.py
 src/cdl_eeg/models/mts_classifiers/inception_time.py
 src/cdl_eeg/models/mts_classifiers/mts_classifier_base.py
+src/cdl_eeg/models/region_based_pooling/__init__.py
+src/cdl_eeg/models/region_based_pooling/region_based_pooling.py
+src/cdl_eeg/models/region_based_pooling/utils.py
+src/cdl_eeg/models/region_based_pooling/pooling_modules/__init__.py
+src/cdl_eeg/models/region_based_pooling/pooling_modules/mean.py
+src/cdl_eeg/models/region_based_pooling/pooling_modules/pooling_base.py
+src/cdl_eeg/models/region_based_pooling/region_splits/__init__.py
+src/cdl_eeg/models/region_based_pooling/region_splits/region_split_base.py
+src/cdl_eeg/models/region_based_pooling/region_splits/voronoi_split.py
 src/cdl_eeg/models/transformations/__init__.py
 src/cdl_eeg/models/transformations/amplitude_envelope.py
 src/cdl_eeg/models/transformations/base.py
