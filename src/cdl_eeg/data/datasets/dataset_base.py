@@ -379,3 +379,30 @@ class EEGDatasetBase(abc.ABC):
         if annotate:
             for x, y, z, channel in zip(x_vals, y_vals, z_vals, channel_names):
                 ax.text(x=x, y=y, z=z, s=channel)
+
+
+# ------------------
+# Functions
+# ------------------
+def channel_names_to_indices(ch_names, channel_name_to_index):
+    """
+    Same as channel_name_to_index, but now you can pass in a tuple of channel names
+
+    Parameters
+    ----------
+    ch_names : tuple[str, ...]
+        Channel names to be mapped to indices
+    channel_name_to_index : dict[str, int]
+        Mapping from channel name (keys) to index in data matrix (values)
+
+    Returns
+    -------
+    tuple[int, ...]
+        The indices of the channel names, in the same order as ch_names
+
+    Examples
+    --------
+    >>> channel_names_to_indices(("A", "C", "B", "E"), channel_name_to_index={"A": 0, "B": 1, "C": 2, "D": 3, "E": 4})
+    (0, 2, 1, 4)
+    """
+    return tuple(channel_name_to_index[channel_name] for channel_name in ch_names)
