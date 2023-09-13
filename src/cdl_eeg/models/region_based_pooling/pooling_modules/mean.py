@@ -32,7 +32,7 @@ class SingleCSMean(SingleChannelSplitPoolingBase):
 
         Returns
         -------
-        tuple[torch.Tensor, ...]
+        torch.Tensor
 
         Examples
         --------
