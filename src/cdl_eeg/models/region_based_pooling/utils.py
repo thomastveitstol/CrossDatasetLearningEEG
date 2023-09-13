@@ -5,7 +5,7 @@ from typing import Dict, NamedTuple, Tuple
 # --------------------
 # Convenient classes for regions
 # --------------------
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class RegionID:
     id: int
 
@@ -24,7 +24,7 @@ class ChannelsInRegion(NamedTuple):
         return len(self.ch_names)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class ChannelsInRegionSplit:
     ch_names: Dict[RegionID, ChannelsInRegion]  # As of Python version >= 3.7, dicts are ordered
 
