@@ -20,4 +20,4 @@ class ChannelsInRegion(NamedTuple):
 
 @dataclasses.dataclass
 class ChannelsInRegionSplit:
-    ch_names: Dict[RegionID, Tuple[ChannelsInRegion, ...]]  # As of Python version >= 3.7, dicts are ordered
+    ch_names: Dict[RegionID, ChannelsInRegion]  # As of Python version >= 3.7, dicts are ordered
