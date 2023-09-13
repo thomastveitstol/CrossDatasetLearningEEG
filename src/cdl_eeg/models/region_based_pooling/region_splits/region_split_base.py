@@ -21,3 +21,14 @@ class RegionSplitBase(abc.ABC):
         -------
         cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit
         """
+
+    @abc.abstractmethod
+    def plot(self):
+        """
+        Method for plotting the regions. Although not mathematically crucial, implementing plotting is important for
+        both debugging and visualisation (needed to explain other people)
+
+        Returns
+        -------
+        None
+        """
