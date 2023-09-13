@@ -26,6 +26,11 @@ class ChannelsInRegion(NamedTuple):
 
 @dataclasses.dataclass(frozen=True)
 class ChannelsInRegionSplit:
+    """
+    Use this class to store the channel names inside the regions of a channel split. Following the notation from the
+    Region Based Pooling paper (Tveitstøl et al., 2023, submitted), it is in mathematical terms
+    {(R^(i)_1 cap C, R^(i)_2 cap C, ..., R^(i)_n cap C)}
+    """
     ch_names: Dict[RegionID, ChannelsInRegion]  # As of Python version >= 3.7, dicts are ordered
 
     def __len__(self) -> int:
