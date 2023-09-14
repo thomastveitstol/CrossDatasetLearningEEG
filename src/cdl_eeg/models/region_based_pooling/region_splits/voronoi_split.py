@@ -1,14 +1,20 @@
+from typing import Tuple
+
 from geovoronoi import voronoi_regions_from_coords
 import matplotlib
 import numpy
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 
 from cdl_eeg.models.region_based_pooling.region_splits.region_split_base import RegionSplitBase
+from cdl_eeg.models.region_based_pooling.utils import RegionID, project_to_2d, ChannelsInRegionSplit, ChannelsInRegion
 from cdl_eeg.models.transformations.utils import UnivariateUniform
 
 
 class VoronoiSplit(RegionSplitBase):
     # TODO: RuntimeWarning all over the place due to Polygons and MatplotlibDeprecationWarning on get_cmap
+
+    __slots__ = "_points", "_voronoi"
+
     def __init__(self, num_points, x_min, x_max, y_min, y_max, method="box_uniform"):
         # ------------------
         # Sample the points
@@ -20,28 +26,56 @@ class VoronoiSplit(RegionSplitBase):
             raise ValueError(f"Method '{method}' for sampling the points was not recognised")
 
         # ------------------
-        # Compute the boundaries
+        # Compute the polygons
         # ------------------
-        shape_boundary = Polygon(((x_min, y_min), (x_min, y_max), (x_max, y_max), (x_max, y_min)))
-        self._voronoi = voronoi_regions_from_coords(numpy.array(self._points), geo_shape=shape_boundary)[0]
+        boundary = Polygon(((x_min, y_min), (x_min, y_max), (x_max, y_max), (x_max, y_min)))
+        voronoi = voronoi_regions_from_coords(numpy.array(self._points), geo_shape=boundary)[0]
 
-    def place_in_regions(self, electrode_positions):
-        raise NotImplementedError
+        self._voronoi = {RegionID(id_): polygon for id_, polygon in voronoi.items()}
 
-    def plot(self):
+    def place_in_regions(self, electrodes_3d):
+        # Initialise the dict
+        chs_in_regs = {region: [] for region in self.regions}
+
+        # Project coordinates to 2D
+        electrodes_2d = project_to_2d(electrodes_3d)
+
+        # Loop through all electrodes
+        for electrode_name, electrode_position in electrodes_2d.positions.items():
+            # Try all polygons
+            for polygon_id, polygon in self._voronoi.items():
+                # If the 2D coordinate is contained in the current polygon, append it
+                if polygon.contains(Point(electrode_position)):
+                    chs_in_regs[polygon_id].append(electrode_name)
+                    break
+            else:
+                # todo: consider raising warning. Do not print, it is just for current debugging
+                print(f"Electrode {electrode_name} not contained in any polygon")
+
+        # Return with correct type
+        return ChannelsInRegionSplit({id_: ChannelsInRegion(tuple(ch_names)) for id_, ch_names in chs_in_regs.items()})
+
+    def plot(self, face_color="random", edge_color="black", line_width=2, plot_seeds=False):
         _, ax = pyplot.subplots()
-        for area in self._voronoi.values():
+        for id_, area in self._voronoi.items():
             # Sample color from colormap
-            cmap = matplotlib.cm.get_cmap('YlOrBr')
+            cmap = matplotlib.colormaps.get_cmap('YlOrBr')
 
             # Get face color
             face_color = cmap(numpy.random.randint(low=0, high=cmap.N // 2))
-            x, y = area.exterior.xy
-            ax.fill(x, y, linewidth=2, facecolor=face_color, edgecolor="black")
 
-        x_vals = tuple(p[0] for p in self._points)
-        y_vals = tuple(p[1] for p in self._points)
-        ax.scatter(x_vals, y_vals)
+            # Extract edges and plot (fill)
+            x, y = area.exterior.xy
+            ax.fill(x, y, linewidth=2, facecolor=face_color, edgecolor=edge_color)
+
+        # Maybe plot the seed points as well
+        if plot_seeds:
+            x_vals, y_vals = zip(*self._points)
+            ax.scatter(x_vals, y_vals)
+
+    @property
+    def regions(self) -> Tuple[RegionID, ...]:
+        return tuple(self._voronoi.keys())
 
 
 # ----------------
@@ -79,9 +113,32 @@ def _box_uniform(k, *, x_min, x_max, y_min, y_max):
 
 
 if __name__ == "__main__":
+    import mne
     from matplotlib import pyplot
 
-    vor = VoronoiSplit(num_points=11, x_min=0, x_max=1, y_min=-2, y_max=-1)
+    from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
+
+    # Create regions
+    vor = VoronoiSplit(num_points=32, x_min=-.17, x_max=.17, y_min=-.17, y_max=.17)
+
+    # Generate positions
+    my_positions = Electrodes3D(mne.channels.make_standard_montage(kind="GSN-HydroCel-129").get_positions()["ch_pos"])
+
+    # Place them
+    placed_channels = vor.place_in_regions(my_positions)
+    print(placed_channels)
+
+    # Plot regions
     vor.plot()
+
+    # Plot the channels
+    for channel_names in placed_channels.ch_names.values():
+        if len(channel_names) == 0:
+            # Do not scatter plot empty regions
+            continue
+
+        positions_3d = Electrodes3D({ch_name: position for ch_name, position in my_positions.positions.items()
+                                     if ch_name in channel_names.ch_names})
+        pyplot.scatter(*zip(*project_to_2d(positions_3d).positions.values()))
+
     pyplot.show()
-    # print(vor._voronoi.ridge_vertices)
