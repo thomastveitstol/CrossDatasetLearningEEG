@@ -9,13 +9,13 @@ class RegionSplitBase(abc.ABC):
     __slots__ = ()
 
     @abc.abstractmethod
-    def place_in_regions(self, electrode_positions):
+    def place_in_regions(self, electrodes_3d):
         """
         Method for placing multiple electrodes into regions
 
         Parameters
         ----------
-        electrode_positions : tuple[cdl_eeg.models.region_based_pooling.utils.CartCoord, ...]
+        electrodes_3d : cdl_eeg.models.region_based_pooling.utils.Electrodes3D
 
         Returns
         -------
@@ -23,7 +23,7 @@ class RegionSplitBase(abc.ABC):
         """
 
     @abc.abstractmethod
-    def plot(self):
+    def plot(self, **kwargs):
         """
         Method for plotting the regions. Although not mathematically crucial, implementing plotting is important for
         both debugging and visualisation (needed to explain other people)
