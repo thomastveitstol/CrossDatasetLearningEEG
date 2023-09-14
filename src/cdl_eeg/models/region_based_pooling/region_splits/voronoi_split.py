@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 from geovoronoi import voronoi_regions_from_coords
 import matplotlib
@@ -35,7 +35,7 @@ class VoronoiSplit(RegionSplitBase):
 
     def place_in_regions(self, electrodes_3d):
         # Initialise the dict
-        chs_in_regs = {region: [] for region in self.regions}
+        chs_in_regs: Dict[RegionID, List[str]] = {region: [] for region in self.regions}
 
         # Project coordinates to 2D
         electrodes_2d = project_to_2d(electrodes_3d)
@@ -126,7 +126,6 @@ if __name__ == "__main__":
 
     # Place them
     placed_channels = vor.place_in_regions(my_positions)
-    print(placed_channels)
 
     # Plot regions
     vor.plot()
