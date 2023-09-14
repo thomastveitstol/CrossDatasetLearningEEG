@@ -56,7 +56,7 @@ class ChannelsInRegionSplit:
 # --------------------
 # Functions
 # --------------------
-def project_head_shape(electrode_positions):
+def project_to_2d(electrode_positions):
     """
     Function for projecting 3D points to 2D, as done in MNE for plotting sensor location.
 
@@ -78,9 +78,9 @@ def project_head_shape(electrode_positions):
     --------
     >>> import mne
     >>> my_positions = mne.channels.make_standard_montage(kind="GSN-HydroCel-129").get_positions()["ch_pos"]
-    >>> tuple(project_head_shape(Electrodes3D(my_positions)).positions.keys())[:3]
+    >>> tuple(project_to_2d(Electrodes3D(my_positions)).positions.keys())[:3]
     ('E1', 'E2', 'E3')
-    >>> tuple(project_head_shape(Electrodes3D(my_positions)).positions.values())[:3]
+    >>> tuple(project_to_2d(Electrodes3D(my_positions)).positions.values())[:3]
     (array([0.07890224, 0.0752648 ]), array([0.05601906, 0.07102252]), array([0.03470422, 0.06856416]))
     """
     # ---------------------------
