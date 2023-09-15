@@ -11,13 +11,42 @@ from mne.transforms import _cart_to_sph, _pol_to_cart
 @dataclasses.dataclass(frozen=True)
 class Electrodes2D:
     """Class for 2D coordinates of multiple electrodes"""
+
     positions: Dict[str, Tuple[float, float]]
+
+    def __getitem__(self, item):
+        """
+        Get item method
+
+        Parameters
+        ----------
+        item : str
+
+        Returns
+        -------
+        tuple[float, float]
+        """
+        return self.positions[item]
 
 
 @dataclasses.dataclass(frozen=True)
 class Electrodes3D:
     """Class for cartesian coordinates of multiple electrodes"""
     positions: Dict[str, Tuple[float, float, float]]
+
+    def __getitem__(self, item):
+        """
+        Get item method
+
+        Parameters
+        ----------
+        item : str
+
+        Returns
+        -------
+        tuple[float, float, float]
+        """
+        return self.positions[item]
 
 
 @dataclasses.dataclass(frozen=True)
