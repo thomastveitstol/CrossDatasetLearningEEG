@@ -3,7 +3,7 @@ import abc
 import torch.nn as nn
 
 
-class PoolingModuleBase(nn.Module, abc.ABC):
+class PoolingModuleBase(nn.Module, abc.ABC):  # todo: not sure if inheriting from abc.ABC is important pr. now
     """
     Pooling module base
     """
