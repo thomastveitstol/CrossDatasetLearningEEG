@@ -36,7 +36,8 @@ def get_pooling_module(pooling_method, **kwargs):
     # Loop through and select the correct one
     for pooling_module in available_pooling_modules:
         if pooling_method == pooling_module.__name__:
-            return pooling_module(**kwargs)
+            # todo: why does mypy complain in the return line?
+            return pooling_module(**kwargs)  # type: ignore[call-arg]
 
     # If no match, an error is raised
     raise ValueError(f"The pooling method '{pooling_method}' was not recognised. Please select among the following: "
