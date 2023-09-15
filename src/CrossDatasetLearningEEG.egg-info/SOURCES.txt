@@ -29,6 +29,7 @@ src/cdl_eeg/models/region_based_pooling/__init__.py
 src/cdl_eeg/models/region_based_pooling/region_based_pooling.py
 src/cdl_eeg/models/region_based_pooling/utils.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/__init__.py
+src/cdl_eeg/models/region_based_pooling/pooling_modules/getter.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/mean.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/pooling_base.py
 src/cdl_eeg/models/region_based_pooling/region_splits/__init__.py
