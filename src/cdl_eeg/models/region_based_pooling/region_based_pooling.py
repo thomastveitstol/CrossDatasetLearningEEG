@@ -154,7 +154,7 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
         -------
         None
         """
-        # Handle the case where a single channel system is passed
+        # Run the .fit_channel_system on all channel systems passed
         if isinstance(channel_systems, ChannelSystem):
             self.fit_channel_system(channel_system=channel_systems)
         elif isinstance(channel_systems, tuple) and all(isinstance(ch_system, ChannelSystem)
