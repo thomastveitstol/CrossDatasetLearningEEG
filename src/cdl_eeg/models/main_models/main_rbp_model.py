@@ -70,3 +70,13 @@ class MainSingleChannelSplitRBPModel(nn.Module):
 
         # Pass through MTS module and return
         return self._mts_module(x)
+
+    # ----------------
+    # Methods for fitting channel systems
+    # todo: these should probably be moved to a base class
+    # ----------------
+    def fit_channel_system(self, channel_system):
+        self._region_based_pooling.fit_channel_system(channel_system)
+
+    def fit_channel_systems(self, channel_systems):
+        self._region_based_pooling.fit_channel_systems(channel_systems)
