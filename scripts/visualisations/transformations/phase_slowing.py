@@ -15,7 +15,7 @@ def main():
     # Hyperparameters
     # -----------------
     # Permutation
-    slowing_distribution = UnivariateNormal(1, 0.1)
+    slowing_distribution = UnivariateNormal(0.7, 0.1)
 
     # Data
     subject = 24
