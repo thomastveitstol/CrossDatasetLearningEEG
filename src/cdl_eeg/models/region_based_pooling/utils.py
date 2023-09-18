@@ -7,6 +7,7 @@ from mne.transforms import _cart_to_sph, _pol_to_cart
 
 # --------------------
 # Convenient classes for regions and channels
+# todo: in general, I don't think these classes are good...
 # --------------------
 @dataclasses.dataclass(frozen=True)
 class Electrodes2D:
