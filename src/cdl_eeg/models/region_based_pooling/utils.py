@@ -54,6 +54,8 @@ class RegionID:
     id: int
 
 
+# todo: somewhat annoying to work with these. e.g. 'ch_name' in ChannelsInRegion should run 'ch_name' in
+#  ChannelsInRegion.ch_names
 class ChannelsInRegion(NamedTuple):
     """
     Use this class to store the channel names inside a region. The object created should contain all channel in
