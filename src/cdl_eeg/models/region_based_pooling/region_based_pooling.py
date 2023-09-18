@@ -64,8 +64,8 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
         if not all(isinstance(pooling_module, SingleChannelSplitPoolingBase) for pooling_module in pooling_modules):
             wrong_methods = tuple(pooling_method for pooling_method in pooling_methods
                                   if not isinstance(pooling_method, SingleChannelSplitPoolingBase))
-            raise TypeError(f"Expected all pooling methods to inherit from {SingleChannelSplitPoolingBase}, but found "
-                            f"{wrong_methods}")
+            raise TypeError(f"Expected all pooling methods to inherit from {SingleChannelSplitPoolingBase.__name__}, "
+                            f"but found {wrong_methods}")
 
         # Pass them to nn.ModuleList (otherwise they are not registered as modules with parameters py pytorch)
         self._pooling_modules = nn.ModuleList(pooling_modules)
