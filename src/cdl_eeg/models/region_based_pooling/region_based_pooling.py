@@ -9,6 +9,7 @@ from typing import Dict, Tuple
 
 import torch.nn as nn
 
+from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.models.region_based_pooling.pooling_modules.getter import get_pooling_module
 from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import SingleChannelSplitPoolingBase
 from cdl_eeg.models.region_based_pooling.region_splits.getter import get_region_split
@@ -120,3 +121,46 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
         # Pass through all channel splits and return as tuple
         return tuple(pooling_module(x, channel_splits=channel_splits, channel_name_to_index=channel_name_to_index)
                      for pooling_module in self._pooling_modules)
+
+    # ----------------
+    # Methods for fitting channel systems
+    # todo: I think these might be moved to the base class
+    # ----------------
+    def fit_channel_system(self, channel_system):
+        """
+        Fit a single channel system on the regions splits
+
+        Parameters
+        ----------
+        channel_system : cdl_eeg.data.datasets.dataset_base.ChannelSystem
+            The channel system to fit
+        Returns
+        -------
+        None
+        """
+        self._channel_systems[channel_system.name] = tuple(
+            region_split.place_in_regions(channel_system.electrode_positions) for region_split in self._region_splits)
+
+    def fit_channel_systems(self, channel_systems):
+        """
+        Fit multiple channel systems on the regions splits
+
+        Parameters
+        ----------
+        channel_systems : tuple[ChannelSystem, ...] | ChannelSystem
+            Channel systems to fit
+
+        Returns
+        -------
+        None
+        """
+        # Handle the case where a single channel system is passed
+        if isinstance(channel_systems, ChannelSystem):
+            self.fit_channel_system(channel_system=channel_systems)
+        elif isinstance(channel_systems, tuple) and all(isinstance(ch_system, ChannelSystem)
+                                                        for ch_system in channel_systems):
+            for channel_system in channel_systems:
+                self.fit_channel_system(channel_system=channel_system)
+        else:
+            raise TypeError(f"Expected channel systems to be either a channel system (type={ChannelSystem.__name__}) "
+                            f"or a tuple of channel systems, but this was not the case")
