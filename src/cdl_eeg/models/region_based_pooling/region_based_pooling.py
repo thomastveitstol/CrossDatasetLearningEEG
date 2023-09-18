@@ -28,7 +28,7 @@ class RegionBasedPoolingBase(nn.Module, abc.ABC):
 # ------------------
 # Implementations of RBP
 # ------------------
-class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
+class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
     """
     Region Based Pooling when pooling module operates on a single channel split at once (when the pooling module used
     inherits from SingleChannelSplitPoolingBase)
@@ -37,10 +37,10 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
     --------
     >>> my_split_kwargs = ({"num_points": 7, "x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1},
     ...                    {"num_points": 11, "x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1})
-    >>> _ = SingleChannelRegionBasedPooling(pooling_methods=("SingleCSMean", "SingleCSMean"),
-    ...                                     pooling_methods_kwargs=({}, {}),
-    ...                                     split_methods=("VoronoiSplit", "VoronoiSplit"),
-    ...                                     split_methods_kwargs=my_split_kwargs)
+    >>> _ = SingleChannelSplitRegionBasedPooling(pooling_methods=("SingleCSMean", "SingleCSMean"),
+    ...                                          pooling_methods_kwargs=({}, {}),
+    ...                                          split_methods=("VoronoiSplit", "VoronoiSplit"),
+    ...                                          split_methods_kwargs=my_split_kwargs)
     """
 
     def __init__(self, pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs):

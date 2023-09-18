@@ -2,7 +2,7 @@ import mne
 import torch
 
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
-from cdl_eeg.models.region_based_pooling.region_based_pooling import SingleChannelRegionBasedPooling
+from cdl_eeg.models.region_based_pooling.region_based_pooling import SingleChannelSplitRegionBasedPooling
 from cdl_eeg.models.region_based_pooling.utils import Electrodes3D, ChannelsInRegionSplit
 
 
@@ -35,10 +35,10 @@ def test_fit_channel_system():
     split_methods_kwargs = ({"num_points": num_regions[0], **box_params}, {"num_points": num_regions[1], **box_params},
                             {"num_points": num_regions[2], **box_params}, {"num_points": num_regions[3], **box_params})
 
-    rbp_module = SingleChannelRegionBasedPooling(pooling_methods=pooling_methods,
-                                                 pooling_methods_kwargs=pooling_methods_kwargs,
-                                                 split_methods=split_methods,
-                                                 split_methods_kwargs=split_methods_kwargs)
+    rbp_module = SingleChannelSplitRegionBasedPooling(pooling_methods=pooling_methods,
+                                                      pooling_methods_kwargs=pooling_methods_kwargs,
+                                                      split_methods=split_methods,
+                                                      split_methods_kwargs=split_methods_kwargs)
 
     # ----------------
     # Fit channel system
@@ -115,10 +115,10 @@ def test_forward():
                             {"num_points": num_regions[2], **box_params}, {"num_points": num_regions[3], **box_params})
 
     # Make object
-    rbp_module = SingleChannelRegionBasedPooling(pooling_methods=pooling_methods,
-                                                 pooling_methods_kwargs=pooling_methods_kwargs,
-                                                 split_methods=split_methods,
-                                                 split_methods_kwargs=split_methods_kwargs)
+    rbp_module = SingleChannelSplitRegionBasedPooling(pooling_methods=pooling_methods,
+                                                      pooling_methods_kwargs=pooling_methods_kwargs,
+                                                      split_methods=split_methods,
+                                                      split_methods_kwargs=split_methods_kwargs)
 
     # Fit channel system
     rbp_module.fit_channel_system(channel_system=channel_system)
