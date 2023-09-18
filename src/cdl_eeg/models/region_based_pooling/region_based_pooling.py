@@ -53,7 +53,9 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
         pooling_methods_kwargs : tuple[dict[str, typing.Any], ...]
             Keyword arguments of the pooling modules. Must have the same length as pooling_methods.
         split_methods : tuple[str, ...]
+            Region splits method. Must have the same length as pooling_methods.
         split_methods_kwargs : tuple[dict[str, typing.Any], ...]
+            Keyword arguments of the pooling modules. Must have the same length as split_methods.
         """
         super().__init__()
 
@@ -95,11 +97,11 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
     def _input_checks(pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs):
         # Check if the pooling methods, pooling method kwargs, split_methods, and split_methods_kwargs have the same
         # lengths
-        if len(pooling_methods) != len(pooling_methods_kwargs) != len(split_methods) != len(split_methods_kwargs):
+        expected_same_lengths = (pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs)
+        if not all(len(arg) == len(pooling_methods) for arg in expected_same_lengths):
             raise ValueError(f"Expected pooling methods, their corresponding kwargs, and the region splits methods and "
-                             f" their corresponding kwargs all to have the same lengths, but found lengths "
-                             f"{len(pooling_methods)}, {len(pooling_methods_kwargs)}, {len(split_methods)}, and "
-                             f"{len(split_methods_kwargs)}")
+                             f"their corresponding kwargs all to have the same lengths, but found lengths "
+                             f"{(tuple(len(arg) for arg in expected_same_lengths))}")
 
     def forward(self, x, *, channel_splits, channel_name_to_index):
         """
