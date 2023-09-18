@@ -5,11 +5,14 @@ There will likely be some overlap with a former project (where Region Based Pool
 https://github.com/thomastveitstol/RegionBasedPoolingEEG/blob/master/src/models/modules/bins/regions_to_bins.py
 """
 import abc
+from typing import Dict, Tuple
 
 import torch.nn as nn
 
 from cdl_eeg.models.region_based_pooling.pooling_modules.getter import get_pooling_module
 from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import SingleChannelSplitPoolingBase
+from cdl_eeg.models.region_based_pooling.region_splits.getter import get_region_split
+from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit
 
 
 # ------------------
@@ -31,11 +34,15 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
 
     Examples
     --------
+    >>> my_split_kwargs = ({"num_points": 7, "x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1},
+    ...                    {"num_points": 11, "x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1})
     >>> _ = SingleChannelRegionBasedPooling(pooling_methods=("SingleCSMean", "SingleCSMean"),
-    ...                                     pooling_methods_kwargs=({}, {}))
+    ...                                     pooling_methods_kwargs=({}, {}),
+    ...                                     split_methods=("VoronoiSplit", "VoronoiSplit"),
+    ...                                     split_methods_kwargs=my_split_kwargs)
     """
 
-    def __init__(self, pooling_methods, pooling_methods_kwargs):
+    def __init__(self, pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs):
         """
         Initialise
 
@@ -45,13 +52,15 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
             Pooling methods
         pooling_methods_kwargs : tuple[dict[str, typing.Any], ...]
             Keyword arguments of the pooling modules. Must have the same length as pooling_methods.
+        split_methods : tuple[str, ...]
+        split_methods_kwargs : tuple[dict[str, typing.Any], ...]
         """
         super().__init__()
 
         # -------------------
         # Input checks
         # -------------------
-        self._input_checks(pooling_methods, pooling_methods_kwargs)
+        self._input_checks(pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs)
 
         # -------------------
         # Generate pooling modules
@@ -70,13 +79,27 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
         # Pass them to nn.ModuleList (otherwise they are not registered as modules with parameters py pytorch)
         self._pooling_modules = nn.ModuleList(pooling_modules)
 
+        # -------------------
+        # Region splits
+        # -------------------
+        # tuple[cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit, ...]
+        # Generate and store region splits
+        self._region_splits = tuple(get_region_split(split_method, **kwargs)
+                                    for split_method, kwargs in zip(split_methods, split_methods_kwargs))
+
+        # Initialise the mapping from regions to channel names, for all datasets (must be fit later)
+        # Should be {dataset_name: tuple[ChannelsInRegionSplit, ...]}
+        self._channel_systems: Dict[str, Tuple[ChannelsInRegionSplit, ...]] = dict()
+
     @staticmethod
-    def _input_checks(pooling_methods, pooling_methods_kwargs):
-        # Check if the pooling methods and pooling method kwargs have same length
-        if len(pooling_methods) != len(pooling_methods_kwargs):
-            raise ValueError(f"Expected pooling methods to have the same length as their corresponding kwargs, but "
-                             f"found lengths {len(pooling_methods)} and {len(pooling_methods_kwargs)}")
-        # TODO: Must ensure that all pooling methods are modules/objects from SingleChannelSplitPoolingBase
+    def _input_checks(pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs):
+        # Check if the pooling methods, pooling method kwargs, split_methods, and split_methods_kwargs have the same
+        # lengths
+        if len(pooling_methods) != len(pooling_methods_kwargs) != len(split_methods) != len(split_methods_kwargs):
+            raise ValueError(f"Expected pooling methods, their corresponding kwargs, and the region splits methods and "
+                             f" their corresponding kwargs all to have the same lengths, but found lengths "
+                             f"{len(pooling_methods)}, {len(pooling_methods_kwargs)}, {len(split_methods)}, and "
+                             f"{len(split_methods_kwargs)}")
 
     def forward(self, x, *, channel_splits, channel_name_to_index):
         """
