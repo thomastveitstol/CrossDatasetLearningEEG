@@ -29,7 +29,7 @@ class ChannelSystem:
     """Data class for channel systems"""
     name: str  # Should ideally be the same as dataset name
     channel_name_to_index: Dict[str, int]
-    electrode_positions: Dict[str, Tuple[float, float, float]]
+    electrode_positions: Electrodes3D
 
 
 class EEGDatasetBase(abc.ABC):
