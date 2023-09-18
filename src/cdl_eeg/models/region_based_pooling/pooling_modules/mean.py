@@ -38,7 +38,7 @@ class SingleCSMean(SingleChannelSplitPoolingBase):
         --------
         >>> from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit, RegionID, ChannelsInRegion
         >>> my_channels = ChannelsInRegionSplit({RegionID(0): ChannelsInRegion(("A", "C", "E")),
-        ...                                      RegionID(1): ChannelsInRegion(("C", "E", "B"))})
+        ...                                      RegionID(1): ChannelsInRegion(("C", "E", "B", "A"))})
         >>> name_2_idx = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5}
         >>> my_model = SingleCSMean()
         >>> my_model(torch.rand(size=(10, 6, 1000)), channel_split=my_channels, channel_name_to_index=name_2_idx).size()
