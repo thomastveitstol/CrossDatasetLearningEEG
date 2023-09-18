@@ -57,6 +57,6 @@ class SingleCSMean(SingleChannelSplitPoolingBase):
                                                             channel_name_to_index=channel_name_to_index)
 
             # Compute region representation by averaging and insert it
-            region_representations[i] = torch.mean(x[:, allowed_node_indices])  # Consider to keep dim in the future
+            region_representations[:, i] = torch.mean(x[:, allowed_node_indices])  # Consider to keep dim in the future
 
         return region_representations
