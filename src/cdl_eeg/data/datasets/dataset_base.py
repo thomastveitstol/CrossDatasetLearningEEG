@@ -1,7 +1,8 @@
 import abc
+import dataclasses
 import logging
 import os
-from typing import Tuple
+from typing import Tuple, Dict
 
 import inflection
 import numpy
@@ -22,6 +23,14 @@ def path_method(func):
 # --------------------
 # Base classes
 # --------------------
+@dataclasses.dataclass(frozen=True)
+class ChannelSystem:
+    """Data class for channel systems"""
+    name: str  # Should ideally be the same as dataset name
+    channel_name_to_index: Dict[str, int]
+    electrode_positions: Dict[str, Tuple[float, float, float]]
+
+
 class EEGDatasetBase(abc.ABC):
     """
     Base class for all datasets to be used
@@ -257,6 +266,11 @@ class EEGDatasetBase(abc.ABC):
     @property
     def name(self) -> str:
         return self._name
+
+    @property
+    def channel_system(self) -> ChannelSystem:
+        return ChannelSystem(name=self.name, channel_name_to_index=self.channel_name_to_index(),
+                             electrode_positions=self.get_electrode_positions())  # type: ignore[arg-type]
 
     # ----------------
     # Path methods
