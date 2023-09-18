@@ -92,7 +92,7 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
 
         # Initialise the mapping from regions to channel names, for all datasets (must be fit later)
         # Should be {dataset_name: tuple[ChannelsInRegionSplit, ...]}
-        self._channel_systems: Dict[str, Tuple[ChannelsInRegionSplit, ...]] = dict()
+        self._channel_splits: Dict[str, Tuple[ChannelsInRegionSplit, ...]] = dict()
 
     @staticmethod
     def _input_checks(pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs):
@@ -138,7 +138,7 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
         -------
         None
         """
-        self._channel_systems[channel_system.name] = tuple(
+        self._channel_splits[channel_system.name] = tuple(
             region_split.place_in_regions(channel_system.electrode_positions) for region_split in self._region_splits)
 
     def fit_channel_systems(self, channel_systems):
@@ -164,3 +164,10 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
         else:
             raise TypeError(f"Expected channel systems to be either a channel system (type={ChannelSystem.__name__}) "
                             f"or a tuple of channel systems, but this was not the case")
+
+    # ----------------
+    # Properties
+    # ----------------
+    @property
+    def channel_splits(self):
+        return self._channel_splits
