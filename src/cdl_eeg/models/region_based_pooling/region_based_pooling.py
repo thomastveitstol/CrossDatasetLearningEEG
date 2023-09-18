@@ -130,6 +130,7 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
         """
         Fit a single channel system on the regions splits
 
+        (unit test in test folder)
         Parameters
         ----------
         channel_system : cdl_eeg.data.datasets.dataset_base.ChannelSystem
