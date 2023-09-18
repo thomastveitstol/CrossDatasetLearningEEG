@@ -13,7 +13,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from cdl_eeg.models.mts_classifiers.mts_classifier_base import MTSClassifierBase
+from cdl_eeg.models.mts_module.mts_classifier_base import MTSModuleBase
 
 
 # ---------------------------
@@ -191,7 +191,7 @@ class _ShortcutLayer(nn.Module):
 # ---------------------------
 # Main module
 # ---------------------------
-class InceptionTime(MTSClassifierBase):
+class InceptionTime(MTSModuleBase):
 
     def __init__(self, in_channels, num_classes, *, cnn_units=32, depth=6, use_bottleneck=True, activation=None,
                  max_kernel_size=40, use_residual=True):
