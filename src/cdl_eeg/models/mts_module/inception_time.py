@@ -13,7 +13,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from cdl_eeg.models.mts_module.mts_classifier_base import MTSModuleBase
+from cdl_eeg.models.mts_module.mts_module_base import MTSModuleBase
 
 
 # ---------------------------
