@@ -56,9 +56,9 @@ class FrequencySlowing(TransformationBase):
         # Keep the amplitude envelope
         amplitude_envelope = numpy.abs(analytical_signal)
 
-        # Slow down the phase by multiplication
+        # Slow down the phase by multiplication todo: ask Mia/Ricardo if this is correct
         phase_modulation = self._slowing_distribution.draw()
-        modified_phase = numpy.angle(analytical_signal ** phase_modulation)  # todo: ask Mia/Ricardo if this is correct
+        modified_phase = numpy.unwrap(numpy.angle(analytical_signal)) * phase_modulation
 
         # (Create and) return the new signal and phase modulation
         return numpy.real(amplitude_envelope * numpy.exp(1j * modified_phase)), phase_modulation
