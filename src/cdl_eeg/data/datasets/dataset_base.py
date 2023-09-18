@@ -10,6 +10,7 @@ import pandas
 from matplotlib import pyplot
 
 from cdl_eeg.data.paths import get_raw_data_storage_path, get_numpy_data_storage_path
+from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
 
 
 # --------------------
@@ -34,6 +35,8 @@ class ChannelSystem:
 class EEGDatasetBase(abc.ABC):
     """
     Base class for all datasets to be used
+
+    todo: use Electrodes3D more
     """
 
     __slots__ = "_name"
@@ -270,7 +273,7 @@ class EEGDatasetBase(abc.ABC):
     @property
     def channel_system(self) -> ChannelSystem:
         return ChannelSystem(name=self.name, channel_name_to_index=self.channel_name_to_index(),
-                             electrode_positions=self.get_electrode_positions())  # type: ignore[arg-type]
+                             electrode_positions=Electrodes3D(self.get_electrode_positions()))  # type: ignore[arg-type]
 
     # ----------------
     # Path methods
