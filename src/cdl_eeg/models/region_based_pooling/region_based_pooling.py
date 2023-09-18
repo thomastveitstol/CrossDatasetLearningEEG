@@ -104,14 +104,14 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
                              f"their corresponding kwargs all to have the same lengths, but found lengths "
                              f"{(tuple(len(arg) for arg in expected_same_lengths))}")
 
-    def forward(self, x, *, channel_splits, channel_name_to_index):
+    def forward(self, x, *, channel_system_name, channel_name_to_index):
         """
         Forward method
 
         Parameters
         ----------
         x : torch.Tensor
-        channel_splits : tuple[cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit, ...]
+        channel_system_name : str
         channel_name_to_index : dict[str, int]
 
         Returns
@@ -119,8 +119,9 @@ class SingleChannelRegionBasedPooling(RegionBasedPoolingBase):
         tuple[torch.Tensor, ...]
         """
         # Pass through all channel splits and return as tuple
-        return tuple(pooling_module(x, channel_splits=channel_splits, channel_name_to_index=channel_name_to_index)
-                     for pooling_module in self._pooling_modules)
+        return tuple(pooling_module(x, channel_split=channel_split, channel_name_to_index=channel_name_to_index)
+                     for pooling_module, channel_split in zip(self._pooling_modules,
+                                                              self._channel_splits[channel_system_name]))
 
     # ----------------
     # Methods for fitting channel systems
