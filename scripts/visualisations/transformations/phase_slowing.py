@@ -1,6 +1,7 @@
 import contextlib
 import io
 import os
+
 import mne
 import numpy
 from matplotlib import pyplot
