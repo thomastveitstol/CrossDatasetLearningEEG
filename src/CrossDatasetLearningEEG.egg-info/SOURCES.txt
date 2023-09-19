@@ -22,9 +22,12 @@ src/cdl_eeg/data/datasets/rockhill_dataset.py
 src/cdl_eeg/data/datasets/van_hees.py
 src/cdl_eeg/data/datasets/yulin_wang_dataset.py
 src/cdl_eeg/models/__init__.py
-src/cdl_eeg/models/mts_classifiers/__init__.py
-src/cdl_eeg/models/mts_classifiers/inception_time.py
-src/cdl_eeg/models/mts_classifiers/mts_classifier_base.py
+src/cdl_eeg/models/main_models/__init__.py
+src/cdl_eeg/models/main_models/main_rbp_model.py
+src/cdl_eeg/models/mts_modules/__init__.py
+src/cdl_eeg/models/mts_modules/getter.py
+src/cdl_eeg/models/mts_modules/inception_time.py
+src/cdl_eeg/models/mts_modules/mts_module_base.py
 src/cdl_eeg/models/region_based_pooling/__init__.py
 src/cdl_eeg/models/region_based_pooling/region_based_pooling.py
 src/cdl_eeg/models/region_based_pooling/utils.py
@@ -32,6 +35,7 @@ src/cdl_eeg/models/region_based_pooling/pooling_modules/__init__.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/getter.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/mean.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/pooling_base.py
+src/cdl_eeg/models/region_based_pooling/pooling_modules/univariate_rocket.py
 src/cdl_eeg/models/region_based_pooling/region_splits/__init__.py
 src/cdl_eeg/models/region_based_pooling/region_splits/getter.py
 src/cdl_eeg/models/region_based_pooling/region_splits/region_split_base.py
