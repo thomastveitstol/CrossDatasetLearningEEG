@@ -105,7 +105,7 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
             # Compute coefficients
             # ---------------------
             # Pass through FC module
-            coefficients = fc_module(pre_computed[:, allowed_node_indices])
+            coefficients = torch.transpose(fc_module(pre_computed[:, allowed_node_indices]), dim0=2, dim1=1)
 
             # Normalise
             coefficients = torch.softmax(coefficients, dim=1)
@@ -115,8 +115,7 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
             # data, and insert as a region representation
             # --------------------------------
             # Add it to the slots
-            region_representations[:, i] = torch.matmul(torch.transpose(coefficients, dim0=1, dim1=2),
-                                                        x[:, allowed_node_indices])
+            region_representations[:, i] = torch.squeeze(torch.matmul(coefficients, x[:, allowed_node_indices]), dim=1)
 
         return region_representations
 
