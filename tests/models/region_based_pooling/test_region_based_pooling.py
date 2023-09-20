@@ -309,6 +309,6 @@ def test_multi_cs_forward():
     assert all(isinstance(out, torch.Tensor) for out in outputs)
 
     # Check if the sizes are correct
-    expected_regions = tuple(itertools.chain(*num_regions))
+    expected_channel_dims = tuple(itertools.chain(*num_regions))
     assert all(out.size() == torch.Size([batch_size, expected_channel_dim, time_steps])
-               for out, expected_channel_dim in zip(expected_regions, num_regions))
+               for out, expected_channel_dim in zip(outputs, expected_channel_dims))
