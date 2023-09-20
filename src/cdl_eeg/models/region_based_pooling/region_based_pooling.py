@@ -37,10 +37,21 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
     --------
     >>> my_split_kwargs = ({"num_points": 7, "x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1},
     ...                    {"num_points": 11, "x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1})
-    >>> _ = SingleChannelSplitRegionBasedPooling(pooling_methods=("SingleCSMean", "SingleCSMean"),
-    ...                                          pooling_methods_kwargs=({}, {}),
-    ...                                          split_methods=("VoronoiSplit", "VoronoiSplit"),
-    ...                                          split_methods_kwargs=my_split_kwargs)
+    >>> my_model = SingleChannelSplitRegionBasedPooling(pooling_methods=("SingleCSMean", "SingleCSMean"),
+    ...                                                 pooling_methods_kwargs=({}, {}),
+    ...                                                 split_methods=("VoronoiSplit", "VoronoiSplit"),
+    ...                                                 split_methods_kwargs=my_split_kwargs)
+    >>> my_model.supports_precomputing
+    False
+
+    Check with a pooling module which supports pre-computing
+
+    >>> SingleChannelSplitRegionBasedPooling(pooling_methods=("SingleCSSharedRocket", "SingleCSMean"),
+    ...                                      pooling_methods_kwargs=({"num_regions": 4, "num_kernels": 100,
+    ...                                                               "max_receptive_field": 200}, {}),
+    ...                                      split_methods=("VoronoiSplit", "VoronoiSplit"),
+    ...                                      split_methods_kwargs=my_split_kwargs).supports_precomputing
+    True
     """
 
     def __init__(self, pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs):
@@ -173,3 +184,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
     @property
     def channel_splits(self):
         return self._channel_splits
+
+    @property
+    def supports_precomputing(self):
+        return any(pooling_module.supports_precomputing() for pooling_module in self._pooling_modules)

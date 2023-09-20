@@ -4,6 +4,7 @@ Simply a function for returning a specified pooling module
 todo: This cannot be the best solution... maybe something with __all__ in init file?
 """
 from cdl_eeg.models.region_based_pooling.pooling_modules.mean import SingleCSMean
+from cdl_eeg.models.region_based_pooling.pooling_modules.univariate_rocket import SingleCSSharedRocket
 
 
 def get_pooling_module(pooling_method, **kwargs):
@@ -31,7 +32,7 @@ def get_pooling_module(pooling_method, **kwargs):
     ('SingleCSMean',...)
     """
     # All available pooling modules must be included here
-    available_pooling_modules = (SingleCSMean,)
+    available_pooling_modules = (SingleCSMean, SingleCSSharedRocket)
 
     # Loop through and select the correct one
     for pooling_module in available_pooling_modules:
