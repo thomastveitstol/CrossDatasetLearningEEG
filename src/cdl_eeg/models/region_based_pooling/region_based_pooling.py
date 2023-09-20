@@ -378,18 +378,18 @@ class MultiChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
 
         # Otherwise, append to a list
         output_channel_splits: List[Tuple[torch.Tensor, ...]] = []
-        for pre_comp_features, pooling_module, channel_split \
+        for pre_comp_features, pooling_module, channel_splits \
                 in zip(pre_computed, self._pooling_modules, self._channel_splits[channel_system_name]):
             # Handle the unsupported case, or when pre-computing is not desired
             if not pooling_module.supports_precomputing() or pre_comp_features is None:
-                output_channel_splits.append(pooling_module(x, channel_split=channel_split,
+                output_channel_splits.append(pooling_module(x, channel_splits=channel_splits,
                                                             channel_name_to_index=channel_name_to_index))
             else:
-                output_channel_splits.append(pooling_module(x, channel_split=channel_split,
+                output_channel_splits.append(pooling_module(x, channel_splits=channel_splits,
                                                             channel_name_to_index=channel_name_to_index,
                                                             pre_computed=pre_comp_features))
         # Convert to unpacked tuple and return
-        return tuple(itertools.chain(output_channel_splits))
+        return tuple(itertools.chain(*output_channel_splits))
 
     def pre_compute(self, x):
         """
