@@ -207,7 +207,7 @@ def test_multi_cs_fit_channel_system():
 
     # Check if the channel split property is a tuple
     multi_ch_splits = rbp_module.channel_splits[channel_system_name]
-    assert isinstance(multi_ch_splits, tuple),\
+    assert isinstance(multi_ch_splits, tuple), \
         (f"Expected channel splits of the channel system to be a tuple, but found "
          f"{type(rbp_module.channel_splits[channel_system_name])}")
 
