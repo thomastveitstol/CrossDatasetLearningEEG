@@ -8,6 +8,7 @@ This code is likely to have overlap with a former implementation of mine (Thomas
 https://github.com/thomastveitstol/RegionBasedPoolingEEG/
 """
 import random
+from typing import List
 
 import numpy
 import torch
@@ -15,9 +16,12 @@ import torch.nn as nn
 
 from cdl_eeg.data.datasets.dataset_base import channel_names_to_indices
 from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import SingleChannelSplitPoolingBase, \
-    precomputing_method
+    precomputing_method, MultiChannelSplitsPoolingBase
 
 
+# ---------------------
+# Pooling module classes
+# ---------------------
 class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
     """
     Pooling by linear combination of the channels, where the importance score is computed from ROCKET-based features and
@@ -34,6 +38,16 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
     """
 
     def __init__(self, num_regions, *, num_kernels, max_receptive_field, seed=None):
+        """
+        Initialise
+
+        Parameters
+        ----------
+        num_regions : int
+        num_kernels : int
+        max_receptive_field : int
+        seed : int
+        """
         super().__init__()
 
         # ----------------
@@ -83,7 +97,7 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
             selected within this method, and the EEG data should be the full data matrix (such that
             channel_name_to_index maps correctly)
         pre_computed : torch.Tensor
-            Pre-computed features of all channels (is in the input 'x') todo: can this be improved memory-wise?
+            Pre-computed features of all channels (as in the input 'x') todo: can this be improved memory-wise?
         channel_split : cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit
         channel_name_to_index : dict[str, int]
 
@@ -131,6 +145,153 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
         return len(self._fc_modules)
 
 
+class MultiCSSharedRocket(MultiChannelSplitsPoolingBase):
+    """
+    Same as SingleCSSharedRocket, but the ROCKET-based features are shared across multiple channel/region splits
+
+    Examples
+    --------
+    >>> my_model = MultiCSSharedRocket((4, 7, 3, 9), num_kernels=100, max_receptive_field=200)
+    >>> my_model.num_channel_splits
+    4
+    >>> MultiCSSharedRocket.supports_precomputing()
+    True
+    """
+
+    def __init__(self, num_regions, *, num_kernels, max_receptive_field, seed=None):
+        """
+        Initialise
+
+        Parameters
+        ----------
+        num_regions : tuple[int, ...]
+        num_kernels : int
+        max_receptive_field : int
+        seed : int
+        """
+        super().__init__()
+
+        # ----------------
+        # Define ROCKET-feature extractor
+        # ----------------
+        self._rocket = RocketConv1d(num_kernels=num_kernels, max_receptive_field=max_receptive_field, seed=seed)
+
+        # ----------------
+        # Define mappings from ROCKET features
+        # to importance scores, for all region/channel
+        # splits and regions
+        # ----------------
+        self._fc_modules = nn.ModuleList([
+            nn.ModuleList([nn.Linear(in_features=num_kernels * 2, out_features=1) for _ in range(regions)])
+            for regions in num_regions])
+
+    @precomputing_method
+    def pre_compute(self, x):
+        """
+        Method for pre-computing the ROCKET features
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            A tensor with shape=(batch, channel, time_steps)
+
+        Returns
+        -------
+        torch.Tensor
+            ROCKET features, with shape=(batch, channels, num_features) with num_features=2 for the current
+            implementation.
+
+        Examples
+        --------
+        >>> my_data = torch.rand(size=(10, 64, 500))
+        >>> MultiCSSharedRocket((6, 3, 9, 2), num_kernels=123, max_receptive_field=50).pre_compute(my_data).size()
+        torch.Size([10, 64, 246])
+        """
+        return self._rocket(x)
+
+    def forward(self, x, *, pre_computed, channel_splits, channel_name_to_index):
+        """
+        Forward method
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            A tensor containing EEG data with shape=(batch, channels, time_steps). Note that the channels are correctly
+            selected within this method, and the EEG data should be the full data matrix (such that
+            channel_name_to_index maps correctly)
+        pre_computed : torch.Tensor
+            Pre-computed features of all channels (as in the input 'x') todo: can this be improved memory-wise?
+        channel_splits : tuple[cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit, ...]
+        channel_name_to_index : dict[str, int]
+
+        Returns
+        -------
+        tuple[torch.Tensor, ...]
+        """
+        # --------------
+        # Input check
+        # --------------
+        assert len(channel_splits) == self.num_channel_splits,  \
+            (f"Expected {self.num_channel_splits} number of channel/region splits, but input suggests "
+             f"{len(channel_splits)}")
+
+        # --------------
+        # Loop through all channel/region splits
+        # --------------
+        output_channel_splits: List[torch.Tensor] = []
+        for channel_split, fc_modules in zip(channel_splits, self._fc_modules):
+            # todo: very similar to forward method of SingleCSSharedRocket
+            # Input check
+            num_regions = len(fc_modules)
+            assert len(channel_split) == num_regions, (f"Expected {num_regions} number of regions, but input "
+                                                       f"channel split suggests {len(channel_split)}")
+
+            # Initialise tensor which will contain all region representations
+            batch, _, time_steps = x.size()
+            region_representations = torch.empty(size=(batch, num_regions, time_steps)).to(x.device)
+
+            # Loop through all regions
+            for i, (fc_module, channels) in enumerate(zip(fc_modules, channel_split.ch_names.values())):
+                # Extract the indices of the legal channels for this region
+                allowed_node_indices = channel_names_to_indices(ch_names=channels.ch_names,
+                                                                channel_name_to_index=channel_name_to_index)
+
+                # ---------------------
+                # Compute coefficients
+                # ---------------------
+                # Pass through FC module
+                coefficients = torch.transpose(fc_module(pre_computed[:, allowed_node_indices]), dim0=2, dim1=1)
+
+                # Normalise
+                coefficients = torch.softmax(coefficients, dim=1)
+
+                # --------------------------------
+                # Apply attention vector on the EEG
+                # data, and insert as a region representation
+                # --------------------------------
+                # Add it to the slots
+                region_representations[:, i] = torch.squeeze(torch.matmul(coefficients, x[:, allowed_node_indices]),
+                                                             dim=1)
+
+            # Append as channel/region split output
+            output_channel_splits.append(region_representations)
+
+        # Return as tuple
+        return tuple(output_channel_splits)
+
+    # -------------
+    # Properties
+    # -------------
+    @property
+    def num_channel_splits(self):
+        """Get the number of channel/region splits the instance is operating on"""
+        # todo: channel split or region splits? RBP paper says channel split, but I kinda regret it...
+        return len(self._fc_modules)
+
+
+# ---------------------
+# ROCKET classes
+# ---------------------
 class RocketConv1d(nn.Module):
     """
     Class for computing ROCKET features. This implementation was the preferred one in the RBP paper, due to a good
