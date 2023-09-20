@@ -5,8 +5,9 @@ There will likely be some overlap with a former project (where Region Based Pool
 https://github.com/thomastveitstol/RegionBasedPoolingEEG/blob/master/src/models/modules/bins/regions_to_bins.py
 """
 import abc
+import dataclasses
 import itertools
-from typing import Dict, Tuple, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -18,6 +19,15 @@ from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import Sin
 from cdl_eeg.models.region_based_pooling.region_splits.getter import get_region_split
 from cdl_eeg.models.region_based_pooling.region_splits.region_split_base import RegionSplitBase
 from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit
+
+
+@dataclasses.dataclass
+class RBPInput(frozen=True):
+    """Dataclass for creating input to RBP"""
+    pooling_method: str
+    pooling_method_kwargs: Dict[str, Any]
+    split_method: str
+    split_method_kwargs: Dict[str, Any]
 
 
 # ------------------
@@ -248,11 +258,14 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
 
 class MultiChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
     """
-    Region Based Pooling when pooling module operates on a multiple channel/region split at once (when the pooling
+    Region Based Pooling when pooling module operates on multiple channel/region split at once (when the pooling
     module used inherits from MultiChannelSplitPoolingBase)
 
     todo: As exemplified below, there is nothing which currently forces pooling methods and split methods to have the
      same number of regions (nor is it a check, because not all pooling methods require that input)
+
+    todo: Why multiple pooling methods? they run in a for-loop anyway
+
     Examples
     --------
     >>> my_p_methods = ("MultiCSSharedRocket", "MultiCSSharedRocket")
