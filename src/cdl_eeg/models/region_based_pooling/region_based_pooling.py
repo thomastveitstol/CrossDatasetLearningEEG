@@ -116,7 +116,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
                              f"their corresponding kwargs all to have the same lengths, but found lengths "
                              f"{(tuple(len(arg) for arg in expected_same_lengths))}")
 
-    def forward(self, x, *, channel_system_name, channel_name_to_index):
+    def forward(self, x, *, channel_system_name, channel_name_to_index, pre_computed=None):
         """
         Forward method
 
@@ -125,15 +125,34 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         x : torch.Tensor
         channel_system_name : str
         channel_name_to_index : dict[str, int]
+        pre_computed : tuple, optional
 
         Returns
         -------
         tuple[torch.Tensor, ...]
         """
+        # ------------------
         # Pass through all channel splits and return as tuple
-        return tuple(pooling_module(x, channel_split=channel_split, channel_name_to_index=channel_name_to_index)
-                     for pooling_module, channel_split in zip(self._pooling_modules,
-                                                              self._channel_splits[channel_system_name]))
+        # ------------------
+        # Simple case when no pre-computing is made
+        if not self.supports_precomputing or pre_computed is None:
+            return tuple(pooling_module(x, channel_split=channel_split, channel_name_to_index=channel_name_to_index)
+                         for pooling_module, channel_split in zip(self._pooling_modules,
+                                                                  self._channel_splits[channel_system_name]))
+
+        # Otherwise, append to a list
+        output_channel_splits: List[torch.Tensor] = []
+        for pre_comp_features, pooling_module, channel_split \
+                in zip(pre_computed, self._pooling_modules, self._channel_splits[channel_system_name]):
+            # Handle the unsupported case, or when pre-computing is not desired
+            if not pooling_module.supports_precomputing() or pre_comp_features is None:
+                output_channel_splits.append(pooling_module(x, channel_split=channel_split,
+                                                            channel_name_to_index=channel_name_to_index))
+            else:
+                output_channel_splits.append(pooling_module(x, channel_split=channel_split,
+                                                            channel_name_to_index=channel_name_to_index,
+                                                            pre_computed=pre_comp_features))
+        return tuple(output_channel_splits)
 
     def pre_compute(self, x):
         """
@@ -160,7 +179,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         # Loop through all pooling modules
         pre_computed: List[Optional[torch.Tensor]] = []
         for pooling_module in self._pooling_modules:
-            if pooling_module.supports_precomputing:
+            if pooling_module.supports_precomputing():
                 # Assuming that the method is called 'pre_compute', and that it only takes in 'x' as argument
                 pre_computed.append(pooling_module.pre_compute(x))
             else:

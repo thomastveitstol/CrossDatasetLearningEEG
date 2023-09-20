@@ -107,8 +107,11 @@ def test_forward():
     # Hyperparameters
     num_regions = 11, 7, 26, 18
 
-    pooling_methods = ("SingleCSMean", "SingleCSMean", "SingleCSMean", "SingleCSMean")
-    pooling_methods_kwargs = ({}, {}, {}, {})
+    pooling_methods = ("SingleCSSharedRocket", "SingleCSMean", "SingleCSMean", "SingleCSSharedRocket")
+    pooling_methods_kwargs = ({"num_regions": num_regions[0], "num_kernels": 300, "max_receptive_field": 73},
+                              {},
+                              {},
+                              {"num_regions": num_regions[3], "num_kernels": 23, "max_receptive_field": 131})
     split_methods = ("VoronoiSplit", "VoronoiSplit", "VoronoiSplit", "VoronoiSplit")
     box_params = {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
     split_methods_kwargs = ({"num_points": num_regions[0], **box_params}, {"num_points": num_regions[1], **box_params},
@@ -124,9 +127,11 @@ def test_forward():
     rbp_module.fit_channel_system(channel_system=channel_system)
 
     # ----------------
-    # Run forward method
+    # Pre-compute and run forward method
     # ----------------
-    outputs = rbp_module(data, channel_system_name=channel_system_name, channel_name_to_index=channel_name_to_index)
+    pre_computed = rbp_module.pre_compute(data)
+    outputs = rbp_module(data, channel_system_name=channel_system_name, channel_name_to_index=channel_name_to_index,
+                         pre_computed=pre_computed)
 
     # ----------------
     # Tests
