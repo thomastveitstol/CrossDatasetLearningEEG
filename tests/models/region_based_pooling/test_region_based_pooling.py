@@ -1,3 +1,5 @@
+import itertools
+
 import mne
 import torch
 
@@ -243,3 +245,70 @@ def test_multi_cs_fit_channel_system():
             assert expected_regions == len(ch_split), (
                 f"Expected number of regions to be {expected_regions}, but found "
                 f"{len(ch_split)}")
+
+
+def test_multi_cs_forward():
+    """Test the forward method. That it runs, and that output types and shapes are as expected"""
+    # ----------------
+    # Generate dummy channel system and data
+    # ----------------
+    # Hyperparameters
+    batch_size, time_steps = 10, 2_000
+    channel_system_name = "TestName"
+    x_min, x_max, y_min, y_max = -.17, .17, -.17, .17
+    montage = mne.channels.make_standard_montage("GSN-HydroCel-129")
+
+    # Channel system requirements
+    electrode_positions = Electrodes3D(montage.get_positions()["ch_pos"])
+    channel_name_to_index = {name: i for i, name in enumerate(electrode_positions.positions)}
+    channel_system = ChannelSystem(name=channel_system_name, channel_name_to_index=channel_name_to_index,
+                                   electrode_positions=electrode_positions)
+
+    # Data
+    data = torch.rand(size=(batch_size, len(electrode_positions), time_steps))
+
+    # ----------------
+    # Make RBP object and fit channel system (tested above)
+    # ----------------
+    # Hyperparameters
+    num_regions = ((11, 7, 26), (4, 7), (3, 4, 3, 6))
+    num_channel_splits = tuple(len(regions) for regions in num_regions)
+
+    pooling_methods = ("MultiCSSharedRocket", "MultiCSSharedRocket", "MultiCSSharedRocket")
+    pooling_methods_kwargs = ({"num_regions": num_regions[0], "num_kernels": 43, "max_receptive_field": 37},
+                              {"num_regions": num_regions[1], "num_kernels": 5, "max_receptive_field": 75},
+                              {"num_regions": num_regions[2], "num_kernels": 17, "max_receptive_field": 57})
+    split_methods = tuple(tuple("VoronoiSplit" for _ in range(num_regs)) for num_regs in num_channel_splits)
+    box_params = {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
+    split_methods_kwargs = tuple(tuple({"num_points": num_regs, **box_params} for num_regs in regions)
+                                 for regions in num_regions)
+
+    # Make object
+    rbp_module = MultiChannelSplitRegionBasedPooling(pooling_methods=pooling_methods,
+                                                     pooling_methods_kwargs=pooling_methods_kwargs,
+                                                     split_methods=split_methods,
+                                                     split_methods_kwargs=split_methods_kwargs)
+
+    # Fit channel system
+    rbp_module.fit_channel_system(channel_system=channel_system)
+
+    # ----------------
+    # Pre-compute and run forward method
+    # ----------------
+    pre_computed = rbp_module.pre_compute(data)
+    outputs = rbp_module(data, channel_system_name=channel_system_name, channel_name_to_index=channel_name_to_index,
+                         pre_computed=pre_computed)
+
+    # ----------------
+    # Tests
+    # ----------------
+    # Type check
+    assert isinstance(outputs, tuple), f"Expected outputs to be a tuple, but found {type(outputs)}"
+
+    # Check that all elements are torch tensors
+    assert all(isinstance(out, torch.Tensor) for out in outputs)
+
+    # Check if the sizes are correct
+    expected_regions = tuple(itertools.chain(*num_regions))
+    assert all(out.size() == torch.Size([batch_size, expected_channel_dim, time_steps])
+               for out, expected_channel_dim in zip(expected_regions, num_regions))
