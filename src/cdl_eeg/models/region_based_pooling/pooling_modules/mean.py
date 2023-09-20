@@ -11,6 +11,8 @@ class SingleCSMean(SingleChannelSplitPoolingBase):
     Examples
     --------
     >>> _ = SingleCSMean()
+    >>> SingleCSMean.supports_precomputing()
+    False
     """
 
     @staticmethod

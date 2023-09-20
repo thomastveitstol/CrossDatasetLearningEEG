@@ -14,7 +14,8 @@ import torch
 import torch.nn as nn
 
 from cdl_eeg.data.datasets.dataset_base import channel_names_to_indices
-from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import SingleChannelSplitPoolingBase
+from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import SingleChannelSplitPoolingBase, \
+    precomputing_method
 
 
 class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
@@ -28,6 +29,8 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
     Examples
     --------
     >>> _ = SingleCSSharedRocket(4, num_kernels=100, max_receptive_field=200)
+    >>> SingleCSSharedRocket.supports_precomputing()
+    True
     """
 
     def __init__(self, num_regions, *, num_kernels, max_receptive_field, seed=None):
@@ -45,6 +48,7 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
         self._fc_modules = nn.ModuleList([nn.Linear(in_features=num_kernels * 2, out_features=1)
                                           for _ in range(num_regions)])
 
+    @precomputing_method
     def pre_compute(self, x):
         """
         Method for pre-computing the ROCKET features
