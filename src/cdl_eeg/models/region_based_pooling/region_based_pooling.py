@@ -21,8 +21,11 @@ from cdl_eeg.models.region_based_pooling.region_splits.region_split_base import 
 from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit
 
 
-@dataclasses.dataclass
-class RBPInput(frozen=True):
+# ------------------
+# Convenient dataclass
+# ------------------
+@dataclasses.dataclass(frozen=True)
+class RBPInput:
     """Dataclass for creating input to RBP"""
     pooling_method: str
     pooling_method_kwargs: Dict[str, Any]
