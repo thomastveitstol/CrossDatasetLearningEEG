@@ -256,7 +256,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         return any(pooling_module.supports_precomputing() for pooling_module in self._pooling_modules)
 
 
-class MultiChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
+class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
     """
     Region Based Pooling when pooling module operates on multiple channel/region split at once (when the pooling
     module used inherits from MultiChannelSplitPoolingBase)
@@ -277,8 +277,9 @@ class MultiChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
     >>> my_s_kwargs = (({"num_points": 3, **my_box}, {"num_points": 7, **my_box}, {"num_points": 4, **my_box}),
     ...                ({"num_points": 11, **my_box}, {"num_points": 4, **my_box}, {"num_points": 9, **my_box},
     ...                 {"num_points": 8, **my_box}))
-    >>> my_model = MultiChannelSplitRegionBasedPooling(pooling_methods=my_p_methods, pooling_methods_kwargs=my_p_kwargs,
-    ...                                                split_methods=my_s_methods, split_methods_kwargs=my_s_kwargs)
+    >>> my_model = MultiChannelSplitsRegionBasedPooling(pooling_methods=my_p_methods,
+    ...                                                 pooling_methods_kwargs=my_p_kwargs, split_methods=my_s_methods,
+    ...                                                 split_methods_kwargs=my_s_kwargs)
     >>> my_model.supports_precomputing
     True
     """
