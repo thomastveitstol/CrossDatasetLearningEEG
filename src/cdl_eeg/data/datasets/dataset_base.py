@@ -22,7 +22,7 @@ def path_method(func):
 
 
 # --------------------
-# Base classes
+# Classes
 # --------------------
 @dataclasses.dataclass(frozen=True)
 class ChannelSystem:
