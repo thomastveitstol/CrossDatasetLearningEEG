@@ -5,8 +5,9 @@ There will likely be some overlap with a former project (where Region Based Pool
 https://github.com/thomastveitstol/RegionBasedPoolingEEG/blob/master/src/models/modules/bins/regions_to_bins.py
 """
 import abc
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List, Optional
 
+import torch
 import torch.nn as nn
 
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
@@ -133,6 +134,40 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         return tuple(pooling_module(x, channel_split=channel_split, channel_name_to_index=channel_name_to_index)
                      for pooling_module, channel_split in zip(self._pooling_modules,
                                                               self._channel_splits[channel_system_name]))
+
+    def pre_compute(self, x):
+        """
+        Method for pre-computing
+
+        Possible future updates:
+            (1) Some pooling modules may have multiple pre-computing methods in the future
+            (2) Different pooling modules may require different input arguments
+            (3) Improved memory usage?
+        Parameters
+        ----------
+        x : torch.Tensor
+
+        Returns
+        -------
+        tuple[torch.Tensor, ...]
+            A tuple of pre-computed tensor (one pr. pooling module). The element will be None if the corresponding
+            pooling module does not support pre-computing
+        """
+        # Quick check to see if this method should be run
+        if not self.supports_precomputing:
+            raise RuntimeError("Tried to pre-compute when no pooling method supports pre-computing")
+
+        # Loop through all pooling modules
+        pre_computed: List[Optional[torch.Tensor]] = []
+        for pooling_module in self._pooling_modules:
+            if pooling_module.supports_precomputing:
+                # Assuming that the method is called 'pre_compute', and that it only takes in 'x' as argument
+                pre_computed.append(pooling_module.pre_compute(x))
+            else:
+                pre_computed.append(None)
+
+        # Convert to tuple and return
+        return tuple(pre_computed)
 
     # ----------------
     # Methods for fitting channel systems
