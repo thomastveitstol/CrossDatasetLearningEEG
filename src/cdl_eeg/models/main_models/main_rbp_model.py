@@ -45,7 +45,21 @@ class MainSingleChannelSplitRBPModel(nn.Module):
         # todo: the number of in channels must be calculated from/by the RBP layer
         self._mts_module = get_mts_module(mts_module_name=mts_module, **mts_module_kwargs)
 
-    def forward(self, x, *, channel_system_name, channel_name_to_index):
+    def pre_compute(self, x):
+        """
+        Pre-compute
+
+        Parameters
+        ----------
+        x : torch.Tensor
+
+        Returns
+        -------
+        tuple
+        """
+        return self._region_based_pooling.pre_compute(x)
+
+    def forward(self, x, *, channel_system_name, channel_name_to_index, pre_computed=None):
         """
         Forward method
 
@@ -54,6 +68,7 @@ class MainSingleChannelSplitRBPModel(nn.Module):
         x : torch.Tensor
         channel_system_name : str
         channel_name_to_index : dict[str, int]
+        pre_computed : torch.Tensor, optional
 
         Returns
         -------
@@ -63,7 +78,7 @@ class MainSingleChannelSplitRBPModel(nn.Module):
         # TODO: Would be nice to be able to have different channel systems in the same batch
         # Pass through RBP layer
         x = self._region_based_pooling(x, channel_system_name=channel_system_name,
-                                       channel_name_to_index=channel_name_to_index)
+                                       channel_name_to_index=channel_name_to_index, pre_computed=pre_computed)
 
         # Merge by concatenation
         x = torch.cat(x, dim=1)

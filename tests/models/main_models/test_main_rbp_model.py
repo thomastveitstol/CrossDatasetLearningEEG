@@ -35,8 +35,11 @@ def test_forward_single_channel_system():
 
     mts_module = "InceptionTime"
     mts_module_kwargs = {"in_channels": sum(num_regions), "num_classes": num_classes}
-    pooling_methods = ("SingleCSMean", "SingleCSMean", "SingleCSMean", "SingleCSMean")
-    pooling_methods_kwargs = ({}, {}, {}, {})
+    pooling_methods = ("SingleCSSharedRocket", "SingleCSMean", "SingleCSMean", "SingleCSSharedRocket")
+    pooling_methods_kwargs = ({"num_regions": num_regions[0], "num_kernels": 300, "max_receptive_field": 73},
+                              {},
+                              {},
+                              {"num_regions": num_regions[3], "num_kernels": 23, "max_receptive_field": 131})
     split_methods = ("VoronoiSplit", "VoronoiSplit", "VoronoiSplit", "VoronoiSplit")
     box_params = {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
     split_methods_kwargs = ({"num_points": num_regions[0], **box_params}, {"num_points": num_regions[1], **box_params},
@@ -52,9 +55,11 @@ def test_forward_single_channel_system():
     model.fit_channel_system(channel_system)
 
     # ----------------
-    # Run forward method
+    # Pre-compute and run forward method
     # ----------------
-    outputs = model(data, channel_system_name=channel_system_name, channel_name_to_index=channel_name_to_index)
+    pre_computed = model.pre_compute(data)
+    outputs = model(data, channel_system_name=channel_system_name, channel_name_to_index=channel_name_to_index,
+                    pre_computed=pre_computed)
 
     # ----------------
     # Tests
