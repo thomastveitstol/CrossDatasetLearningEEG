@@ -593,7 +593,7 @@ class RegionBasedPooling(nn.Module):
         # Loop through all RBP modules
         pre_computed: List[Optional[torch.Tensor]] = []
         for rbp_module in self._rbp_modules:
-            if rbp_module.supports_precomputing():
+            if rbp_module.supports_precomputing:
                 # Assuming that the method is called 'pre_compute', and that it only takes in 'x' as argument
                 pre_computed.append(rbp_module.pre_compute(x))
             else:
