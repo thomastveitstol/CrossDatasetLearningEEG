@@ -404,7 +404,8 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
             raise RuntimeError("Tried to pre-compute when no pooling method supports pre-computing")
 
         # todo: Assuming that the method is called 'pre_compute', and that it only takes in 'x' as argument
-        return self._pooling_module.pre_compute(x)
+        # mypy thinks I am calling on a Tensor here... why?
+        return self._pooling_module.pre_compute(x)  # type: ignore[operator]
 
     # ----------------
     # Methods for fitting channel systems
