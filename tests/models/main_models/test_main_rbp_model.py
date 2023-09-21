@@ -1,7 +1,14 @@
+import os.path
+
 import mne
+import pytest
 import torch
 
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
+from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
+from cdl_eeg.data.datasets.rockhill_dataset import Rockhill
+from cdl_eeg.data.datasets.van_hees import VanHees
+from cdl_eeg.data.paths import get_raw_data_storage_path
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RBPDesign, RBPPoolType
 from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
@@ -94,3 +101,76 @@ def test_forward_single_channel_system():
     # Shape check
     expected_size = torch.Size([batch_size, num_classes])
     assert outputs.size() == expected_size, f"Expected output to have shape {expected_size}, but found {outputs.size()}"
+
+
+@pytest.mark.skipif(not os.path.isdir(get_raw_data_storage_path()), reason="Required datasets not available")
+def test_fit_real_channel_systems():
+    """Test fitting of real channel systems"""
+    # ------------------
+    # Create real channel systems
+    # ------------------
+    # Select datasets for testing
+    datasets = (VanHees(), Rockhill(), Miltiadous())
+
+    # Get their channel systems
+    channel_systems = tuple(dataset.channel_system for dataset in datasets)
+
+    # ----------------
+    # Make model supporting RBP  TODO: copied
+    # ----------------
+    x_min, x_max, y_min, y_max = -.17, .17, -.17, .17
+    box_params = {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
+
+    # Design 1
+    num_regions_1 = (11, 7, 26, 4, 7)
+    num_channel_splits_1 = len(num_regions_1)
+
+    design_1 = RBPDesign(
+        pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
+        pooling_methods_kwargs={"num_regions": num_regions_1, "num_kernels": 43, "max_receptive_field": 37},
+        split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_1)),
+        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_1)
+    )
+
+    # Design 2
+    num_regions_2 = (9, 14)
+
+    design_2 = RBPDesign(
+        pooling_type=RBPPoolType.SINGLE_CS, pooling_methods=("SingleCSMean", "SingleCSSharedRocket"),
+        pooling_methods_kwargs=({}, {"num_regions": num_regions_2[1], "num_kernels": 93, "max_receptive_field": 67}),
+        split_methods=("VoronoiSplit", "VoronoiSplit"),
+        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_2)
+    )
+
+    # Design 3
+    num_regions_3 = (5, 5, 7, 5, 12, 10)
+    num_channel_splits_3 = len(num_regions_3)
+
+    design_3 = RBPDesign(
+        pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
+        pooling_methods_kwargs={"num_regions": num_regions_3, "num_kernels": 5, "max_receptive_field": 55},
+        split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_3)),
+        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_3)
+    )
+
+    # ----------------
+    # Make model and fit channel system
+    # ----------------
+    num_classes = 5
+    num_regions = num_regions_1 + num_regions_2 + num_regions_3
+
+    mts_module = "InceptionTime"
+    mts_module_kwargs = {"in_channels": sum(num_regions), "num_classes": num_classes}
+
+    model = MainRBPModel(mts_module=mts_module, mts_module_kwargs=mts_module_kwargs,
+                         rbp_designs=(design_1, design_2, design_3))
+    model.fit_channel_systems(channel_systems)
+
+    # ----------------
+    # Tests
+    # ----------------
+    for channel_system in channel_systems:
+        assert all(channel_system.name in rbp_module.channel_splits
+                   for rbp_module in model._region_based_pooling._rbp_modules), \
+            (f"Expected all channel systems to be fit to all RBP modules, but this was not the case for the channel "
+             f"system {channel_system.name}")
