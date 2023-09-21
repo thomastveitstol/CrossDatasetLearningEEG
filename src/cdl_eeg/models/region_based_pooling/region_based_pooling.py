@@ -504,8 +504,6 @@ class RegionBasedPooling(nn.Module):
         # ------------------
         rbp_modules: List[RegionBasedPoolingBase] = []
         for design in rbp_designs:
-            design: RBPDesign
-
             # Select the correct class
             if design.pooling_type == RBPPoolType.SINGLE_CS:
                 rbp = SingleChannelSplitRegionBasedPooling(pooling_methods=design.pooling_methods,
