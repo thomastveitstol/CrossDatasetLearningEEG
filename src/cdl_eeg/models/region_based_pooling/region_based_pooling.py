@@ -21,7 +21,6 @@ from cdl_eeg.models.region_based_pooling.pooling_modules.getter import get_pooli
 from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import SingleChannelSplitPoolingBase, \
     MultiChannelSplitsPoolingBase
 from cdl_eeg.models.region_based_pooling.region_splits.getter import get_region_split
-from cdl_eeg.models.region_based_pooling.region_splits.region_split_base import RegionSplitBase
 from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit
 
 
@@ -42,9 +41,9 @@ class RBPPoolType(Enum):
 @dataclasses.dataclass(frozen=True)
 class RBPDesign:
     """Dataclass for creating input to RBP"""
+    pooling_type: RBPPoolType
     pooling_methods: Union[str, Tuple[str, ...]]
     pooling_methods_kwargs: Union[Dict[str, Any], Tuple[Dict[str, Any], ...]]
-    pooling_type: RBPPoolType
     split_methods: Union[str, Tuple[str, ...]]
     split_methods_kwargs: Union[Dict[str, Any], Tuple[Dict[str, Any], ...]]
 
@@ -397,9 +396,8 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
 
         Returns
         -------
-        tuple[torch.Tensor, ...]
-            A tuple of pre-computed tensor (one pr. pooling module). The element will be None if the corresponding
-            pooling module does not support pre-computing
+        torch.Tensor
+            A pre-computed tensor
         """
         # Quick check to see if this method should be run
         if not self.supports_precomputing:
@@ -470,6 +468,25 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
 class RegionBasedPooling(nn.Module):
     """
     The main implementation of Region Based Pooling (Tveitstøl et al., 2023, submitted)
+
+    Examples
+    --------
+    >>> p_method_0 = "MultiCSSharedRocket"
+    >>> p_kwargs_0 = {"num_regions": (3, 7, 4), "num_kernels": 43, "max_receptive_field": 37}
+    >>> s_methods_0 = ("VoronoiSplit", "VoronoiSplit", "VoronoiSplit")
+    >>> my_box = {"x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1}
+    >>> s_kwargs_0 = ({"num_points": 3, **my_box}, {"num_points": 7, **my_box}, {"num_points": 4, **my_box})
+    >>> design_0 = RBPDesign(pooling_type=RBPPoolType.MULTI_CS, pooling_methods=p_method_0,
+    ...                      pooling_methods_kwargs=p_kwargs_0, split_methods=s_methods_0,
+    ...                      split_methods_kwargs=s_kwargs_0)
+    >>> p_methods_1 = ("SingleCSSharedRocket", "SingleCSMean")
+    >>> p_kwargs_1 = ({"num_regions": 8, "num_kernels": 100, "max_receptive_field": 200}, {})
+    >>> s_methods_1 = ("VoronoiSplit", "VoronoiSplit")
+    >>> s_kwargs_1 = ({"num_points": 8, **my_box}, {"num_points": 11, **my_box})
+    >>> design_1 = RBPDesign(pooling_type=RBPPoolType.SINGLE_CS, pooling_methods=p_methods_1,
+    ...                      pooling_methods_kwargs=p_kwargs_1, split_methods=s_methods_1,
+    ...                      split_methods_kwargs=s_kwargs_1)
+    >>> _ = RegionBasedPooling((design_0, design_1))
     """
 
     def __init__(self, rbp_designs):
@@ -494,12 +511,12 @@ class RegionBasedPooling(nn.Module):
                 rbp = SingleChannelSplitRegionBasedPooling(pooling_methods=design.pooling_methods,
                                                            pooling_methods_kwargs=design.pooling_methods_kwargs,
                                                            split_methods=design.split_methods,
-                                                           split_methods_kwargs=design.pooling_methods_kwargs)
+                                                           split_methods_kwargs=design.split_methods_kwargs)
             elif design.pooling_type == RBPPoolType.MULTI_CS:
                 rbp = MultiChannelSplitsRegionBasedPooling(pooling_method=design.pooling_methods,
                                                            pooling_method_kwargs=design.pooling_methods_kwargs,
                                                            split_methods=design.split_methods,
-                                                           split_methods_kwargs=design.pooling_methods_kwargs)
+                                                           split_methods_kwargs=design.split_methods_kwargs)
             else:
                 raise ValueError(f"Expected pooling type to be in {tuple(type_ for type_ in RBPPoolType)}, but found "
                                  f"{design.pooling_type}")
@@ -509,3 +526,128 @@ class RegionBasedPooling(nn.Module):
 
         # Store all in a ModuleList to register the modules properly
         self._rbp_modules = nn.ModuleList(rbp_modules)
+
+    # ----------------
+    # Forward and pre-computing
+    # ----------------
+    def forward(self, x, *, channel_system_name, channel_name_to_index, pre_computed=None):
+        """
+        Forward method
+
+        Parameters
+        ----------
+        x : torch.Tensor
+        channel_system_name : str
+        channel_name_to_index : dict[str, int]
+        pre_computed : tuple, optional
+
+        Returns
+        -------
+        tuple[torch.Tensor, ...]
+        """
+        # ------------------
+        # Pass through all RBP modules and return as unpacked tuple
+        # ------------------
+        # Simple case when no pre-computing is made
+        if not self.supports_precomputing or pre_computed is None:
+            # Compute outputs
+            outputs = tuple(
+                rbp_module(x, channel_system_name=channel_system_name, channel_name_to_index=channel_name_to_index)
+                for rbp_module in self._rbp_modules
+            )
+            # Unpack and return
+            return tuple(itertools.chain(*outputs))
+
+        # Otherwise, append to a list
+        rbp_outputs: List[Tuple[torch.Tensor, ...]] = []
+        for pre_comp_features, rbp_module in zip(pre_computed, self._rbp_modules):
+            # Handle the unsupported case, or when pre-computing is not desired
+            if not rbp_module.supports_precomputing or pre_comp_features is None:
+                rbp_outputs.append(rbp_module(x, channel_system_name=channel_system_name,
+                                              channel_name_to_index=channel_name_to_index))
+            else:
+                rbp_outputs.append(rbp_module(x, channel_system_name=channel_system_name,
+                                              channel_name_to_index=channel_name_to_index,
+                                              pre_computed=pre_comp_features))
+        # Unpacked tuple and return
+        return tuple(itertools.chain(*rbp_outputs))
+
+    def pre_compute(self, x):
+        """
+        Method for pre-computing
+
+        Parameters
+        ----------
+        x : torch.Tensor
+
+        Returns
+        -------
+        tuple[torch.Tensor, ...]
+            A tuple of pre-computed tensors (one pr. RBP module). The element will be None if the corresponding
+            pooling module does not support pre-computing
+        """
+        # Quick check to see if this method should be run
+        if not self.supports_precomputing:
+            raise RuntimeError("Tried to pre-compute when no pooling method supports pre-computing")
+
+        # Loop through all RBP modules
+        pre_computed: List[Optional[torch.Tensor]] = []
+        for rbp_module in self._rbp_modules:
+            if rbp_module.supports_precomputing():
+                # Assuming that the method is called 'pre_compute', and that it only takes in 'x' as argument
+                pre_computed.append(rbp_module.pre_compute(x))
+            else:
+                pre_computed.append(None)
+
+        # Convert to tuple and return
+        return tuple(pre_computed)
+
+    # ----------------
+    # Methods for fitting channel systems
+    # ----------------
+    def fit_channel_system(self, channel_system):
+        """
+        Fit a single channel system on all RBP modules
+
+        Parameters
+        ----------
+        channel_system : cdl_eeg.data.datasets.dataset_base.ChannelSystem
+            The channel system to fit
+        Returns
+        -------
+        None
+        """
+        for rbp_module in self._rbp_modules:
+            rbp_module.fit_channel_system(channel_system)
+
+    def fit_channel_systems(self, channel_systems):
+        """
+        Fit multiple channel systems on all RBP modules
+
+        Parameters
+        ----------
+        channel_systems : tuple[ChannelSystem, ...] | ChannelSystem
+            Channel systems to fit
+
+        Returns
+        -------
+        None
+        """
+        # Run the .fit_channel_system on all channel systems passed
+        if isinstance(channel_systems, ChannelSystem):
+            self.fit_channel_system(channel_system=channel_systems)
+        elif isinstance(channel_systems, tuple) and all(isinstance(ch_system, ChannelSystem)
+                                                        for ch_system in channel_systems):
+            for channel_system in channel_systems:
+                self.fit_channel_system(channel_system=channel_system)
+        else:
+            raise TypeError(
+                f"Expected channel systems to be either a channel system (type={ChannelSystem.__name__}) "
+                f"or a tuple of channel systems, but this was not the case")
+
+    # ----------------
+    # Properties
+    # ----------------
+    @property
+    def supports_precomputing(self):
+        return any(rbp_module.supports_precomputing for rbp_module in self._rbp_modules)
