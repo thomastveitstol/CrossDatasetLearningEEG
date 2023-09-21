@@ -3,7 +3,7 @@ import torch
 
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.models.region_based_pooling.region_based_pooling import SingleChannelSplitRegionBasedPooling, \
-    MultiChannelSplitsRegionBasedPooling
+    MultiChannelSplitsRegionBasedPooling, RBPDesign, RBPPoolType, RegionBasedPooling
 from cdl_eeg.models.region_based_pooling.utils import Electrodes3D, ChannelsInRegionSplit
 
 
@@ -293,3 +293,102 @@ def test_multi_cs_forward():
     # Check if the sizes are correct
     assert all(out.size() == torch.Size([batch_size, expected_channel_dim, time_steps])
                for out, expected_channel_dim in zip(outputs, num_regions))
+
+
+# ------------------------
+# Testing the main RBP module
+# ------------------------
+def test_main_forward():
+    """Test forward method. This it runs, has correct output type, and correct output shapes"""
+    # ----------------
+    # Generate dummy channel system
+    # todo: re-using code
+    # ----------------
+    # Hyperparameters
+    batch_size, time_steps = 10, 2_000
+    channel_system_name = "TestName"
+    x_min, x_max, y_min, y_max = -.17, .17, -.17, .17
+    montage = mne.channels.make_standard_montage("GSN-HydroCel-129")
+
+    # Channel system requirements
+    electrode_positions = Electrodes3D(montage.get_positions()["ch_pos"])
+    channel_name_to_index = {name: i for i, name in enumerate(electrode_positions.positions)}
+    channel_system = ChannelSystem(name=channel_system_name, channel_name_to_index=channel_name_to_index,
+                                   electrode_positions=electrode_positions)
+
+    # Data
+    data = torch.rand(size=(batch_size, len(electrode_positions), time_steps))
+
+    # ----------------
+    # Make RBP designs
+    # ----------------
+    box_params = {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
+
+    # Design 1
+    num_regions_1 = (11, 7, 26, 4, 7)
+    num_channel_splits_1 = len(num_regions_1)
+
+    design_1 = RBPDesign(
+        pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
+        pooling_methods_kwargs={"num_regions": num_regions_1, "num_kernels": 43, "max_receptive_field": 37},
+        split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_1)),
+        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_1)
+    )
+
+    # Design 2
+    num_regions_2 = (9, 14)
+    num_channel_splits_2 = len(num_regions_2)
+
+    design_2 = RBPDesign(
+        pooling_type=RBPPoolType.SINGLE_CS, pooling_methods=("SingleCSMean", "SingleCSSharedRocket"),
+        pooling_methods_kwargs=({}, {"num_regions": num_regions_2[1], "num_kernels": 93, "max_receptive_field": 67}),
+        split_methods=("VoronoiSplit", "VoronoiSplit"),
+        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_2)
+    )
+
+    # Design 3
+    num_regions_3 = (5, 5, 7, 5, 12, 10)
+    num_channel_splits_3 = len(num_regions_3)
+
+    design_3 = RBPDesign(
+        pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
+        pooling_methods_kwargs={"num_regions": num_regions_3, "num_kernels": 5, "max_receptive_field": 55},
+        split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_3)),
+        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_3)
+    )
+
+    # ----------------
+    # Make RBP module
+    # ----------------
+    # Create model
+    rbp_module = RegionBasedPooling((design_1, design_2, design_3))
+
+    # Fit channel system
+    rbp_module.fit_channel_system(channel_system)
+
+    # ----------------
+    # Pre-compute and run forward method
+    # ----------------
+    pre_computed = rbp_module.pre_compute(data)
+    outputs = rbp_module(data, channel_system_name=channel_system_name, channel_name_to_index=channel_name_to_index,
+                         pre_computed=pre_computed)
+
+    # ----------------
+    # Tests  todo: very overlapping with the above tests of forward method
+    # ----------------
+    # Type check
+    assert isinstance(outputs, tuple), f"Expected outputs to be a tuple, but found {type(outputs)}"
+
+    # Check if the number of elements are as expected (=total number of channel/region splits)
+    tot_num_channel_splits = num_channel_splits_1 + num_channel_splits_2 + num_channel_splits_3
+    assert len(outputs) == tot_num_channel_splits, (f"Expected output tuple length to match with the total number of "
+                                                    f"channel/region splits, ({tot_num_channel_splits}), but found "
+                                                    f"{len(outputs)}")
+
+    # Check that all elements are torch tensors
+    assert all(isinstance(out, torch.Tensor) for out in outputs)
+
+    # Check if the sizes of tensors are correct
+    expected_channel_dims = num_regions_1 + num_regions_2 + num_regions_3
+    assert all(out.size() == torch.Size([batch_size, expected_channel_dim, time_steps])
+               for out, expected_channel_dim in zip(outputs, expected_channel_dims))
