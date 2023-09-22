@@ -2,7 +2,7 @@ import abc
 import dataclasses
 import logging
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 import enlighten
 import inflection
