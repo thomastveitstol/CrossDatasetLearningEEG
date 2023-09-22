@@ -13,6 +13,8 @@ class FrequencySlowing(TransformationBase):
     --------
     >>> from cdl_eeg.models.transformations.utils import UnivariateNormal
     >>> _ = FrequencySlowing(UnivariateNormal(1, 0.05))
+    >>> FrequencySlowing.get_available_transformations()
+    ('phase_slowing',)
     """
 
     __slots__ = "_slowing_distribution",
