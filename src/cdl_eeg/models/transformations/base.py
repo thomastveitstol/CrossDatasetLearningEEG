@@ -3,6 +3,7 @@ from typing import List
 
 
 def transformation_method(func):
+    """Decorator to be used on methods which are transformation methods"""
     setattr(func, "_is_transformation_method", True)
     return func
 
@@ -12,6 +13,8 @@ class TransformationBase(abc.ABC):
 
     @classmethod
     def get_available_transformations(cls):
+        """Get all transformation methods available for the class. The transformation method must be decorated by
+        @transformation_method to be properly registered"""
         # Get all transformation methods
         transformations: List[str] = []
         for method in dir(cls):
