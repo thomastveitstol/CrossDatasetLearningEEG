@@ -11,6 +11,8 @@ src/CrossDatasetLearningEEG.egg-info/top_level.txt
 src/cdl_eeg/__init__.py
 src/cdl_eeg/py.typed
 src/cdl_eeg/data/__init__.py
+src/cdl_eeg/data/combined_datasets.py
+src/cdl_eeg/data/data_split.py
 src/cdl_eeg/data/paths.py
 src/cdl_eeg/data/data_generators/__init__.py
 src/cdl_eeg/data/data_generators/data_generator.py
