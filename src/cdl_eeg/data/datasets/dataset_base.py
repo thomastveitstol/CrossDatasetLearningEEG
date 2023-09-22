@@ -175,7 +175,8 @@ class EEGDatasetBase(abc.ABC):
         # Check if all subjects are actually available
         if not all(sub_id in subject_ids for sub_id in self.get_subject_ids()):
             _unexpected_subjects = tuple(sub_id for sub_id in self.get_subject_ids() if sub_id not in subject_ids)
-            raise ValueError(f"Unexpected subject IDs (N={len(_unexpected_subjects)}): {_unexpected_subjects}")
+            raise ValueError(f"Unexpected subject IDs for class '{type(self).__name__}' "
+                             f"(N={len(_unexpected_subjects)}): {_unexpected_subjects}")
 
         # ------------------
         # Loop through all subjects
