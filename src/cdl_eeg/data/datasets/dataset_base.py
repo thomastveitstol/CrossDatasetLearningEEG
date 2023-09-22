@@ -2,8 +2,9 @@ import abc
 import dataclasses
 import logging
 import os
-from typing import Tuple, Dict
+from typing import Dict, List, Tuple
 
+import enlighten
 import inflection
 import numpy
 import pandas
@@ -145,6 +146,60 @@ class EEGDatasetBase(abc.ABC):
             MNE object of the subject
         """
         raise NotImplementedError("A cleaned version is not available for this class.")
+
+    def load_numpy_arrays(self, subject_ids=None, *, time_series_start=None, num_time_steps=None):
+        """
+        Method for loading numpy arrays
+
+        Parameters
+        ----------
+        subject_ids : tuple[str, ...]
+        time_series_start : int, optional
+        num_time_steps : int, optional
+
+        Returns
+        -------
+        numpy.ndarray
+        """
+        subject_ids = self.get_subject_ids() if subject_ids is None else subject_ids
+
+        # ------------------
+        # Input checks todo: copied from save as numpy
+        # ------------------
+        # Check if all subjects are passed only once
+        if len(set(subject_ids)) != len(subject_ids):
+            _num_non_unique_subjects = len(set(subject_ids)) != len(subject_ids)
+            raise ValueError(f"Expected all subject IDs to be unique, but there were {_num_non_unique_subjects} "
+                             f"subject IDs which were passed more than once")
+
+        # Check if all subjects are actually available
+        if not all(sub_id in subject_ids for sub_id in self.get_subject_ids()):
+            _unexpected_subjects = tuple(sub_id for sub_id in self.get_subject_ids() if sub_id not in subject_ids)
+            raise ValueError(f"Unexpected subject IDs (N={len(_unexpected_subjects)}): {_unexpected_subjects}")
+
+        # ------------------
+        # Loop through all subjects
+        # ------------------
+        # Set counter
+        pbar = enlighten.Counter(total=len(subject_ids), desc="Loading", unit="subjects")
+
+        data: List[numpy.ndarray] = []
+        for sub_id in subject_ids:
+            # Load the numpy array
+            eeg_data = numpy.load(os.path.join(self.get_numpy_arrays_path(), f"{sub_id}.npy"))
+
+            # (Maybe crop the signal)
+            if time_series_start is not None:
+                eeg_data = eeg_data[..., time_series_start:]
+            if num_time_steps is not None:
+                eeg_data = eeg_data[..., :num_time_steps]
+
+            # Add the data
+            data.append(numpy.expand_dims(eeg_data, axis=0))
+            pbar.update()
+
+        # Concatenate to a single numpy ndarray
+        return numpy.concatenate(data, axis=0)
 
     def save_eeg_as_numpy_arrays(self, subject_ids=None, *, filtering=None, resample=None, notch_filter=None,
                                  avg_reference=False, num_time_steps=None, time_series_start=None, derivatives=False,
