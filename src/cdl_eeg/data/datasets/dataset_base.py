@@ -185,7 +185,7 @@ class EEGDatasetBase(abc.ABC):
         # Set counter
         pbar = enlighten.Counter(total=len(subject_ids), desc="Loading", unit="subjects")
 
-        data: List[numpy.ndarray] = []
+        data = []
         for sub_id in subject_ids:
             # Load the numpy array
             eeg_data = numpy.load(os.path.join(self.get_numpy_arrays_path(), f"{sub_id}.npy"))
