@@ -94,8 +94,9 @@ class MainRBPModel(nn.Module):
     # Methods for training
     # todo: don't know if I should have another class, and if this generalisation really works...
     # ----------------
-    def pre_train(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser,
-                  prediction_activation_function=None, verbose=True):
+    def pre_train(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser, device,
+                  train_channel_system_name, train_channel_name_to_index, val_channel_system_name,
+                  val_channel_name_to_index, prediction_activation_function=None, verbose=True):
         """
         Method for pre-training
 
@@ -109,6 +110,11 @@ class MainRBPModel(nn.Module):
         num_epochs : int
         criterion : nn.modules.loss._Loss
         optimiser : torch.optim.Optimizer
+        device : torch.device
+        train_channel_system_name
+        train_channel_name_to_index
+        val_channel_system_name
+        val_channel_name_to_index
         prediction_activation_function : typing.Callable | None
         verbose : bool
 
@@ -135,14 +141,15 @@ class MainRBPModel(nn.Module):
             # Training
             # ----------------
             self.train()
-            for x_train, y_train in train_loader:
+            for x_train, train_pre_computed, y_train in train_loader:
                 # todo: Only works for train loaders with this specific __getitem__ return
                 # Send data to correct device
-                x_train = x_train.to(self.device)
-                y_train = y_train.to(self.device)
+                x_train = x_train.to(device)
+                y_train = torch.tensor(y_train, dtype=torch.float).to(device)
 
                 # Forward pass
-                output = self(x_train)
+                output = self(x_train, pre_computed=train_pre_computed, channel_system_name=train_channel_system_name,
+                              channel_name_to_index=train_channel_name_to_index)
 
                 # Compute loss
                 loss = criterion(output, y_train)
@@ -168,13 +175,14 @@ class MainRBPModel(nn.Module):
             # ----------------
             self.eval()
             with torch.no_grad():
-                for x_val, y_val in val_loader:
+                for x_val, val_pre_computed, y_val in val_loader:
                     # Send data to correct device
-                    x_val = x_val.to(self.device)
-                    y_val = y_val.to(self.device)
+                    x_val = x_val.to(device)
+                    y_val = torch.tensor(y_val, dtype=torch.float).to(device)
 
                     # Forward pass  todo: why did I use .clone() in the PhD course tasks?
-                    y_pred = self(x_val)
+                    y_pred = self(x_val, pre_computed=val_pre_computed, channel_system_name=val_channel_system_name,
+                                  channel_name_to_index=val_channel_name_to_index)
 
                     # Update validation history
                     if prediction_activation_function is not None:

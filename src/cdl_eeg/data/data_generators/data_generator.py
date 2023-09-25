@@ -24,7 +24,7 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
     ValueError: The pretext task 'NotAPretextTask' is not available for the current transformation class ...
     """
 
-    def __init__(self, x, *, transformation, pretext_task):
+    def __init__(self, x, *, transformation, pretext_task, pre_computed=None):
         """
         Initialise
 
@@ -36,12 +36,14 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
             The object responsible for performing the transformations
         pretext_task : str
             The pretext task to use
+        pre_computed
         """
         super().__init__()
 
         self._x = x
         self._transformation = transformation
         self._pretext_task = pretext_task
+        self._pre_computed = pre_computed
 
     def __len__(self):
         return self._x.shape[0]
@@ -49,7 +51,13 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
     def __getitem__(self, item):
         # todo: if the __getitem__ is to be standardised, the input to the transformation methods must also be
         transformed, details = self._transformation.transform(self._pretext_task)(self._x[item])
-        return torch.tensor(transformed, dtype=torch.float), details
+
+        # TODO: quite hard coded?
+        if self._pre_computed is None:
+            return torch.tensor(transformed, dtype=torch.float), details
+        else:
+            pre_computed = tuple(pre_comp[item] for pre_comp in self._pre_computed)
+            return torch.tensor(transformed, dtype=torch.float), pre_computed, details
 
     # ---------------
     # Properties
