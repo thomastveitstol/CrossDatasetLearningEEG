@@ -45,7 +45,7 @@ class CombinedDatasets:
         for dataset, details in zip(datasets, load_details):
             subject_ids[dataset.name] = {sub_id: i for i, sub_id in enumerate(details.subject_ids)}
 
-        self._subject_ids = {dataset.name: details.subject_ids for dataset, details in zip(datasets, load_details)}
+        self._subject_ids = subject_ids
 
         # Load and store data  todo: can this be made faster be asyncio?
         self._data = {dataset.name: dataset.load_numpy_arrays(subject_ids=details.subject_ids,
@@ -59,7 +59,7 @@ class CombinedDatasets:
 
         Parameters
         ----------
-        subjects : tuple[cdl_eeg.data.data_split.Subject]
+        subjects : tuple[cdl_eeg.data.data_split.Subject, ...]
             Subjects to extract
 
         Returns
