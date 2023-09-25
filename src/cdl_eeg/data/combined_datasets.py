@@ -1,7 +1,12 @@
 import dataclasses
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
+
+import numpy
 
 
+# -----------------
+# Convenient dataclasses
+# -----------------
 @dataclasses.dataclass(frozen=True)
 class LoadDetails:
     subject_ids: Tuple[str, ...]
@@ -9,6 +14,9 @@ class LoadDetails:
     num_time_steps: Optional[int] = None
 
 
+# -----------------
+# Classes
+# -----------------
 class CombinedDatasets:
 
     def __init__(self, datasets, load_details=None):
@@ -32,7 +40,11 @@ class CombinedDatasets:
         # --------------
         # Store attributes
         # --------------
-        # Store subject IDs
+        # Store subject IDs. Organised as {dataset_name: {subject_name: row-number in data matrix}}
+        subject_ids: Dict[str, Dict[str, int]] = dict()
+        for dataset, details in zip(datasets, load_details):
+            subject_ids[dataset.name] = {sub_id: i for i, sub_id in enumerate(details.subject_ids)}
+
         self._subject_ids = {dataset.name: details.subject_ids for dataset, details in zip(datasets, load_details)}
 
         # Load and store data
@@ -47,10 +59,27 @@ class CombinedDatasets:
 
         Parameters
         ----------
-        subjects : tuple[cdl_eeg.data.data_split.Subject, ...]
+        subjects : tuple[cdl_eeg.data.data_split.Subject]
+            Subjects to extract
 
         Returns
         -------
         dict[str, numpy.ndarray]
         """
-        raise NotImplementedError
+        # Loop through all subjects
+        data = dict()
+        for subject in subjects:
+            dataset_name = subject.dataset_name
+
+            # Get the data
+            idx = self._subject_ids[dataset_name][subject.subject_id]
+            subject_data = self._data[dataset_name][idx]
+
+            # Add the subject data
+            if dataset_name in data:
+                data[dataset_name].append(subject_data)
+            else:
+                data[dataset_name] = [subject_data]
+
+        # Convert to numpy arrays and return (here, we assume that the data matrices can be concatenated)
+        return {dataset_name: numpy.concatenate(data_matrix, axis=0) for dataset_name, data_matrix in data.items()}
