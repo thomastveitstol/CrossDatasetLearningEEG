@@ -23,11 +23,15 @@ class CombinedDatasets:
         load_details = tuple(LoadDetails(dataset.get_subject_ids()) for dataset in datasets) \
             if load_details is None else load_details
 
+        # --------------
         # Input check
+        # --------------
         if len(datasets) != len(load_details):
             raise ValueError(f"Expected number of datasets to be the same as the number of loading details, but found "
                              f"{len(datasets)} and {len(load_details)}")
-
+        # --------------
+        # Store attributes
+        # --------------
         # Store subject IDs
         self._subject_ids = {dataset.name: details.subject_ids for dataset, details in zip(datasets, load_details)}
 
