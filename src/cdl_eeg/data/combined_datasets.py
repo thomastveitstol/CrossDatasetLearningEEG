@@ -28,6 +28,8 @@ class CombinedDatasets:
         """
         Initialise
 
+        (unittest in test folder)
+
         Parameters
         ----------
         datasets : tuple[cdl_eeg.data.datasets.dataset_base.EEGDatasetBase]
@@ -61,6 +63,8 @@ class CombinedDatasets:
     def get_data(self, subjects):
         """
         Method for getting data
+
+        (unittest in test folder)
 
         Parameters
         ----------
