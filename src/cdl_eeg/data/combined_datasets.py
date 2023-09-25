@@ -35,6 +35,7 @@ class CombinedDatasets:
         datasets : tuple[cdl_eeg.data.datasets.dataset_base.EEGDatasetBase]
         load_details : tuple[LoadDetails, ...], optional
         """
+        # If no loading details are provided, use default
         load_details = tuple(LoadDetails(dataset.get_subject_ids()) for dataset in datasets) \
             if load_details is None else load_details
 
