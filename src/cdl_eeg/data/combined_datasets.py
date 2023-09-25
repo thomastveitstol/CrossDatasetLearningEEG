@@ -93,3 +93,11 @@ class CombinedDatasets:
         # Convert to numpy arrays and return (here, we assume that the data matrices can be concatenated)
         return {dataset_name: numpy.concatenate(numpy.expand_dims(data_matrix, axis=0), axis=0)
                 for dataset_name, data_matrix in data.items()}
+
+    # ----------------
+    # Properties
+    # ----------------
+    @property
+    def dataset_subjects(self) -> Dict[str, Tuple[str, ...]]:
+        """Get a dictionary containing the subjects available (values) in the datasets (keys)"""
+        return {name: tuple(subjects.keys()) for name, subjects in self._subject_ids}
