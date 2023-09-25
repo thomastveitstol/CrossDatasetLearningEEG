@@ -95,7 +95,7 @@ class MainRBPModel(nn.Module):
     # todo: don't know if I should have another class, and if this generalisation really works...
     # ----------------
     def pre_train(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser,
-                  prediction_activation_function, verbose):
+                  prediction_activation_function=None, verbose=True):
         """
         Method for pre-training
 
