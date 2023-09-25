@@ -26,6 +26,7 @@ src/cdl_eeg/data/datasets/rockhill_dataset.py
 src/cdl_eeg/data/datasets/van_hees.py
 src/cdl_eeg/data/datasets/yulin_wang_dataset.py
 src/cdl_eeg/models/__init__.py
+src/cdl_eeg/models/metrics.py
 src/cdl_eeg/models/main_models/__init__.py
 src/cdl_eeg/models/main_models/main_rbp_model.py
 src/cdl_eeg/models/mts_modules/__init__.py
