@@ -82,4 +82,5 @@ class CombinedDatasets:
                 data[dataset_name] = [subject_data]
 
         # Convert to numpy arrays and return (here, we assume that the data matrices can be concatenated)
-        return {dataset_name: numpy.concatenate(data_matrix, axis=0) for dataset_name, data_matrix in data.items()}
+        return {dataset_name: numpy.concatenate(numpy.expand_dims(data_matrix, axis=0), axis=0)
+                for dataset_name, data_matrix in data.items()}
