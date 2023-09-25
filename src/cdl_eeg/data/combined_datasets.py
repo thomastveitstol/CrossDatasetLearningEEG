@@ -18,6 +18,11 @@ class LoadDetails:
 # Classes
 # -----------------
 class CombinedDatasets:
+    """
+    Class for storing multiple datasets
+    """
+
+    __slots__ = "_subject_ids", "_data"
 
     def __init__(self, datasets, load_details=None):
         """
