@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
 
 import numpy
 
@@ -47,7 +47,7 @@ class CombinedDatasets:
 
         self._subject_ids = {dataset.name: details.subject_ids for dataset, details in zip(datasets, load_details)}
 
-        # Load and store data
+        # Load and store data  todo: can this be made faster be asyncio?
         self._data = {dataset.name: dataset.load_numpy_arrays(subject_ids=details.subject_ids,
                                                               time_series_start=details.time_series_start,
                                                               num_time_steps=details.num_time_steps)
@@ -66,8 +66,8 @@ class CombinedDatasets:
         -------
         dict[str, numpy.ndarray]
         """
-        # Loop through all subjects
-        data = dict()
+        # Loop through all subjects  todo: fix type hinting
+        data: Dict[str, List[numpy.ndarray]] = dict()  # type: ignore[type-arg]
         for subject in subjects:
             dataset_name = subject.dataset_name
 
