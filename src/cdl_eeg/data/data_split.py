@@ -5,12 +5,18 @@ from typing import Tuple, List
 import numpy
 
 
+# -----------------
+# Convenient dataclasses
+# -----------------
 @dataclasses.dataclass(frozen=True)
 class Subject:
     subject_id: str
     dataset_name: str
 
 
+# -----------------
+# Classes
+# -----------------
 class KFoldDataSplit:
     """
     Class for splitting the data into k folds. The different datasets are neglected
