@@ -101,4 +101,4 @@ class CombinedDatasets:
     @property
     def dataset_subjects(self) -> Dict[str, Tuple[str, ...]]:
         """Get a dictionary containing the subjects available (values) in the datasets (keys)"""
-        return {name: tuple(subjects.keys()) for name, subjects in self._subject_ids}
+        return {name: tuple(subjects.keys()) for name, subjects in self._subject_ids.items()}
