@@ -1,6 +1,8 @@
+import enlighten
 import torch
 import torch.nn as nn
 
+from cdl_eeg.models.metrics import Histories
 from cdl_eeg.models.mts_modules.getter import get_mts_module
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RegionBasedPooling
 
@@ -87,3 +89,99 @@ class MainRBPModel(nn.Module):
 
     def fit_channel_systems(self, channel_systems):
         self._region_based_pooling.fit_channel_systems(channel_systems)
+
+    # ----------------
+    # Methods for training
+    # todo: don't know if I should have another class, and if this generalisation really works...
+    # ----------------
+    def pre_train(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser,
+                  prediction_activation_function, verbose):
+        """
+        Method for pre-training
+
+        TODO: make tests. Also, is this really specific to pre-training?
+
+        Parameters
+        ----------
+        train_loader : torch.utils.data.DataLoader
+        val_loader : torch.utils.data.DataLoader
+        metrics : str | tuple[str, ...]
+        num_epochs : int
+        criterion : nn.modules.loss._Loss
+        optimiser : torch.optim.Optimizer
+        prediction_activation_function : typing.Callable | None
+        verbose : bool
+
+        Returns
+        -------
+        tuple[Histories, Histories]
+            Training and validation histories
+        """
+        # todo: may want to think more on memory usage
+
+        # Defining histories objects
+        train_history = Histories(metrics=metrics)
+        val_history = Histories(metrics=metrics)
+
+        # ------------------------
+        # Fit model
+        # ------------------------
+        for epoch in range(num_epochs):
+            # Start progress bar
+            pbar = enlighten.Counter(total=int(len(train_loader) / train_loader.batch_size + 1),
+                                     desc=f"Epoch {epoch + 1}/{num_epochs}", unit="batch")
+
+            # ----------------
+            # Training
+            # ----------------
+            self.train()
+            for x_train, y_train in train_loader:
+                # todo: Only works for train loaders with this specific __getitem__ return
+                # Send data to correct device
+                x_train = x_train.to(self.device)
+                y_train = y_train.to(self.device)
+
+                # Forward pass
+                output = self(x_train)
+
+                # Compute loss
+                loss = criterion(output, y_train)
+                loss.backward()
+                optimiser.step()
+
+                # Update train history
+                # todo: see if you can optimise more here
+                with torch.no_grad():
+                    y_pred = torch.clone(output)
+                    if prediction_activation_function is not None:
+                        y_pred = prediction_activation_function(y_pred)
+                    train_history.store_batch_evaluation(y_pred=y_pred, y_true=y_train)
+
+                # Update progress bar
+                pbar.update()
+
+            # Finalise epoch for train history object
+            train_history.on_epoch_end(verbose=verbose)
+
+            # ----------------
+            # Validation
+            # ----------------
+            self.eval()
+            with torch.no_grad():
+                for x_val, y_val in val_loader:
+                    # Send data to correct device
+                    x_val = x_val.to(self.device)
+                    y_val = y_val.to(self.device)
+
+                    # Forward pass  todo: why did I use .clone() in the PhD course tasks?
+                    y_pred = self(x_val)
+
+                    # Update validation history
+                    if prediction_activation_function is not None:
+                        y_pred = prediction_activation_function(y_pred)
+                    val_history.store_batch_evaluation(y_pred=y_pred, y_true=y_val)
+
+                # Finalise epoch for validation history object
+                val_history.on_epoch_end()
+
+        return train_history, val_history
