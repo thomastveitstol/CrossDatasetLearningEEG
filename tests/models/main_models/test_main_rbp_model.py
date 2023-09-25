@@ -1,9 +1,17 @@
 import os
+import random
 
 import mne
+import numpy
 import pytest
 import torch
+import torch.nn as nn
+from torch import optim
+from torch.utils.data import DataLoader
 
+from cdl_eeg.data.combined_datasets import LoadDetails, CombinedDatasets
+from cdl_eeg.data.data_generators.data_generator import SelfSupervisedDataGenerator
+from cdl_eeg.data.data_split import SplitOnDataset
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.rockhill_dataset import Rockhill
@@ -12,6 +20,8 @@ from cdl_eeg.data.paths import get_raw_data_storage_path
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RBPDesign, RBPPoolType
 from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
+from cdl_eeg.models.transformations.frequency_slowing import FrequencySlowing
+from cdl_eeg.models.transformations.utils import UnivariateUniform
 
 
 def test_forward_single_channel_system():
@@ -174,3 +184,129 @@ def test_fit_real_channel_systems():
                    for rbp_module in model._region_based_pooling._rbp_modules), \
             (f"Expected all channel systems to be fit to all RBP modules, but this was not the case for the channel "
              f"system {channel_system.name}")
+
+
+@pytest.mark.skipif(not os.path.isdir(get_raw_data_storage_path()), reason="Required datasets not available")
+def test_pre_training():
+    device = torch.device("cpu")  # todo
+
+    random.seed(2)
+    numpy.random.seed(2)
+
+    # ------------------
+    # Load data  todo: use more datasets when supported
+    # ------------------
+    datasets = (Miltiadous(), Rockhill())
+
+    # Defining load details
+    num_subjects = (9, 14)
+    num_time_steps = (1_003, 974)
+    subjects = {dataset.name: dataset.get_subject_ids()[:subjects] for dataset, subjects in zip(datasets, num_subjects)}
+
+    load_details = tuple(LoadDetails(subject_ids=subject_ids, num_time_steps=time_steps)
+                         for subject_ids, time_steps in zip(subjects.values(), num_time_steps))
+
+    # Load all data
+    combined_dataset = CombinedDatasets(datasets, load_details=load_details)
+
+    # Split the data
+    data_split = SplitOnDataset(dataset_subjects=subjects, seed=2).folds  # todo: test relies on miltiadous first
+
+    # Split into training and validation splits
+    train_subjects = data_split[0]
+    val_subjects = data_split[1]
+
+    # Define pretext task/transformation
+    slowing_distribution = UnivariateUniform(lower=.6, upper=.8)
+    transformation = FrequencySlowing(slowing_distribution=slowing_distribution)
+    pretext_task = "phase_slowing"
+
+    # ----------------
+    # Make model supporting RBP  TODO: works only on RBPPoolType.MULTI_CS
+    # ----------------
+    x_min, x_max, y_min, y_max = -.17, .17, -.17, .17
+    box_params = {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
+
+    # Design 1
+    num_regions_1 = (5, 5, 5)
+    num_channel_splits_1 = len(num_regions_1)
+
+    design_1 = RBPDesign(
+        pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
+        pooling_methods_kwargs={"num_regions": num_regions_1, "num_kernels": 43, "max_receptive_field": 37},
+        split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_1)),
+        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_1)
+    )
+
+    # Design 2
+    num_regions_2 = (5, 5)
+    num_channel_splits_2 = len(num_regions_2)
+
+    design_2 = RBPDesign(
+        pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
+        pooling_methods_kwargs={"num_regions": num_regions_2, "num_kernels": 53, "max_receptive_field": 27},
+        split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_2)),
+        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_2)
+    )
+
+    # Design 3
+    num_regions_3 = (5, 5)
+    num_channel_splits_3 = len(num_regions_3)
+
+    design_3 = RBPDesign(
+        pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
+        pooling_methods_kwargs={"num_regions": num_regions_3, "num_kernels": 5, "max_receptive_field": 55},
+        split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_3)),
+        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_3)
+    )
+
+    # Some hyperparameters
+    num_classes = 1
+    num_regions = num_regions_1 + num_regions_2 + num_regions_3
+
+    mts_module = "InceptionTime"
+    mts_module_kwargs = {"in_channels": sum(num_regions), "num_classes": num_classes}
+
+    # Make model and fit channel systems
+    model = MainRBPModel(mts_module=mts_module, mts_module_kwargs=mts_module_kwargs,
+                         rbp_designs=(design_1, design_2, design_3))
+    model.fit_channel_systems(tuple(dataset.channel_system for dataset in datasets))
+
+    # ----------------
+    # Perform pre-training
+    # ----------------
+    # Extract numpy array data
+    train_data = combined_dataset.get_data(subjects=train_subjects)[datasets[0].name]
+    val_data = combined_dataset.get_data(subjects=val_subjects)[datasets[1].name]
+
+    # Perform pre-computing
+    train_pre_computed = model.pre_compute(x=torch.tensor(train_data, dtype=torch.float))
+    val_pre_computed = model.pre_compute(x=torch.tensor(val_data, dtype=torch.float))
+
+    assert all(isinstance(r, torch.Tensor) for r in train_pre_computed)
+
+    # Create data generators
+    train_gen = SelfSupervisedDataGenerator(x=train_data, pre_computed=train_pre_computed,
+                                            transformation=transformation, pretext_task=pretext_task)
+    val_gen = SelfSupervisedDataGenerator(x=val_data, pre_computed=val_pre_computed, transformation=transformation,
+                                          pretext_task=pretext_task)
+
+    # Create data loaders
+    train_loader = DataLoader(dataset=train_gen, batch_size=7, shuffle=True)
+    val_loader = DataLoader(dataset=val_gen, batch_size=5, shuffle=True)
+
+    # Create optimiser and loss
+    optimiser = optim.Adam(model.parameters(), lr=0.0001)
+    criterion = nn.MSELoss(reduction="mean")
+
+    # Get channel systems
+    train_channel_system = datasets[0].channel_system
+    val_channel_system = datasets[1].channel_system
+
+    # Pre-train
+    model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
+                    optimiser=optimiser, num_epochs=12, verbose=True,
+                    train_channel_system_name=train_channel_system.name,
+                    train_channel_name_to_index=train_channel_system.channel_name_to_index,
+                    val_channel_system_name=val_channel_system.name,
+                    val_channel_name_to_index=val_channel_system.channel_name_to_index, device=device)
