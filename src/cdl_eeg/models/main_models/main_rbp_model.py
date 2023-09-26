@@ -39,28 +39,27 @@ class MainRBPModel(nn.Module):
         # todo: the number of in channels must be calculated from/by the RBP layer
         self._mts_module = get_mts_module(mts_module_name=mts_module, **mts_module_kwargs)
 
-    def pre_compute(self, x):
+    def pre_compute(self, input_tensors):
         """
         Pre-compute
 
         Parameters
         ----------
-        x : torch.Tensor
+        input_tensors : dict[str, torch.Tensor]
 
         Returns
         -------
-        tuple[torch.Tensor, ...]
+        tuple[dict[str, torch.Tensor], ...]
         """
-        return self._region_based_pooling.pre_compute(x)
+        return self._region_based_pooling.pre_compute(input_tensors)
 
-    def forward(self, x, *, channel_system_name, channel_name_to_index, pre_computed=None):
+    def forward(self, input_tensors, *, channel_name_to_index, pre_computed=None):
         """
         Forward method
 
         Parameters
         ----------
-        x : torch.Tensor
-        channel_system_name : str
+        input_tensors : dict[str, torch.Tensor]
         channel_name_to_index : dict[str, int]
         pre_computed : torch.Tensor, optional
 
@@ -71,8 +70,8 @@ class MainRBPModel(nn.Module):
         """
         # TODO: Would be nice to be able to have different channel systems in the same batch
         # Pass through RBP layer
-        x = self._region_based_pooling(x, channel_system_name=channel_system_name,
-                                       channel_name_to_index=channel_name_to_index, pre_computed=pre_computed)
+        x = self._region_based_pooling(input_tensors, channel_name_to_index=channel_name_to_index,
+                                       pre_computed=pre_computed)
 
         # Merge by concatenation
         x = torch.cat(x, dim=1)
