@@ -143,7 +143,7 @@ class MainRBPModel(nn.Module):
             for x_train, train_pre_computed, y_train in train_loader:
                 # todo: Only works for train loaders with this specific __getitem__ return
                 # Send data to correct device
-                x_train = x_train.to(device)
+                x_train = x_train.to(device)  # TODO: this is a dict
                 y_train = torch.tensor(y_train, dtype=torch.float).to(device)
 
                 # Forward pass
@@ -176,7 +176,7 @@ class MainRBPModel(nn.Module):
             with torch.no_grad():
                 for x_val, val_pre_computed, y_val in val_loader:
                     # Send data to correct device
-                    x_val = x_val.to(device)
+                    x_val = x_val.to(device)  # TODO: this is a dict
                     y_val = torch.tensor(y_val, dtype=torch.float).to(device)
 
                     # Forward pass  todo: why did I use .clone() in the PhD course tasks?
