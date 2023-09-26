@@ -146,6 +146,7 @@ class MainRBPModel(nn.Module):
                 output = self(x_train, pre_computed=train_pre_computed, channel_name_to_index=channel_name_to_index)
 
                 # Compute loss
+                y_train = torch.tensor(y_train, dtype=torch.float)  # todo: why do I need to do this?
                 loss = criterion(output, y_train)
                 loss.backward()
                 optimiser.step()
