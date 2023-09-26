@@ -1,4 +1,5 @@
 import enlighten
+import numpy
 import torch
 import torch.nn as nn
 
@@ -138,8 +139,8 @@ class MainRBPModel(nn.Module):
             for x_train, train_pre_computed, y_train in train_loader:
                 # todo: Only works for train loaders with this specific __getitem__ return
                 # Send data to correct device
-                x_train = x_train.to(device)  # TODO: this is a dict
-                y_train = torch.tensor(y_train, dtype=torch.float).to(device)
+                x_train = _tensor_dict_to_device(x_train, device=device)
+                y_train = _flatten_targets(y_train).to(device)
 
                 # Forward pass
                 output = self(x_train, pre_computed=train_pre_computed, channel_name_to_index=channel_name_to_index)
@@ -170,8 +171,8 @@ class MainRBPModel(nn.Module):
             with torch.no_grad():
                 for x_val, val_pre_computed, y_val in val_loader:
                     # Send data to correct device
-                    x_val = x_val.to(device)  # TODO: this is a dict
-                    y_val = torch.tensor(y_val, dtype=torch.float).to(device)
+                    x_val = _tensor_dict_to_device(x_val, device=device)
+                    y_val = _flatten_targets(y_val).to(device)
 
                     # Forward pass  todo: why did I use .clone() in the PhD course tasks?
                     y_pred = self(x_val, pre_computed=val_pre_computed, channel_name_to_index=channel_name_to_index)
@@ -185,3 +186,51 @@ class MainRBPModel(nn.Module):
                 val_history.on_epoch_end()
 
         return train_history, val_history
+
+
+# ---------------
+# Functions
+# ---------------
+def _tensor_dict_to_device(tensors, device):
+    """
+    Send a dictionary containing tensors to device
+
+    Parameters
+    ----------
+    tensors : dict[str, torch.Tensor]
+    device : torch.device
+
+    Returns
+    -------
+    dict[str, torch.Tensor]
+    """
+    # Input check
+    if not all(isinstance(tensor, torch.Tensor) for tensor in tensors.values()):
+        raise TypeError(f"Expected all values in the dictionary to be torch tensors, but found "
+                        f"{set(type(tensor) for tensor in tensors.values())}")
+
+    # Send to device and return
+    return {dataset_name: tensor.to(device) for dataset_name, tensor in tensors.items()}
+
+
+def _flatten_targets(tensors):
+    """
+    Flatten the targets
+
+    TODO: Make tests on the sorting
+    Parameters
+    ----------
+    tensors : dict[str, torch.Tensor | numpy.ndarray]
+
+    Returns
+    -------
+    torch.Tensor
+    """
+    # Maybe convert to torch tensors
+    if all(isinstance(tensor, numpy.ndarray) for tensor in tensors.values()):
+        tensors = {dataset_name: torch.tensor(tensor, dtype=torch.float) for dataset_name, tensor in tensors.items()}
+
+    # Flatten  todo: why do we need to loop for converting to tuple??
+    targets = torch.cat(tuple(tensor for tensor in tensors.values()), dim=0)
+
+    return targets
