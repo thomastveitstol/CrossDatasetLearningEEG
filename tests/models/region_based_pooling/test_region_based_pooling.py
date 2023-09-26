@@ -12,7 +12,7 @@ from cdl_eeg.models.region_based_pooling.utils import Electrodes3D, ChannelsInRe
 # Testing SingleChannelSplitRegionBasedPooling
 # ------------------------
 # TODO: not updated
-@pytest.mark.xfail(reason="The test must be updated for the newest implementations")
+@pytest.mark.skip(reason="The test must be updated for the newest implementations")
 def test_single_cs_fit_channel_system():
     """Tests if a channel system is properly fit. Testing channel_split property types, lengths, that the electrodes
     are contained in regions when expected, and that the number of regions are correct"""
@@ -89,7 +89,7 @@ def test_single_cs_fit_channel_system():
 
 
 # TODO: not updated
-@pytest.mark.xfail(reason="The test must be updated for the newest implementations")
+@pytest.mark.skip(reason="The test must be updated for the newest implementations")
 def test_single_cs_forward():
     """Test the forward method. That it runs, and that output types and shapes are as expected"""
     # ----------------
@@ -270,28 +270,42 @@ def test_multi_cs_fit_channel_system():
 def test_multi_cs_forward():
     """Test the forward method. That it runs, and that output types and shapes are as expected"""
     # ----------------
-    # Generate dummy channel system and data
+    # Generate dummy channel system
     # ----------------
-    # Hyperparameters
-    batch_size, time_steps = 10, 2_000
-    channel_system_name = "TestName"
     x_min, x_max, y_min, y_max = -.17, .17, -.17, .17
-    montage = mne.channels.make_standard_montage("GSN-HydroCel-129")
 
-    # Channel system requirements
-    electrode_positions = Electrodes3D(montage.get_positions()["ch_pos"])
-    channel_name_to_index = {name: i for i, name in enumerate(electrode_positions.positions)}
-    channel_system = ChannelSystem(name=channel_system_name, channel_name_to_index=channel_name_to_index,
-                                   electrode_positions=electrode_positions)
+    # Channel system 1
+    montage_1 = mne.channels.make_standard_montage("GSN-HydroCel-129")
+    electrode_positions_1 = Electrodes3D(montage_1.get_positions()["ch_pos"])
+    ch_name_to_idx_1 = {name: i for i, name in enumerate(electrode_positions_1.positions)}
+    channel_system_1 = ChannelSystem(name="TestName1", channel_name_to_index=ch_name_to_idx_1,
+                                     electrode_positions=electrode_positions_1)
+
+    # Channel system 2
+    montage_2 = mne.channels.make_standard_montage("biosemi64")
+    electrode_positions_2 = Electrodes3D(montage_2.get_positions()["ch_pos"])
+    ch_name_to_idx_2 = {name: i for i, name in enumerate(electrode_positions_2.positions)}
+    channel_system_2 = ChannelSystem(name="TestName2", channel_name_to_index=ch_name_to_idx_2,
+                                     electrode_positions=electrode_positions_2)
+
+    # All channel systems
+    channel_systems = (channel_system_1, channel_system_2)
+    channel_name_to_index = {"TestName1": ch_name_to_idx_1, "TestName2": ch_name_to_idx_2}
 
     # Data
-    data = torch.rand(size=(batch_size, len(electrode_positions), time_steps))
+    time_steps = 2_000
+    batch_size_1, batch_size_2 = 31, 13
+
+    data_1 = torch.rand(size=(batch_size_1, len(electrode_positions_1), time_steps))
+    data_2 = torch.rand(size=(batch_size_2, len(electrode_positions_1), time_steps))
+
+    data = {"TestName1": data_1, "TestName2": data_2}
 
     # ----------------
     # Make RBP object and fit channel system (tested above)
     # ----------------
     # Hyperparameters
-    num_regions = (11, 7, 26, 4, 7)
+    num_regions = (5, 5, 5)
     num_channel_splits = len(num_regions)
 
     pooling_method = "MultiCSSharedRocket"
@@ -300,20 +314,19 @@ def test_multi_cs_forward():
     box_params = {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
     split_methods_kwargs = tuple({"num_points": num_regs, **box_params} for num_regs in num_regions)
 
-    # Make object
     rbp_module = MultiChannelSplitsRegionBasedPooling(pooling_method=pooling_method,
                                                       pooling_method_kwargs=pooling_method_kwargs,
                                                       split_methods=split_methods,
                                                       split_methods_kwargs=split_methods_kwargs)
 
     # Fit channel system
-    rbp_module.fit_channel_system(channel_system=channel_system)
+    rbp_module.fit_channel_systems(channel_systems=channel_systems)
 
     # ----------------
     # Pre-compute and run forward method
     # ----------------
     pre_computed = rbp_module.pre_compute(data)
-    outputs = rbp_module(data, channel_system_name=channel_system_name, channel_name_to_index=channel_name_to_index,
+    outputs = rbp_module(data, channel_name_to_index=channel_name_to_index,
                          pre_computed=pre_computed)
 
     # ----------------
@@ -323,17 +336,19 @@ def test_multi_cs_forward():
     assert isinstance(outputs, tuple), f"Expected outputs to be a tuple, but found {type(outputs)}"
 
     # Check that all elements are torch tensors
-    assert all(isinstance(out, torch.Tensor) for out in outputs)
+    assert all(isinstance(out, torch.Tensor) for out in outputs), \
+        f"Expected all output elements to be torch tensors, but found {set(type(out) for out in outputs)}"
 
     # Check if the sizes are correct
-    assert all(out.size() == torch.Size([batch_size, expected_channel_dim, time_steps])
-               for out, expected_channel_dim in zip(outputs, num_regions))
+    expected_batch_size = batch_size_1 + batch_size_2
+    assert all(out.size() == torch.Size([expected_batch_size, expected_channel_dim, time_steps])
+               for out, expected_channel_dim in zip(outputs, num_regions)), f"Wrong tensor output shapes"
 
 
 # ------------------------
 # Testing the main RBP module
 # ------------------------
-@pytest.mark.xfail(reason="The test must be updated for the newest implementations")
+@pytest.mark.skip(reason="The test must be updated for the newest implementations")
 def test_main_forward():
     """Test forward method. This it runs, has correct output type, and correct output shapes"""
     # ----------------
