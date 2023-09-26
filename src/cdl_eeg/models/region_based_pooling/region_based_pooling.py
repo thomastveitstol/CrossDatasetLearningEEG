@@ -360,16 +360,15 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
     # ----------------
     # Forward and pre-computing
     # ----------------
-    def forward(self, x, *, channel_system_name, channel_name_to_index, pre_computed=None):
+    def forward(self, input_tensors, *, channel_name_to_index, pre_computed=None):
         """
         Forward method
 
         Parameters
         ----------
-        x : torch.Tensor
-        channel_system_name : str
-        channel_name_to_index : dict[str, int]
-        pre_computed : tuple, optional
+        input_tensors : dict[str, torch.Tensor]
+        channel_name_to_index : dict[str, dict[str, int]]
+        pre_computed : dict[str, tuple], optional
 
         Returns
         -------
@@ -380,24 +379,24 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         # ------------------
         # Pass pre_computed or not, depending on compatibility and if when pre-computing is not desired (value is None)
         if not self.supports_precomputing or pre_computed is None:
-            return self._pooling_module(x, channel_splits=self._channel_splits[channel_system_name],
+            return self._pooling_module(input_tensors, channel_splits=self._channel_splits,
                                         channel_name_to_index=channel_name_to_index)
         else:
-            return self._pooling_module(x, channel_splits=self._channel_splits[channel_system_name],
+            return self._pooling_module(input_tensors, channel_splits=self._channel_splits,
                                         channel_name_to_index=channel_name_to_index, pre_computed=pre_computed)
 
-    def pre_compute(self, x):
+    def pre_compute(self, input_tensors):
         """
         Method for pre-computing
 
         Parameters
         ----------
-        x : torch.Tensor
+        input_tensors : dict[str, torch.Tensor]
 
         Returns
         -------
-        torch.Tensor
-            A pre-computed tensor
+        dict[str, torch.Tensor]
+            Pre-computed tensors  todo: is this correct?
         """
         # Quick check to see if this method should be run
         if not self.supports_precomputing:
@@ -405,7 +404,7 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
 
         # todo: Assuming that the method is called 'pre_compute', and that it only takes in 'x' as argument
         # mypy thinks I am calling on a Tensor here... why?
-        return self._pooling_module.pre_compute(x)  # type: ignore[operator]
+        return self._pooling_module.pre_compute(input_tensors)
 
     # ----------------
     # Methods for fitting channel systems
@@ -530,16 +529,15 @@ class RegionBasedPooling(nn.Module):
     # ----------------
     # Forward and pre-computing
     # ----------------
-    def forward(self, x, *, channel_system_name, channel_name_to_index, pre_computed=None):
+    def forward(self, input_tensors, *, channel_name_to_index, pre_computed=None):
         """
         Forward method
 
         Parameters
         ----------
-        x : torch.Tensor
-        channel_system_name : str
+        input_tensors : dict[str, torch.Tensor]
         channel_name_to_index : dict[str, int]
-        pre_computed : tuple, optional
+        pre_computed : tuple[dict[str, typing.Any], ...], optional
 
         Returns
         -------
@@ -552,7 +550,7 @@ class RegionBasedPooling(nn.Module):
         if not self.supports_precomputing or pre_computed is None:
             # Compute outputs
             outputs = tuple(
-                rbp_module(x, channel_system_name=channel_system_name, channel_name_to_index=channel_name_to_index)
+                rbp_module(input_tensors, channel_name_to_index=channel_name_to_index)
                 for rbp_module in self._rbp_modules
             )
             # Unpack and return
@@ -563,26 +561,24 @@ class RegionBasedPooling(nn.Module):
         for pre_comp_features, rbp_module in zip(pre_computed, self._rbp_modules):
             # Handle the unsupported case, or when pre-computing is not desired
             if not rbp_module.supports_precomputing or pre_comp_features is None:
-                rbp_outputs.append(rbp_module(x, channel_system_name=channel_system_name,
-                                              channel_name_to_index=channel_name_to_index))
+                rbp_outputs.append(rbp_module(input_tensors, channel_name_to_index=channel_name_to_index))
             else:
-                rbp_outputs.append(rbp_module(x, channel_system_name=channel_system_name,
-                                              channel_name_to_index=channel_name_to_index,
+                rbp_outputs.append(rbp_module(input_tensors, channel_name_to_index=channel_name_to_index,
                                               pre_computed=pre_comp_features))
         # Unpacked tuple and return
         return tuple(itertools.chain(*rbp_outputs))
 
-    def pre_compute(self, x):
+    def pre_compute(self, input_tensors):
         """
         Method for pre-computing
 
         Parameters
         ----------
-        x : torch.Tensor
+        input_tensors : dict[str, torch.Tensor]
 
         Returns
         -------
-        tuple[torch.Tensor, ...]
+        tuple[dict[str, torch.Tensor], ...]
             A tuple of pre-computed tensors (one pr. RBP module). The element will be None if the corresponding
             pooling module does not support pre-computing
         """
@@ -595,7 +591,7 @@ class RegionBasedPooling(nn.Module):
         for rbp_module in self._rbp_modules:
             if rbp_module.supports_precomputing:
                 # Assuming that the method is called 'pre_compute', and that it only takes in 'x' as argument
-                pre_computed.append(rbp_module.pre_compute(x))
+                pre_computed.append(rbp_module.pre_compute(input_tensors))
             else:
                 pre_computed.append(None)
 
