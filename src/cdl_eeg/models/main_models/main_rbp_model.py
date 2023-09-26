@@ -93,8 +93,7 @@ class MainRBPModel(nn.Module):
     # todo: don't know if I should have another class, and if this generalisation really works...
     # ----------------
     def pre_train(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser, device,
-                  train_channel_system_name, train_channel_name_to_index, val_channel_system_name,
-                  val_channel_name_to_index, prediction_activation_function=None, verbose=True):
+                  channel_name_to_index, prediction_activation_function=None, verbose=True):
         """
         Method for pre-training
 
@@ -109,10 +108,7 @@ class MainRBPModel(nn.Module):
         criterion : nn.modules.loss._Loss
         optimiser : torch.optim.Optimizer
         device : torch.device
-        train_channel_system_name
-        train_channel_name_to_index
-        val_channel_system_name
-        val_channel_name_to_index
+        channel_name_to_index : dict[str, dict[str, int]]
         prediction_activation_function : typing.Callable | None
         verbose : bool
 
@@ -146,8 +142,7 @@ class MainRBPModel(nn.Module):
                 y_train = torch.tensor(y_train, dtype=torch.float).to(device)
 
                 # Forward pass
-                output = self(x_train, pre_computed=train_pre_computed, channel_system_name=train_channel_system_name,
-                              channel_name_to_index=train_channel_name_to_index)
+                output = self(x_train, pre_computed=train_pre_computed, channel_name_to_index=channel_name_to_index)
 
                 # Compute loss
                 loss = criterion(output, y_train)
@@ -179,8 +174,7 @@ class MainRBPModel(nn.Module):
                     y_val = torch.tensor(y_val, dtype=torch.float).to(device)
 
                     # Forward pass  todo: why did I use .clone() in the PhD course tasks?
-                    y_pred = self(x_val, pre_computed=val_pre_computed, channel_system_name=val_channel_system_name,
-                                  channel_name_to_index=val_channel_name_to_index)
+                    y_pred = self(x_val, pre_computed=val_pre_computed, channel_name_to_index=channel_name_to_index)
 
                     # Update validation history
                     if prediction_activation_function is not None:
