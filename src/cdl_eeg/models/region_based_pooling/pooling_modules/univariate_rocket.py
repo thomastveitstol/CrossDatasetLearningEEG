@@ -147,9 +147,9 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
 
 class MultiCSSharedRocket(MultiChannelSplitsPoolingBase):
     """
-    todo: this should at some point be the main implementation. The other one should be removed
-
     Same as SingleCSSharedRocket, but the ROCKET-based features are shared across multiple channel/region splits
+
+    This class is compatible with having different datasets in the same batch
 
     Examples
     --------
