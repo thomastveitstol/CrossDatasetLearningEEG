@@ -32,7 +32,7 @@ class CombinedDatasets:
 
         Parameters
         ----------
-        datasets : tuple[cdl_eeg.data.datasets.dataset_base.EEGDatasetBase]
+        datasets : tuple[cdl_eeg.data.datasets.dataset_base.EEGDatasetBase, ...]
         load_details : tuple[LoadDetails, ...], optional
         """
         # If no loading details are provided, use default
