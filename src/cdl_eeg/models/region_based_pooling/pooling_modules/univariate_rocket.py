@@ -289,6 +289,186 @@ class MultiCSSharedRocket(MultiChannelSplitsPoolingBase):
         return len(self._fc_modules)
 
 
+class MultiCSSharedRocketImp2(MultiChannelSplitsPoolingBase):
+    """
+    todo: this should at some point be the main implementation. The other one should be removed
+
+    Same as SingleCSSharedRocket, but the ROCKET-based features are shared across multiple channel/region splits
+
+    Examples
+    --------
+    >>> my_model = MultiCSSharedRocketImp2((4, 7, 3, 9), num_kernels=100, max_receptive_field=200)
+    >>> my_model.num_channel_splits
+    4
+    >>> MultiCSSharedRocketImp2.supports_precomputing()
+    True
+    """
+
+    def __init__(self, num_regions, *, num_kernels, max_receptive_field, seed=None):
+        """
+        Initialise
+
+        Parameters
+        ----------
+        num_regions : tuple[int, ...]
+        num_kernels : int
+        max_receptive_field : int
+        seed : int
+        """
+        super().__init__()
+
+        # ----------------
+        # Define ROCKET-feature extractor
+        # ----------------
+        self._rocket = RocketConv1d(num_kernels=num_kernels, max_receptive_field=max_receptive_field, seed=seed)
+
+        # ----------------
+        # Define mappings from ROCKET features
+        # to importance scores, for all region/channel
+        # splits and regions
+        # ----------------
+        self._fc_modules = nn.ModuleList([
+            nn.ModuleList([nn.Linear(in_features=num_kernels * 2, out_features=1) for _ in range(regions)])
+            for regions in num_regions])
+
+    @precomputing_method
+    def pre_compute(self, input_tensors):
+        """
+        Method for pre-computing the ROCKET features
+
+        Parameters
+        ----------
+        input_tensors : dict[str, torch.Tensor]
+            A tensor per dataset with dimensions=(batch, channel, time_steps). Note that the dimensions are pr. dataset,
+            and can vary between the different datasets. The keys are dataset names
+
+        Returns
+        -------
+        dict[str, torch.Tensor]
+            ROCKET features, with shape=(batch, channels, num_features) pr. dataset with num_features=2 for the current
+            implementation. Batch and channel dimension may vary for each dataset. The keys are dataset names
+
+        Examples
+        --------
+        >>> my_data = {"d1": torch.rand(size=(10, 64, 500)), "d2": torch.rand(size=(7, 52, 512)),
+        ...            "d3": torch.rand(size=(8, 9, 456)), "d4": torch.rand(size=(32, 19, 213))}
+        >>> my_model = MultiCSSharedRocketImp2((6, 3, 9, 2), num_kernels=123, max_receptive_field=50)
+        >>> my_rocket_features = my_model.pre_compute(my_data)
+        >>> {dataset_name: features.size() for dataset_name, features in my_rocket_features.items()}  # type: ignore
+        ... # doctest: +NORMALIZE_WHITESPACE
+        {'d1': torch.Size([10, 64, 246]), 'd2': torch.Size([7, 52, 246]), 'd3': torch.Size([8, 9, 246]),
+         'd4': torch.Size([32, 19, 246])}
+        """
+        return {dataset_name: self._rocket(x) for dataset_name, x in input_tensors.items()}
+
+    def _forward_single_dataset(self, x, *, pre_computed, channel_splits, channel_name_to_index):
+        # --------------
+        # Loop through all channel/region splits
+        # --------------
+        output_channel_splits: List[torch.Tensor] = []
+        for channel_split, fc_modules in zip(channel_splits, self._fc_modules):
+            # todo: very similar to forward method of SingleCSSharedRocket
+            # Input check
+            num_regions = len(fc_modules)
+            assert len(channel_split) == num_regions, (f"Expected {num_regions} number of regions, but input "
+                                                       f"channel split suggests {len(channel_split)}")
+
+            # Initialise tensor which will contain all region representations
+            batch, _, time_steps = x.size()
+            region_representations = torch.empty(size=(batch, num_regions, time_steps)).to(x.device)
+
+            # Loop through all regions
+            for i, (fc_module, channels) in enumerate(zip(fc_modules, channel_split.ch_names.values())):
+                # Extract the indices of the legal channels for this region
+                allowed_node_indices = channel_names_to_indices(ch_names=channels.ch_names,
+                                                                channel_name_to_index=channel_name_to_index)
+
+                # ---------------------
+                # Compute coefficients
+                # ---------------------
+                # Pass through FC module
+                coefficients = torch.transpose(fc_module(pre_computed[:, allowed_node_indices]), dim0=2, dim1=1)
+
+                # Normalise
+                coefficients = torch.softmax(coefficients, dim=1)
+
+                # --------------------------------
+                # Apply attention vector on the EEG
+                # data, and insert as a region representation
+                # --------------------------------
+                # Add it to the slots
+                region_representations[:, i] = torch.squeeze(torch.matmul(coefficients, x[:, allowed_node_indices]),
+                                                             dim=1)
+
+            # Append as channel/region split output
+            output_channel_splits.append(region_representations)
+
+        return output_channel_splits
+
+    def forward(self, input_tensors, *, pre_computed, channel_splits, channel_name_to_index):
+        """
+        Forward method
+
+        Parameters
+        ----------
+        input_tensors : dict[str, torch.Tensor]
+            A tensor containing EEG data with shape=(batch, channels, time_steps). Note that the channels are correctly
+            selected within this method, and the EEG data should be the full data matrix (such that
+            channel_name_to_index maps correctly)
+        pre_computed : dict[str, torch.Tensor]
+            Pre-computed features of all channels (as in the input 'x') todo: can this be improved memory-wise?
+        channel_splits : dict[str, tuple[cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit, ...]]
+        channel_name_to_index : dict[str, dict[str, int]]
+
+        Returns
+        -------
+        tuple[torch.Tensor, ...]
+
+        Examples
+        --------
+        >>> my_data = {"d1": torch.rand(size=(10, 64, 500)), "d2": torch.rand(size=(7, 52, 512)),
+        ...            "d3": torch.rand(size=(8, 9, 456)), "d4": torch.rand(size=(32, 19, 213))}
+        >>> my_model = MultiCSSharedRocketImp2((6, 3, 9, 2), num_kernels=123, max_receptive_field=50)
+        >>> my_rocket_features = my_model.pre_compute(my_data)
+        >>> my_model(my_data, pre_computed=my_rocket_features)
+        """
+        # --------------
+        # Input check  todo: consider more input checks
+        # --------------
+        assert all(len(ch_splits) == self.num_channel_splits for ch_splits in channel_splits.values()),  \
+            (f"Expected {self.num_channel_splits} number of channel/region splits, but inputs suggests "
+             f"{set(len(ch_splits) for ch_splits in channel_splits.values())}")
+
+        # --------------
+        # Loop through all datasets
+        #
+        # todo: not sure if this is the best approach (triple for-loop!!)... maybe padding+masking is better?
+        # --------------
+        dataset_region_representations = []
+        for dataset_name, x in input_tensors.items():
+            # (I take no chances on all input being ordered similarly)
+            dataset_pre_computed = pre_computed[dataset_name]
+            dataset_ch_name_to_idx = channel_name_to_index[dataset_name]
+            ch_splits = channel_splits[dataset_name]
+
+            # Perform forward pass
+            dataset_region_representations.append(
+                self._forward_single_dataset(x, pre_computed=dataset_pre_computed, channel_splits=ch_splits,
+                                             channel_name_to_index=dataset_ch_name_to_idx))
+
+        # Concatenate the data together TODO: it is VERY important that the i-th subject corresponds to the i-th target
+        return tuple(torch.cat(tensor, dim=0) for tensor in list(zip(*dataset_region_representations)))
+
+    # -------------
+    # Properties
+    # -------------
+    @property
+    def num_channel_splits(self):
+        """Get the number of channel/region splits the instance is operating on"""
+        # todo: channel split or region splits? RBP paper says channel split, but I kinda regret it...
+        return len(self._fc_modules)
+
+
 # ---------------------
 # ROCKET classes
 # ---------------------
