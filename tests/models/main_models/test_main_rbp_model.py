@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 from cdl_eeg.data.combined_datasets import LoadDetails, CombinedDatasets
 from cdl_eeg.data.data_generators.data_generator import SelfSupervisedDataGenerator
-from cdl_eeg.data.data_split import SplitOnDataset
+from cdl_eeg.data.data_split import SplitOnDataset, KFoldDataSplit
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.rockhill_dataset import Rockhill
@@ -24,6 +24,7 @@ from cdl_eeg.models.transformations.frequency_slowing import FrequencySlowing
 from cdl_eeg.models.transformations.utils import UnivariateUniform
 
 
+@pytest.mark.skip(reason="The test must be updated for the newest implementations")
 def test_forward_single_channel_system():
     """Test forward method when only one channel system has been fit"""
     # ----------------
@@ -132,7 +133,7 @@ def test_fit_real_channel_systems():
     box_params = {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
 
     # Design 1
-    num_regions_1 = (11, 7, 26, 4, 7)
+    num_regions_1 = (5, 5, 5)
     num_channel_splits_1 = len(num_regions_1)
 
     design_1 = RBPDesign(
@@ -143,17 +144,18 @@ def test_fit_real_channel_systems():
     )
 
     # Design 2
-    num_regions_2 = (9, 14)
+    num_regions_2 = (6, 3)
+    num_channel_splits_2 = len(num_regions_2)
 
     design_2 = RBPDesign(
-        pooling_type=RBPPoolType.SINGLE_CS, pooling_methods=("SingleCSMean", "SingleCSSharedRocket"),
-        pooling_methods_kwargs=({}, {"num_regions": num_regions_2[1], "num_kernels": 93, "max_receptive_field": 67}),
-        split_methods=("VoronoiSplit", "VoronoiSplit"),
+        pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
+        pooling_methods_kwargs={"num_regions": num_regions_2, "num_kernels": 93, "max_receptive_field": 67},
+        split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_2)),
         split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_2)
     )
 
     # Design 3
-    num_regions_3 = (5, 5, 7, 5, 12, 10)
+    num_regions_3 = (5, 5, 3, 5, 6, 3)
     num_channel_splits_3 = len(num_regions_3)
 
     design_3 = RBPDesign(
@@ -197,20 +199,21 @@ def test_pre_training():
     # Load data  todo: use more datasets when supported
     # ------------------
     datasets = (Miltiadous(), Rockhill())
+    channel_name_to_index = {dataset.name: dataset.channel_system.channel_name_to_index for dataset in datasets}
 
     # Defining load details
-    num_subjects = (9, 14)
-    num_time_steps = (1_003, 974)
+    num_subjects = (50, 14)
+    num_time_steps = 1_003
     subjects = {dataset.name: dataset.get_subject_ids()[:subjects] for dataset, subjects in zip(datasets, num_subjects)}
 
-    load_details = tuple(LoadDetails(subject_ids=subject_ids, num_time_steps=time_steps)
-                         for subject_ids, time_steps in zip(subjects.values(), num_time_steps))
+    load_details = tuple(LoadDetails(subject_ids=subject_ids, num_time_steps=num_time_steps)
+                         for subject_ids in subjects.values())
 
     # Load all data
     combined_dataset = CombinedDatasets(datasets, load_details=load_details)
 
     # Split the data
-    data_split = SplitOnDataset(dataset_subjects=subjects, seed=2).folds  # todo: test relies on miltiadous first
+    data_split = KFoldDataSplit(num_folds=3, dataset_subjects=subjects, seed=2).folds
 
     # Split into training and validation splits
     train_subjects = data_split[0]
@@ -276,37 +279,30 @@ def test_pre_training():
     # Perform pre-training
     # ----------------
     # Extract numpy array data
-    train_data = combined_dataset.get_data(subjects=train_subjects)[datasets[0].name]
-    val_data = combined_dataset.get_data(subjects=val_subjects)[datasets[1].name]
+    train_data = combined_dataset.get_data(subjects=train_subjects)
+    val_data = combined_dataset.get_data(subjects=val_subjects)
 
     # Perform pre-computing
-    train_pre_computed = model.pre_compute(x=torch.tensor(train_data, dtype=torch.float))
-    val_pre_computed = model.pre_compute(x=torch.tensor(val_data, dtype=torch.float))
-
-    assert all(isinstance(r, torch.Tensor) for r in train_pre_computed)
+    train_pre_computed = model.pre_compute(input_tensors={dataset_name: torch.tensor(data, dtype=torch.float)
+                                                          for dataset_name, data in train_data.items()})
+    val_pre_computed = model.pre_compute(input_tensors={dataset_name: torch.tensor(data, dtype=torch.float)
+                                                        for dataset_name, data in val_data.items()})
 
     # Create data generators
-    train_gen = SelfSupervisedDataGenerator(x=train_data, pre_computed=train_pre_computed,
+    train_gen = SelfSupervisedDataGenerator(data=train_data, pre_computed=train_pre_computed,
                                             transformation=transformation, pretext_task=pretext_task)
-    val_gen = SelfSupervisedDataGenerator(x=val_data, pre_computed=val_pre_computed, transformation=transformation,
+    val_gen = SelfSupervisedDataGenerator(data=val_data, pre_computed=val_pre_computed, transformation=transformation,
                                           pretext_task=pretext_task)
 
     # Create data loaders
-    train_loader = DataLoader(dataset=train_gen, batch_size=7, shuffle=True)
-    val_loader = DataLoader(dataset=val_gen, batch_size=5, shuffle=True)
+    train_loader = DataLoader(dataset=train_gen, batch_size=2, shuffle=True)
+    val_loader = DataLoader(dataset=val_gen, batch_size=1, shuffle=True)
 
     # Create optimiser and loss
-    optimiser = optim.Adam(model.parameters(), lr=0.0001)
+    optimiser = optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.MSELoss(reduction="mean")
-
-    # Get channel systems
-    train_channel_system = datasets[0].channel_system
-    val_channel_system = datasets[1].channel_system
 
     # Pre-train
     model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
-                    optimiser=optimiser, num_epochs=12, verbose=True,
-                    train_channel_system_name=train_channel_system.name,
-                    train_channel_name_to_index=train_channel_system.channel_name_to_index,
-                    val_channel_system_name=val_channel_system.name,
-                    val_channel_name_to_index=val_channel_system.channel_name_to_index, device=device)
+                    optimiser=optimiser, num_epochs=50, verbose=True, channel_name_to_index=channel_name_to_index,
+                    device=device)

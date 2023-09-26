@@ -63,6 +63,7 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
             return {dataset_name: torch.tensor(transformed, dtype=torch.float)}, {dataset_name: details}
         else:
             pre_computed = tuple({dataset_name: pre_comp[dataset_name][idx]} for pre_comp in self._pre_computed)
+            # TODO: must fix return, as KeyError is raised when collating
             return {dataset_name: torch.tensor(transformed, dtype=torch.float)}, pre_computed, {dataset_name: details}
 
     # ---------------
