@@ -7,6 +7,7 @@ from cdl_eeg.models.region_based_pooling.pooling_modules.univariate_rocket impor
 from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit, RegionID, ChannelsInRegion
 
 
+# TODO: not updated
 def test_single_cs_shared_rocket_forward():
     """Test forward method of SingleCSSharedRocket. Tests output type and shape"""
     # ---------------
