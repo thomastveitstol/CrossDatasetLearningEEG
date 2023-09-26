@@ -62,7 +62,7 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
         if self._pre_computed is None:
             return torch.tensor(transformed, dtype=torch.float), details
         else:
-            pre_computed = tuple(pre_comp[item] for pre_comp in self._pre_computed)
+            pre_computed = tuple(pre_comp[dataset_name][idx] for pre_comp in self._pre_computed)
             return torch.tensor(transformed, dtype=torch.float), pre_computed, details
 
     # ---------------
