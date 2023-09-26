@@ -404,7 +404,7 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
 
         # todo: Assuming that the method is called 'pre_compute', and that it only takes in 'x' as argument
         # mypy thinks I am calling on a Tensor here... why?
-        return self._pooling_module.pre_compute(input_tensors)
+        return self._pooling_module.pre_compute(input_tensors)  # type: ignore[operator]
 
     # ----------------
     # Methods for fitting channel systems
