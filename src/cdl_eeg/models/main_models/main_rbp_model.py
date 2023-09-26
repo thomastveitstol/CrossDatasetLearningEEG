@@ -81,7 +81,6 @@ class MainRBPModel(nn.Module):
 
     # ----------------
     # Methods for fitting channel systems
-    # todo: these should probably be moved to a base class
     # ----------------
     def fit_channel_system(self, channel_system):
         self._region_based_pooling.fit_channel_system(channel_system)
