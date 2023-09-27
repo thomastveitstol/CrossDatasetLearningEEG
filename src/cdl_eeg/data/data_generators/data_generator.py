@@ -25,6 +25,9 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
     ValueError: The pretext task 'NotAPretextTask' is not available for the current transformation class ...
     """
 
+    # Remember to remove the yielded -1 tensors!
+    strip_outputs = True
+
     def __init__(self, data, *, transformation, pretext_task, pre_computed=None):
         """
         Initialise
@@ -37,7 +40,7 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
             The object responsible for performing the transformations
         pretext_task : str
             The pretext task to use
-        pre_computed : dict[str, typing.Any]
+        pre_computed : tuple[dict[str, typing.Any], ...]
         """
         super().__init__()
 
@@ -51,6 +54,13 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
 
     def __getitem__(self, item):
         # todo: if the __getitem__ is to be standardised, the input to the transformation methods must also be
+
+        # Varying keys in the returned dictionary is not possible with the DataLoader of PyTorch. This solution to the
+        # problem is to simply return a tensor of -1s for the datasets not used
+        data = {dataset_name: torch.ones(size=x.shape[1:]) * (-1) for dataset_name, x in self._data.items()}
+        all_details = {dataset_name: torch.unsqueeze(torch.tensor(-1), dim=-1)
+                       for dataset_name in self._data}  # todo: hard-coded fill values
+
         # Select dataset and subject in the dataset
         dataset_size = {dataset_name: x.shape[0] for dataset_name, x in self._data.items()}
         dataset_name, idx = _select_dataset_and_index(item, dataset_size)
@@ -58,13 +68,24 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
         # Perform permutation and get details
         transformed, details = self._transformation.transform(self._pretext_task)(self._data[dataset_name][idx])
 
+        # Add the data which should be used
+        data[dataset_name] = torch.tensor(transformed, dtype=torch.float)
+        all_details[dataset_name] = torch.unsqueeze(torch.tensor(details, dtype=torch.float), dim=-1)
+
         # TODO: quite hard coded?
         if self._pre_computed is None:
-            return {dataset_name: torch.tensor(transformed, dtype=torch.float)}, {dataset_name: details}
+            return data, all_details
         else:
-            pre_computed = tuple({dataset_name: pre_comp[dataset_name][idx]} for pre_comp in self._pre_computed)
+            # assert False, {type(pre_comp) for pre_comp in self._pre_computed}
+            pre_computed = []
+            for pre_comp in self._pre_computed:
+                my_dict = {data_name: torch.ones(tensor.size()[1:]) * (-1) for data_name, tensor in pre_comp.items()}
+                my_dict[dataset_name] = pre_comp[dataset_name][idx]
+                pre_computed.append(my_dict)
+
             # TODO: must fix return, as KeyError is raised when collating
-            return {dataset_name: torch.tensor(transformed, dtype=torch.float)}, pre_computed, {dataset_name: details}
+            # Don't think I should convert pre_computed to tuple, as I must strip it anyway
+            return data, pre_computed, all_details
 
     # ---------------
     # Properties
@@ -126,3 +147,68 @@ def _select_dataset_and_index(item, dataset_sizes):
 
     # This should not happen...
     raise RuntimeError("Found not select a dataset and an index")
+
+
+def strip_tensors(tensors, fill_val=-1):
+    """
+    Function which may be used to remove unused tensors
+
+    This function changes the input in-place (meaning it is not actually important to use the return)
+
+    Pro-tip: use this before sending the data to a GPU
+
+    Parameters
+    ----------
+    tensors : dict[str, torch.Tensor]
+    fill_val : int
+        The value which was used to indicate that a tensor should not be there
+
+    Returns
+    -------
+    dict[str, torch.Tensor]
+
+    Examples
+    --------
+    >>> my_fill = -1
+    >>> tensor_a = torch.rand(size=(1, 5, 30))
+    >>> tensor_b = torch.rand(size=(1, 3, 30))
+    >>> tensor_c = torch.rand(size=(1, 6, 30))
+    >>> my_tensors = {"a": torch.cat((tensor_a, torch.ones(size=(1, 5, 30)) * my_fill,
+    ...                               torch.ones(size=(1, 5, 30)) * my_fill), dim=0),
+    ...               "b": torch.cat((torch.ones(size=(1, 3, 30)) * my_fill, torch.ones(size=(1, 3, 30)) * my_fill,
+    ...                               tensor_b), dim=0),
+    ...               "c": torch.cat((torch.ones(size=(1, 6, 30)) * my_fill, tensor_c,
+    ...                               torch.ones(size=(1, 6, 30)) * my_fill), dim=0),
+    ...               "d": torch.cat((torch.ones(size=(1, 11, 30)) * my_fill, torch.ones(size=(1, 11, 30)) * my_fill,
+    ...                               torch.ones(size=(1, 11, 30)) * my_fill), dim=0)}
+    >>> my_stripped_tensors = strip_tensors(my_tensors)
+    >>> tuple(my_stripped_tensors.keys()), tuple(my_stripped_tensors.keys())  # Left out dataset 'd'
+    (('a', 'b', 'c'), ('a', 'b', 'c'))
+
+    The operations were also made in-place (the input dict is changed as well)
+
+    >>> all(torch.equal(new_tensor, old_tensor) for new_tensor, old_tensor  # type: ignore[attr-defined]
+    ...     in zip(my_stripped_tensors.values(), my_tensors.values()))
+    True
+    """
+    # Loop through all datasets. Changing values while iterating is ok, inserting/deleting is not. Thanks, James
+    # 'mCoding' Murphy (Sec. 13): https://www.youtube.com/watch?v=E8NijUYfyus
+    to_delete = set()
+    for dataset_name, x in tensors.items():
+        # Get the indices of which indices to keep
+        ghost_tensor = torch.ones(size=x.size()[1:]) * fill_val
+        kept_indices = [i for i, tensor in enumerate(x) if not torch.equal(tensor, ghost_tensor)]
+
+        # If no data is supposed to be used in the batch, the dataset should be deleted. Otherwise, keep only the real
+        # ones
+        if not kept_indices:
+            to_delete.add(dataset_name)
+        else:
+            tensors[dataset_name] = x[kept_indices]
+
+    # Delete
+    for dataset_name in to_delete:
+        del tensors[dataset_name]
+
+    # Return the dictionary of tensors (although the operations also happen in-place)
+    return tensors
