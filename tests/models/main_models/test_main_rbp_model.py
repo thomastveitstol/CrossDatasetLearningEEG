@@ -295,14 +295,14 @@ def test_pre_training():
                                           pretext_task=pretext_task)
 
     # Create data loaders
-    train_loader = DataLoader(dataset=train_gen, batch_size=2, shuffle=True)
-    val_loader = DataLoader(dataset=val_gen, batch_size=1, shuffle=True)
+    train_loader = DataLoader(dataset=train_gen, batch_size=16, shuffle=True)
+    val_loader = DataLoader(dataset=val_gen, batch_size=20, shuffle=True)
 
     # Create optimiser and loss
-    optimiser = optim.Adam(model.parameters(), lr=0.001)
+    optimiser = optim.Adam(model.parameters(), lr=0.0001)
     criterion = nn.MSELoss(reduction="mean")
 
     # Pre-train
     model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
-                    optimiser=optimiser, num_epochs=50, verbose=True, channel_name_to_index=channel_name_to_index,
+                    optimiser=optimiser, num_epochs=20, verbose=True, channel_name_to_index=channel_name_to_index,
                     device=device)
