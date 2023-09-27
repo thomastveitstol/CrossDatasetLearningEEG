@@ -46,6 +46,7 @@ class FrequencySlowing(TransformationBase):
         ----------
         x : numpy.ndarray
             EEG data with shape=(batch, channels, time_steps)
+            todo: the __getitem__ method of pytorch Datasets does not have a batch dimension
 
         Returns
         -------
