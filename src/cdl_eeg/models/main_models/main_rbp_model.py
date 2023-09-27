@@ -3,6 +3,7 @@ import numpy
 import torch
 import torch.nn as nn
 
+from cdl_eeg.data.data_generators.data_generator import strip_tensors
 from cdl_eeg.models.metrics import Histories
 from cdl_eeg.models.mts_modules.getter import get_mts_module
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RegionBasedPooling
@@ -138,6 +139,11 @@ class MainRBPModel(nn.Module):
             self.train()
             for x_train, train_pre_computed, y_train in train_loader:
                 # todo: Only works for train loaders with this specific __getitem__ return
+                # Strip the dictionaries for 'ghost tensors'
+                x_train = strip_tensors(x_train)
+                y_train = strip_tensors(y_train)
+                train_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in train_pre_computed)
+
                 # Send data to correct device
                 x_train = _tensor_dict_to_device(x_train, device=device)
                 y_train = _flatten_targets(y_train).to(device)
@@ -171,6 +177,11 @@ class MainRBPModel(nn.Module):
             self.eval()
             with torch.no_grad():
                 for x_val, val_pre_computed, y_val in val_loader:
+                    # # Strip the dictionaries for 'ghost tensors'
+                    x_val = strip_tensors(x_val)
+                    y_val = strip_tensors(y_val)
+                    val_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in val_pre_computed)
+
                     # Send data to correct device
                     x_val = _tensor_dict_to_device(x_val, device=device)
                     y_val = _flatten_targets(y_val).to(device)
