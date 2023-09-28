@@ -179,7 +179,7 @@ class MainRBPModel(nn.Module):
             self.eval()
             with torch.no_grad():
                 for x_val, val_pre_computed, y_val in val_loader:
-                    # # Strip the dictionaries for 'ghost tensors'
+                    # Strip the dictionaries for 'ghost tensors'
                     x_val = strip_tensors(x_val)
                     y_val = strip_tensors(y_val)
                     val_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in val_pre_computed)
