@@ -144,14 +144,15 @@ def test_fit_real_channel_systems():
     )
 
     # Design 2
-    num_regions_2 = (6, 3)
-    num_channel_splits_2 = len(num_regions_2)
+    num_regions_2 = 3
+    num_designs_2 = 7
 
     design_2 = RBPDesign(
-        pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
+        pooling_type=RBPPoolType.SINGLE_CS, pooling_methods="SingleCSSharedRocket",
         pooling_methods_kwargs={"num_regions": num_regions_2, "num_kernels": 93, "max_receptive_field": 67},
-        split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_2)),
-        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_2)
+        split_methods="VoronoiSplit",
+        split_methods_kwargs={"num_points": num_regions_2, **box_params},
+        num_designs=num_designs_2
     )
 
     # Design 3
@@ -165,17 +166,29 @@ def test_fit_real_channel_systems():
         split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_3)
     )
 
+    # Design 4
+    num_regions_4 = 4
+    num_designs_4 = 5
+
+    design_4 = RBPDesign(
+        pooling_type=RBPPoolType.SINGLE_CS, pooling_methods="SingleCSMean",
+        pooling_methods_kwargs={},
+        split_methods="VoronoiSplit",
+        split_methods_kwargs={"num_points": num_regions_4, **box_params},
+        num_designs=num_designs_4
+    )
+
     # ----------------
     # Make model and fit channel system
     # ----------------
     num_classes = 5
-    num_regions = num_regions_1 + num_regions_2 + num_regions_3
+    num_regions = num_regions_1 + (num_regions_2,) * num_designs_2 + num_regions_3 + (num_regions_4,) * num_designs_4
 
     mts_module = "InceptionTime"
     mts_module_kwargs = {"in_channels": sum(num_regions), "num_classes": num_classes}
 
     model = MainRBPModel(mts_module=mts_module, mts_module_kwargs=mts_module_kwargs,
-                         rbp_designs=(design_1, design_2, design_3))
+                         rbp_designs=(design_1, design_2, design_3, design_4))
     model.fit_channel_systems(channel_systems)
 
     # ----------------
