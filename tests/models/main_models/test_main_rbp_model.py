@@ -17,7 +17,7 @@ from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.rockhill_dataset import Rockhill
 from cdl_eeg.data.datasets.van_hees import VanHees
 from cdl_eeg.data.paths import get_raw_data_storage_path
-from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
+from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel, tensor_dict_to_device
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RBPDesign, RBPPoolType
 from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
 from cdl_eeg.models.transformations.frequency_slowing import FrequencySlowing
@@ -228,7 +228,7 @@ def test_fit_real_channel_systems():
 
 @pytest.mark.skipif(not os.path.isdir(get_raw_data_storage_path()), reason="Required datasets not available")
 def test_pre_training():
-    device = torch.device("cpu")  # todo
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     random.seed(2)
     numpy.random.seed(2)
@@ -323,7 +323,7 @@ def test_pre_training():
 
     # Make model and fit channel systems
     model = MainRBPModel(mts_module=mts_module, mts_module_kwargs=mts_module_kwargs,
-                         rbp_designs=(design_1, design_2, design_3))
+                         rbp_designs=(design_1, design_2, design_3)).to(device)
     model.fit_channel_systems(tuple(dataset.channel_system for dataset in datasets))
 
     # ----------------
@@ -334,10 +334,16 @@ def test_pre_training():
     val_data = combined_dataset.get_data(subjects=val_subjects)
 
     # Perform pre-computing
-    train_pre_computed = model.pre_compute(input_tensors={dataset_name: torch.tensor(data, dtype=torch.float)
+    train_pre_computed = model.pre_compute(input_tensors={dataset_name: torch.tensor(data, dtype=torch.float).to(device)
                                                           for dataset_name, data in train_data.items()})
-    val_pre_computed = model.pre_compute(input_tensors={dataset_name: torch.tensor(data, dtype=torch.float)
+    val_pre_computed = model.pre_compute(input_tensors={dataset_name: torch.tensor(data, dtype=torch.float).to(device)
                                                         for dataset_name, data in val_data.items()})
+
+    # Send to cpu
+    train_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=torch.device("cpu"))
+                               for pre_comp in train_pre_computed)
+    val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=torch.device("cpu"))
+                             for pre_comp in val_pre_computed)
 
     # Create data generators
     train_gen = SelfSupervisedDataGenerator(data=train_data, pre_computed=train_pre_computed,

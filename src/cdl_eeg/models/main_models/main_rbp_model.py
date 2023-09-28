@@ -142,11 +142,13 @@ class MainRBPModel(nn.Module):
                 # Strip the dictionaries for 'ghost tensors'
                 x_train = strip_tensors(x_train)
                 y_train = strip_tensors(y_train)
-                train_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in train_pre_computed)
+                train_pre_computed = [strip_tensors(pre_comp) for pre_comp in train_pre_computed]
 
                 # Send data to correct device
-                x_train = _tensor_dict_to_device(x_train, device=device)
+                x_train = tensor_dict_to_device(x_train, device=device)
                 y_train = _flatten_targets(y_train).to(device)
+                train_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                           for pre_comp in train_pre_computed)
 
                 # Forward pass
                 output = self(x_train, pre_computed=train_pre_computed, channel_name_to_index=channel_name_to_index)
@@ -183,8 +185,10 @@ class MainRBPModel(nn.Module):
                     val_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in val_pre_computed)
 
                     # Send data to correct device
-                    x_val = _tensor_dict_to_device(x_val, device=device)
+                    x_val = tensor_dict_to_device(x_val, device=device)
                     y_val = _flatten_targets(y_val).to(device)
+                    val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                             for pre_comp in val_pre_computed)
 
                     # Forward pass  todo: why did I use .clone() in the PhD course tasks?
                     y_pred = self(x_val, pre_computed=val_pre_computed, channel_name_to_index=channel_name_to_index)
@@ -203,7 +207,7 @@ class MainRBPModel(nn.Module):
 # ---------------
 # Functions
 # ---------------
-def _tensor_dict_to_device(tensors, device):
+def tensor_dict_to_device(tensors, device):
     """
     Send a dictionary containing tensors to device
 
