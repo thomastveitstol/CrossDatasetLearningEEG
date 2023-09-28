@@ -20,9 +20,6 @@ class SingleCSMean(SingleChannelSplitPoolingBase):
         """
         Forward method
 
-        TODO: I must implement padding/masking or something like that to enable varied number of channels in the same
-         batch
-
         Parameters
         ----------
         input_tensors : dict[str, torch.Tensor]
