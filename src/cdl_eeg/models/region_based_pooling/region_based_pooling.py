@@ -46,6 +46,7 @@ class RBPDesign:
     pooling_methods_kwargs: Union[Dict[str, Any], Tuple[Dict[str, Any], ...]]
     split_methods: Union[str, Tuple[str, ...]]
     split_methods_kwargs: Union[Dict[str, Any], Tuple[Dict[str, Any], ...]]
+    num_designs: int = 1
 
 
 # ------------------
@@ -159,16 +160,15 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
             raise TypeError(f"Expected all keys of the split method kwargs to be string, but found "
                             f"{set(type(kwarg) for kwarg in split_method_kwargs)}")
 
-    def forward(self, x, *, channel_system_name, channel_name_to_index, pre_computed=None):
+    def forward(self, input_tensors, *, channel_name_to_index, pre_computed=None):
         """
         Forward method
 
         Parameters
         ----------
-        x : torch.Tensor
-        channel_system_name : str
-        channel_name_to_index : dict[str, int]
-        pre_computed : tuple, optional
+        input_tensors : dict[str, torch.Tensor]
+        channel_name_to_index : dict[str, dict[str, int]]
+        pre_computed : dict[str, torch.Tensor], optional
 
         Returns
         -------
@@ -179,14 +179,14 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         # ------------------
         # Case when no pre-computing is made
         if not self.supports_precomputing or pre_computed is None:
-            return self._pooling_module(x, channel_split=self._channel_splits[channel_system_name],
+            return self._pooling_module(input_tensors, channel_split=self._channel_splits,
                                         channel_name_to_index=channel_name_to_index)
 
         # Otherwise, pass the pre-computed as well
-        return self._pooling_module(x, channel_split=self._channel_splits[channel_system_name],
+        return self._pooling_module(input_tensors, channel_split=self._channel_splits,
                                     channel_name_to_index=channel_name_to_index, pre_computed=pre_computed)
 
-    def pre_compute(self, x):
+    def pre_compute(self, input_tensors):
         """
         Method for pre-computing
 
@@ -197,7 +197,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
 
         Parameters
         ----------
-        x : torch.Tensor
+        input_tensors : dict[str, torch.Tensor]
 
         Returns
         -------
@@ -210,7 +210,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
             raise RuntimeError("Tried to pre-compute when no pooling method supports pre-computing")
 
         # Pre-compute and return
-        return self._pooling_module.pre_compute(x)  # type: ignore[operator]
+        return self._pooling_module.pre_compute(input_tensors)  # type: ignore[operator]
 
     # ----------------
     # Methods for fitting channel systems
@@ -473,15 +473,22 @@ class RegionBasedPooling(nn.Module):
     >>> s_kwargs_0 = ({"num_points": 3, **my_box}, {"num_points": 7, **my_box}, {"num_points": 4, **my_box})
     >>> design_0 = RBPDesign(pooling_type=RBPPoolType.MULTI_CS, pooling_methods=p_method_0,
     ...                      pooling_methods_kwargs=p_kwargs_0, split_methods=s_methods_0,
-    ...                      split_methods_kwargs=s_kwargs_0)
-    >>> p_methods_1 = ("SingleCSSharedRocket", "SingleCSMean")
-    >>> p_kwargs_1 = ({"num_regions": 8, "num_kernels": 100, "max_receptive_field": 200}, {})
-    >>> s_methods_1 = ("VoronoiSplit", "VoronoiSplit")
-    >>> s_kwargs_1 = ({"num_points": 8, **my_box}, {"num_points": 11, **my_box})
+    ...                      split_methods_kwargs=s_kwargs_0, num_designs=2)
+    >>> p_methods_1 = "SingleCSSharedRocket"
+    >>> p_kwargs_1 = {"num_regions": 8, "num_kernels": 100, "max_receptive_field": 200}
+    >>> s_methods_1 = "VoronoiSplit"
+    >>> s_kwargs_1 = {"num_points": 8, **my_box}
     >>> design_1 = RBPDesign(pooling_type=RBPPoolType.SINGLE_CS, pooling_methods=p_methods_1,
     ...                      pooling_methods_kwargs=p_kwargs_1, split_methods=s_methods_1,
-    ...                      split_methods_kwargs=s_kwargs_1)
-    >>> _ = RegionBasedPooling((design_0, design_1))
+    ...                      split_methods_kwargs=s_kwargs_1, num_designs=3)
+    >>> p_methods_2 = "SingleCSMean"
+    >>> p_kwargs_2 = {}
+    >>> s_methods_2 = "VoronoiSplit"
+    >>> s_kwargs_2 = {"num_points": 11, **my_box}
+    >>> design_2 = RBPDesign(pooling_type=RBPPoolType.SINGLE_CS, pooling_methods=p_methods_2,
+    ...                      pooling_methods_kwargs=p_kwargs_2, split_methods=s_methods_2,
+    ...                      split_methods_kwargs=s_kwargs_2)
+    >>> _ = RegionBasedPooling((design_0, design_1, design_2))
     """
 
     def __init__(self, rbp_designs):
@@ -499,24 +506,27 @@ class RegionBasedPooling(nn.Module):
         # ------------------
         rbp_modules: List[RegionBasedPoolingBase] = []
         for design in rbp_designs:
-            # Select the correct class
-            rbp: RegionBasedPoolingBase
-            if design.pooling_type == RBPPoolType.SINGLE_CS:
-                rbp = SingleChannelSplitRegionBasedPooling(pooling_method=design.pooling_methods,
-                                                           pooling_method_kwargs=design.pooling_methods_kwargs,
-                                                           split_method=design.split_methods,
-                                                           split_method_kwargs=design.split_methods_kwargs)
-            elif design.pooling_type == RBPPoolType.MULTI_CS:
-                rbp = MultiChannelSplitsRegionBasedPooling(pooling_method=design.pooling_methods,
-                                                           pooling_method_kwargs=design.pooling_methods_kwargs,
-                                                           split_methods=design.split_methods,
-                                                           split_methods_kwargs=design.split_methods_kwargs)
-            else:
-                raise ValueError(f"Expected pooling type to be in {tuple(type_ for type_ in RBPPoolType)}, but found "
-                                 f"{design.pooling_type}")
 
-            # Append the object to rbp_modules
-            rbp_modules.append(rbp)
+            # Create as many similar designs as specified
+            for _ in range(design.num_designs):
+                # Select the correct class
+                rbp: RegionBasedPoolingBase
+                if design.pooling_type == RBPPoolType.SINGLE_CS:
+                    rbp = SingleChannelSplitRegionBasedPooling(pooling_method=design.pooling_methods,
+                                                               pooling_method_kwargs=design.pooling_methods_kwargs,
+                                                               split_method=design.split_methods,
+                                                               split_method_kwargs=design.split_methods_kwargs)
+                elif design.pooling_type == RBPPoolType.MULTI_CS:
+                    rbp = MultiChannelSplitsRegionBasedPooling(pooling_method=design.pooling_methods,
+                                                               pooling_method_kwargs=design.pooling_methods_kwargs,
+                                                               split_methods=design.split_methods,
+                                                               split_methods_kwargs=design.split_methods_kwargs)
+                else:
+                    raise ValueError(f"Expected pooling type to be in {tuple(type_ for type_ in RBPPoolType)}, but "
+                                     f"found {design.pooling_type}")
+
+                # Append the object to rbp_modules
+                rbp_modules.append(rbp)
 
         # Store all in a ModuleList to register the modules properly
         self._rbp_modules = nn.ModuleList(rbp_modules)
