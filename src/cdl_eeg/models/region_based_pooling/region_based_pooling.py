@@ -62,89 +62,102 @@ class RegionBasedPoolingBase(nn.Module, abc.ABC):
 # ------------------
 class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
     """
+    (Under changing: Must fix type hinting when the pooling modules are compatible with a dictionary of input tensors)
+
     Region Based Pooling when pooling module operates on a single channel split at once (when the pooling module used
     inherits from SingleChannelSplitPoolingBase)
 
     Examples
     --------
-    >>> my_split_kwargs = ({"num_points": 7, "x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1},
-    ...                    {"num_points": 11, "x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1})
-    >>> my_model = SingleChannelSplitRegionBasedPooling(pooling_methods=("SingleCSMean", "SingleCSMean"),
-    ...                                                 pooling_methods_kwargs=({}, {}),
-    ...                                                 split_methods=("VoronoiSplit", "VoronoiSplit"),
-    ...                                                 split_methods_kwargs=my_split_kwargs)
+    >>> my_split_kwargs = {"num_points": 7, "x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1}
+    >>> my_model = SingleChannelSplitRegionBasedPooling(pooling_method="SingleCSMean", pooling_method_kwargs={},
+    ...                                                 split_method="VoronoiSplit",
+    ...                                                 split_method_kwargs=my_split_kwargs)
     >>> my_model.supports_precomputing
     False
 
     Check with a pooling module which supports pre-computing
 
-    >>> SingleChannelSplitRegionBasedPooling(pooling_methods=("SingleCSSharedRocket", "SingleCSMean"),
-    ...                                      pooling_methods_kwargs=({"num_regions": 7, "num_kernels": 100,
-    ...                                                               "max_receptive_field": 200}, {}),
-    ...                                      split_methods=("VoronoiSplit", "VoronoiSplit"),
-    ...                                      split_methods_kwargs=my_split_kwargs).supports_precomputing
+    >>> SingleChannelSplitRegionBasedPooling(pooling_method="SingleCSSharedRocket",
+    ...                                      pooling_method_kwargs={"num_regions": 7, "num_kernels": 100,
+    ...                                                             "max_receptive_field": 200},
+    ...                                      split_method="VoronoiSplit",
+    ...                                      split_method_kwargs=my_split_kwargs).supports_precomputing
     True
     """
 
-    def __init__(self, pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs):
+    def __init__(self, pooling_method, pooling_method_kwargs, split_method, split_method_kwargs):
         """
         Initialise
 
         Parameters
         ----------
-        pooling_methods : tuple[str, ...]
-            Pooling methods
-        pooling_methods_kwargs : tuple[dict[str, typing.Any], ...]
+        pooling_method : str
+            Pooling method
+        pooling_method_kwargs : dict[str, typing.Any]
             Keyword arguments of the pooling modules. Must have the same length as pooling_methods.
-        split_methods : tuple[str, ...]
-            Region splits method. Must have the same length as pooling_methods.
-        split_methods_kwargs : tuple[dict[str, typing.Any], ...]
-            Keyword arguments of the pooling modules. Must have the same length as split_methods.
+        split_method : str
+            Method for splitting into regions
+        split_method_kwargs : dict[str, typing.Any]
+            Keyword arguments of the region splitting
         """
         super().__init__()
 
         # -------------------
         # Input checks
         # -------------------
-        self._input_checks(pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs)
+        self._input_checks(pooling_method, pooling_method_kwargs, split_method, split_method_kwargs)
 
         # -------------------
         # Generate pooling modules
         # -------------------
-        # Get them in a list
-        pooling_modules = [get_pooling_module(pooling_method, **kwargs) for pooling_method, kwargs
-                           in zip(pooling_methods, pooling_methods_kwargs)]
+        # Get the pooling module
+        pooling_module = get_pooling_module(pooling_method, **pooling_method_kwargs)
 
-        # Verify that they have correct type
-        if not all(isinstance(pooling_module, SingleChannelSplitPoolingBase) for pooling_module in pooling_modules):
-            wrong_methods = tuple(pooling_method for pooling_method in pooling_methods
-                                  if not isinstance(pooling_method, SingleChannelSplitPoolingBase))
-            raise TypeError(f"Expected all pooling methods to inherit from {SingleChannelSplitPoolingBase.__name__}, "
-                            f"but found {wrong_methods}")
+        # Verify that it has correct type
+        if not isinstance(pooling_module, SingleChannelSplitPoolingBase):
+            raise TypeError(f"Expected pooling module to inherit from {SingleChannelSplitPoolingBase.__name__}, but "
+                            f"found {type(pooling_module)}")
 
-        # Pass them to nn.ModuleList (otherwise they are not registered as modules with parameters py pytorch)
-        self._pooling_modules = nn.ModuleList(pooling_modules)
+        # Set as attribute
+        self._pooling_module = pooling_module
 
         # -------------------
         # Region splits
         # -------------------
         # Generate and store region splits
-        self._region_splits = tuple(get_region_split(split_method, **kwargs)
-                                    for split_method, kwargs in zip(split_methods, split_methods_kwargs))
+        self._region_split = get_region_split(split_method, **split_method_kwargs)
 
         # Initialise the mapping from regions to channel names, for all datasets (must be fit later)
         # Should be {dataset_name: tuple[ChannelsInRegionSplit, ...]}
-        self._channel_splits: Dict[str, Tuple[ChannelsInRegionSplit, ...]] = dict()
+        self._channel_splits: Dict[str, ChannelsInRegionSplit] = dict()
 
     @staticmethod
-    def _input_checks(pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs):
-        # Check if the pooling methods, pooling method kwargs, split_methods, and split_methods_kwargs have the same
-        # lengths
-        expected_same_lengths = (pooling_methods, pooling_methods_kwargs, split_methods, split_methods_kwargs)
-        if not all(len(arg) == len(pooling_methods) for arg in expected_same_lengths):
-            raise ValueError(f"Expected pooling methods, their corresponding kwargs, and the region splits methods and "
-                             f"their corresponding kwargs all to have the same lengths, but found lengths "
-                             f"{(tuple(len(arg) for arg in expected_same_lengths))}")
+    def _input_checks(pooling_method, pooling_method_kwargs, split_method, split_method_kwargs):
+        # ---------------
+        # Just type checking for now...
+        # ---------------
+        # Pooling method
+        if not isinstance(pooling_method, str):
+            raise TypeError(f"Expected pooling method to be a string, but found {type(pooling_method)}")
+
+        if not isinstance(pooling_method_kwargs, dict):
+            raise TypeError(f"Expected pooling method kwargs to be a dict, but found {type(pooling_method_kwargs)}")
+
+        if not all(isinstance(kwarg, str) for kwarg in pooling_method_kwargs):
+            raise TypeError(f"Expected all keys of the pooling method kwargs to be string, but found "
+                            f"{set(type(kwarg) for kwarg in pooling_method_kwargs)}")
+
+        # Region split
+        if not isinstance(split_method, str):
+            raise TypeError(f"Expected split method to be a string, but found {type(split_method)}")
+
+        if not isinstance(split_method_kwargs, dict):
+            raise TypeError(f"Expected split method kwargs to be a dict, but found {type(split_method_kwargs)}")
+
+        if not all(isinstance(kwarg, str) for kwarg in split_method_kwargs):
+            raise TypeError(f"Expected all keys of the split method kwargs to be string, but found "
+                            f"{set(type(kwarg) for kwarg in split_method_kwargs)}")
 
     def forward(self, x, *, channel_system_name, channel_name_to_index, pre_computed=None):
         """
@@ -164,25 +177,14 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         # ------------------
         # Pass through all channel splits and return as tuple
         # ------------------
-        # Simple case when no pre-computing is made
+        # Case when no pre-computing is made
         if not self.supports_precomputing or pre_computed is None:
-            return tuple(pooling_module(x, channel_split=channel_split, channel_name_to_index=channel_name_to_index)
-                         for pooling_module, channel_split in zip(self._pooling_modules,
-                                                                  self._channel_splits[channel_system_name]))
+            return self._pooling_module(x, channel_split=self._channel_splits[channel_system_name],
+                                        channel_name_to_index=channel_name_to_index)
 
-        # Otherwise, append to a list
-        output_channel_splits: List[torch.Tensor] = []
-        for pre_comp_features, pooling_module, channel_split \
-                in zip(pre_computed, self._pooling_modules, self._channel_splits[channel_system_name]):
-            # Handle the unsupported case, or when pre-computing is not desired
-            if not pooling_module.supports_precomputing() or pre_comp_features is None:
-                output_channel_splits.append(pooling_module(x, channel_split=channel_split,
-                                                            channel_name_to_index=channel_name_to_index))
-            else:
-                output_channel_splits.append(pooling_module(x, channel_split=channel_split,
-                                                            channel_name_to_index=channel_name_to_index,
-                                                            pre_computed=pre_comp_features))
-        return tuple(output_channel_splits)
+        # Otherwise, pass the pre-computed as well
+        return self._pooling_module(x, channel_split=self._channel_splits[channel_system_name],
+                                    channel_name_to_index=channel_name_to_index, pre_computed=pre_computed)
 
     def pre_compute(self, x):
         """
@@ -192,6 +194,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
             (1) Some pooling modules may have multiple pre-computing methods in the future
             (2) Different pooling modules may require different input arguments
             (3) Improved memory usage?
+
         Parameters
         ----------
         x : torch.Tensor
@@ -206,17 +209,8 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         if not self.supports_precomputing:
             raise RuntimeError("Tried to pre-compute when no pooling method supports pre-computing")
 
-        # Loop through all pooling modules
-        pre_computed: List[Optional[torch.Tensor]] = []
-        for pooling_module in self._pooling_modules:
-            if pooling_module.supports_precomputing():
-                # Assuming that the method is called 'pre_compute', and that it only takes in 'x' as argument
-                pre_computed.append(pooling_module.pre_compute(x))
-            else:
-                pre_computed.append(None)
-
-        # Convert to tuple and return
-        return tuple(pre_computed)
+        # Pre-compute and return
+        return self._pooling_module.pre_compute(x)
 
     # ----------------
     # Methods for fitting channel systems
@@ -231,12 +225,13 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         ----------
         channel_system : cdl_eeg.data.datasets.dataset_base.ChannelSystem
             The channel system to fit
+
         Returns
         -------
         None
         """
-        self._channel_splits[channel_system.name] = tuple(
-            region_split.place_in_regions(channel_system.electrode_positions) for region_split in self._region_splits)
+        self._channel_splits[channel_system.name] = self._region_splits.place_in_regions(
+            channel_system.electrode_positions)
 
     def fit_channel_systems(self, channel_systems):
         """
@@ -271,7 +266,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
 
     @property
     def supports_precomputing(self):
-        return any(pooling_module.supports_precomputing() for pooling_module in self._pooling_modules)
+        return self._pooling_module.supports_precomputing()
 
 
 class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
@@ -507,10 +502,10 @@ class RegionBasedPooling(nn.Module):
             # Select the correct class
             rbp: RegionBasedPoolingBase
             if design.pooling_type == RBPPoolType.SINGLE_CS:
-                rbp = SingleChannelSplitRegionBasedPooling(pooling_methods=design.pooling_methods,
-                                                           pooling_methods_kwargs=design.pooling_methods_kwargs,
-                                                           split_methods=design.split_methods,
-                                                           split_methods_kwargs=design.split_methods_kwargs)
+                rbp = SingleChannelSplitRegionBasedPooling(pooling_method=design.pooling_methods,
+                                                           pooling_method_kwargs=design.pooling_methods_kwargs,
+                                                           split_method=design.split_methods,
+                                                           split_method_kwargs=design.split_methods_kwargs)
             elif design.pooling_type == RBPPoolType.MULTI_CS:
                 rbp = MultiChannelSplitsRegionBasedPooling(pooling_method=design.pooling_methods,
                                                            pooling_method_kwargs=design.pooling_methods_kwargs,
