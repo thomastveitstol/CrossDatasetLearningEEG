@@ -61,13 +61,13 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
                                           for _ in range(num_regions)])
 
     @precomputing_method
-    def pre_compute(self, x):
+    def pre_compute(self, input_tensors):
         """
         Method for pre-computing the ROCKET features
 
         Parameters
         ----------
-        x : torch.Tensor
+        input_tensors : dict[str, torch.Tensor]
             A tensor with shape=(batch, channel, time_steps)
 
         Returns
@@ -78,35 +78,18 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
 
         Examples
         --------
-        >>> my_data = torch.rand(size=(10, 64, 500))
-        >>> SingleCSSharedRocket(6, num_kernels=123, max_receptive_field=50).pre_compute(my_data).size()
-        torch.Size([10, 64, 246])
+        >>> my_data = {"d1": torch.rand(size=(10, 64, 500)), "d2": torch.rand(size=(7, 52, 512)),
+        ...            "d3": torch.rand(size=(8, 9, 456)), "d4": torch.rand(size=(32, 19, 213))}
+        >>> my_model = SingleCSSharedRocket(6, num_kernels=124, max_receptive_field=50)
+        >>> my_rocket_features = my_model.pre_compute(my_data)
+        >>> {dataset_name: features.size() for dataset_name, features in my_rocket_features.items()}  # type: ignore
+        ... # doctest: +NORMALIZE_WHITESPACE
+        {'d1': torch.Size([10, 64, 248]), 'd2': torch.Size([7, 52, 248]), 'd3': torch.Size([8, 9, 248]),
+         'd4': torch.Size([32, 19, 248])}
         """
-        return self._rocket(x)
+        return {dataset_name: self._rocket(x) for dataset_name, x in input_tensors.items()}
 
-    def forward(self, x, *, pre_computed, channel_split, channel_name_to_index):
-        """
-        Forward method
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            A tensor containing EEG data with shape=(batch, channels, time_steps). Note that the channels are correctly
-            selected within this method, and the EEG data should be the full data matrix (such that
-            channel_name_to_index maps correctly)
-        pre_computed : torch.Tensor
-            Pre-computed features of all channels (as in the input 'x') todo: can this be improved memory-wise?
-        channel_split : cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit
-        channel_name_to_index : dict[str, int]
-
-        Returns
-        -------
-        torch.Tensor
-        """
-        # Input check
-        assert len(channel_split) == self.num_regions, (f"Expected {self.num_regions} number of regions, but input "
-                                                        f"channel split suggests {len(channel_split)}")
-
+    def _forward_single_dataset(self, x, *, pre_computed, channel_split, channel_name_to_index):
         # Initialise tensor which will contain all region representations
         batch, _, time_steps = x.size()
         region_representations = torch.empty(size=(batch, self.num_regions, time_steps)).to(x.device)
@@ -134,6 +117,47 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
             region_representations[:, i] = torch.squeeze(torch.matmul(coefficients, x[:, allowed_node_indices]), dim=1)
 
         return region_representations
+
+    def forward(self, input_tensors, *, pre_computed, channel_splits, channel_name_to_index):
+        """
+        Forward method
+
+        Parameters
+        ----------
+        input_tensors : dict[str, torch.Tensor]
+            A tensor containing EEG data with shape=(batch, channels, time_steps). Note that the channels are correctly
+            selected within this method, and the EEG data should be the full data matrix (such that
+            channel_name_to_index maps correctly)
+        pre_computed : dict[str, torch.Tensor]
+            Pre-computed features of all channels (as in the input 'x') todo: can this be improved memory-wise?
+        channel_splits : dict[str, cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit]
+        channel_name_to_index : dict[str, dict[str, int]]
+
+        Returns
+        -------
+        torch.Tensor
+        """
+        # Input check
+        assert all(len(channel_split) == self.num_regions for channel_split in channel_splits.values()), \
+            (f"Expected {self.num_regions} number of regions, but input channel split suggested "
+             f"{set(len(channel_split) for channel_split in channel_splits.values())}")
+
+        # Loop through all datasets
+        dataset_region_representations = []
+        for dataset_name, x in input_tensors.items():
+            # (I take no chances on all input being ordered similarly)
+            dataset_ch_name_to_idx = channel_name_to_index[dataset_name]
+            ch_splits = channel_splits[dataset_name]
+            pre_comp = pre_computed[dataset_name]
+
+            # Perform forward pass
+            dataset_region_representations.append(
+                self._forward_single_dataset(x, channel_split=ch_splits, channel_name_to_index=dataset_ch_name_to_idx,
+                                             pre_computed=pre_comp)
+            )
+
+        # Concatenate the data together
+        return torch.cat(dataset_region_representations, dim=0)
 
     # -------------
     # Properties
