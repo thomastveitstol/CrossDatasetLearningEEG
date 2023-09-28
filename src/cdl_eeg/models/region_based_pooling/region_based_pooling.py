@@ -210,7 +210,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
             raise RuntimeError("Tried to pre-compute when no pooling method supports pre-computing")
 
         # Pre-compute and return
-        return self._pooling_module.pre_compute(x)
+        return self._pooling_module.pre_compute(x)  # type: ignore[operator]
 
     # ----------------
     # Methods for fitting channel systems
@@ -230,7 +230,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         -------
         None
         """
-        self._channel_splits[channel_system.name] = self._region_splits.place_in_regions(
+        self._channel_splits[channel_system.name] = self._region_split.place_in_regions(
             channel_system.electrode_positions)
 
     def fit_channel_systems(self, channel_systems):
