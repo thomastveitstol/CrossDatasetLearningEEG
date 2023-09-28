@@ -199,7 +199,7 @@ class MainRBPModel(nn.Module):
                     val_history.store_batch_evaluation(y_pred=y_pred, y_true=y_val)
 
                 # Finalise epoch for validation history object
-                val_history.on_epoch_end()
+                val_history.on_epoch_end(verbose=verbose)
 
         return train_history, val_history
 
