@@ -391,41 +391,58 @@ def test_main_forward():
     # Design 1
     num_regions_1 = (5, 5, 5)
     num_channel_splits_1 = len(num_regions_1)
+    num_designs_1 = 3
 
     design_1 = RBPDesign(
         pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
         pooling_methods_kwargs={"num_regions": num_regions_1, "num_kernels": 43, "max_receptive_field": 37},
         split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_1)),
-        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_1)
+        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_1),
+        num_designs=num_designs_1
     )
 
     # Design 2
-    num_regions_2 = (6, 3)
-    num_channel_splits_2 = len(num_regions_2)
+    num_regions_2 = 6
+    num_designs_2 = 7
 
     design_2 = RBPDesign(
-        pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
+        pooling_type=RBPPoolType.SINGLE_CS, pooling_methods="SingleCSSharedRocket",
         pooling_methods_kwargs={"num_regions": num_regions_2, "num_kernels": 93, "max_receptive_field": 67},
-        split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_2)),
-        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_2)
+        split_methods="VoronoiSplit",
+        split_methods_kwargs={"num_points": num_regions_2, **box_params},
+        num_designs=num_designs_2
     )
 
     # Design 3
     num_regions_3 = (5, 5, 3, 5, 6, 3)
     num_channel_splits_3 = len(num_regions_3)
+    num_designs_3 = 1
 
     design_3 = RBPDesign(
         pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
         pooling_methods_kwargs={"num_regions": num_regions_3, "num_kernels": 5, "max_receptive_field": 55},
         split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_3)),
-        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_3)
+        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_3),
+        num_designs=num_designs_3
+    )
+
+    # Design 4
+    num_regions_4 = 6
+    num_designs_4 = 5
+
+    design_4 = RBPDesign(
+        pooling_type=RBPPoolType.SINGLE_CS, pooling_methods="SingleCSMean",
+        pooling_methods_kwargs={},
+        split_methods="VoronoiSplit",
+        split_methods_kwargs={"num_points": num_regions_4, **box_params},
+        num_designs=num_designs_4
     )
 
     # ----------------
     # Make RBP module
     # ----------------
     # Create model
-    rbp_module = RegionBasedPooling((design_1, design_2, design_3))
+    rbp_module = RegionBasedPooling((design_1, design_2, design_3, design_4))
 
     # Fit channel system
     rbp_module.fit_channel_systems(channel_systems)
@@ -443,7 +460,8 @@ def test_main_forward():
     assert isinstance(outputs, tuple), f"Expected outputs to be a tuple, but found {type(outputs)}"
 
     # Check if the number of elements are as expected (=total number of channel/region splits)
-    tot_num_channel_splits = num_channel_splits_1 + num_channel_splits_2 + num_channel_splits_3
+    tot_num_channel_splits = (num_channel_splits_1 * num_designs_1 + num_designs_2
+                              + num_channel_splits_3 * num_designs_3 + num_designs_4)
     assert len(outputs) == tot_num_channel_splits, (f"Expected output tuple length to match with the total number of "
                                                     f"channel/region splits, ({tot_num_channel_splits}), but found "
                                                     f"{len(outputs)}")
@@ -454,6 +472,7 @@ def test_main_forward():
 
     # Check if the sizes of tensors are correct
     expected_batch_size = batch_size_1 + batch_size_2
-    expected_channel_dims = num_regions_1 + num_regions_2 + num_regions_3
+    expected_channel_dims = (num_regions_1 * num_designs_1 + (num_regions_2,) * num_designs_2
+                             + num_regions_3 * num_designs_3 + (num_regions_4,) * num_designs_4)
     assert all(out.size() == torch.Size([expected_batch_size, expected_channel_dim, time_steps])
                for out, expected_channel_dim in zip(outputs, expected_channel_dims)), "Wrong tensor output shapes"
