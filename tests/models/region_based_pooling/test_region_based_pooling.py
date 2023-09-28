@@ -266,7 +266,6 @@ def test_multi_cs_fit_channel_system():
                 f"Expected number of regions to be {expected_regions}, but found {len(ch_split)}"
 
 
-# TODO: not updated
 def test_multi_cs_forward():
     """Test the forward method. That it runs, and that output types and shapes are as expected"""
     # ----------------
