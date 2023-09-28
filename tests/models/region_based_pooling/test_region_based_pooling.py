@@ -42,16 +42,10 @@ def test_single_cs_fit_channel_system():
     # ----------------
     num_regions = 5
 
-    pooling_method = "SingleCSMean"
-    pooling_method_kwargs = {}
-    split_method = "VoronoiSplit"
-    box_params = {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
-    split_method_kwargs = {"num_points": num_regions, **box_params}
-
-    rbp_module = SingleChannelSplitRegionBasedPooling(pooling_method=pooling_method,
-                                                      pooling_method_kwargs=pooling_method_kwargs,
-                                                      split_method=split_method,
-                                                      split_method_kwargs=split_method_kwargs)
+    rbp_module = SingleChannelSplitRegionBasedPooling(
+        pooling_method="SingleCSMean", pooling_method_kwargs={}, split_method="VoronoiSplit",
+        split_method_kwargs={"num_points": num_regions, "x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
+    )
 
     # ----------------
     # Fit channel system
