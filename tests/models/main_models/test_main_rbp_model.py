@@ -202,7 +202,7 @@ def test_pre_training():
     channel_name_to_index = {dataset.name: dataset.channel_system.channel_name_to_index for dataset in datasets}
 
     # Defining load details
-    num_subjects = (50, 14)
+    num_subjects = (25, 14)
     num_time_steps = 1_003
     subjects = {dataset.name: dataset.get_subject_ids()[:subjects] for dataset, subjects in zip(datasets, num_subjects)}
 
@@ -253,19 +253,32 @@ def test_pre_training():
     )
 
     # Design 3
-    num_regions_3 = (5, 5)
-    num_channel_splits_3 = len(num_regions_3)
+    num_regions_3 = 5
+    num_designs_3 = 3
 
     design_3 = RBPDesign(
-        pooling_type=RBPPoolType.MULTI_CS, pooling_methods="MultiCSSharedRocket",
+        pooling_type=RBPPoolType.SINGLE_CS, pooling_methods="SingleCSSharedRocket",
         pooling_methods_kwargs={"num_regions": num_regions_3, "num_kernels": 5, "max_receptive_field": 55},
-        split_methods=tuple("VoronoiSplit" for _ in range(num_channel_splits_3)),
-        split_methods_kwargs=tuple({"num_points": num_regs, **box_params} for num_regs in num_regions_3)
+        split_methods="VoronoiSplit",
+        split_methods_kwargs={"num_points": num_regions_3, **box_params},
+        num_designs=num_designs_3
     )
+
+    # Design 4  todo: the pytorch DataLoader cannot handle None values in pre_computing
+    # num_regions_4 = 4
+    # num_designs_4 = 5
+    #
+    # design_4 = RBPDesign(
+    #     pooling_type=RBPPoolType.SINGLE_CS, pooling_methods="SingleCSMean",
+    #     pooling_methods_kwargs={},
+    #     split_methods="VoronoiSplit",
+    #     split_methods_kwargs={"num_points": num_regions_4, **box_params},
+    #     num_designs=num_designs_4
+    # )
 
     # Some hyperparameters
     num_classes = 1
-    num_regions = num_regions_1 + num_regions_2 + num_regions_3
+    num_regions = num_regions_1 + num_regions_2 + (num_regions_3,) * num_designs_3
 
     mts_module = "InceptionTime"
     mts_module_kwargs = {"in_channels": sum(num_regions), "num_classes": num_classes}
@@ -304,5 +317,5 @@ def test_pre_training():
 
     # Pre-train
     model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
-                    optimiser=optimiser, num_epochs=20, verbose=True, channel_name_to_index=channel_name_to_index,
+                    optimiser=optimiser, num_epochs=5, verbose=False, channel_name_to_index=channel_name_to_index,
                     device=device)
