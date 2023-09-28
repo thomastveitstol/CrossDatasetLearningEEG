@@ -31,7 +31,7 @@ def main():
     chunk_time_delay = 1000
 
     # Data. The phase of subject 1 will be inserted into subject 0
-    subject_0 = 24
+    subject_0 = 6
     subject_1 = 24
 
     derivatives = True  # boolean, indicating cleaned/not cleaned data
