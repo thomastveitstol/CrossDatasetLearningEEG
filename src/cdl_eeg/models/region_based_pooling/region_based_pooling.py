@@ -172,18 +172,18 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
 
         Returns
         -------
-        tuple[torch.Tensor, ...]
+        torch.Tensor
         """
         # ------------------
         # Pass through all channel splits and return as tuple
         # ------------------
         # Case when no pre-computing is made
         if not self.supports_precomputing or pre_computed is None:
-            return self._pooling_module(input_tensors, channel_split=self._channel_splits,
+            return self._pooling_module(input_tensors, channel_splits=self._channel_splits,
                                         channel_name_to_index=channel_name_to_index)
 
         # Otherwise, pass the pre-computed as well
-        return self._pooling_module(input_tensors, channel_split=self._channel_splits,
+        return self._pooling_module(input_tensors, channel_splits=self._channel_splits,
                                     channel_name_to_index=channel_name_to_index, pre_computed=pre_computed)
 
     def pre_compute(self, input_tensors):
@@ -566,12 +566,21 @@ class RegionBasedPooling(nn.Module):
         for pre_comp_features, rbp_module in zip(pre_computed, self._rbp_modules):
             # Handle the unsupported case, or when pre-computing is not desired
             if not rbp_module.supports_precomputing or pre_comp_features is None:
-                rbp_outputs.append(rbp_module(input_tensors, channel_name_to_index=channel_name_to_index))
+                # TODO: somewhat hard-coded
+                if isinstance(rbp_module, MultiChannelSplitsRegionBasedPooling):
+                    rbp_outputs.extend(rbp_module(input_tensors, channel_name_to_index=channel_name_to_index))
+                else:
+                    rbp_outputs.append(rbp_module(input_tensors, channel_name_to_index=channel_name_to_index))
             else:
-                rbp_outputs.append(rbp_module(input_tensors, channel_name_to_index=channel_name_to_index,
-                                              pre_computed=pre_comp_features))
-        # Unpacked tuple and return
-        return tuple(itertools.chain(*rbp_outputs))
+                if isinstance(rbp_module, MultiChannelSplitsRegionBasedPooling):
+
+                    rbp_outputs.extend(rbp_module(input_tensors, channel_name_to_index=channel_name_to_index,
+                                                  pre_computed=pre_comp_features))
+                else:
+                    rbp_outputs.append(rbp_module(input_tensors, channel_name_to_index=channel_name_to_index,
+                                                  pre_computed=pre_comp_features))
+        # Convert to tuple and return
+        return tuple(rbp_outputs)
 
     def pre_compute(self, input_tensors):
         """
