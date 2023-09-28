@@ -6,6 +6,7 @@ This transformation looks a little strange. Also, the frequency is shifted when 
 import contextlib
 import io
 import os
+import random
 
 import mne
 import numpy
@@ -18,6 +19,9 @@ from cdl_eeg.models.transformations.utils import chunk_eeg, eeg_chunks_to_mne_ep
 
 
 def main():
+    random.seed(1)
+    numpy.random.seed(2)
+
     # -----------------
     # Hyperparameters
     # -----------------
@@ -27,14 +31,14 @@ def main():
     chunk_time_delay = 1000
 
     # Data. The phase of subject 1 will be inserted into subject 0
-    subject_0 = 6
+    subject_0 = 24
     subject_1 = 24
 
     derivatives = True  # boolean, indicating cleaned/not cleaned data
 
     # Preprocessing
-    l_freq = 13
-    h_freq = 30
+    l_freq = 8
+    h_freq = 12
 
     verbose = False
 
