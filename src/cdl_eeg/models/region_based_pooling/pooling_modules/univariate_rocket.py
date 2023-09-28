@@ -25,10 +25,8 @@ from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import Sin
 class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
     """
     Pooling by linear combination of the channels, where the importance score is computed from ROCKET-based features and
-    the ROCKET kernels are shared (at least) across all regions in the channel/region split. It operates on an entire
+    the ROCKET kernels are sharedacross all regions in the channel/region split. It operates on an entire
     channel/region split
-
-    todo: this must be compatible in combination with e.g. SingleCSMean, otherwise use MultiChannelSplitsPoolingBase
 
     Examples
     --------
