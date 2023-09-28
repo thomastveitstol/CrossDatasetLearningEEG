@@ -11,8 +11,6 @@ from cdl_eeg.models.region_based_pooling.utils import Electrodes3D, ChannelsInRe
 # ------------------------
 # Testing SingleChannelSplitRegionBasedPooling
 # ------------------------
-# TODO: not updated
-@pytest.mark.skip(reason="The test must be updated for the newest implementations")
 def test_single_cs_fit_channel_system():
     """Tests if a channel system is properly fit. Testing channel_split property types, lengths, that the electrodes
     are contained in regions when expected, and that the number of regions are correct"""
@@ -20,72 +18,81 @@ def test_single_cs_fit_channel_system():
     # Generate dummy channel system
     # todo: check mCoding if this can be improved
     # ----------------
-    channel_system_name = "TestName"
     x_min, x_max, y_min, y_max = -.17, .17, -.17, .17
-    montage = mne.channels.make_standard_montage("GSN-HydroCel-129")
 
-    electrode_positions = Electrodes3D(montage.get_positions()["ch_pos"])
-    channel_name_to_index = {name: i for i, name in enumerate(electrode_positions.positions)}
-    channel_system = ChannelSystem(name=channel_system_name, channel_name_to_index=channel_name_to_index,
-                                   electrode_positions=electrode_positions)
+    # Channel system 1
+    montage_1 = mne.channels.make_standard_montage("GSN-HydroCel-129")
+    electrode_positions_1 = Electrodes3D(montage_1.get_positions()["ch_pos"])
+    ch_name_to_idx_1 = {name: i for i, name in enumerate(electrode_positions_1.positions)}
+    channel_system_1 = ChannelSystem(name="TestName1", channel_name_to_index=ch_name_to_idx_1,
+                                     electrode_positions=electrode_positions_1)
+
+    # Channel system 2
+    montage_2 = mne.channels.make_standard_montage("biosemi64")
+    electrode_positions_2 = Electrodes3D(montage_2.get_positions()["ch_pos"])
+    ch_name_to_idx_2 = {name: i for i, name in enumerate(electrode_positions_2.positions)}
+    channel_system_2 = ChannelSystem(name="TestName2", channel_name_to_index=ch_name_to_idx_2,
+                                     electrode_positions=electrode_positions_2)
+
+    # All channel systems
+    channel_systems = (channel_system_1, channel_system_2)
 
     # ----------------
     # Make RBP object
     # todo: check mCoding if this can be improved
     # ----------------
-    num_regions = 11, 7, 26, 18
+    num_regions = 5
 
-    pooling_methods = ("SingleCSMean", "SingleCSMean", "SingleCSMean", "SingleCSMean")
-    pooling_methods_kwargs = ({}, {}, {}, {})
-    split_methods = ("VoronoiSplit", "VoronoiSplit", "VoronoiSplit", "VoronoiSplit")
+    pooling_method = "SingleCSMean"
+    pooling_method_kwargs = {}
+    split_method = "VoronoiSplit"
     box_params = {"x_min": x_min, "x_max": x_max, "y_min": y_min, "y_max": y_max}
-    split_methods_kwargs = ({"num_points": num_regions[0], **box_params}, {"num_points": num_regions[1], **box_params},
-                            {"num_points": num_regions[2], **box_params}, {"num_points": num_regions[3], **box_params})
+    split_method_kwargs = {"num_points": num_regions, **box_params}
 
-    rbp_module = SingleChannelSplitRegionBasedPooling(pooling_methods=pooling_methods,
-                                                      pooling_methods_kwargs=pooling_methods_kwargs,
-                                                      split_methods=split_methods,
-                                                      split_methods_kwargs=split_methods_kwargs)
+    rbp_module = SingleChannelSplitRegionBasedPooling(pooling_method=pooling_method,
+                                                      pooling_method_kwargs=pooling_method_kwargs,
+                                                      split_method=split_method,
+                                                      split_method_kwargs=split_method_kwargs)
 
     # ----------------
     # Fit channel system
     # ----------------
-    rbp_module.fit_channel_system(channel_system=channel_system)
+    rbp_module.fit_channel_systems(channel_systems=channel_systems)
 
     # ----------------
     # Tests
     # ----------------
     # Check if the channel system is a key in the registered channel splits
-    assert channel_system_name in rbp_module.channel_splits, ("Expected the channel system to be registered as a "
-                                                              "fitted channel system, but it was not found")
+    assert "TestName1" in rbp_module.channel_splits, \
+        "Expected the first channel system to be registered as a fitted channel system, but it was not found"
+    assert "TestName2" in rbp_module.channel_splits, \
+        "Expected the second channel system to be registered as a fitted channel system, but it was not found"
 
-    # Check if the channel split property is a tuple
-    ch_splits = rbp_module.channel_splits[channel_system_name]
-    assert isinstance(ch_splits, tuple), (f"Expected channel splits of the channel system to be a tuple, but found "
-                                          f"{type(rbp_module.channel_splits[channel_system_name])}")
+    # Type check of the channel split property values
+    ch_split_1 = rbp_module.channel_splits["TestName1"]
+    ch_split_2 = rbp_module.channel_splits["TestName2"]
 
-    # Check if the channel split property has the same length as number of pooling modules
-    assert len(ch_splits) == len(pooling_methods), (f"Expected number of channel splits to be the same as the "
-                                                    f"number of pooling modules, but found {len(ch_splits)} and "
-                                                    f"{len(pooling_methods)}")
+    assert isinstance(ch_split_1, ChannelsInRegionSplit), \
+        (f"Expected channel splits of the channel system to be a tuple, but found "
+         f"{type(rbp_module.channel_splits['TestName1'])}")
+    assert isinstance(ch_split_2, ChannelsInRegionSplit), \
+        (f"Expected channel splits of the channel system to be a tuple, but found "
+         f"{type(rbp_module.channel_splits['TestName2'])}")
 
-    # Check if the values of the channel split property have correct types
-    assert all(isinstance(chs_in_regs, ChannelsInRegionSplit) for chs_in_regs in ch_splits), \
-        (f"Expected all elements to be of type {ChannelsInRegionSplit.__name__}, but found "
-         f"{set(type(chs_in_regs) for chs_in_regs in ch_splits)}")
+    # Check if the channel split property has the same length as number of regions
+    assert len(ch_split_1) == num_regions, f"Expected {num_regions} number of regions, but found {len(ch_split_1)}"
+    assert len(ch_split_2) == num_regions, f"Expected {num_regions} number of regions, but found {len(ch_split_2)}"
 
     # Check if all electrodes are assigned a region, in all channel splits
-    channel_names = montage.ch_names
-    for ch_split in ch_splits:
-        # Loop though all electrodes
-        for ch_name in channel_names:
-            assert any(ch_name in region.ch_names for region in ch_split.ch_names.values()), \
-                f"Expected the channel '{ch_name}' to be contained in a region, but found no match"
+    channel_names_1 = montage_1.ch_names
+    for ch_name in channel_names_1:
+        assert any(ch_name in region.ch_names for region in ch_split_1.ch_names.values()), \
+                    f"Expected the channel '{ch_name}' to be contained in a region, but found no match"
 
-    # Check if number of regions in each channel split is as expected
-    for expected_regions, ch_split in zip(num_regions, ch_splits):
-        assert expected_regions == len(ch_split), (f"Expected number of regions to be {expected_regions}, but found "
-                                                   f"{len(ch_split)}")
+    channel_names_2 = montage_2.ch_names
+    for ch_name in channel_names_2:
+        assert any(ch_name in region.ch_names for region in ch_split_2.ch_names.values()), \
+            f"Expected the channel '{ch_name}' to be contained in a region, but found no match"
 
 
 # TODO: not updated
