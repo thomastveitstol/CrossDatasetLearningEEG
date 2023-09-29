@@ -123,7 +123,7 @@ class MainRBPModel(nn.Module):
 
         # Defining histories objects
         train_history = Histories(metrics=metrics)
-        val_history = Histories(metrics=metrics)
+        val_history = Histories(metrics=metrics, name="val")
 
         # ------------------------
         # Fit model

@@ -41,9 +41,9 @@ class Histories:
     ('mae', 'mape', 'mse', 'pearson_r', 'spearman_rho')
     """
 
-    __slots__ = "_history", "_epoch_y_pred", "_epoch_y_true"
+    __slots__ = "_history", "_epoch_y_pred", "_epoch_y_true", "_name"
 
-    def __init__(self, metrics):
+    def __init__(self, metrics, name=None):
         """
         Initialise
 
@@ -52,6 +52,8 @@ class Histories:
         metrics : str | tuple[str, ...]
             The metrics to use. If 'str', it must either be 'regression' or 'classification', specifying that all
             available regression/classification metrics should be used
+        name : str, optional
+            May be used for the printing of the metrics
         """
         # Maybe set metrics
         if metrics == "regression":
@@ -67,6 +69,8 @@ class Histories:
         # ----------------
         # Set attributes
         # ----------------
+        self._name = name
+
         # Create history dictionary
         self._history: Dict[str, List[float]] = {f"{metric}": [] for metric in metrics}
 
@@ -88,11 +92,18 @@ class Histories:
     def _print_newest_metrics(self) -> None:
         """Method for printing the newest metrics"""
         # todo: printing?
+
         for i, (metric_name, metric_values) in enumerate(self.history.items()):
             if i == len(self.history) - 1:
-                print(f"{metric_name}: {metric_values[-1]:.3f}")
+                if self._name is None:
+                    print(f"{metric_name}: {metric_values[-1]:.3f}")
+                else:
+                    print(f"{self._name}_{metric_name}: {metric_values[-1]:.3f}")
             else:
-                print(f"{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
+                if self._name is None:
+                    print(f"{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
+                else:
+                    print(f"{self._name}_{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
 
     def _update_metrics(self):
         # Update all metrics
