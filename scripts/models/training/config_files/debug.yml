@@ -1,0 +1,62 @@
+box: &box
+  x_min: -0.17
+  x_max: 0.17
+  y_min: -0.17
+  y_max: 0.17
+
+RBP Designs:
+  RBP Design 1:
+    num_designs: 4
+    pooling_type: multi_cs
+    pooling_methods: MultiCSSharedRocket
+    pooling_methods_kwargs:
+      num_regions: [ 5, 3, 5 ]
+      num_kernels: 100
+      max_receptive_field: 53
+    split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit ]
+    split_methods_kwargs:
+      - num_points: 5
+        <<: *box
+      - num_points: 3
+        <<: *box
+      - num_points: 5
+        <<: *box
+
+  RBP Design 2:
+    num_designs: 7
+    pooling_type: single_cs
+    pooling_methods: SingleCSSharedRocket
+    pooling_methods_kwargs:
+      num_regions: &num_regions_2 4
+      num_kernels: 54
+      max_receptive_field: 53
+    split_methods: VoronoiSplit
+    split_methods_kwargs:
+      num_points: *num_regions_2
+      <<: *box
+
+  RBP Design 3:
+    num_designs: 5
+    pooling_type: multi_cs
+    pooling_methods: MultiCSSharedRocket
+    pooling_methods_kwargs:
+      num_regions: [ 5, 5, 5, 3, 2 ]
+      num_kernels: 132
+      max_receptive_field: 71
+    split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit ]
+    split_methods_kwargs:
+      - num_points: 5
+        <<: *box
+      - num_points: 5
+        <<: *box
+      - num_points: 5
+        <<: *box
+      - num_points: 3
+        <<: *box
+      - num_points: 2
+        <<: *box
+
+MTS Module:
+  model: InceptionTime
+  kwargs:
+    num_classes: 5
