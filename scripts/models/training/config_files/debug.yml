@@ -4,20 +4,44 @@ box: &box
   y_min: -0.17
   y_max: 0.17
 
+Training:
+  batch_size: 32
+  learning_rate: 0.0001
+  num_epochs: 500
+  verbose: true
+
+Data Split:
+  num_folds: 2
+  seed: 42
+
+Shared Dataset Details:
+  num_time_steps: &num_time_steps 2000
+  time_series_start: &time_series_start null
+
+Datasets:
+  miltiadous:
+    num_subjects: 88
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+  rockhill:
+    num_subjects: 31
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+
 RBP Designs:
   RBP Design 1:
     num_designs: 4
     pooling_type: multi_cs
     pooling_methods: MultiCSSharedRocket
     pooling_methods_kwargs:
-      num_regions: [ 5, 3, 5 ]
-      num_kernels: 100
-      max_receptive_field: 53
+      num_regions: [ 5, 5, 5 ]
+      num_kernels: 5000
+      max_receptive_field: 250
     split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit ]
     split_methods_kwargs:
       - num_points: 5
         <<: *box
-      - num_points: 3
+      - num_points: 5
         <<: *box
       - num_points: 5
         <<: *box
@@ -28,8 +52,8 @@ RBP Designs:
     pooling_methods: SingleCSSharedRocket
     pooling_methods_kwargs:
       num_regions: &num_regions_2 4
-      num_kernels: 54
-      max_receptive_field: 53
+      num_kernels: 2000
+      max_receptive_field: 100
     split_methods: VoronoiSplit
     split_methods_kwargs:
       num_points: *num_regions_2
@@ -40,23 +64,29 @@ RBP Designs:
     pooling_type: multi_cs
     pooling_methods: MultiCSSharedRocket
     pooling_methods_kwargs:
-      num_regions: [ 5, 5, 5, 3, 2 ]
-      num_kernels: 132
-      max_receptive_field: 71
+      num_regions: [ 3, 3, 5, 3, 3 ]
+      num_kernels: 4000
+      max_receptive_field: 300
     split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit ]
     split_methods_kwargs:
-      - num_points: 5
+      - num_points: 3
         <<: *box
-      - num_points: 5
+      - num_points: 3
         <<: *box
       - num_points: 5
         <<: *box
       - num_points: 3
         <<: *box
-      - num_points: 2
+      - num_points: 3
         <<: *box
 
 MTS Module:
   model: InceptionTime
   kwargs:
-    num_classes: 5
+    num_classes: 1
+
+
+Pretext Task:
+  lower: 0.6
+  upper: 2.1
+  task: phase_slowing
