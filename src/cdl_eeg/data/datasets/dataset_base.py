@@ -326,6 +326,33 @@ class EEGDatasetBase(abc.ABC):
         participants.tsv file"""
         return tuple(pandas.read_csv(self.get_participants_tsv_path(), sep="\t")["participant_id"])
 
+    # ----------------
+    # Target methods
+    # ----------------
+    def load_targets(self, target, subject_ids=None):
+        """
+        Method for loading targets
+
+        Parameters
+        ----------
+        target : str
+        subject_ids : tuple[str, ...]
+
+        Returns
+        -------
+        numpy.ndarray
+        """
+        subject_ids = self.get_subject_ids() if subject_ids is None else subject_ids
+
+        # Input check
+        if target not in self.get_available_targets():
+            raise ValueError(f"Target '{target}' was not recognised. Make sure that the method passed shares the name "
+                             f"with the implemented method you want to use. The targets available for this class "
+                             f"({type(self).__name__}) are: {self.get_available_targets()}")
+
+        # Return the targets  todo: check if 'subject_ids' can be a required input for the decorated methods
+        return getattr(self, target)(subject_ids=subject_ids)
+
     @classmethod
     def get_available_targets(cls):
         """Get all target methods available for the class. The target method must be decorated by @target_method to be

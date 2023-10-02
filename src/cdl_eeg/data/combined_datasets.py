@@ -22,9 +22,9 @@ class CombinedDatasets:
     Class for storing multiple datasets
     """
 
-    __slots__ = "_subject_ids", "_data"
+    __slots__ = "_subject_ids", "_data", "_targets"
 
-    def __init__(self, datasets, load_details=None):
+    def __init__(self, datasets, load_details=None, target=None):
         """
         Initialise
 
@@ -34,6 +34,8 @@ class CombinedDatasets:
         ----------
         datasets : tuple[cdl_eeg.data.datasets.dataset_base.EEGDatasetBase, ...]
         load_details : tuple[LoadDetails, ...], optional
+        target: str, optional
+            Targets to load. If None, no targets are loaded
         """
         # If no loading details are provided, use default
         load_details = tuple(LoadDetails(dataset.get_subject_ids()) for dataset in datasets) \
@@ -61,6 +63,10 @@ class CombinedDatasets:
                                                               num_time_steps=details.num_time_steps)
                       for dataset, details in zip(datasets, load_details)}
 
+        self._targets = None if target is None \
+            else {dataset.name: dataset.load_targets(subject_ids=details.subject_ids, target=target)
+                  for dataset, details in zip(datasets, load_details)}
+
     def get_data(self, subjects):
         """
         Method for getting data
@@ -84,6 +90,40 @@ class CombinedDatasets:
             # Get the data
             idx = self._subject_ids[dataset_name][subject.subject_id]
             subject_data = self._data[dataset_name][idx]
+
+            # Add the subject data
+            if dataset_name in data:
+                data[dataset_name].append(subject_data)
+            else:
+                data[dataset_name] = [subject_data]
+
+        # Convert to numpy arrays and return (here, we assume that the data matrices can be concatenated)
+        return {dataset_name: numpy.concatenate(numpy.expand_dims(data_matrix, axis=0), axis=0)
+                for dataset_name, data_matrix in data.items()}
+
+    def get_targets(self, subjects):
+        """
+        Method for getting targets
+
+        TODO: make tests
+
+        Parameters
+        ----------
+        subjects : tuple[cdl_eeg.data.data_split.Subject, ...]
+            Subjects to extract
+
+        Returns
+        -------
+        dict[str, numpy.ndarray]
+        """
+        # Loop through all subjects  todo: fix type hinting
+        data: Dict[str, List[numpy.ndarray]] = dict()  # type: ignore[type-arg]
+        for subject in subjects:
+            dataset_name = subject.dataset_name
+
+            # Get the target
+            idx = self._subject_ids[dataset_name][subject.subject_id]
+            subject_data = self._targets[dataset_name][idx]
 
             # Add the subject data
             if dataset_name in data:
