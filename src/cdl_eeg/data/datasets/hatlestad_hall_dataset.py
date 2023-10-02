@@ -88,7 +88,7 @@ class HatlestadHall(EEGDatasetBase):
         sub_id_to_age = {name: age for name, age in zip(df["participant_id"], df["age"])}
 
         # Extract the ages of the subjects, in the same order as the input argument
-        return tuple(sub_id_to_age[sub_id] for sub_id in subject_ids)
+        return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
 
     # ----------------
     # Channel system

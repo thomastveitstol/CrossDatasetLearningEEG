@@ -1,6 +1,7 @@
 import os
 
 import mne
+import numpy
 import pandas
 
 from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, target_method
@@ -52,7 +53,7 @@ class Miltiadous(EEGDatasetBase):
         sub_id_to_age = {name: age for name, age in zip(df["participant_id"], df["Age"])}
 
         # Extract the ages of the subjects, in the same order as the input argument
-        return tuple(sub_id_to_age[sub_id] for sub_id in subject_ids)
+        return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
 
     @target_method
     def mmse(self, subject_ids):
@@ -63,7 +64,7 @@ class Miltiadous(EEGDatasetBase):
         sub_id_to_age = {name: age for name, age in zip(df["participant_id"], df["MMSE"])}
 
         # Extract the MMSE score of the subjects, in the same order as the input argument
-        return tuple(sub_id_to_age[sub_id] for sub_id in subject_ids)
+        return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
 
     # ----------------
     # Methods for channel system
