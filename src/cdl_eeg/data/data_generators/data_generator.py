@@ -136,15 +136,17 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
         # Varying keys in the returned dictionary is not possible with the DataLoader of PyTorch. This solution to the
         # problem is to simply return a tensor of -1s for the datasets not used
         data = {dataset_name: torch.ones(size=x.shape[1:]) * (-1) for dataset_name, x in self._data.items()}
-        targets = {dataset_name: torch.ones(size=y.shape[1:]) * (-1) for dataset_name, y in self._targets.items()}
+        targets = {dataset_name: torch.unsqueeze(torch.ones(size=y.shape[1:]) * (-1), dim=-1)
+                   for dataset_name, y in self._targets.items()}
 
         # Select dataset and subject in the dataset
         dataset_size = {dataset_name: x.shape[0] for dataset_name, x in self._data.items()}
         dataset_name, idx = _select_dataset_and_index(item, dataset_size)
 
         # Add the data which should be used
-        data[dataset_name] = self._data[dataset_name][idx]
-        targets[dataset_name] = self._targets[dataset_name][idx]
+        data[dataset_name] = torch.tensor(self._data[dataset_name][idx], dtype=torch.float)
+        targets[dataset_name] = torch.unsqueeze(torch.tensor(self._targets[dataset_name][idx], dtype=torch.float),
+                                                dim=-1)
 
         # TODO: quite hard coded?
         if self._pre_computed is None:
