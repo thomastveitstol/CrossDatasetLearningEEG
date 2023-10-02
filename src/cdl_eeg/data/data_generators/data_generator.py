@@ -106,6 +106,62 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
         self._pretext_task = task
 
 
+class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
+
+    # Remember to remove the yielded -1 tensors!
+    strip_outputs = True
+
+    def __init__(self, data, targets, *, pre_computed=None):
+        """
+        Initialise
+
+        Parameters
+        ----------
+        data : dict[str, numpy.ndarray]
+        targets : dict[str, numpy.ndarray]
+        pre_computed : tuple[dict[str, typing.Any], ...]
+        """
+        super().__init__()
+
+        self._data = data
+        self._targets = targets
+        self._pre_computed = pre_computed
+
+    def __len__(self):
+        return sum(x.shape[0] for x in self._data.values())
+
+    def __getitem__(self, item):
+        # TODO: copied from SelfSupervisedDataGenerator
+
+        # Varying keys in the returned dictionary is not possible with the DataLoader of PyTorch. This solution to the
+        # problem is to simply return a tensor of -1s for the datasets not used
+        data = {dataset_name: torch.ones(size=x.shape[1:]) * (-1) for dataset_name, x in self._data.items()}
+        targets = {dataset_name: torch.ones(size=y.shape[1:]) * (-1) for dataset_name, y in self._targets.items()}
+
+        # Select dataset and subject in the dataset
+        dataset_size = {dataset_name: x.shape[0] for dataset_name, x in self._data.items()}
+        dataset_name, idx = _select_dataset_and_index(item, dataset_size)
+
+        # Add the data which should be used
+        data[dataset_name] = self._data[dataset_name][idx]
+        targets[dataset_name] = self._targets[dataset_name][idx]
+
+        # TODO: quite hard coded?
+        if self._pre_computed is None:
+            return data, targets
+        else:
+            # assert False, {type(pre_comp) for pre_comp in self._pre_computed}
+            pre_computed = []
+            for pre_comp in self._pre_computed:
+                my_dict = {data_name: torch.ones(tensor.size()[1:]) * (-1) for data_name, tensor in pre_comp.items()}
+                my_dict[dataset_name] = pre_comp[dataset_name][idx]
+                pre_computed.append(my_dict)
+
+            # TODO: must fix return, as KeyError is raised when collating
+            # Don't think I should convert pre_computed to tuple, as I must strip it anyway
+            return data, pre_computed, targets
+
+
 # ----------------
 # Functions
 # ----------------
