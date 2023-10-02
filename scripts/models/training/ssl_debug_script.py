@@ -14,7 +14,7 @@ import yaml
 from torch.utils.data import DataLoader
 
 from cdl_eeg.data.combined_datasets import LoadDetails, CombinedDatasets
-from cdl_eeg.data.data_generators.data_generator import SelfSupervisedDataGenerator
+from cdl_eeg.data.data_generators.data_generator import SelfSupervisedDataGenerator, DownstreamDataGenerator
 from cdl_eeg.data.data_split import KFoldDataSplit
 from cdl_eeg.data.datasets.getter import get_dataset
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel, tensor_dict_to_device
@@ -93,7 +93,8 @@ def main():
         )
 
     # Load all data
-    combined_dataset = CombinedDatasets(tuple(datasets), load_details=tuple(load_details))
+    combined_dataset = CombinedDatasets(tuple(datasets), load_details=tuple(load_details),
+                                        target=config["Downstream Training"]["target"])
 
     # -----------------
     # Split data
@@ -145,7 +146,7 @@ def main():
                                           pretext_task=pretext_task)
 
     # Create data loaders
-    config_training = config["Training"]
+    config_training = config["Pre-Training"]
     train_loader = DataLoader(dataset=train_gen, batch_size=config_training["batch_size"], shuffle=True)
     val_loader = DataLoader(dataset=val_gen, batch_size=config_training["batch_size"], shuffle=True)
 
@@ -155,6 +156,58 @@ def main():
 
     # Pre-train
     print("Pre-training...")
+    model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
+                    optimiser=optimiser, num_epochs=config_training["num_epochs"], verbose=config_training["verbose"],
+                    channel_name_to_index=channel_name_to_index, device=device)
+
+    # -----------------
+    # Perform downstream training
+    # -----------------
+    # Split the data  todo
+    conf_data_split = config["Data Split"]
+    data_split = KFoldDataSplit(num_folds=conf_data_split["num_folds"], dataset_subjects=subjects,
+                                seed=conf_data_split["seed"]).folds
+
+    # Split into training and validation splits
+    train_subjects = data_split[0]
+    val_subjects = data_split[-1]
+
+    # Extract input data
+    train_data = combined_dataset.get_data(subjects=train_subjects)
+    val_data = combined_dataset.get_data(subjects=val_subjects)
+
+    # Extract target data
+    train_targets = combined_dataset.get_targets(subjects=train_subjects)
+    val_targets = combined_dataset.get_targets(subjects=val_subjects)
+
+    # Perform pre-computing
+    print("Pre-computing...")
+    train_pre_computed = model.pre_compute(input_tensors={dataset_name: torch.tensor(data, dtype=torch.float).to(device)
+                                                          for dataset_name, data in train_data.items()})
+    val_pre_computed = model.pre_compute(input_tensors={dataset_name: torch.tensor(data, dtype=torch.float).to(device)
+                                                        for dataset_name, data in val_data.items()})
+
+    # Send to cpu
+    train_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=torch.device("cpu"))
+                               for pre_comp in train_pre_computed)
+    val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=torch.device("cpu"))
+                             for pre_comp in val_pre_computed)
+
+    # Create data generators
+    train_gen = DownstreamDataGenerator(data=train_data, targets=train_targets, pre_computed=train_pre_computed)
+    val_gen = DownstreamDataGenerator(data=val_data, targets=val_targets, pre_computed=val_pre_computed)
+
+    # Create data loaders
+    config_training = config["Downstream Training"]
+    train_loader = DataLoader(dataset=train_gen, batch_size=config_training["batch_size"], shuffle=True)
+    val_loader = DataLoader(dataset=val_gen, batch_size=config_training["batch_size"], shuffle=True)
+
+    # Create optimiser and loss
+    optimiser = optim.Adam(model.parameters(), lr=config_training["learning_rate"])
+    criterion = nn.MSELoss(reduction="mean")
+
+    # Train model
+    print("Downstream training...")
     model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
                     optimiser=optimiser, num_epochs=config_training["num_epochs"], verbose=config_training["verbose"],
                     channel_name_to_index=channel_name_to_index, device=device)
