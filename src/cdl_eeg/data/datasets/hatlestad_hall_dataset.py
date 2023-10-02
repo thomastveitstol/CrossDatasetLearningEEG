@@ -4,7 +4,7 @@ import mne
 import numpy
 import pandas
 
-from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase
+from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, target_method
 
 
 class HatlestadHall(EEGDatasetBase):
@@ -13,6 +13,8 @@ class HatlestadHall(EEGDatasetBase):
     ----------
     >>> HatlestadHall().name
     'hatlestad_hall'
+    >>> HatlestadHall.get_available_targets()
+    ('age',)
     """
 
     __slots__ = ()
@@ -73,6 +75,20 @@ class HatlestadHall(EEGDatasetBase):
 
         # Load MNE object and return
         return mne.io.read_epochs_eeglab(input_fname=path, verbose=False)
+
+    # ----------------
+    # Targets
+    # ----------------
+    @target_method
+    def age(self, subject_ids):
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
+
+        # Convert to dict
+        sub_id_to_age = {name: age for name, age in zip(df["participant_id"], df["age"])}
+
+        # Extract the ages of the subjects, in the same order as the input argument
+        return tuple(sub_id_to_age[sub_id] for sub_id in subject_ids)
 
     # ----------------
     # Channel system

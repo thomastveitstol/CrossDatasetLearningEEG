@@ -2,7 +2,7 @@ import abc
 import dataclasses
 import logging
 import os
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 
 import enlighten
 import inflection
@@ -17,6 +17,11 @@ from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
 # --------------------
 # Convenient decorators
 # --------------------
+def target_method(func):
+    setattr(func, "_is_target_method", True)
+    return func
+
+
 def path_method(func):
     setattr(func, "_is_path_method", True)
     return func
@@ -320,6 +325,22 @@ class EEGDatasetBase(abc.ABC):
         """Get the subject IDs available. Unless this method is overridden, it will collect the IDs from the
         participants.tsv file"""
         return tuple(pandas.read_csv(self.get_participants_tsv_path(), sep="\t")["participant_id"])
+
+    @classmethod
+    def get_available_targets(cls):
+        """Get all target methods available for the class. The target method must be decorated by @target_method to be
+        properly registered"""
+        # Get all target methods
+        target_methods: List[str] = []
+        for method in dir(cls):
+            attribute = getattr(cls, method)
+
+            # Append (as type 'str') if it is a target method
+            if callable(attribute) and getattr(attribute, "_is_target_method", False):
+                target_methods.append(method)
+
+        # Convert to tuple and return
+        return tuple(target_methods)
 
     # ----------------
     # Properties

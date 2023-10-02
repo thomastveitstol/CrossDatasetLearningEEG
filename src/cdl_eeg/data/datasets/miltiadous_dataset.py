@@ -1,8 +1,9 @@
 import os
 
 import mne
+import pandas
 
-from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase
+from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, target_method
 
 
 class Miltiadous(EEGDatasetBase):
@@ -11,6 +12,8 @@ class Miltiadous(EEGDatasetBase):
     ----------
     >>> Miltiadous().name
     'miltiadous'
+    >>> Miltiadous.get_available_targets()
+    ('age', 'mmse')
     """
 
     __slots__ = ()
@@ -36,6 +39,31 @@ class Miltiadous(EEGDatasetBase):
 
         # Load MNE object and return
         return mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)
+
+    # ----------------
+    # Targets
+    # ----------------
+    @target_method
+    def age(self, subject_ids):
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
+
+        # Convert to dict
+        sub_id_to_age = {name: age for name, age in zip(df["participant_id"], df["Age"])}
+
+        # Extract the ages of the subjects, in the same order as the input argument
+        return tuple(sub_id_to_age[sub_id] for sub_id in subject_ids)
+
+    @target_method
+    def mmse(self, subject_ids):
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
+
+        # Convert to dict
+        sub_id_to_age = {name: age for name, age in zip(df["participant_id"], df["MMSE"])}
+
+        # Extract the MMSE score of the subjects, in the same order as the input argument
+        return tuple(sub_id_to_age[sub_id] for sub_id in subject_ids)
 
     # ----------------
     # Methods for channel system
