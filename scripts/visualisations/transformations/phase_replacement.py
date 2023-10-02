@@ -90,6 +90,7 @@ def main():
     transformation = PhaseReplacement(num_chunks=num_chunks, chunk_duration=chunk_duration,
                                       chunk_time_delay=chunk_time_delay)
     permuted_chunks, idx = transformation.phase_replacement(original_data=data_0, replacement_data=data_1)
+
     # -----------------
     # Convert to MNE objects, plot, and print details
     # -----------------
