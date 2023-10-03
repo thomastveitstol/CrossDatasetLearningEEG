@@ -17,6 +17,7 @@ from cdl_eeg.data.combined_datasets import LoadDetails, CombinedDatasets
 from cdl_eeg.data.data_generators.data_generator import SelfSupervisedDataGenerator, DownstreamDataGenerator
 from cdl_eeg.data.data_split import KFoldDataSplit
 from cdl_eeg.data.datasets.getter import get_dataset
+from cdl_eeg.data.scalers.z_normalisation import ZNormalisation
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel, tensor_dict_to_device
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RBPDesign, RBPPoolType
 from cdl_eeg.models.transformations.frequency_slowing import FrequencySlowing
@@ -179,6 +180,13 @@ def main():
     # Extract target data
     train_targets = combined_dataset.get_targets(subjects=train_subjects)
     val_targets = combined_dataset.get_targets(subjects=val_subjects)
+
+    # Fit scaler and scale
+    target_scaler = ZNormalisation()
+    target_scaler.fit(train_targets)
+
+    train_targets = target_scaler.transform(train_targets)
+    val_targets = target_scaler.transform(val_targets)
 
     # Perform pre-computing
     print("Pre-computing...")

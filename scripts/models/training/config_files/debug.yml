@@ -7,7 +7,7 @@ box: &box
 Downstream Training:
   batch_size: 32
   learning_rate: 0.0001
-  num_epochs: 15
+  num_epochs: 150
   verbose: true
   target: age
 
@@ -27,11 +27,11 @@ Shared Dataset Details:
 
 Datasets:
   miltiadous:
-    num_subjects: 10
+    num_subjects: 88
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
   rockhill:
-    num_subjects: 10
+    num_subjects: 31
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
 
