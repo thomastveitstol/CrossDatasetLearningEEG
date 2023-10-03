@@ -34,12 +34,13 @@ class ZNormalisation:
 
         Examples
         --------
-        >>> my_data = {"d1": numpy.array([61, 43, 9, 32]), "d2": numpy.array([8, 3, 65, 2, 5, 6]),
-        ...            "d3": numpy.array([7, 2])}
+        >>> my_data = {"d1": numpy.expand_dims(numpy.array([61, 43, 9, 32]), axis=-1),
+        ...            "d2": numpy.expand_dims(numpy.array([8, 3, 65, 2, 5, 6]), axis=-1),
+        ...            "d3": numpy.expand_dims(numpy.array([7, 2]), axis=-1)}
         >>> my_scaler = ZNormalisation()
         >>> my_scaler.fit(my_data)
-        >>> my_scaler.mean, round(my_scaler.std, 2)
-        (20.25, 22.68)
+        >>> my_scaler.mean, my_scaler.std
+        (array([20.25]), array([22.67570286]))
         """
         # Concatenate to a data matrix
         data_matrix = numpy.concatenate(list(data.values()), axis=0)
@@ -63,14 +64,18 @@ class ZNormalisation:
 
         Examples
         --------
-        >>> my_fit_data = {"d1": numpy.array([61, 43, 9, 32]), "d2": numpy.array([8, 3, 65, 2, 5, 6]),
-        ...                "d3": numpy.array([7, 2])}
+        >>> my_fit_data = {"d1": numpy.expand_dims(numpy.array([61, 43, 9, 32]), axis=-1),
+        ...                 "d2": numpy.expand_dims(numpy.array([8, 3, 65, 2, 5, 6]), axis=-1),
+        ...                 "d3": numpy.expand_dims(numpy.array([7, 2]), axis=-1)}
         >>> my_scaler = ZNormalisation()
         >>> my_scaler.fit(my_fit_data)
-        >>> my_test_data = {"d4": numpy.array([20.25, 34, 3]), "d5": numpy.array([54, 4, 22, 7, 103])}
+        >>> my_test_data = {"d4": numpy.expand_dims(numpy.array([20.25, 34, 3]), axis=-1),
+        ...                 "d5": numpy.expand_dims(numpy.array([54, 4, 22, 7, 103]), axis=-1)}
         >>> my_transformed_data = my_scaler.transform(my_test_data)
         >>> {my_n: numpy.round(my_y, 2) for my_n, my_y in my_transformed_data.items()}  # type: ignore[attr-defined]
-        {'d4': array([ 0.  ,  0.61, -0.76]), 'd5': array([ 1.49, -0.72,  0.08, -0.58,  3.65])}
+        ... # doctest: +NORMALIZE_WHITESPACE
+        {'d4': array([[ 0.  ], [ 0.61], [-0.76]]),
+         'd5': array([[ 1.49], [-0.72], [ 0.08], [-0.58], [ 3.65]])}
         """
         return {dataset_name: (x - self._mean) / self._std for dataset_name, x in data.items()}
 
