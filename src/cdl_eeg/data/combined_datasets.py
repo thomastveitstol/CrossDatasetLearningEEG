@@ -20,6 +20,8 @@ class LoadDetails:
 class CombinedDatasets:
     """
     Class for storing multiple datasets
+
+    TODO: Make methods for introducing more data, and for removing from memory
     """
 
     __slots__ = "_subject_ids", "_data", "_targets"
