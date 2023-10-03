@@ -151,7 +151,7 @@ def main():
 
     # Create optimiser and loss
     optimiser = optim.Adam(model.parameters(), lr=config_training["learning_rate"])
-    criterion = nn.L1Loss(reduction="mean")
+    criterion = nn.MSELoss(reduction="mean")
 
     # Pre-train
     print("Pre-training...")
