@@ -14,7 +14,7 @@ class Rockhill(EEGDatasetBase):
     >>> Rockhill().name
     'rockhill'
     >>> Rockhill.get_available_targets()
-    ('age', 'mmse', 'naart')
+    ('age', 'mmse', 'naart', 'parkinsons')
     """
 
     __slots__ = ()
@@ -81,7 +81,7 @@ class Rockhill(EEGDatasetBase):
     @staticmethod
     def _get_subject_status(subject_id):
         """
-        Get the subject status (pd or hc)
+        Get the subject status (pd or hc)  todo: consider using Enum instead of string
 
         Parameters
         ----------
@@ -120,6 +120,23 @@ class Rockhill(EEGDatasetBase):
     # ----------------
     # Targets  todo: they are very similar...
     # ----------------
+    @target_method
+    def parkinsons(self, subject_ids):
+        # Loop though subject IDs
+        targets = []
+        for sub_id in subject_ids:
+            # Set the target to 0 if healthy, 1 if PD
+            status = self._get_subject_status(sub_id)
+            if status == "hc":
+                targets.append(0)
+            elif status == "pd":
+                targets.append(1)
+            else:
+                raise ValueError("This should never happens, please contact the developer")
+
+        # Convert to numpy array and return
+        return numpy.array(targets)
+    
     @target_method
     def age(self, subject_ids):
         # Read the .tsv file
