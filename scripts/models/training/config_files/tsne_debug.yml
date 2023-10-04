@@ -7,7 +7,7 @@ box: &box
 Pre-Training:
   batch_size: 32
   learning_rate: 0.0001
-  num_epochs: 100
+  num_epochs: 300
   verbose: true
 
 SSL Data Split:
@@ -24,16 +24,17 @@ SSL Datasets:
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
   rockhill:
-    num_subjects: 1
+    num_subjects: 31
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
 
 Pretext Task:
   Distribution:
     distribution: UnivariateUniform
+    scale_details: true
     kwargs:
       lower: 0.6
-      upper: 2.1
+      upper: 1.4
   task: phase_slowing
 
 t-SNE Data:

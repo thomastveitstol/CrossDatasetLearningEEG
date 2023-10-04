@@ -101,7 +101,8 @@ def main():
     config_pretext = config["Pretext Task"]
     slowing_distribution = get_random_distribution(distribution=config_pretext["Distribution"]["distribution"],
                                                    **config_pretext["Distribution"]["kwargs"])
-    transformation = FrequencySlowing(slowing_distribution=slowing_distribution)
+    transformation = FrequencySlowing(slowing_distribution=slowing_distribution,
+                                      scale_details=config_pretext["Distribution"]["scale_details"])
     pretext_task = config_pretext["task"]
 
     # -----------------
