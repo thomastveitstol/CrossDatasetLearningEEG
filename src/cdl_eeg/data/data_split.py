@@ -1,4 +1,5 @@
 import dataclasses
+import itertools
 import random
 from typing import Tuple, List
 
@@ -145,3 +146,44 @@ class SplitOnDataset:
     @property
     def folds(self):
         return self._folds
+
+
+# -----------------
+# Functions
+# -----------------
+def leave_1_fold_out(i, folds):
+    """
+    Method for selecting all subject except for one fold (the i-th fold)
+
+    Parameters
+    ----------
+    i : int
+        Fold to not include
+    folds : tuple[tuple[Subject, ...], ...]
+
+    Returns
+    -------
+    tuple[Subject, ...]
+
+    Examples
+    --------
+    >>> my_folds = ((Subject("TW", "Merc"), Subject("MV", "RB"), Subject("LN", "McL")),
+    ...             (Subject("YT", "AT"), Subject("CS", "F")), (Subject("CL", "F"), Subject("VB", "AR")),
+    ...             (Subject("FA", "AM"), Subject("LS", "AM"), Subject("DH", "RB")))
+    >>> leave_1_fold_out(2, my_folds)  # doctest: +NORMALIZE_WHITESPACE
+    (Subject(subject_id='TW', dataset_name='Merc'), Subject(subject_id='MV', dataset_name='RB'),
+     Subject(subject_id='LN', dataset_name='McL'), Subject(subject_id='YT', dataset_name='AT'),
+     Subject(subject_id='CS', dataset_name='F'), Subject(subject_id='FA', dataset_name='AM'),
+     Subject(subject_id='LS', dataset_name='AM'), Subject(subject_id='DH', dataset_name='RB'))
+    >>> leave_1_fold_out(-1, my_folds)  # doctest: +NORMALIZE_WHITESPACE
+    (Subject(subject_id='TW', dataset_name='Merc'), Subject(subject_id='MV', dataset_name='RB'),
+     Subject(subject_id='LN', dataset_name='McL'), Subject(subject_id='YT', dataset_name='AT'),
+     Subject(subject_id='CS', dataset_name='F'), Subject(subject_id='CL', dataset_name='F'),
+     Subject(subject_id='VB', dataset_name='AR'))
+
+    """
+    # Handle negative index
+    i = len(folds) + i if i < 0 else i
+
+    # Return as unpacked tuple
+    return tuple(itertools.chain(*tuple(fold for j, fold in enumerate(folds) if j != i)))
