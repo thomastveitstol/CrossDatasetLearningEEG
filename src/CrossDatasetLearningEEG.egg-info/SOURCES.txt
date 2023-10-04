@@ -27,8 +27,10 @@ src/cdl_eeg/data/datasets/rockhill_dataset.py
 src/cdl_eeg/data/datasets/van_hees.py
 src/cdl_eeg/data/datasets/yulin_wang_dataset.py
 src/cdl_eeg/data/scalers/__init__.py
-src/cdl_eeg/data/scalers/z_normalisation.py
+src/cdl_eeg/data/scalers/scaler_base.py
+src/cdl_eeg/data/scalers/target_scalers.py
 src/cdl_eeg/models/__init__.py
+src/cdl_eeg/models/losses.py
 src/cdl_eeg/models/metrics.py
 src/cdl_eeg/models/main_models/__init__.py
 src/cdl_eeg/models/main_models/main_rbp_model.py
