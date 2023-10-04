@@ -8,8 +8,8 @@ Pre-Training:
   batch_size: 32
   num_epochs: 100
   verbose: true
-  loss: regression
-  metrics: classification
+  loss: MSELoss
+  metrics: regression
   Scalers:
     target:
       name: ZNormalisation
