@@ -37,7 +37,7 @@ Downstream Training:
   loss: BCEWithLogitsLoss
   Scalers:
     target:
-      name: ZNormalisation
+      name: NoScaler
       kwargs: { }
   Data Split:
     name: KFoldDataSplit
