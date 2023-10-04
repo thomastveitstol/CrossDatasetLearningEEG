@@ -7,7 +7,7 @@ from sklearn.manifold import TSNE
 from cdl_eeg.data.data_generators.data_generator import strip_tensors
 from cdl_eeg.models.metrics import Histories
 from cdl_eeg.models.mts_modules.getter import get_mts_module
-from cdl_eeg.models.region_based_pooling.region_based_pooling import RegionBasedPooling
+from cdl_eeg.models.region_based_pooling.region_based_pooling import RegionBasedPooling, RBPDesign, RBPPoolType
 
 
 class MainRBPModel(nn.Module):
@@ -41,6 +41,43 @@ class MainRBPModel(nn.Module):
         # ----------------
         # todo: the number of in channels must be calculated from/by the RBP layer
         self._mts_module = get_mts_module(mts_module_name=mts_module, **mts_module_kwargs)
+
+    @classmethod
+    def from_config(cls, config):
+        # -----------------
+        # Read RBP designs
+        # -----------------
+        designs_config = config["RBP Designs"]
+        rbp_designs = []
+        total_num_regions = 0
+        for name, design in designs_config.items():
+            rbp_designs.append(
+                RBPDesign(pooling_type=RBPPoolType(design["pooling_type"]),
+                          pooling_methods=design["pooling_methods"],
+                          pooling_methods_kwargs=design["pooling_methods_kwargs"],
+                          split_methods=design["split_methods"],
+                          split_methods_kwargs=design["split_methods_kwargs"],
+                          num_designs=design["num_designs"])
+            )
+
+            num_regions = design["pooling_methods_kwargs"]["num_regions"]  # todo: should be specified by split instead
+            if isinstance(num_regions, int):
+                total_num_regions += num_regions * design["num_designs"]
+            else:
+                total_num_regions += sum(num_regions) * design["num_designs"]
+
+        # -----------------
+        # Read MTS design
+        # -----------------
+        # Read configuration file
+        mts_design = config["MTS Module"]
+        mts_design["kwargs"]["in_channels"] = total_num_regions
+
+        # -----------------
+        # Make model
+        # -----------------
+        return cls(mts_module=mts_design["model"], mts_module_kwargs=mts_design["kwargs"],
+                   rbp_designs=tuple(rbp_designs))
 
     def pre_compute(self, input_tensors):
         """
