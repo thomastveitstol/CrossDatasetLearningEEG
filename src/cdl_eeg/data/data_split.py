@@ -1,3 +1,4 @@
+import abc
 import dataclasses
 import itertools
 import random
@@ -16,9 +17,28 @@ class Subject:
 
 
 # -----------------
+# Base classes
+# -----------------
+class DataSplitBase(abc.ABC):
+
+    __slots__ = ()
+
+    @property
+    @abc.abstractmethod
+    def folds(self):
+        """
+        Get the folds
+
+        Returns
+        -------
+        tuple[tuple[Subject, ...], ...]
+        """
+
+
+# -----------------
 # Classes
 # -----------------
-class KFoldDataSplit:
+class KFoldDataSplit(DataSplitBase):
     """
     Class for splitting the data into k folds. The different datasets are neglected
 
@@ -86,7 +106,7 @@ class KFoldDataSplit:
         return self._folds
 
 
-class SplitOnDataset:
+class SplitOnDataset(DataSplitBase):
     """
     Class for splitting the data based on the provided datasets only
 
