@@ -120,7 +120,7 @@ class CombinedDatasets:
         """
         # Input check
         if self._targets is None:
-            raise ValueError(f"Tried to extract targets, but no targets are available")
+            raise ValueError("Tried to extract targets, but no targets are available")
 
         # Loop through all subjects  todo: fix type hinting
         data: Dict[str, List[numpy.ndarray]] = dict()  # type: ignore[type-arg]

@@ -136,7 +136,7 @@ class Rockhill(EEGDatasetBase):
 
         # Convert to numpy array and return
         return numpy.array(targets)
-    
+
     @target_method
     def age(self, subject_ids):
         # Read the .tsv file
