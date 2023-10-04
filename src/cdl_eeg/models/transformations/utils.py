@@ -102,6 +102,20 @@ class RandomBase(abc.ABC):
             A sample from the distribution
         """
 
+    @abc.abstractmethod
+    def scale(self, draw):
+        """
+        Method for scaling a random  draw
+
+        Parameters
+        ----------
+        draw : float
+
+        Returns
+        -------
+        float
+        """
+
 
 class UnivariateNormal(RandomBase):
     """
@@ -147,6 +161,27 @@ class UnivariateNormal(RandomBase):
         # Draw a sample from the distribution and return
         return numpy.random.normal(loc=self._mean, scale=self._std)
 
+    def scale(self, draw):
+        """
+        Scaling method which subtracts the mean and divide by standard deviation
+
+        Parameters
+        ----------
+        draw : float
+
+        Returns
+        -------
+        float
+
+        Examples
+        --------
+        >>> UnivariateNormal(3, 0.5).scale(3.5)
+        1.0
+        >>> round(UnivariateNormal(3, 0.5).scale(2.7), 5)
+        -0.6
+        """
+        return (draw - self._mean) / self._std
+
 
 class UnivariateUniform(RandomBase):
 
@@ -187,6 +222,37 @@ class UnivariateUniform(RandomBase):
 
         # Draw a sample from the distribution and return
         return numpy.random.uniform(low=self._lower, high=self._upper)
+
+    def scale(self, draw):
+        """
+        Scales such that the distribution is U[-1, 1]
+
+        Parameters
+        ----------
+        draw : float
+
+        Returns
+        -------
+        float
+
+        Examples
+        --------
+        >>> UnivariateUniform(9, 10).scale(9)
+        -1.0
+        >>> UnivariateUniform(9, 10).scale(10)
+        1.0
+        >>> UnivariateUniform(9, 10).scale(9.5)
+        0.0
+        >>> UnivariateUniform(9, 10).scale(9.75)
+        0.5
+        """
+        # Subtract mean
+        draw -= (self._upper + self._lower) / 2
+
+        # Scale interval
+        draw /= (self._upper - self._lower) / 2
+
+        return draw
 
     # --------------
     # Properties
