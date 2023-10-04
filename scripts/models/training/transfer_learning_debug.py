@@ -9,7 +9,6 @@ import warnings
 
 import torch
 import yaml
-import torch.nn as nn
 from torch import optim
 from torch.utils.data import DataLoader
 

@@ -9,7 +9,7 @@ def get_loss_function(loss):
     # Loop through and select the correct one
     for available_loss in available_losses:
         if loss == type(available_loss).__name__:
-            return available_loss(reduction="mean")
+            return available_loss
 
     # If no match, an error is raised
     raise ValueError(f"The loss function '{loss}' was not recognised. Please select among the following: "
