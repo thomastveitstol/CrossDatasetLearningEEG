@@ -17,9 +17,9 @@ class FrequencySlowing(TransformationBase):
     ('phase_slowing',)
     """
 
-    __slots__ = "_slowing_distribution",
+    __slots__ = "_slowing_distribution", "_scale_details"
 
-    def __init__(self, slowing_distribution):
+    def __init__(self, slowing_distribution, scale_details=True):
         """
         Initialise
 
@@ -33,6 +33,7 @@ class FrequencySlowing(TransformationBase):
             raise TypeError(f"Expected the input distribution to be an instance of 'RandomBase', but found "
                             f"{type(slowing_distribution)}")
         self._slowing_distribution = slowing_distribution
+        self._scale_details = scale_details
 
     # ----------------------
     # Transformation methods
@@ -64,4 +65,7 @@ class FrequencySlowing(TransformationBase):
         modified_phase = numpy.unwrap(numpy.angle(analytical_signal)) * phase_modulation
 
         # (Create and) return the new signal and phase modulation
+        if self._scale_details:
+            phase_modulation = self._slowing_distribution.scale(phase_modulation)
+
         return numpy.real(amplitude_envelope * numpy.exp(1j * modified_phase)), phase_modulation
