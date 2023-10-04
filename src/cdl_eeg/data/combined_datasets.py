@@ -1,7 +1,10 @@
 import dataclasses
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Self, Tuple
 
 import numpy
+
+from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase
+from cdl_eeg.data.datasets.getter import get_dataset
 
 
 # -----------------
@@ -24,7 +27,7 @@ class CombinedDatasets:
     TODO: Make methods for introducing more data, and for removing from memory
     """
 
-    __slots__ = "_subject_ids", "_data", "_targets"
+    __slots__ = "_subject_ids", "_data", "_targets", "_datasets"
 
     def __init__(self, datasets, load_details=None, target=None):
         """
@@ -34,7 +37,7 @@ class CombinedDatasets:
 
         Parameters
         ----------
-        datasets : tuple[cdl_eeg.data.datasets.dataset_base.EEGDatasetBase, ...]
+        datasets : tuple[EEGDatasetBase, ...]
         load_details : tuple[LoadDetails, ...], optional
         target: str, optional
             Targets to load. If None, no targets are loaded
@@ -68,6 +71,46 @@ class CombinedDatasets:
         self._targets = None if target is None \
             else {dataset.name: dataset.load_targets(subject_ids=details.subject_ids, target=target)
                   for dataset, details in zip(datasets, load_details)}
+
+        # Convenient for e.g. extracting channel systems
+        self._datasets = datasets
+
+    @classmethod
+    def from_config(cls, config, target=None) -> Self:
+        """
+        Method for initialising directly from a config file
+
+        Parameters
+        ----------
+        config : dict[str, typing.Any]
+        target : str, optional
+
+        Returns
+        -------
+        """
+        # Initialise lists and dictionaries
+        load_details = []
+        datasets = []
+        subjects = dict()
+        channel_name_to_index = dict()
+
+        # Loop through all datasets and loading details to be used
+        for dataset_name, dataset_details in config.items():
+            # Get dataset
+            dataset = get_dataset(dataset_name)
+            datasets.append(dataset)
+            dataset_subjects = dataset.get_subject_ids()[:dataset_details["num_subjects"]]
+            subjects[dataset_name] = dataset_subjects
+            channel_name_to_index[dataset_name] = dataset.channel_name_to_index()
+
+            # Construct loading details
+            load_details.append(
+                LoadDetails(subject_ids=dataset_subjects, time_series_start=dataset_details["time_series_start"],
+                            num_time_steps=dataset_details["num_time_steps"])
+            )
+
+        # Load all data and return object
+        return cls(datasets=tuple(datasets), load_details=tuple(load_details), target=target)
 
     def get_data(self, subjects):
         """
@@ -148,6 +191,10 @@ class CombinedDatasets:
     def dataset_subjects(self) -> Dict[str, Tuple[str, ...]]:
         """Get a dictionary containing the subjects available (values) in the datasets (keys)"""
         return {name: tuple(subjects.keys()) for name, subjects in self._subject_ids.items()}
+
+    @property
+    def datasets(self) -> Tuple[EEGDatasetBase, ...]:
+        return self._datasets
 
 # todo: check out asyncio for loading. See mCoding at https://www.youtube.com/watch?v=ftmdDlwMwwQ and
 #  https://www.youtube.com/watch?v=ueTXYhtlnjA
