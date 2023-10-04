@@ -196,5 +196,9 @@ class CombinedDatasets:
     def datasets(self) -> Tuple[EEGDatasetBase, ...]:
         return self._datasets
 
+    @property
+    def channel_name_to_index(self):
+        return {dataset.name: dataset.channel_name_to_index() for dataset in self._datasets}
+
 # todo: check out asyncio for loading. See mCoding at https://www.youtube.com/watch?v=ftmdDlwMwwQ and
 #  https://www.youtube.com/watch?v=ueTXYhtlnjA
