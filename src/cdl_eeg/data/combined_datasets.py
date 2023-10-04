@@ -73,7 +73,7 @@ class CombinedDatasets:
                   for dataset, details in zip(datasets, load_details)}
 
         # Convenient for e.g. extracting channel systems
-        self._datasets = datasets
+        self._datasets: Tuple[EEGDatasetBase, ...] = datasets
 
     @classmethod
     def from_config(cls, config, target=None) -> Self:
@@ -193,7 +193,7 @@ class CombinedDatasets:
         return {name: tuple(subjects.keys()) for name, subjects in self._subject_ids.items()}
 
     @property
-    def datasets(self) -> Tuple[EEGDatasetBase, ...]:
+    def datasets(self):
         return self._datasets
 
     @property
