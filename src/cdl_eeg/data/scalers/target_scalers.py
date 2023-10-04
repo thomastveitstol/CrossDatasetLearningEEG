@@ -1,7 +1,12 @@
 import numpy
 
+from cdl_eeg.data.scalers.scaler_base import TargetScalerBase
 
-class ZNormalisation:
+
+# ---------------
+# Classes
+# ---------------
+class ZNormalisation(TargetScalerBase):
     """
     Class for z-normalising
     """
@@ -89,3 +94,46 @@ class ZNormalisation:
     @property
     def std(self):
         return self._std
+
+
+class NoScaler(TargetScalerBase):
+    """
+    Class for not scaling anything
+    """
+
+    __slots__ = ()
+
+    def fit(self):
+        ...
+
+    def transform(self, data):
+        return data
+
+
+# ---------------
+# Functions
+# ---------------
+def get_target_scaler(scaler, **kwargs):
+    """
+    Function for getting the specified target scaler
+
+    Parameters
+    ----------
+    scaler : str
+    kwargs
+
+    Returns
+    -------
+    TargetScalerBase
+    """
+    # All available scalers must be included here
+    available_scalers = (ZNormalisation, NoScaler)
+
+    # Loop through and select the correct one
+    for target_scaler in available_scalers:
+        if scaler == target_scaler.__name__:
+            return target_scaler(**kwargs)
+
+    # If no match, an error is raised
+    raise ValueError(f"The target scaler '{scaler}' was not recognised. Please select among the following: "
+                     f"{tuple(target_scaler.__name__ for target_scaler in available_scalers)}")
