@@ -112,9 +112,9 @@ def main():
 
     # Pre-train model
     print("Pre-training...")
-    model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
-                    optimiser=optimiser, num_epochs=pre_train_config["num_epochs"], verbose=pre_train_config["verbose"],
-                    channel_name_to_index=channel_name_to_index, device=device)
+    model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics=pre_train_config["metrics"],
+                    criterion=criterion, optimiser=optimiser, num_epochs=pre_train_config["num_epochs"],
+                    verbose=pre_train_config["verbose"], channel_name_to_index=channel_name_to_index, device=device)
 
     # -----------------
     # Load data for downstream training and split data
@@ -187,8 +187,8 @@ def main():
 
     # Pre-train model
     print("Downstream training...")
-    model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
-                    optimiser=optimiser, num_epochs=downstream_config["num_epochs"],
+    model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics=downstream_config["metrics"],
+                    criterion=criterion, optimiser=optimiser, num_epochs=downstream_config["num_epochs"],
                     verbose=downstream_config["verbose"], channel_name_to_index=channel_name_to_index, device=device)
 
 

@@ -8,7 +8,8 @@ Pre-Training:
   batch_size: 32
   num_epochs: 100
   verbose: true
-  loss: MSELoss
+  loss: regression
+  metrics: classification
   Scalers:
     target:
       name: ZNormalisation
@@ -35,6 +36,7 @@ Downstream Training:
   num_epochs: 150
   verbose: true
   loss: BCEWithLogitsLoss
+  metrics: classification
   Scalers:
     target:
       name: NoScaler
