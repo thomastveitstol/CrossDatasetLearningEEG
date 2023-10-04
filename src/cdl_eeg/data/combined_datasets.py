@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Dict, List, Optional, Self, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy
 
@@ -76,7 +76,7 @@ class CombinedDatasets:
         self._datasets: Tuple[EEGDatasetBase, ...] = datasets
 
     @classmethod
-    def from_config(cls, config, target=None) -> Self:
+    def from_config(cls, config, target=None):
         """
         Method for initialising directly from a config file
 
