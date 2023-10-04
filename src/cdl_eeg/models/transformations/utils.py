@@ -198,3 +198,32 @@ class UnivariateUniform(RandomBase):
     @property
     def upper(self):
         return self._upper
+
+
+# -------------------------
+# Functions
+# -------------------------
+def get_random_distribution(distribution, **kwargs):
+    """
+    Function for getting the specified random distribution
+
+    Parameters
+    ----------
+    distribution : str
+    kwargs
+
+    Returns
+    -------
+    RandomBase
+    """
+    # All available distributions must be included here
+    available_distributions = (UnivariateUniform, UnivariateNormal)
+
+    # Loop through and select the correct one
+    for dist in available_distributions:
+        if distribution == dist.__name__:
+            return dist(**kwargs)
+
+    # If no match, an error is raised
+    raise ValueError(f"The random distribution '{distribution}' was not recognised. Please select among the following: "
+                     f"{tuple(dist.__name__ for dist in available_distributions)}")
