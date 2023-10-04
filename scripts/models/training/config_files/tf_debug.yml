@@ -8,6 +8,7 @@ Pre-Training:
   batch_size: 32
   num_epochs: 100
   verbose: true
+  loss: MSELoss
   Scalers:
     target:
       name: ZNormalisation
@@ -28,26 +29,24 @@ Pre-Training:
       time_series_start: *time_series_start
 
 Downstream Training:
-  target: mmse
+  target: parkinsons
   learning_rate: 0.0001
   batch_size: 32
   num_epochs: 150
   verbose: true
+  loss: BCEWithLogitsLoss
   Scalers:
     target:
       name: ZNormalisation
       kwargs: { }
   Data Split:
-    name: SplitOnDataset
+    name: KFoldDataSplit
     kwargs:
+      num_folds: 2
       seed: 42
   Datasets:
     rockhill:
       num_subjects: 31
-      num_time_steps: *num_time_steps
-      time_series_start: *time_series_start
-    miltiadous:
-      num_subjects: 88
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
 

@@ -17,6 +17,7 @@ from cdl_eeg.data.combined_datasets import CombinedDatasets
 from cdl_eeg.data.data_generators.data_generator import DownstreamDataGenerator
 from cdl_eeg.data.data_split import leave_1_fold_out, get_data_split
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
+from cdl_eeg.models.losses import get_loss_function
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel, tensor_dict_to_device
 
 
@@ -108,7 +109,7 @@ def main():
 
     # Create optimiser and loss
     optimiser = optim.Adam(model.parameters(), lr=pre_train_config["learning_rate"])
-    criterion = nn.MSELoss(reduction="mean")
+    criterion = get_loss_function(loss=pre_train_config["loss"])
 
     # Pre-train model
     print("Pre-training...")
@@ -183,7 +184,7 @@ def main():
 
     # Create optimiser and loss
     optimiser = optim.Adam(model.parameters(), lr=downstream_config["learning_rate"])
-    criterion = nn.MSELoss(reduction="mean")
+    criterion = get_loss_function(downstream_config["loss"])
 
     # Pre-train model
     print("Downstream training...")
