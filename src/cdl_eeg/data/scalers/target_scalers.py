@@ -103,7 +103,7 @@ class NoScaler(TargetScalerBase):
 
     __slots__ = ()
 
-    def fit(self):
+    def fit(self, *args, **kwargs):
         ...
 
     def transform(self, data):
