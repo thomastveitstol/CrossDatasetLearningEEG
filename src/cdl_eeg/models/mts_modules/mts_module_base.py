@@ -10,7 +10,6 @@ def latent_feature_extraction_method(func):
 
 
 class MTSModuleBase(nn.Module, abc.ABC):
-    # todo: consider overriding __new__ to store all inputs and defaults of __init__
 
     @classmethod
     def supports_latent_feature_extraction(cls):
