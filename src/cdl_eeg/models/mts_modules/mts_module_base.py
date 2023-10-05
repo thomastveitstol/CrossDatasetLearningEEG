@@ -39,6 +39,7 @@ class MTSModuleBase(nn.Module, abc.ABC):
         return tuple(feature_extraction_methods)
 
     def extract_latent_features(self, data, method="default_latent_feature_extraction"):
+        """Method for extracting latent features"""
         # Input check
         if method not in self.get_available_latent_feature_extractions():
             raise ValueError(f"Latent feature extraction method '{method}' was not recognised. Make sure that the "
