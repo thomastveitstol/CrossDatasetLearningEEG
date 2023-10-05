@@ -13,7 +13,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from cdl_eeg.models.mts_modules.mts_module_base import MTSModuleBase
+from cdl_eeg.models.mts_modules.mts_module_base import MTSModuleBase, latent_feature_extraction_method
 
 
 # ---------------------------
@@ -192,6 +192,14 @@ class _ShortcutLayer(nn.Module):
 # Main module
 # ---------------------------
 class InceptionTime(MTSModuleBase):
+    """
+    Inception Time
+
+    Examples
+    --------
+    >>> InceptionTime(64, 5).supports_latent_feature_extraction()
+    True
+    """
 
     def __init__(self, in_channels, num_classes, *, cnn_units=32, depth=6, use_bottleneck=True, activation=None,
                  max_kernel_size=40, use_residual=True):
@@ -250,6 +258,29 @@ class InceptionTime(MTSModuleBase):
         # forward method)
         # -----------------------------
         self._fc_layer = nn.Linear(in_features=output_channels, out_features=num_classes)
+
+    @latent_feature_extraction_method
+    def extract_latent_features(self, input_tensor):
+        """
+        Get the features right after performing global average pooling in temporal dimension
+
+        Parameters
+        ----------
+        input_tensor : torch.Tensor
+            A torch.Tensor with shape=(batch, output_channels), see __init__ for output channels
+
+        Returns
+        -------
+        torch.Tensor
+            A torch.Tensor with shape=(batch, output_channels), see __init__ for output channels
+
+        Examples
+        --------
+        >>> my_model = InceptionTime(in_channels=43, num_classes=3, cnn_units=23)
+        >>> my_model.extract_latent_features(torch.rand(size=(10, 43, 500))).size()
+        torch.Size([10, 92])
+        """
+        return self(input_tensor, return_features=True)
 
     def forward(self, input_tensor, return_features=False):
         """
