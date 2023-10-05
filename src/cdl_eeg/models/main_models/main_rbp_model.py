@@ -119,6 +119,23 @@ class MainRBPModel(nn.Module):
         # Pass through MTS module and return
         return self._mts_module(x)
 
+    def extract_latent_features(self, input_tensors, *, channel_name_to_index, pre_computed=None,
+                                method="default_latent_feature_extraction"):
+        """Method for extracting latent features"""
+        # Input check
+        if not self._mts_module.supports_latent_feature_extraction():
+            raise ValueError(f"The MTS module {type(self._mts_module).__name__} does not support latent feature "
+                             f"extraction")
+
+        # Pass through RBP layer
+        x = self._region_based_pooling(input_tensors, channel_name_to_index=channel_name_to_index,
+                                       pre_computed=pre_computed)
+        # Merge by concatenation
+        x = torch.cat(x, dim=1)
+
+        # Pass through MTS module and return
+        return self._mts_module.extract_latent_features(x, method=method)
+
     # ----------------
     # Methods for fitting channel systems
     # ----------------
