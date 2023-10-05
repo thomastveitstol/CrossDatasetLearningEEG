@@ -260,7 +260,7 @@ class InceptionTime(MTSModuleBase):
         self._fc_layer = nn.Linear(in_features=output_channels, out_features=num_classes)
 
     @latent_feature_extraction_method
-    def extract_latent_features(self, input_tensor):
+    def default_latent_feature_extraction(self, input_tensor):
         """
         Get the features right after performing global average pooling in temporal dimension
 
@@ -277,6 +277,8 @@ class InceptionTime(MTSModuleBase):
         Examples
         --------
         >>> my_model = InceptionTime(in_channels=43, num_classes=3, cnn_units=23)
+        >>> my_model.default_latent_feature_extraction(torch.rand(size=(10, 43, 500))).size()
+        torch.Size([10, 92])
         >>> my_model.extract_latent_features(torch.rand(size=(10, 43, 500))).size()
         torch.Size([10, 92])
         """
