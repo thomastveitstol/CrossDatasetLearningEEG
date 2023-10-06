@@ -32,7 +32,9 @@ src/cdl_eeg/data/scalers/target_scalers.py
 src/cdl_eeg/models/__init__.py
 src/cdl_eeg/models/losses.py
 src/cdl_eeg/models/metrics.py
+src/cdl_eeg/models/utils.py
 src/cdl_eeg/models/main_models/__init__.py
+src/cdl_eeg/models/main_models/main_fixed_channels_model.py
 src/cdl_eeg/models/main_models/main_rbp_model.py
 src/cdl_eeg/models/main_models/ml_models.py
 src/cdl_eeg/models/mts_modules/__init__.py
