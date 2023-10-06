@@ -34,6 +34,7 @@ src/cdl_eeg/models/losses.py
 src/cdl_eeg/models/metrics.py
 src/cdl_eeg/models/main_models/__init__.py
 src/cdl_eeg/models/main_models/main_rbp_model.py
+src/cdl_eeg/models/main_models/ml_models.py
 src/cdl_eeg/models/mts_modules/__init__.py
 src/cdl_eeg/models/mts_modules/getter.py
 src/cdl_eeg/models/mts_modules/inception_time.py
