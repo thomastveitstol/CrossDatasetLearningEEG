@@ -8,6 +8,7 @@ from cdl_eeg.data.data_generators.data_generator import strip_tensors
 from cdl_eeg.models.metrics import Histories
 from cdl_eeg.models.mts_modules.getter import get_mts_module
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RegionBasedPooling, RBPDesign, RBPPoolType
+from cdl_eeg.models.utils import tensor_dict_to_device, flatten_targets
 
 
 class MainRBPModel(nn.Module):
@@ -201,7 +202,7 @@ class MainRBPModel(nn.Module):
 
                 # Send data to correct device
                 x_train = tensor_dict_to_device(x_train, device=device)
-                y_train = _flatten_targets(y_train).to(device)
+                y_train = flatten_targets(y_train).to(device)
                 train_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
                                            for pre_comp in train_pre_computed)
 
@@ -240,7 +241,7 @@ class MainRBPModel(nn.Module):
 
                     # Send data to correct device
                     x_val = tensor_dict_to_device(x_val, device=device)
-                    y_val = _flatten_targets(y_val).to(device)
+                    y_val = flatten_targets(y_val).to(device)
                     val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
                                              for pre_comp in val_pre_computed)
 
@@ -299,51 +300,3 @@ class MainRBPModel(nn.Module):
         # Create and fit t-SNE
         tsne = TSNE(n_components=n_components)
         return tsne.fit_transform(x)
-
-
-# ---------------
-# Functions
-# ---------------
-def tensor_dict_to_device(tensors, device):
-    """
-    Send a dictionary containing tensors to device
-
-    Parameters
-    ----------
-    tensors : dict[str, torch.Tensor]
-    device : torch.device
-
-    Returns
-    -------
-    dict[str, torch.Tensor]
-    """
-    # Input check
-    if not all(isinstance(tensor, torch.Tensor) for tensor in tensors.values()):
-        raise TypeError(f"Expected all values in the dictionary to be torch tensors, but found "
-                        f"{set(type(tensor) for tensor in tensors.values())}")
-
-    # Send to device and return
-    return {dataset_name: tensor.to(device) for dataset_name, tensor in tensors.items()}
-
-
-def _flatten_targets(tensors):
-    """
-    Flatten the targets
-
-    TODO: Make tests on the sorting
-    Parameters
-    ----------
-    tensors : dict[str, torch.Tensor | numpy.ndarray]
-
-    Returns
-    -------
-    torch.Tensor
-    """
-    # Maybe convert to torch tensors
-    if all(isinstance(tensor, numpy.ndarray) for tensor in tensors.values()):
-        tensors = {dataset_name: torch.tensor(tensor, dtype=torch.float) for dataset_name, tensor in tensors.items()}
-
-    # Flatten  todo: why do we need to loop for converting to tuple??
-    targets = torch.cat(tuple(tensor for tensor in tensors.values()), dim=0)
-
-    return targets

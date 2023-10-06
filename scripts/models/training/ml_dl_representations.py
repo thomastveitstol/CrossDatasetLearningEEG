@@ -18,7 +18,7 @@ from cdl_eeg.data.data_generators.data_generator import SelfSupervisedDataGenera
 from cdl_eeg.data.data_split import leave_1_fold_out, get_data_split
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
 from cdl_eeg.models.losses import get_loss_function
-from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel, tensor_dict_to_device, _flatten_targets
+from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel, tensor_dict_to_device, flatten_targets
 from cdl_eeg.models.main_models.ml_models import get_ml_model
 from cdl_eeg.models.transformations.frequency_slowing import FrequencySlowing
 from cdl_eeg.models.transformations.utils import get_random_distribution
@@ -186,7 +186,7 @@ def main():
 
     # Train the classifier
     ml_model = get_ml_model(downstream_config["ML Model"]["name"], **downstream_config["ML Model"]["kwargs"])
-    ml_model.fit(train_features, _flatten_targets(train_targets).numpy())
+    ml_model.fit(train_features, flatten_targets(train_targets).numpy())
 
     # Predict
     with torch.no_grad():
@@ -199,8 +199,8 @@ def main():
     predictions = ml_model.predict(val_features)
 
     print("----------------------")
-    print(f"AUC: {roc_auc_score(_flatten_targets(val_targets).numpy(), predictions)}")
-    print(f"Accuracy: {accuracy_score(_flatten_targets(val_targets).numpy(), predictions)}")
+    print(f"AUC: {roc_auc_score(flatten_targets(val_targets).numpy(), predictions)}")
+    print(f"Accuracy: {accuracy_score(flatten_targets(val_targets).numpy(), predictions)}")
 
 
 if __name__ == "__main__":
