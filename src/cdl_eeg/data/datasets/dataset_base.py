@@ -152,7 +152,7 @@ class EEGDatasetBase(abc.ABC):
         """
         raise NotImplementedError("A cleaned version is not available for this class.")
 
-    def load_numpy_arrays(self, subject_ids=None, *, time_series_start=None, num_time_steps=None):
+    def load_numpy_arrays(self, subject_ids=None, *, time_series_start=None, num_time_steps=None, channels=None):
         """
         Method for loading numpy arrays
 
@@ -161,6 +161,7 @@ class EEGDatasetBase(abc.ABC):
         subject_ids : tuple[str, ...]
         time_series_start : int, optional
         num_time_steps : int, optional
+        channels: tuple[str, ...], optional
 
         Returns
         -------
@@ -195,11 +196,17 @@ class EEGDatasetBase(abc.ABC):
             # Load the numpy array
             eeg_data = numpy.load(os.path.join(self.get_numpy_arrays_path(), f"{sub_id}.npy"))
 
-            # (Maybe crop the signal)
+            # (Maybe) crop the signal
             if time_series_start is not None:
                 eeg_data = eeg_data[..., time_series_start:]
             if num_time_steps is not None:
                 eeg_data = eeg_data[..., :num_time_steps]
+
+            # (Maybe) remove unwanted signals
+            if channels is not None:
+                indices = channel_names_to_indices(ch_names=channels,
+                                                   channel_name_to_index=self.channel_name_to_index())
+                eeg_data = eeg_data[indices]
 
             # Add the data
             data.append(numpy.expand_dims(eeg_data, axis=0))

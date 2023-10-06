@@ -15,6 +15,7 @@ class LoadDetails:
     subject_ids: Tuple[str, ...]
     time_series_start: Optional[int] = None
     num_time_steps: Optional[int] = None
+    channels: Optional[Tuple[str, ...]] = None
 
 
 # -----------------
@@ -65,7 +66,8 @@ class CombinedDatasets:
         # Load and store data  todo: can this be made faster be asyncio?
         self._data = {dataset.name: dataset.load_numpy_arrays(subject_ids=details.subject_ids,
                                                               time_series_start=details.time_series_start,
-                                                              num_time_steps=details.num_time_steps)
+                                                              num_time_steps=details.num_time_steps,
+                                                              channels=details.channels)
                       for dataset, details in zip(datasets, load_details)}
 
         self._targets = None if target is None \
