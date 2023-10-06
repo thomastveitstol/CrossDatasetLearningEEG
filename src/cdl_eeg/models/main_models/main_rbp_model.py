@@ -1,5 +1,4 @@
 import enlighten
-import numpy
 import torch
 import torch.nn as nn
 from sklearn.manifold import TSNE
