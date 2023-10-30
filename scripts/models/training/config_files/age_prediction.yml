@@ -80,8 +80,9 @@ Training:
       name: ZNormalisation
       kwargs: { }
   Data Split:
-    name: SplitOnDataset
+    name: KFoldDataSplit
     kwargs:
+      num_folds: 5
       seed: 42
   Datasets:
     rockhill:
