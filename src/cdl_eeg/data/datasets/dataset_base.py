@@ -470,7 +470,7 @@ class EEGDatasetBase(abc.ABC):
             Keys are channel name, value is the row-position in the data matrix
         """
 
-    def plot_electrode_positions(self, subject_id=None, annotate=True):
+    def plot_electrode_positions(self, subject_id=None, annotate=True, ax=None):
         """
         Method for 3D plotting the electrode positions.
 
@@ -480,6 +480,7 @@ class EEGDatasetBase(abc.ABC):
             Subject ID
         annotate : bool
             To annotate the points with channel names (True) or not (False)
+        ax: optional
 
         Returns
         -------
@@ -499,9 +500,10 @@ class EEGDatasetBase(abc.ABC):
             y_vals.append(y)
             z_vals.append(z)
 
-        # Make new figure
-        fig = pyplot.figure()
-        ax = fig.add_subplot(111, projection='3d')
+        # Maybe make new figure
+        if ax is None:
+            fig = pyplot.figure()
+            ax = fig.add_subplot(111, projection='3d')
 
         # Plot
         ax.scatter(x_vals, y_vals, z_vals)
