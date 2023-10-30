@@ -146,6 +146,7 @@ def main():
 
             # Forward pass
             predictions = model(test_data, pre_computed=test_pre_computed, channel_name_to_index=channel_name_to_index)
+            predictions = target_scaler.inv_transform(scaled_data=predictions)
 
             # Update test history
             test_history.store_batch_evaluation(y_pred=predictions, y_true=test_targets)

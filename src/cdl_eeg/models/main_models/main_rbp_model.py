@@ -221,8 +221,9 @@ class MainRBPModel(nn.Module):
                     if prediction_activation_function is not None:
                         y_pred = prediction_activation_function(y_pred)
 
-                    # (Maybe) re-scale targets before computing metrics
+                    # (Maybe) re-scale targets and predictions before computing metrics
                     if target_scaler is not None:
+                        y_pred = target_scaler.inv_transform(scaled_data=y_pred)
                         y_train = target_scaler.inv_transform(scaled_data=y_train)
                     train_history.store_batch_evaluation(y_pred=y_pred, y_true=y_train)
 
@@ -256,8 +257,9 @@ class MainRBPModel(nn.Module):
                     if prediction_activation_function is not None:
                         y_pred = prediction_activation_function(y_pred)
 
-                    # (Maybe) re-scale targets before computing metrics
+                    # (Maybe) re-scale targets and predictions before computing metrics
                     if target_scaler is not None:
+                        y_pred = target_scaler.inv_transform(scaled_data=y_pred)
                         y_val = target_scaler.inv_transform(scaled_data=y_val)
                     val_history.store_batch_evaluation(y_pred=y_pred, y_true=y_val)
 
