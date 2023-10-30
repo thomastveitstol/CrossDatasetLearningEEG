@@ -22,11 +22,11 @@ class ScalerBase(abc.ABC):
 
         Parameters
         ----------
-        data : dict[str, numpy.ndarray]
+        data
 
         Returns
         -------
-        dict[str, numpy.ndarray]
+        Scaled data
         """
 
     @abc.abstractmethod
@@ -36,13 +36,12 @@ class ScalerBase(abc.ABC):
 
         Parameters
         ----------
-        scaled_data : dict[str, numpy.ndarray]
+        scaled_data
             Scaled data
 
         Returns
         -------
-        dict[str, numpy.ndarray]
-            De-scaled data
+        De-scaled data
         """
 
 
