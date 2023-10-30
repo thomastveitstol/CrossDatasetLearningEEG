@@ -98,6 +98,10 @@ Experts:
           num_subjects: 31
           num_time_steps: *num_time_steps
           time_series_start: *time_series_start
+        hatlestad_hall:
+          num_subjects: 111
+          num_time_steps: *num_time_steps
+          time_series_start: *time_series_start
   Expert 2:
     Model: *model
     Training:
@@ -127,6 +131,10 @@ Experts:
           time_series_start: *time_series_start
         rockhill:
           num_subjects: 31
+          num_time_steps: *num_time_steps
+          time_series_start: *time_series_start
+        hatlestad_hall:
+          num_subjects: 111
           num_time_steps: *num_time_steps
           time_series_start: *time_series_start
   Expert 3:
@@ -160,6 +168,10 @@ Experts:
           num_subjects: 31
           num_time_steps: *num_time_steps
           time_series_start: *time_series_start
+        hatlestad_hall:
+          num_subjects: 111
+          num_time_steps: *num_time_steps
+          time_series_start: *time_series_start
 
 Downstream Training:
   target: parkinsons
@@ -175,6 +187,14 @@ Downstream Training:
   Datasets:
     rockhill:
       num_subjects: 31
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
+    miltiadous:
+      num_subjects: 88
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
+    hatlestad_hall:
+      num_subjects: 111
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
   ML Model:
