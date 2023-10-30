@@ -24,7 +24,7 @@ Model:
           <<: *box
 
     RBP Design 2:
-      num_designs: 7
+      num_designs: 20
       pooling_type: single_cs
       pooling_methods: SingleCSSharedRocket
       pooling_methods_kwargs:
