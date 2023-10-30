@@ -119,7 +119,7 @@ def project_to_2d(electrode_positions):
 
     Returns
     -------
-    cdl_eeg.models.region_based_pooling.utils.Electrodes3D
+    cdl_eeg.models.region_based_pooling.utils.Electrodes2D
         The 2D projection of the electrodes
 
     Examples
