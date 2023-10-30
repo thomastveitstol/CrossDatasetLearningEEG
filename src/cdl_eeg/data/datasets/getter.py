@@ -1,3 +1,6 @@
+from typing import Type, Tuple
+
+from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.rockhill_dataset import Rockhill
@@ -17,10 +20,10 @@ def get_dataset(dataset_name, **kwargs):
 
     Returns
     -------
-    cdl_eeg.data.datasets.dataset_base.EEGDatasetBase
+    EEGDatasetBase
     """
     # All available datasets must be included here
-    available_datasets = (Miltiadous, Rockhill, HatlestadHall, YulinWang)
+    available_datasets: Tuple[Type[EEGDatasetBase], ...] = (Miltiadous, Rockhill, HatlestadHall, YulinWang)
 
     # Loop through and select the correct one
     for dataset in available_datasets:
