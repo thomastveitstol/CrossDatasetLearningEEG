@@ -150,7 +150,7 @@ class MainRBPModel(nn.Module):
     # todo: don't know if I should have another class, and if this generalisation really works...
     # ----------------
     def pre_train(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser, device,
-                  channel_name_to_index, prediction_activation_function=None, verbose=True):
+                  channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
         """
         Method for pre-training
 
@@ -168,6 +168,7 @@ class MainRBPModel(nn.Module):
         channel_name_to_index : dict[str, dict[str, int]]
         prediction_activation_function : typing.Callable | None
         verbose : bool
+        target_scaler : cdl_eeg.data.scalers.target_scalers.TargetScalerBase, optional
 
         Returns
         -------
@@ -219,6 +220,10 @@ class MainRBPModel(nn.Module):
                     y_pred = torch.clone(output)
                     if prediction_activation_function is not None:
                         y_pred = prediction_activation_function(y_pred)
+
+                    # (Maybe) re-scale targets before computing metrics
+                    if target_scaler is not None:
+                        y_train = target_scaler.inv_transform(scaled_data=y_train)
                     train_history.store_batch_evaluation(y_pred=y_pred, y_true=y_train)
 
                 # Update progress bar
@@ -250,6 +255,10 @@ class MainRBPModel(nn.Module):
                     # Update validation history
                     if prediction_activation_function is not None:
                         y_pred = prediction_activation_function(y_pred)
+
+                    # (Maybe) re-scale targets before computing metrics
+                    if target_scaler is not None:
+                        y_val = target_scaler.inv_transform(scaled_data=y_val)
                     val_history.store_batch_evaluation(y_pred=y_pred, y_true=y_val)
 
                 # Finalise epoch for validation history object

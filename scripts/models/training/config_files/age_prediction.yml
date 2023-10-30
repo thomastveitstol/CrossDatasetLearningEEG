@@ -1,0 +1,102 @@
+box: &box
+  x_min: -0.17
+  x_max: 0.17
+  y_min: -0.17
+  y_max: 0.17
+
+Model:
+  RBP Designs:
+    RBP Design 1:
+      num_designs: 4
+      pooling_type: multi_cs
+      pooling_methods: MultiCSSharedRocket
+      pooling_methods_kwargs:
+        num_regions: [ 5, 5, 5 ]
+        num_kernels: 1021
+        max_receptive_field: 250
+      split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit ]
+      split_methods_kwargs:
+        - num_points: 5
+          <<: *box
+        - num_points: 5
+          <<: *box
+        - num_points: 5
+          <<: *box
+
+    RBP Design 2:
+      num_designs: 7
+      pooling_type: single_cs
+      pooling_methods: SingleCSSharedRocket
+      pooling_methods_kwargs:
+        num_regions: &num_regions_2 4
+        num_kernels: 1000
+        max_receptive_field: 100
+      split_methods: VoronoiSplit
+      split_methods_kwargs:
+        num_points: *num_regions_2
+        <<: *box
+
+    RBP Design 3:
+      num_designs: 5
+      pooling_type: multi_cs
+      pooling_methods: MultiCSSharedRocket
+      pooling_methods_kwargs:
+        num_regions: [ 3, 3, 5, 3, 3 ]
+        num_kernels: 400
+        max_receptive_field: 200
+      split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit ]
+      split_methods_kwargs:
+        - num_points: 3
+          <<: *box
+        - num_points: 3
+          <<: *box
+        - num_points: 5
+          <<: *box
+        - num_points: 3
+          <<: *box
+        - num_points: 3
+          <<: *box
+
+  MTS Module:
+    model: InceptionTime
+    kwargs:
+      num_classes: 1
+
+Shared Dataset Details:
+  num_time_steps: &num_time_steps 2000
+  time_series_start: &time_series_start null
+
+Training:
+  learning_rate: 0.0001
+  batch_size: 32
+  num_epochs: 30
+  verbose: true
+  val_split: 0.2
+  loss: MSELoss
+  metrics: regression
+  target: age
+  Scalers:
+    target:
+      name: ZNormalisation
+      kwargs: { }
+  Data Split:
+    name: SplitOnDataset
+    kwargs:
+      seed: 42
+  Datasets:
+    rockhill:
+      num_subjects: 31
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
+    miltiadous:
+      num_subjects: 88
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
+    hatlestad_hall:
+      num_subjects: 111
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
+    yulin_wang:
+      num_subjects: 60
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
