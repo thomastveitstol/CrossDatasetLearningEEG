@@ -9,6 +9,7 @@ import inflection
 import numpy
 import pandas
 from matplotlib import pyplot
+from mne.transforms import _cart_to_sph, _pol_to_cart
 
 from cdl_eeg.data.paths import get_raw_data_storage_path, get_numpy_data_storage_path
 from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
@@ -509,6 +510,32 @@ class EEGDatasetBase(abc.ABC):
         if annotate:
             for x, y, z, channel in zip(x_vals, y_vals, z_vals, channel_names):
                 ax.text(x=x, y=y, z=z, s=channel)
+
+    def plot_2d_electrode_positions(self, subject_id=None, annotate=True):
+        # Get electrode positions
+        electrode_positions = self.get_electrode_positions(subject_id=subject_id)
+
+        # Apply the same steps as _auto_topomap_coordinates from MNE.transforms
+        cartesian_coords = _cart_to_sph(tuple(electrode_positions.values()))  # type: ignore
+        out = _pol_to_cart(cartesian_coords[:, 1:][:, ::-1])
+        out *= cartesian_coords[:, [0]] / (numpy.pi / 2.)
+
+        # Extract coordinates
+        channel_names = []
+        x_vals = []
+        y_vals = []
+        for ch_name, (x, y) in zip(electrode_positions, out):  # type: ignore
+            channel_names.append(ch_name)
+            x_vals.append(x)
+            y_vals.append(y)
+
+        # Plot
+        pyplot.scatter(x_vals, y_vals)
+
+        # Annotate the channels with channel names (if desired)
+        if annotate:
+            for x, y, channel in zip(x_vals, y_vals, channel_names):
+                pyplot.text(x=x, y=y, s=channel)
 
 
 # ------------------
