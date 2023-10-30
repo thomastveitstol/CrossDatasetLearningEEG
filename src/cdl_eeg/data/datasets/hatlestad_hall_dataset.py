@@ -78,6 +78,8 @@ class HatlestadHall(EEGDatasetBase):
 
     # ----------------
     # Targets
+    # todo: all these look the same. Consider trying to fall back on extracting from .tsv when loading targets
+    #  not specifically implemented
     # ----------------
     @target_method
     def age(self, subject_ids):
@@ -86,6 +88,39 @@ class HatlestadHall(EEGDatasetBase):
 
         # Convert to dict
         sub_id_to_age = {name: age for name, age in zip(df["participant_id"], df["age"])}
+
+        # Extract the ages of the subjects, in the same order as the input argument
+        return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
+
+    @target_method
+    def ravlt_tot(self, subject_ids):
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
+
+        # Convert to dict
+        sub_id_to_age = {name: age for name, age in zip(df["participant_id"], df["ravlt_tot"])}
+
+        # Extract the ages of the subjects, in the same order as the input argument
+        return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
+
+    @target_method
+    def ravlt_del(self, subject_ids):
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
+
+        # Convert to dict
+        sub_id_to_age = {name: age for name, age in zip(df["participant_id"], df["ravlt_del"])}
+
+        # Extract the ages of the subjects, in the same order as the input argument
+        return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
+
+    @target_method
+    def ravlt_rec(self, subject_ids):
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
+
+        # Convert to dict
+        sub_id_to_age = {name: age for name, age in zip(df["participant_id"], df["ravlt_rec"])}
 
         # Extract the ages of the subjects, in the same order as the input argument
         return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
