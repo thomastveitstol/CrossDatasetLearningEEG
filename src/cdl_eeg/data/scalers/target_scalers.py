@@ -1,4 +1,5 @@
 import numpy
+import torch
 
 from cdl_eeg.data.scalers.scaler_base import TargetScalerBase
 
@@ -100,7 +101,12 @@ class ZNormalisation(TargetScalerBase):
         {'d4': array([[20.25], [34.  ], [ 3.  ]]),
          'd5': array([[ 54.], [  4.], [ 22.], [  7.], [103.]])}
         """
-        return {dataset_name: z * self._std + self._mean for dataset_name, z in scaled_data.items()}
+        if isinstance(scaled_data, dict):
+            return {dataset_name: z * self._std + self._mean for dataset_name, z in scaled_data.items()}
+        elif isinstance(scaled_data, (numpy.ndarray, torch.Tensor)):
+            return scaled_data * self._std + self._mean
+        else:
+            raise TypeError(f"Unrecognised data type: {type(scaled_data)}")
 
     # ----------------
     # Properties
