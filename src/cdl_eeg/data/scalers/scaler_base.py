@@ -29,6 +29,22 @@ class ScalerBase(abc.ABC):
         dict[str, numpy.ndarray]
         """
 
+    @abc.abstractmethod
+    def inv_transform(self, scaled_data):
+        """
+        Method for re-transforming, based on the parameters and nature of the scaling
+
+        Parameters
+        ----------
+        scaled_data : dict[str, numpy.ndarray]
+            Scaled data
+
+        Returns
+        -------
+        dict[str, numpy.ndarray]
+            De-scaled data
+        """
+
 
 class TargetScalerBase(ScalerBase, abc.ABC):
     __slots__ = ()

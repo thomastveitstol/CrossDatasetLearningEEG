@@ -84,6 +84,24 @@ class ZNormalisation(TargetScalerBase):
         """
         return {dataset_name: (x - self._mean) / self._std for dataset_name, x in data.items()}
 
+    def inv_transform(self, scaled_data):
+        """
+        Examples
+        --------
+        >>> my_fit_data = {"d1": numpy.expand_dims(numpy.array([61, 43, 9, 32]), axis=-1),
+        ...                 "d2": numpy.expand_dims(numpy.array([8, 3, 65, 2, 5, 6]), axis=-1),
+        ...                 "d3": numpy.expand_dims(numpy.array([7, 2]), axis=-1)}
+        >>> my_scaler = ZNormalisation()
+        >>> my_scaler.fit(my_fit_data)
+        >>> my_test_data = {"d4": numpy.expand_dims(numpy.array([20.25, 34, 3]), axis=-1),
+        ...                 "d5": numpy.expand_dims(numpy.array([54, 4, 22, 7, 103]), axis=-1)}
+        >>> my_outputs = my_scaler.inv_transform(my_scaler.transform(my_test_data))
+        >>> my_outputs  # doctest: +NORMALIZE_WHITESPACE
+        {'d4': array([[20.25], [34.  ], [ 3.  ]]),
+         'd5': array([[ 54.], [  4.], [ 22.], [  7.], [103.]])}
+        """
+        return {dataset_name: z * self._std + self._mean for dataset_name, z in scaled_data.items()}
+
     # ----------------
     # Properties
     # ----------------
@@ -108,6 +126,9 @@ class NoScaler(TargetScalerBase):
 
     def transform(self, data):
         return data
+
+    def inv_transform(self, scaled_data):
+        return scaled_data
 
 
 # ---------------
