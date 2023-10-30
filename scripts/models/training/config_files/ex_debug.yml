@@ -174,10 +174,10 @@ Experts:
           time_series_start: *time_series_start
 
 Downstream Training:
-  target: parkinsons
+  target: age
   Scalers:
     target:
-      name: NoScaler
+      name: ZNormalisation
       kwargs: { }
   Data Split:
     name: KFoldDataSplit
