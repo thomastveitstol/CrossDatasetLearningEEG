@@ -2,10 +2,11 @@ import os
 import pathlib
 
 import mne
+import numpy
 import pandas
 from pymatreader import read_mat
 
-from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase
+from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, target_method
 
 
 class YulinWang(EEGDatasetBase):
@@ -48,6 +49,20 @@ class YulinWang(EEGDatasetBase):
 
         # Make MNE raw object
         return mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)
+
+    # ----------------
+    # Targets
+    # ----------------
+    @target_method
+    def age(self, subject_ids):
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
+
+        # Convert to dict
+        sub_id_to_age = {name: age for name, age in zip(df["participant_id"], df["age"])}
+
+        # Extract the ages of the subjects, in the same order as the input argument
+        return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
 
     # ----------------
     # Methods for channel system
@@ -111,4 +126,4 @@ class YulinWang(EEGDatasetBase):
 
     def channel_name_to_index(self):
         # todo: make tests
-        raise NotImplementedError
+        return {ch_name: i for i, ch_name in enumerate(self._get_template_electrode_positions())}
