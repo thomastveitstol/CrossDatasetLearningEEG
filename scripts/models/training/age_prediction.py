@@ -159,7 +159,7 @@ def main():
         print(f"----- Metric: {metric.capitalize()} -----")
 
         print(f"\tMean: {numpy.mean(performance):.2f}")
-        print(f"\tSTD: {numpy.std(performance)}:.2f")
+        print(f"\tSTD: {numpy.std(performance):.2f}")
 
         print(f"\tAll folds: {tuple(round(p, 2) for p in performance)}")
 
