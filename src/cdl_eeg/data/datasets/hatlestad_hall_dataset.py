@@ -93,7 +93,7 @@ class HatlestadHall(EEGDatasetBase):
     # ----------------
     # Channel system
     # ----------------
-    def _get_template_electrode_positions(self):
+    def _deprecated_get_template_electrode_positions(self):
         # Create path
         path = os.path.join(self.get_mne_path(), "code", "bidsify-srm-restingstate", "chanlocs",
                             "BioSemi_SRM_template_64_locs.xyz")
@@ -111,6 +111,28 @@ class HatlestadHall(EEGDatasetBase):
 
         # Convert to dict and return
         return {ch_name: (x, y, z) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
+
+    def _get_template_electrode_positions(self):
+        # Following the international 10-20 system according to the documentation. Thus using MNE default
+        montage = mne.channels.make_standard_montage("standard_1020")
+        channel_positions = montage.get_positions()["ch_pos"]
+
+        # ---------------
+        # Read the channel names
+        # ---------------
+        # Create path
+        path = os.path.join(self.get_mne_path(), "code", "bidsify-srm-restingstate", "chanlocs",
+                            "BioSemi_SRM_template_64_locs.xyz")
+
+        # Make pandas dataframe
+        df = pandas.read_table(path, header=None, delim_whitespace=True).rename(columns={1: "x", 2: "y", 3: "z",
+                                                                                         4: "ch_name"})
+
+        # Extract channel names
+        channel_names = tuple(df["ch_name"])
+
+        # Return dict with channel positions, keeping only the ones in the data
+        return {ch_name: tuple(pos) for ch_name, pos in channel_positions.items() if ch_name in channel_names}
 
     def channel_name_to_index(self):
         # Create path
