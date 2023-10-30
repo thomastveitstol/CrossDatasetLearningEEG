@@ -12,7 +12,7 @@ from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
 
 def main():
     # Select dataset
-    names = "HatlestadHall", "Rockhill", "Miltiadous"
+    names = "HatlestadHall", "YulinWang", "Rockhill", "Miltiadous"
 
     # Loop through all names
     for name in names:

@@ -71,7 +71,7 @@ class YulinWang(EEGDatasetBase):
         # Make it a dict and return it
         return {ch_name: (x, y, z) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
 
-    def _get_template_electrode_positions(self):
+    def _deprecated_get_template_electrode_positions(self):
         # Using the positions from the chanlocs62.mat file in derivatives folder
         path = os.path.join(self.get_mne_path(), "derivatives", "preprocessed data", "chanlocs62.mat")
 
@@ -88,6 +88,26 @@ class YulinWang(EEGDatasetBase):
 
         # Convert to dict and return
         return {ch_name: (x, y, z) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
+
+    def _get_template_electrode_positions(self):
+        # Following the international 10-20 system according to the original paper. Thus using MNE default
+        montage = mne.channels.make_standard_montage("standard_1020")
+        channel_positions = montage.get_positions()["ch_pos"]
+
+        # ---------------
+        # Read the channel names
+        # ---------------
+        # Using the positions from the chanlocs62.mat file in derivatives folder
+        path = os.path.join(self.get_mne_path(), "derivatives", "preprocessed data", "chanlocs62.mat")
+
+        # Load the file
+        mat_file = read_mat(path)
+
+        # Extract channel names
+        channel_names = mat_file["chanlocs"]["labels"]
+
+        # Return dict with channel positions, keeping only the ones in the data
+        return {ch_name: tuple(pos) for ch_name, pos in channel_positions.items() if ch_name in channel_names}
 
     def channel_name_to_index(self):
         # todo: make tests
