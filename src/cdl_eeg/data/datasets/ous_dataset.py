@@ -17,6 +17,10 @@ class OUS(EEGDatasetBase):
     ----------
     >>> OUS().name
     'ous'
+    >>> OUS.get_available_targets()
+    ('age',)
+    >>> len(OUS().get_subject_ids())
+    4811
     """
 
     __slots__ = ()
