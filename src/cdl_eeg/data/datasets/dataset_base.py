@@ -60,7 +60,8 @@ class EEGDatasetBase(abc.ABC):
         self._name: str = inflection.underscore(self.__class__.__name__) if name is None else name
 
     @staticmethod
-    def pre_process(eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False):
+    def pre_process(eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False,
+                    excluded_channels=None):
         """
         Method for pre-processing EEG data
 
@@ -71,6 +72,7 @@ class EEGDatasetBase(abc.ABC):
         resample : float, optional
         notch_filter : float, optional
         avg_reference : bool
+        excluded_channels : tuple[str, ...], optional
 
         Returns
         -------
@@ -80,6 +82,10 @@ class EEGDatasetBase(abc.ABC):
         # TODO: Such shared pre processing steps is not optimal. The EEG data may e.g. contain boundary events or have
         #   unequal requirements such as line noise
         # todo: Maybe try out AutoReject and use spherical spline interpolation?
+        # Excluding channels
+        if excluded_channels is not None:
+            eeg_data = eeg_data.pick(picks="eeg", exclude=excluded_channels)
+
         # Resampling
         if resample is not None:
             eeg_data.resample(resample, verbose=False)
