@@ -19,7 +19,7 @@ class MainRBPModel(nn.Module):
     PS: Merges channel splits by concatenation
     """
 
-    def __init__(self, *, mts_module, mts_module_kwargs, rbp_designs):
+    def __init__(self, *, mts_module, mts_module_kwargs, rbp_designs, normalise_region_representations=True):
         """
         Initialise
 
@@ -28,6 +28,7 @@ class MainRBPModel(nn.Module):
         mts_module : str
         mts_module_kwargs : dict[str, typing.Any]
         rbp_designs : tuple[cdl_eeg.models.region_based_pooling.region_based_pooling.RBPDesign, ...]
+        normalise_region_representations : bool
         """
         super().__init__()
 
@@ -35,6 +36,7 @@ class MainRBPModel(nn.Module):
         # Create RBP layer
         # -----------------
         self._region_based_pooling = RegionBasedPooling(rbp_designs)
+        self._normalise_region_representations = normalise_region_representations
 
         # ----------------
         # Create MTS module
@@ -77,7 +79,8 @@ class MainRBPModel(nn.Module):
         # Make model
         # -----------------
         return cls(mts_module=mts_design["model"], mts_module_kwargs=mts_design["kwargs"],
-                   rbp_designs=tuple(rbp_designs))
+                   rbp_designs=tuple(rbp_designs),
+                   normalise_region_representations=config["Normalise region representations"])
 
     def pre_compute(self, input_tensors):
         """
@@ -115,6 +118,10 @@ class MainRBPModel(nn.Module):
 
         # Merge by concatenation
         x = torch.cat(x, dim=1)
+
+        # Maybe normalise region representations
+        if self._normalise_region_representations:
+            x = (x - torch.mean(x, dim=-1, keepdim=True)) / (torch.std(x, dim=-1, keepdim=True) + 1e-8)
 
         # Pass through MTS module and return
         return self._mts_module(x)
