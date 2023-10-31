@@ -224,7 +224,7 @@ class EEGDatasetBase(abc.ABC):
 
     def save_eeg_as_numpy_arrays(self, subject_ids=None, *, filtering=None, resample=None, notch_filter=None,
                                  avg_reference=False, num_time_steps=None, time_series_start=None, derivatives=False,
-                                 **kwargs):
+                                 excluded_channels=None, **kwargs):
         """
         Method for saving data as numpy arrays
 
@@ -245,6 +245,8 @@ class EEGDatasetBase(abc.ABC):
         derivatives : bool
             For datasets where an already cleaned version is available. If True, the cleaned version will be used,
             otherwise the non-cleaned data is loaded
+        excluded_channels : tuple[str, ...], optional
+            Channels to exclude. If None is passed, no channels will be excluded
         kwargs
             Keyword arguments, which will be passed to load_single_mne_object
 
@@ -293,6 +295,7 @@ class EEGDatasetBase(abc.ABC):
         logger.info(f"Filtering: {'Skipped' if filtering is None else filtering}")
         logger.info(f"Notch-filter: {'Skipped' if notch_filter is None else notch_filter}")
         logger.info(f"Average referencing: {avg_reference}")
+        logger.info(f"Excluding channels: {'Skipped' if excluded_channels is None else excluded_channels}")
         logger.info("...")
 
         logger.info("----- Signal cropping details -----")
@@ -316,7 +319,8 @@ class EEGDatasetBase(abc.ABC):
             raw = self.load_single_mne_object(subject_id=sub_id, derivatives=derivatives, **kwargs)
 
             # Pre-process
-            raw = self.pre_process(raw, filtering=filtering, resample=resample, notch_filter=notch_filter)
+            raw = self.pre_process(raw, filtering=filtering, resample=resample, notch_filter=notch_filter,
+                                   excluded_channels=excluded_channels)
 
             # Convert to numpy arrays
             eeg_data = raw.get_data()
