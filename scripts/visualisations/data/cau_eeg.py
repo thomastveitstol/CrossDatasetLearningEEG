@@ -33,7 +33,7 @@ def main():
     # -----------------
     eeg.plot()
     eeg.compute_psd().plot()
-    print(eeg.ch_names)
+
     pyplot.show()
 
 
