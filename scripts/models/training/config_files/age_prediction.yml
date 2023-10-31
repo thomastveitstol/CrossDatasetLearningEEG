@@ -24,7 +24,7 @@ Model:
           <<: *box
 
     RBP Design 2:
-      num_designs: 20
+      num_designs: 11
       pooling_type: single_cs
       pooling_methods: SingleCSSharedRocket
       pooling_methods_kwargs:
@@ -102,6 +102,10 @@ Training:
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     ous:
-      num_subjects: 600
+      num_subjects: 100
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
+    cau_eeg:
+      num_subjects: 200
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
