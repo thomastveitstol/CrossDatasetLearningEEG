@@ -65,13 +65,13 @@ Model:
   Normalise region representations: true
 
 Shared Dataset Details:
-  num_time_steps: &num_time_steps 2000
+  num_time_steps: &num_time_steps 5000
   time_series_start: &time_series_start null
 
 Training:
   learning_rate: 0.0001
   batch_size: 32
-  num_epochs: 75
+  num_epochs: 200
   verbose: true
   val_split: 0.2
   loss: MSELoss
@@ -104,7 +104,7 @@ Training:
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     ous:
-      num_subjects: 100
+      num_subjects: 200
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     cau_eeg:
