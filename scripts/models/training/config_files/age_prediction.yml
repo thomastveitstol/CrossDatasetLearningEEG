@@ -60,6 +60,8 @@ Model:
   MTS Module:
     model: InceptionTime
     kwargs:
+      cnn_units: 64
+      depth: 8
       num_classes: 1
 
   Normalise region representations: true
@@ -82,9 +84,8 @@ Training:
       name: ZNormalisation
       kwargs: { }
   Data Split:
-    name: KFoldDataSplit
+    name: SplitOnDataset
     kwargs:
-      num_folds: 5
       seed: 42
   Datasets:
     rockhill:
@@ -104,10 +105,10 @@ Training:
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     ous:
-      num_subjects: 200
+      num_subjects: 400
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     cau_eeg:
-      num_subjects: 200
+      num_subjects: 400
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
