@@ -60,7 +60,7 @@ Model:
   MTS Module:
     model: InceptionTime
     kwargs:
-      cnn_units: 64
+      cnn_units: 32
       depth: 8
       num_classes: 1
 
