@@ -15,7 +15,7 @@ def get_raw_data_storage_path():
     str
         The path to where the data is stored, or to be stored (e.g. in the scripts for downloading)
     """
-    return "/media/thomas/AI-Mind - Anonymised data"
+    return "/media/thomas/AI-Mind - Anonymised data/CDLDatasets"
 
 
 def get_numpy_data_storage_path():
