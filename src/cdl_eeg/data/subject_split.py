@@ -1,5 +1,7 @@
 import dataclasses
-from typing import Any
+from typing import Any, Tuple, Dict
+
+from cdl_eeg.data.data_split import Subject
 
 
 # -----------------
@@ -30,7 +32,6 @@ def filter_subjects(subjects, inclusion_criteria):
 
     Examples
     --------
-    >>> from cdl_eeg.data.data_split import Subject
     >>> my_subjects = (
     ...     Subject("P1", "D1", details={"sex": "male", "age": "old"}),
     ...     Subject("P2", "D1", details={"sex": "male", "age": "old"}),
@@ -97,7 +98,6 @@ def make_subject_splits(subjects, splits):
 
     Examples
     --------
-    >>> from cdl_eeg.data.data_split import Subject
     >>> my_subjects = (
     ...     Subject("P1", "D1", details={"sex": "male", "cognition": "hc"}),
     ...     Subject("P2", "D1", details={"sex": "male", "cognition": "hc"}),
@@ -143,7 +143,7 @@ def make_subject_splits(subjects, splits):
           Subject(subject_id='P3', dataset_name='D3', details={'sex': 'female', 'cognition': 'mci'}))}
     """
     # Loop through all desired splits (e.g. 'sex' and 'education')
-    subjects_split = dict()
+    subjects_split: Dict[str, Dict[Criterion, Tuple[Subject, ...]]] = dict()
     for split, criteria in splits.items():
         # Loop through the different criteria (e.g. 'male' and 'female' for sex split)
         subjects_split[split] = dict()

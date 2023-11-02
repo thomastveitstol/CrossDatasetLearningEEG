@@ -2,7 +2,7 @@ import abc
 import dataclasses
 import itertools
 import random
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Any
 
 import numpy
 
@@ -14,7 +14,7 @@ import numpy
 class Subject:
     subject_id: str
     dataset_name: str
-    details: Optional[dict] = None
+    details: Optional[dict[str, Any]] = None
 
 
 # -----------------
