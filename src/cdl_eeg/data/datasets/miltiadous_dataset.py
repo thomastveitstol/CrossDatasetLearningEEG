@@ -15,6 +15,8 @@ class Miltiadous(EEGDatasetBase):
     'miltiadous'
     >>> Miltiadous.get_available_targets()
     ('age', 'mmse')
+    >>> len(Miltiadous().get_subject_ids())
+    88
     """
 
     __slots__ = ()

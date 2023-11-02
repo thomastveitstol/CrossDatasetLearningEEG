@@ -15,6 +15,8 @@ class MPILemon(EEGDatasetBase):
     ----------
     >>> MPILemon().name
     'mpi_lemon'
+    >>> len(MPILemon().get_subject_ids())
+    203
     """
 
     __slots__ = ()
