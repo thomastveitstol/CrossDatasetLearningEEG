@@ -14,6 +14,7 @@ src/cdl_eeg/data/__init__.py
 src/cdl_eeg/data/combined_datasets.py
 src/cdl_eeg/data/data_split.py
 src/cdl_eeg/data/paths.py
+src/cdl_eeg/data/subject_split.py
 src/cdl_eeg/data/data_generators/__init__.py
 src/cdl_eeg/data/data_generators/data_generator.py
 src/cdl_eeg/data/datasets/__init__.py
