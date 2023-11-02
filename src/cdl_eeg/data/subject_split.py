@@ -1,5 +1,20 @@
+import dataclasses
+from typing import Any
 
 
+# -----------------
+# Convenient dataclasses
+# -----------------
+@dataclasses.dataclass(frozen=True)
+class Criterion:
+    """Criterion for a group within a split. (This is important mainly because it may be used as a key, as opposed to
+    mutable objects)"""
+    crit: Any
+
+
+# -----------------
+# Functions
+# -----------------
 def filter_subjects(subjects, inclusion_criteria):
     """
     Function for filtering out subjects not satisfying the provided inclusion criteria
@@ -64,3 +79,82 @@ def filter_subjects(subjects, inclusion_criteria):
             included_subjects.append(subject)
 
     return tuple(included_subjects)
+
+
+def make_subject_splits(subjects, splits):
+    """
+    Function for splitting subjects into different groups
+
+    Parameters
+    ----------
+    subjects : subjects: tuple[cdl_eeg.data.data_split.Subject, ...]
+    splits : dict[str, tuple]
+
+    Returns
+    -------
+    dict[str, dict[Condition, tuple[cdl_eeg.data.data_split.Subject, ...]]]
+    # todo: consider extending Condition dataclass to include the split and the included subjects
+
+    Examples
+    --------
+    >>> from cdl_eeg.data.data_split import Subject
+    >>> my_subjects = (
+    ...     Subject("P1", "D1", details={"sex": "male", "cognition": "hc"}),
+    ...     Subject("P2", "D1", details={"sex": "male", "cognition": "hc"}),
+    ...     Subject("P3", "D1", details={"sex": "female", "cognition": "mci"}),
+    ...     Subject("P1", "D2", details={"sex": "female", "cognition": "ad"}),
+    ...     Subject("P2", "D2", details={"sex": "male", "cognition": "ad"}),
+    ...     Subject("P1", "D3", details={"sex": "male", "cognition": "mci"}),
+    ...     Subject("P2", "D3", details={"sex": "female", "cognition": "hc"}),
+    ...     Subject("P3", "D3", details={"sex": "female", "cognition": "mci"}))
+    >>> my_splits = {"sex": (("female",), ("male",)), "cognition": (("hc",), ("mci",), ("ad",), ("mci", "hc"))}
+    >>> my_outs = make_subject_splits(subjects=my_subjects, splits=my_splits)
+    >>> tuple(my_outs.keys())
+    ('sex', 'cognition')
+    >>> my_outs["sex"]  # doctest: +NORMALIZE_WHITESPACE
+    {Criterion(crit=('female',)):
+         (Subject(subject_id='P3', dataset_name='D1', details={'sex': 'female', 'cognition': 'mci'}),
+          Subject(subject_id='P1', dataset_name='D2', details={'sex': 'female', 'cognition': 'ad'}),
+          Subject(subject_id='P2', dataset_name='D3', details={'sex': 'female', 'cognition': 'hc'}),
+          Subject(subject_id='P3', dataset_name='D3', details={'sex': 'female', 'cognition': 'mci'})),
+     Criterion(crit=('male',)):
+         (Subject(subject_id='P1', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
+          Subject(subject_id='P2', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
+          Subject(subject_id='P2', dataset_name='D2', details={'sex': 'male', 'cognition': 'ad'}),
+          Subject(subject_id='P1', dataset_name='D3', details={'sex': 'male', 'cognition': 'mci'}))}
+    >>> my_outs["cognition"]  # doctest: +NORMALIZE_WHITESPACE
+    {Criterion(crit=('hc',)):
+         (Subject(subject_id='P1', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
+          Subject(subject_id='P2', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
+          Subject(subject_id='P2', dataset_name='D3', details={'sex': 'female', 'cognition': 'hc'})),
+     Criterion(crit=('mci',)):
+         (Subject(subject_id='P3', dataset_name='D1', details={'sex': 'female', 'cognition': 'mci'}),
+          Subject(subject_id='P1', dataset_name='D3', details={'sex': 'male', 'cognition': 'mci'}),
+          Subject(subject_id='P3', dataset_name='D3', details={'sex': 'female', 'cognition': 'mci'})),
+     Criterion(crit=('ad',)):
+         (Subject(subject_id='P1', dataset_name='D2', details={'sex': 'female', 'cognition': 'ad'}),
+          Subject(subject_id='P2', dataset_name='D2', details={'sex': 'male', 'cognition': 'ad'})),
+     Criterion(crit=('mci', 'hc')):
+         (Subject(subject_id='P1', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
+          Subject(subject_id='P2', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
+          Subject(subject_id='P3', dataset_name='D1', details={'sex': 'female', 'cognition': 'mci'}),
+          Subject(subject_id='P1', dataset_name='D3', details={'sex': 'male', 'cognition': 'mci'}),
+          Subject(subject_id='P2', dataset_name='D3', details={'sex': 'female', 'cognition': 'hc'}),
+          Subject(subject_id='P3', dataset_name='D3', details={'sex': 'female', 'cognition': 'mci'}))}
+    """
+    # Loop through all desired splits (e.g. 'sex' and 'education')
+    subjects_split = dict()
+    for split, criteria in splits.items():
+        # Loop through the different criteria (e.g. 'male' and 'female' for sex split)
+        subjects_split[split] = dict()
+        for criterion in criteria:
+            # Loop through all subjects to append the ones which satisfy the criterion
+            included_subjects = []
+            for subject in subjects:
+                if split in subject.details and subject.details[split] in criterion:
+                    included_subjects.append(subject)
+
+            # Add the included subjects as criterion satisfied for the split
+            subjects_split[split][Criterion(criterion)] = tuple(included_subjects)
+
+    return subjects_split
