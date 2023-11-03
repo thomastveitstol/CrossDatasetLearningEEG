@@ -6,7 +6,7 @@ https://github.com/thomastveitstol/RegionBasedPoolingEEG/blob/master/src/metrics
 
 Author: Thomas Tveitstøl (Oslo University Hospital)
 """
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional, Any
 
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, roc_auc_score
@@ -16,7 +16,7 @@ from cdl_eeg.data.data_split import Subject
 from cdl_eeg.data.subject_split import Criterion, filter_subjects, make_subject_splits
 
 # Type hints
-_SPLIT = Tuple[Dict[str, tuple], Dict[str, Tuple[Criterion, ...]]]
+_SPLIT = Tuple[Dict[str, tuple], Dict[str, Tuple[Criterion, ...]]]  # type: ignore[type-arg]
 
 
 # ----------------
@@ -52,7 +52,7 @@ class Histories:
 
     __slots__ = "_history", "_splits_histories", "_epoch_y_pred", "_epoch_y_true", "_epoch_subjects", "_name"
 
-    def __init__(self, metrics, name=None, splits: Tuple[_SPLIT, ...] = None):
+    def __init__(self, metrics, name=None, splits: Optional[Tuple[_SPLIT, ...]] = None):
         """
         Initialise
 
@@ -91,6 +91,8 @@ class Histories:
         self._history: Dict[str, List[float]] = {f"{metric}": [] for metric in metrics}
 
         # Histories per subgroup
+        splits_histories: Optional[List[Tuple[Dict[str, Tuple[Any, ...]],
+                                              Dict[str, Dict[Criterion, Dict[str, List[float]]]]]]]
         if splits is not None:
             splits_histories = []
             # Loop through all desired splits
@@ -104,7 +106,7 @@ class Histories:
                 # Initialise history dictionary for all conditions and metrics
                 split_history = dict()
                 for split_selection, criteria in split_selections.items():
-                    initial_metrics = {f"{metric}": [] for metric in metrics}
+                    initial_metrics: Dict[str, List[float]] = {f"{metric}": [] for metric in metrics}
                     split_history[split_selection] = {criterion: initial_metrics for criterion in criteria}
 
                 # Append initialised history to main list
@@ -122,7 +124,7 @@ class Histories:
         self._epoch_y_true: List[torch.Tensor] = []
         self._epoch_subjects: List[Subject] = []
 
-    def store_batch_evaluation(self, y_pred, y_true, subjects):
+    def store_batch_evaluation(self, y_pred, y_true, subjects=None):
         """
         Store the prediction, targets, and maybe the corresponding subjects. Should be called for each batch
 
@@ -168,13 +170,14 @@ class Histories:
                     print(f"{self._name}_{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
 
     def _print_newest_subgroups_metrics(self):
-        for i, split in enumerate(self._splits_histories):
-            print(f"----- Details for split {i} -----")
-            print(f"Inclusion criteria:")
-            # todo: mypy complaining?
-            for selection, condition in split[0].items():  # type: ignore
-                print(f"\t{selection.capitalize()} must be in: {condition}")
-                # todo: this is where you left...
+        if self._splits_histories is not None:
+            for i, split in enumerate(self._splits_histories):
+                print(f"----- Details for split {i} -----")
+                print("Inclusion criteria:")
+                # todo: mypy complaining?
+                for selection, condition in split[0].items():  # type: ignore
+                    print(f"\t{selection.capitalize()} must be in: {condition}")
+                    # todo: this is where you left...
 
     def _update_metrics(self):
         # Concatenate torch tenors
