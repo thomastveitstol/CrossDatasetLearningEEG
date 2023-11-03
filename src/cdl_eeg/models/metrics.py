@@ -6,11 +6,17 @@ https://github.com/thomastveitstol/RegionBasedPoolingEEG/blob/master/src/metrics
 
 Author: Thomas Tveitstøl (Oslo University Hospital)
 """
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, roc_auc_score
 import torch
+
+from cdl_eeg.data.data_split import Subject
+from cdl_eeg.data.subject_split import Criterion, filter_subjects, make_subject_splits
+
+# Type hints
+_SPLIT = Tuple[Dict[str, tuple], Dict[str, Tuple[Criterion, ...]]]
 
 
 # ----------------
@@ -33,6 +39,9 @@ class Histories:
     """
     Class for keeping track of all metrics during training. Works for both classification and regression
 
+    TODO: It is strange to store outputs and targets, and compute metrics at the end of the epoch for correlation
+        metrics
+
     Examples
     --------
     >>> Histories.get_available_classification_metrics()
@@ -41,9 +50,9 @@ class Histories:
     ('mae', 'mape', 'mse', 'pearson_r', 'spearman_rho')
     """
 
-    __slots__ = "_history", "_epoch_y_pred", "_epoch_y_true", "_name"
+    __slots__ = "_history", "_splits_histories", "_epoch_y_pred", "_epoch_y_true", "_epoch_subjects", "_name"
 
-    def __init__(self, metrics, name=None):
+    def __init__(self, metrics, name=None, splits: Tuple[_SPLIT, ...] = None):
         """
         Initialise
 
@@ -54,6 +63,10 @@ class Histories:
             available regression/classification metrics should be used
         name : str, optional
             May be used for the printing of the metrics
+        splits : Tuple[_SPLIT, ...], optional
+            Splits for computing metrics per subgroup (see the PDF file for visual example of a single _SPLIT). Each
+            split has inclusion criteria, coupled with split selections and their split criteria (condition in the
+            figure).
         """
         # Maybe set metrics
         if metrics == "regression":
@@ -71,17 +84,64 @@ class Histories:
         # ----------------
         self._name = name
 
-        # Create history dictionary
+        # ----------------
+        # Create history dictionaries
+        # ----------------
+        # The "normal" one
         self._history: Dict[str, List[float]] = {f"{metric}": [] for metric in metrics}
 
-        # Initialise epochs predictions and targets. They will be updated for each batch
+        # Histories per subgroup
+        if splits is not None:
+            splits_histories = []
+            # Loop through all desired splits
+            for split in splits:
+                # Extract inclusion criteria for the current split
+                split_inclusion_criteria = split[0]  # todo: consider named tuple
+
+                # Extract what to split on
+                split_selections = split[1]
+
+                # Initialise history dictionary for all conditions and metrics
+                split_history = dict()
+                for split_selection, criteria in split_selections.items():
+                    initial_metrics = {f"{metric}": [] for metric in metrics}
+                    split_history[split_selection] = {criterion: initial_metrics for criterion in criteria}
+
+                # Append initialised history to main list
+                splits_histories.append((split_inclusion_criteria, split_history))  # todo: again, consider NamedTuple
+        else:
+            splits_histories = None
+
+        self._splits_histories = splits_histories
+
+        # ----------------
+        # Initialise epochs predictions and targets.
+        # They will be updated for each batch
+        # ----------------
         self._epoch_y_pred: List[torch.Tensor] = []
         self._epoch_y_true: List[torch.Tensor] = []
+        self._epoch_subjects: List[Subject] = []
 
-    def store_batch_evaluation(self, y_pred: torch.Tensor, y_true: torch.Tensor):
-        """Store the predictions and targets. Should be called for each batch"""
+    def store_batch_evaluation(self, y_pred, y_true, subjects):
+        """
+        Store the prediction, targets, and maybe the corresponding subjects. Should be called for each batch
+
+        Parameters
+        ----------
+        y_pred : torch.Tensor
+        y_true : torch.Tensor
+        subjects : tuple[Subject, ...], optional
+
+        Returns
+        -------
+        None
+        """
         self._epoch_y_pred.append(y_pred)
         self._epoch_y_true.append(y_true)
+
+        # Store the corresponding subjects, if provided
+        if subjects is not None:
+            self._epoch_subjects.extend(subjects)
 
     def on_epoch_end(self, verbose=True) -> None:
         """Updates the metrics, and should be called after each epoch"""
@@ -106,19 +166,69 @@ class Histories:
                     print(f"{self._name}_{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
 
     def _update_metrics(self):
-        # Update all metrics
-        for metric, hist in self._history.items():
-            hist.append(self._compute_metric(metric=metric, y_pred=torch.cat(self._epoch_y_pred, dim=0),
-                                             y_true=torch.cat(self._epoch_y_true, dim=0)))
+        # Concatenate torch tenors
+        y_pred = torch.cat(self._epoch_y_pred, dim=0)
+        y_true = torch.cat(self._epoch_y_true, dim=0)
 
-        # Remove the epoch histories
+        # -------------
+        # Update all metrics of the 'normal' history dict
+        # -------------
+        for metric, hist in self._history.items():
+            hist.append(self._compute_metric(metric=metric, y_pred=y_pred, y_true=y_true))
+
+        # -------------
+        # (Maybe) update all metrics of all subgroups
+        # -------------
+        if self._splits_histories is not None:
+            # Make dictionary containing subjects combined with the prediction and target
+            # todo: y_pred and y_true to NamedTuple or dataclass?
+            subjects_pred_and_true = {subject: {"y_pred": y_hat, "y_true": y} for subject, y_hat, y
+                                      in zip(self._epoch_subjects, self._epoch_y_pred, self._epoch_y_true)}
+
+            # Loop through all splits
+            for split in self._splits_histories:
+                # Filter subjects
+                inclusion_criteria = split[0]
+                filtered_subjects = filter_subjects(subjects=tuple(self._epoch_subjects),
+                                                    inclusion_criteria=inclusion_criteria)
+
+                # Split subjects
+                split_selections = {selection: tuple(criteria_performance.keys())
+                                    for selection, criteria_performance in split[1].items()}
+                subjects_splits = make_subject_splits(subjects=filtered_subjects, splits=split_selections)
+
+                # Loop through all subgroups
+                for selection, criteria_performance in split[1].items():
+                    for criterion, performance in criteria_performance.items():
+                        for metric, metric_value in performance.items():
+                            # Extract the subgroup
+                            sub_group_subjects = subjects_splits[selection][criterion]
+
+                            # Extract their predictions and targets
+                            sub_group_y_pred = torch.cat([subjects_pred_and_true[subject]["y_pred"]
+                                                          for subject in sub_group_subjects], dim=0)
+                            sub_group_y_true = torch.cat([subjects_pred_and_true[subject]["y_true"]
+                                                          for subject in sub_group_subjects], dim=0)
+
+                            # Compute metrics for the subgroup and store it
+                            metric_value.append(self._compute_metric(metric=metric, y_pred=sub_group_y_pred,
+                                                                     y_true=sub_group_y_true))
+
+                    # Remove the epoch histories
         self._epoch_y_pred = []
         self._epoch_y_true = []
+        self._epoch_subjects = []
 
     @classmethod
-    def _compute_metric(cls, metric, *, y_pred, y_true):
+    def _compute_metric(cls, metric: str, *, y_pred: torch.Tensor, y_true: torch.Tensor):
         """Method for computing the specified metric"""
         return getattr(cls, metric)(y_pred=y_pred, y_true=y_true)
+
+    # -----------------
+    # Methods for computing performance on sub-groups
+    # -----------------
+    def store_sub_groups_batch_evaluation(self, y_pred: torch.Tensor, y_true: torch.Tensor):
+        raise NotImplementedError
 
     # -----------------
     # Properties
