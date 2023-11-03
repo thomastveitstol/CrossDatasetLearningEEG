@@ -112,7 +112,7 @@ class Histories:
         else:
             splits_histories = None
 
-        self._splits_histories = splits_histories
+        self._splits_histories = splits_histories  # todo: consider renaming to e.g. something with subgroup histories
 
         # ----------------
         # Initialise epochs predictions and targets.
