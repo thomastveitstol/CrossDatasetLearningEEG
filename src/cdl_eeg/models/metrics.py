@@ -143,11 +143,13 @@ class Histories:
         if subjects is not None:
             self._epoch_subjects.extend(subjects)
 
-    def on_epoch_end(self, verbose=True) -> None:
+    def on_epoch_end(self, verbose=True, verbose_sub_groups=False) -> None:
         """Updates the metrics, and should be called after each epoch"""
         self._update_metrics()
         if verbose:
             self._print_newest_metrics()
+        if verbose_sub_groups and self._splits_histories is not None:
+            self._print_newest_subgroups_metrics()
 
     def _print_newest_metrics(self) -> None:
         """Method for printing the newest metrics"""
@@ -164,6 +166,15 @@ class Histories:
                     print(f"{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
                 else:
                     print(f"{self._name}_{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
+
+    def _print_newest_subgroups_metrics(self):
+        for i, split in enumerate(self._splits_histories):
+            print(f"----- Details for split {i} -----")
+            print(f"Inclusion criteria:")
+            # todo: mypy complaining?
+            for selection, condition in split[0].items():  # type: ignore
+                print(f"\t{selection.capitalize()} must be in: {condition}")
+                # todo: this is where you left...
 
     def _update_metrics(self):
         # Concatenate torch tenors
