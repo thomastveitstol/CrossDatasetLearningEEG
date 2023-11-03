@@ -214,7 +214,7 @@ class Histories:
                             metric_value.append(self._compute_metric(metric=metric, y_pred=sub_group_y_pred,
                                                                      y_true=sub_group_y_true))
 
-                    # Remove the epoch histories
+        # Remove the epoch histories
         self._epoch_y_pred = []
         self._epoch_y_true = []
         self._epoch_subjects = []
