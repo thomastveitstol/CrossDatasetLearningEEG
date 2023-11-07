@@ -10,11 +10,19 @@ import numpy
 # -----------------
 # Convenient dataclasses
 # -----------------
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class Subject:
+    """
+    >>> my_subject = {Subject("P1", "D1", details={"sex": "male", "cognition": "hc"}): "this_is_a_value"}
+    >>> my_subject[Subject("P1", "D1", details={"sex": "male", "cognition": "hc"})]
+    'this_is_a_value'
+    """
     subject_id: str
     dataset_name: str
     details: Optional[Dict[str, Any]] = None
+
+    def __hash__(self):
+        return hash((self.subject_id, self.dataset_name))
 
 
 # -----------------
