@@ -38,8 +38,8 @@ def classification_metric(func):
 # ----------------
 class YYhat(NamedTuple):
     """Tuple for storing target and prediction"""
-    y_true: float
-    y_pred: float
+    y_true: torch.Tensor
+    y_pred: torch.Tensor
 
 
 # ----------------
@@ -114,7 +114,7 @@ class Histories:
                 split_selections = split[1]
 
                 # Initialise history dictionary for all conditions and metrics
-                split_history = dict()
+                split_history: Dict[str, Dict[Criterion, Dict[str, List[float]]]] = dict()
                 for split_selection, criteria in split_selections.items():
                     split_history[split_selection] = {criterion: {f"{metric}": [] for metric in metrics}
                                                       for criterion in criteria}
@@ -393,7 +393,7 @@ if __name__ == "__main__":
             my_details = {"sex": random.choice(my_sexes), "cognition": random.choice(my_cognitions),
                           "age": random.choice(my_ages), "education": random.choice(education)}
             my_subjects.append(Subject(f"P{j_}", f"D{i_}", details=my_details))
-    my_subjects = tuple(my_subjects)
+    my_subjects = tuple(my_subjects)  # type: ignore[assignment]
 
     # Create object for tracking metrics
     my_history = Histories(metrics="regression", splits=my_splits)
