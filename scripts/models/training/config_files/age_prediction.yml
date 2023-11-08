@@ -105,10 +105,10 @@ Training:
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     ous:
-      num_subjects: 400
+      num_subjects: 150
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     cau_eeg:
-      num_subjects: 400
+      num_subjects: 150
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
