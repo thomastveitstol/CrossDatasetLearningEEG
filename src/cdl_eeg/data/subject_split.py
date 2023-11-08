@@ -14,19 +14,6 @@ class Criterion:
     crit: Any
 
 
-@dataclasses.dataclass(frozen=True)
-class SplitCriterion:
-    """
-    Class for defining a criterion for splitting subjects
-
-    Examples
-    --------
-    >>> _ = SplitCriterion(domain="cognition", criterion=("mci", "ad"))
-    """
-    domain: str
-    criterion: Tuple
-
-
 # -----------------
 # Functions
 # -----------------
