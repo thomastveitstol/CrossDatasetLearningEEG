@@ -14,6 +14,19 @@ class Criterion:
     crit: Any
 
 
+@dataclasses.dataclass(frozen=True)
+class SplitCriterion:
+    """
+    Class for defining a criterion for splitting subjects
+
+    Examples
+    --------
+    >>> _ = SplitCriterion(domain="cognition", criterion=("mci", "ad"))
+    """
+    domain: str
+    criterion: Tuple
+
+
 # -----------------
 # Functions
 # -----------------
@@ -148,13 +161,15 @@ def make_subject_splits(subjects, splits):
         # Loop through the different criteria (e.g. 'male' and 'female' for sex split)
         subjects_split[split] = dict()
         for criterion in criteria:
+            c = criterion.crit if isinstance(criterion, Criterion) else criterion
+
             # Loop through all subjects to append the ones which satisfy the criterion
             included_subjects = []
             for subject in subjects:
-                if split in subject.details and subject.details[split] in criterion:
+                if split in subject.details and subject.details[split] in c:
                     included_subjects.append(subject)
 
             # Add the included subjects as criterion satisfied for the split
-            subjects_split[split][Criterion(criterion)] = tuple(included_subjects)
+            subjects_split[split][Criterion(crit=c)] = tuple(included_subjects)
 
     return subjects_split
