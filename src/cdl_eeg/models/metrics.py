@@ -6,7 +6,8 @@ https://github.com/thomastveitstol/RegionBasedPoolingEEG/blob/master/src/metrics
 
 Author: Thomas Tveitstøl (Oslo University Hospital)
 """
-from typing import Dict, List, Tuple, Optional, Any
+import random
+from typing import Dict, List, Tuple, Optional, Any, NamedTuple
 
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, roc_auc_score
@@ -30,6 +31,15 @@ def regression_metric(func):
 def classification_metric(func):
     setattr(func, "_is_classification_metric", True)
     return func
+
+
+# ----------------
+# Convenient small classes
+# ----------------
+class YYhat(NamedTuple):
+    """Tuple for storing target and prediction"""
+    y_true: float
+    y_pred: float
 
 
 # ----------------
@@ -106,8 +116,8 @@ class Histories:
                 # Initialise history dictionary for all conditions and metrics
                 split_history = dict()
                 for split_selection, criteria in split_selections.items():
-                    initial_metrics: Dict[str, List[float]] = {f"{metric}": [] for metric in metrics}
-                    split_history[split_selection] = {criterion: initial_metrics for criterion in criteria}
+                    split_history[split_selection] = {criterion: {f"{metric}": [] for metric in metrics}
+                                                      for criterion in criteria}
 
                 # Append initialised history to main list
                 splits_histories.append((split_inclusion_criteria, split_history))  # todo: again, consider NamedTuple
@@ -172,12 +182,37 @@ class Histories:
     def _print_newest_subgroups_metrics(self):
         if self._splits_histories is not None:
             for i, split in enumerate(self._splits_histories):
-                print(f"----- Details for split {i} -----")
+                print(f"\n----- Details for split {i} -----")
                 print("Inclusion criteria:")
                 # todo: mypy complaining?
+                # Print who to include
                 for selection, condition in split[0].items():  # type: ignore
+                    # E.g. selection = "dataset", condition = ("cau_eeg",)
                     print(f"\t{selection.capitalize()} must be in: {condition}")
                     # todo: this is where you left...
+
+                # Loop through to get all metrics and print the newest ones
+                for split_selection, criteria_performance in split[1].items():
+                    print(f"\n\tDomain: {split_selection}")
+                    for criterion, performance in criteria_performance.items():
+                        print(f"\t\tSub-group: {criterion}")
+                        for j, (metric_name, metric_values) in enumerate(performance.items()):
+                            # todo: this looks bad...
+                            if j == len(performance) - 1:
+                                if self._name is None:
+                                    print(f"{metric_name}: {metric_values[-1]:.3f}")
+                                else:
+                                    print(f"{self._name}_{metric_name}: {metric_values[-1]:.3f}")
+                            elif j == 0:
+                                if self._name is None:
+                                    print(f"\t\t\t{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
+                                else:
+                                    print(f"\t\t\t{self._name}_{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
+                            else:
+                                if self._name is None:
+                                    print(f"{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
+                                else:
+                                    print(f"{self._name}_{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
 
     def _update_metrics(self):
         # Concatenate torch tenors
@@ -195,9 +230,8 @@ class Histories:
         # -------------
         if self._splits_histories is not None:
             # Make dictionary containing subjects combined with the prediction and target
-            # todo: y_pred and y_true to NamedTuple or dataclass?
-            subjects_pred_and_true = {subject: {"y_pred": y_hat, "y_true": y} for subject, y_hat, y
-                                      in zip(self._epoch_subjects, self._epoch_y_pred, self._epoch_y_true)}
+            subjects_pred_and_true = {subject: YYhat(y_true=y, y_pred=y_hat) for subject, y_hat, y
+                                      in zip(self._epoch_subjects, y_pred, y_true)}
 
             # Loop through all splits
             for split in self._splits_histories:
@@ -219,9 +253,9 @@ class Histories:
                             sub_group_subjects = subjects_splits[selection][criterion]
 
                             # Extract their predictions and targets
-                            sub_group_y_pred = torch.cat([subjects_pred_and_true[subject]["y_pred"]
+                            sub_group_y_pred = torch.cat([subjects_pred_and_true[subject].y_pred
                                                           for subject in sub_group_subjects], dim=0)
-                            sub_group_y_true = torch.cat([subjects_pred_and_true[subject]["y_true"]
+                            sub_group_y_true = torch.cat([subjects_pred_and_true[subject].y_true
                                                           for subject in sub_group_subjects], dim=0)
 
                             # Compute metrics for the subgroup and store it
@@ -239,12 +273,6 @@ class Histories:
     def _compute_metric(cls, metric: str, *, y_pred: torch.Tensor, y_true: torch.Tensor):
         """Method for computing the specified metric"""
         return getattr(cls, metric)(y_pred=y_pred, y_true=y_true)
-
-    # -----------------
-    # Methods for computing performance on sub-groups
-    # -----------------
-    def store_sub_groups_batch_evaluation(self, y_pred: torch.Tensor, y_true: torch.Tensor):
-        raise NotImplementedError
 
     # -----------------
     # Properties
@@ -338,3 +366,45 @@ class Histories:
     @classification_metric
     def auc(y_pred: torch.Tensor, y_true: torch.Tensor):
         return roc_auc_score(y_true=y_true.cpu(), y_score=y_pred.cpu())
+
+
+if __name__ == "__main__":
+    # Define splits
+    my_splits = (
+        ({"sex": ("female",), "cognition": ("hc", "mci")},  # Inclusion criteria  todo: NamedTuple
+         {"education": (Criterion((1, 2, 3)), Criterion((4, 5, 6))),
+          "age": (Criterion(("young",)), (Criterion("old",)), Criterion(("young", "old"))),
+          "cognition": (Criterion(("hc",)), Criterion(("mci",)))}),
+        ({"sex": ("male",), "cognition": ("mci", "ad")},  # Inclusion criteria
+         {"education": (Criterion((1, 2)), Criterion((3, 4)), Criterion((5, 6))),
+          "age": (Criterion(("young",)), Criterion(("old",))),
+          "cognition": (Criterion(("ad",)), Criterion(("mci",)))})
+    )
+
+    # Define subjects
+    my_subjects = []
+    my_sexes = ("male", "female")
+    my_cognitions = ("mci", "hc", "ad")
+    my_ages = ("old", "young")
+    education = (1, 2, 3, 4, 5, 6)
+
+    for i_ in range(10):
+        for j_ in range(13):
+            my_details = {"sex": random.choice(my_sexes), "cognition": random.choice(my_cognitions),
+                          "age": random.choice(my_ages), "education": random.choice(education)}
+            my_subjects.append(Subject(f"P{j_}", f"D{i_}", details=my_details))
+    my_subjects = tuple(my_subjects)
+
+    # Create object for tracking metrics
+    my_history = Histories(metrics="regression", splits=my_splits)
+
+    # Pretend to do predictions
+    batch_size = len(my_subjects)
+    my_predictions = torch.rand(size=(batch_size, 1), dtype=torch.float)
+    my_targets = torch.randint(low=0, high=2, size=(batch_size, 1), dtype=torch.float)
+
+    # Pretend that the batch is done
+    my_history.store_batch_evaluation(y_pred=my_predictions, y_true=my_targets, subjects=my_subjects)
+
+    # Pretend that the epoch is done
+    my_history.on_epoch_end(verbose=True, verbose_sub_groups=True)
