@@ -60,8 +60,9 @@ class _InceptionModule(nn.Module):
         # -------------------------------
         self._input_conv: Optional[nn.Module]
         if use_bottleneck:
-            self._input_conv = nn.Conv1d(in_channels, out_channels=32, kernel_size=1, padding="same", bias=False)
             out_channels = 32
+            self._input_conv = nn.Conv1d(in_channels, out_channels=out_channels, kernel_size=1, padding="same",
+                                         bias=False)
         else:
             self._input_conv = None
             out_channels = in_channels
