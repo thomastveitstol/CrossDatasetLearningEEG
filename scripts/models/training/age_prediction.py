@@ -5,6 +5,8 @@ Script primarily made for age prediction using a single DL model only. No pre-tr
     Ganin and Lempitsky 2015
     - Remember to use unsupervised domain adaptation which do not require access to the target data during training
     (e.g. 'de-learning' as part of the learning is not accepted)
+    - Can the Harmonisation work with Engemann be used on the latent feature space after the convolutional module?
+    Re-centering, re-scaling, and rotation? Their work did focus on covariance matrices and Riemann manifolds though...
 """
 import os
 import random
