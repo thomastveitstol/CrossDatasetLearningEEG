@@ -1,5 +1,8 @@
 """
-Script primarily made for age prediction using a single DL model only. No pre-training employed. Using RBP
+Script primarily made for age prediction using a single DL model only. No pre-training employed. Using RBP.
+
+Remember to use t-SNE and color-coding the domains, as in
+"Unsupervised Domain Adaptation by Backpropagation" by Ganin and Lempitsky 2015
 """
 import os
 import random
