@@ -7,6 +7,7 @@ Script primarily made for age prediction using a single DL model only. No pre-tr
     (e.g. 'de-learning' as part of the learning is not accepted)
     - Can the Harmonisation work with Engemann be used on the latent feature space after the convolutional module?
     Re-centering, re-scaling, and rotation? Their work did focus on covariance matrices and Riemann manifolds though...
+    - Remember to add down-sampling of channels as data augmentation when feasible
 """
 import os
 import random
