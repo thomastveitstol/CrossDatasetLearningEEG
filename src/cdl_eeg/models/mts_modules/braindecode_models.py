@@ -115,4 +115,3 @@ class Deep4NetMTS(MTSModuleBase):
 
     def forward(self, x):
         return self._model(x)
-
