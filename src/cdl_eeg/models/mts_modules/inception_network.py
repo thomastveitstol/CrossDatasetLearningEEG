@@ -1,5 +1,5 @@
 """
-Inception Time is implemented. Defaults are set as the original Keras implementation.
+Inception network is implemented. Defaults are set as the original Keras implementation.
 
 Paper: https://arxiv.org/pdf/1909.04939.pdf
 Original implementation in keras at https://github.com/hfawaz/InceptionTime
@@ -192,13 +192,13 @@ class _ShortcutLayer(nn.Module):
 # ---------------------------
 # Main module
 # ---------------------------
-class InceptionTime(MTSModuleBase):
+class InceptionNetwork(MTSModuleBase):
     """
-    Inception Time
+    Inception network
 
     Examples
     --------
-    >>> InceptionTime(64, 5).supports_latent_feature_extraction()
+    >>> InceptionNetwork(64, 5).supports_latent_feature_extraction()
     True
     """
 
@@ -277,7 +277,7 @@ class InceptionTime(MTSModuleBase):
 
         Examples
         --------
-        >>> my_model = InceptionTime(in_channels=43, num_classes=3, cnn_units=23)
+        >>> my_model = InceptionNetwork(in_channels=43, num_classes=3, cnn_units=23)
         >>> my_model.default_latent_feature_extraction(torch.rand(size=(10, 43, 500))).size()
         torch.Size([10, 92])
         >>> my_model.extract_latent_features(torch.rand(size=(10, 43, 500))).size()
@@ -305,13 +305,15 @@ class InceptionTime(MTSModuleBase):
 
         Examples
         --------
-        >>> my_model = InceptionTime(in_channels=43, num_classes=3)
+        >>> my_model = InceptionNetwork(in_channels=43, num_classes=3)
         >>> my_model(torch.rand(size=(10, 43, 500))).size()
         torch.Size([10, 3])
         >>> my_model(torch.rand(size=(13, 43, 1000))).size()  # The model is compatible with different num time steps
         torch.Size([13, 3])
-        >>> # Verify that it runs with other arguments specified
-        >>> my_model = InceptionTime(in_channels=533, num_classes=2, cnn_units=43, depth=7, use_residual=False,
+
+        Verify that it runs with other arguments specified
+
+        >>> my_model = InceptionNetwork(in_channels=533, num_classes=2, cnn_units=43, depth=7, use_residual=False,
         ...                      use_bottleneck=False, activation=nn.functional.elu, max_kernel_size=8)
         >>> my_model(torch.rand(size=(11, 533, 400))).size()
         torch.Size([11, 2])

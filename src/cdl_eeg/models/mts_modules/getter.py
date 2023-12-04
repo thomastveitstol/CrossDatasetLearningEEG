@@ -2,7 +2,7 @@
 Contains only a function for returning a specified MTS module
 """
 from cdl_eeg.models.mts_modules.braindecode_models import EEGNetv4MTS, EEGResNetMTS, ShallowFBCSPNetMTS, Deep4NetMTS
-from cdl_eeg.models.mts_modules.inception_time import InceptionTime
+from cdl_eeg.models.mts_modules.inception_network import InceptionNetwork
 
 
 def get_mts_module(mts_module_name, **kwargs):
@@ -22,15 +22,15 @@ def get_mts_module(mts_module_name, **kwargs):
 
     Examples
     --------
-    >>> _ = get_mts_module("InceptionTime", in_channels=5, num_classes=3)
+    >>> _ = get_mts_module("InceptionNetwork", in_channels=5, num_classes=3)
     >>> get_mts_module("NotAnMTSModule")  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
     Traceback (most recent call last):
     ...
     ValueError: The MTS module 'NotAnMTSModule' was not recognised. Please select among the following:
-    ('InceptionTime',...)
+    ('InceptionNetwork',...)
     """
     # All available MTS modules must be included here
-    available_mts_modules = (InceptionTime, EEGNetv4MTS, EEGResNetMTS, ShallowFBCSPNetMTS, Deep4NetMTS)
+    available_mts_modules = (InceptionNetwork, EEGNetv4MTS, EEGResNetMTS, ShallowFBCSPNetMTS, Deep4NetMTS)
 
     # Loop through and select the correct one
     for mts_module in available_mts_modules:
