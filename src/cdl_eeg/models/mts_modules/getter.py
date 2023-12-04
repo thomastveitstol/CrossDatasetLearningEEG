@@ -1,6 +1,7 @@
 """
 Contains only a function for returning a specified MTS module
 """
+from cdl_eeg.models.mts_modules.braindecode_models import EEGNetv4MTS, EEGResNetMTS, ShallowFBCSPNetMTS, Deep4NetMTS
 from cdl_eeg.models.mts_modules.inception_time import InceptionTime
 
 
@@ -29,7 +30,7 @@ def get_mts_module(mts_module_name, **kwargs):
     ('InceptionTime',...)
     """
     # All available MTS modules must be included here
-    available_mts_modules = (InceptionTime,)
+    available_mts_modules = (InceptionTime, EEGNetv4MTS, EEGResNetMTS, ShallowFBCSPNetMTS, Deep4NetMTS)
 
     # Loop through and select the correct one
     for mts_module in available_mts_modules:
