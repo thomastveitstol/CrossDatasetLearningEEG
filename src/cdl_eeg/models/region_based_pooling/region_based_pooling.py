@@ -20,7 +20,7 @@ from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.models.region_based_pooling.pooling_modules.getter import get_pooling_module
 from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import SingleChannelSplitPoolingBase, \
     MultiChannelSplitsPoolingBase
-from cdl_eeg.models.region_based_pooling.region_splits.getter import get_region_split
+from cdl_eeg.models.region_based_pooling.montage_splits.getter import get_region_split
 from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit
 
 

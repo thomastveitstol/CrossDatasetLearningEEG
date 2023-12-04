@@ -5,12 +5,12 @@ import matplotlib
 import numpy
 from shapely.geometry import Polygon, Point
 
-from cdl_eeg.models.region_based_pooling.region_splits.region_split_base import RegionSplitBase
+from cdl_eeg.models.region_based_pooling.montage_splits.region_split_base import MontageSplitBase
 from cdl_eeg.models.region_based_pooling.utils import RegionID, project_to_2d, ChannelsInRegionSplit, ChannelsInRegion
 from cdl_eeg.models.transformations.utils import UnivariateUniform
 
 
-class VoronoiSplit(RegionSplitBase):
+class VoronoiSplit(MontageSplitBase):
     # TODO: RuntimeWarning all over the place due to Polygons and MatplotlibDeprecationWarning on get_cmap
 
     __slots__ = "_points", "_voronoi"

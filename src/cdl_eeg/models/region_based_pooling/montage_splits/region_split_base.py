@@ -1,7 +1,7 @@
 import abc
 
 
-class RegionSplitBase(abc.ABC):
+class MontageSplitBase(abc.ABC):
     """
     Base class for splitting the EEG cap into regions
     """

@@ -1,7 +1,7 @@
 """
 Contains only a function for returning a specified region split
 """
-from cdl_eeg.models.region_based_pooling.region_splits.voronoi_split import VoronoiSplit
+from cdl_eeg.models.region_based_pooling.montage_splits.voronoi_split import VoronoiSplit
 
 
 def get_region_split(split_method, **kwargs):
