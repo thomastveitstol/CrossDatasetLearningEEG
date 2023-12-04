@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Dict, NamedTuple, Tuple
+from typing import Dict, NamedTuple, Tuple, Union
 
 import numpy
 from mne.transforms import _cart_to_sph, _pol_to_cart
@@ -68,7 +68,7 @@ class Electrodes3D:
 
 @dataclasses.dataclass(frozen=True)
 class RegionID:
-    id: int
+    id: Union[int, str]
 
 
 # todo: somewhat annoying to work with these. e.g. 'ch_name' in ChannelsInRegion should run 'ch_name' in
