@@ -155,7 +155,7 @@ class PolygonGraph:
         # -----------
         # Store attribute
         # -----------
-        self._nodes = nodes
+        self._nodes: Tuple[Point2D, ...] = nodes  # mypy is forcing me to have in-line type hinting here
 
     def line_intersection(self, point, angle):
         """
