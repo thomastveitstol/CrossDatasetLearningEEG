@@ -124,7 +124,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         self._pooling_module = pooling_module
 
         # -------------------
-        # Region splits
+        # Region splits  todo: montage split
         # -------------------
         # Generate and store region splits
         self._region_split = get_region_split(split_method, **split_method_kwargs)
