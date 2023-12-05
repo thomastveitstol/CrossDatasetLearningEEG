@@ -1,0 +1,138 @@
+Training:
+  learning_rate: [ 0.005, 0.001, 0.0005, 0.0001 ]
+  batch_size: 16
+  num_epochs: 200
+  verbose: true
+  val_split: 0.2
+  loss: [ MSELoss, L1Loss ]
+
+Shared Dataset Details:
+  num_time_steps: &num_time_steps 5000
+
+# -----------------
+# Methods for handling a varied number of channels
+# -----------------
+box: &box
+  x_min: -0.17
+  x_max: 0.17
+  y_min: -0.17
+  y_max: 0.17
+
+RBP:
+  Normalise region representations: true
+  RBP Designs:
+    RBP Design 1:
+      num_designs: 4
+      pooling_type: multi_cs
+      pooling_methods: MultiCSSharedRocket
+      pooling_methods_kwargs:
+        num_regions: [ 5, 5, 5 ]
+        num_kernels: 1021
+        max_receptive_field: 250
+      split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit ]
+      split_methods_kwargs:
+        - num_points: 5
+          <<: *box
+        - num_points: 5
+          <<: *box
+        - num_points: 5
+          <<: *box
+
+    RBP Design 2:
+      num_designs: 11
+      pooling_type: single_cs
+      pooling_methods: SingleCSSharedRocket
+      pooling_methods_kwargs:
+        num_regions: &num_regions_2 4
+        num_kernels: 1000
+        max_receptive_field: 100
+      split_methods: VoronoiSplit
+      split_methods_kwargs:
+        num_points: *num_regions_2
+        <<: *box
+
+    RBP Design 3:
+      num_designs: 5
+      pooling_type: multi_cs
+      pooling_methods: MultiCSSharedRocket
+      pooling_methods_kwargs:
+        num_regions: [ 3, 3, 5, 3, 3 ]
+        num_kernels: 400
+        max_receptive_field: 200
+      split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit ]
+      split_methods_kwargs:
+        - num_points: 3
+          <<: *box
+        - num_points: 3
+          <<: *box
+        - num_points: 5
+          <<: *box
+        - num_points: 3
+          <<: *box
+        - num_points: 3
+          <<: *box
+
+# -----------------
+# Montage splits
+# todo: the hyperparameter domain must be further investigated
+# -----------------
+VoronoiSplit: &VoronoiSplit
+  num_points: [3, 4, 5, 6, 7, 8, 9]
+  <<: *box
+
+CentroidPolygons: &CentroidPolygons
+  min_nodes: [1, 2, 3, 4, 5]
+  k: [[2, 2, 2, 2, 2, 2, 2], [3, 3, 3, 3, 3, 3, 3, 3], [2, 3, 2, 3, 2, 3, 2, 3, 2], [4, 3, 2, 3, 4, 3, 2, 3, 4]]
+
+Montage Splits:
+  VoronoiSplit: *VoronoiSplit
+  CentroidPolygons: *CentroidPolygons
+
+# -----------------
+# Deep learning architectures
+# TODO: I have to check the hyperparameters, of the braindecode models in particular
+# -----------------
+InceptionNetwork: &InceptionNetwork
+  num_classes: 1
+  cnn_units: [ 16, 32, 64  ]
+  depth: [ 4, 6, 8, 10 ]
+
+EEGNetv4MTS: &EEGNetv4MTS
+  num_classes: 1
+  num_time_steps: *num_time_steps
+  kernel_length: [ 16, 32, 64 ]
+
+EEGResNetMTS: &EEGResNetMTS
+  num_classes: 1
+  num_time_steps: *num_time_steps
+  n_layers_per_block: [ 2, 3, 4 ]
+  first_filter_length: [ 3, 5, 7 ]
+
+ShallowFBCSPNetMTS: &ShallowFBCSPNetMTS
+  num_classes: 1
+  num_time_steps: *num_time_steps
+  n_filters_time: [ 15, 25, 35 ]
+  n_filters_spat: [ 15, 25, 35 ]
+
+Deep4NetMTS: &Deep4NetMTS
+  num_classes: 1
+  num_time_steps: *num_time_steps
+  n_filters_time: [ 20, 40, 60 ]
+  filter_time_length: [ 15, 25, 35 ]
+  n_filters_spat: [ 20, 40, 60 ]
+  split_first_layer: [ true, false ]
+  batch_norm: [ true, false ]
+  drop_prob: [ 0.1, 0.25, 0.5 ]
+  n_filters_2: [ 50, 100, 200 ]
+  n_filters_3: [ 50, 100, 200 ]
+  n_filters_4: [ 50, 100, 200 ]
+  filter_length_2: [ 5, 10, 20 ]
+  filter_length_3: [ 5, 10, 20 ]
+  filter_length_4: [ 5, 10, 20 ]
+
+MTS Module:
+  InceptionNetwork: *InceptionNetwork
+  EEGNetv4MTS: *EEGNetv4MTS
+  EEGResNetMTS: *EEGResNetMTS
+  ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
+  Deep4NetMTS: *Deep4NetMTS
