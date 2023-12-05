@@ -1,3 +1,5 @@
+import copy
+
 import enlighten
 import torch
 import torch.nn as nn
@@ -45,11 +47,11 @@ class MainRBPModel(nn.Module):
         self._mts_module = get_mts_module(mts_module_name=mts_module, **mts_module_kwargs)
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, rbp_config, mts_config):
         # -----------------
         # Read RBP designs
         # -----------------
-        designs_config = config["RBP Designs"]
+        designs_config = copy.deepcopy(rbp_config["RBP Designs"])
         rbp_designs = []
         total_num_regions = 0
         for name, design in designs_config.items():
@@ -72,7 +74,7 @@ class MainRBPModel(nn.Module):
         # Read MTS design
         # -----------------
         # Read configuration file
-        mts_design = config["MTS Module"]
+        mts_design = copy.deepcopy(mts_config)
         mts_design["kwargs"]["in_channels"] = total_num_regions
 
         # -----------------
@@ -80,7 +82,7 @@ class MainRBPModel(nn.Module):
         # -----------------
         return cls(mts_module=mts_design["model"], mts_module_kwargs=mts_design["kwargs"],
                    rbp_designs=tuple(rbp_designs),
-                   normalise_region_representations=config["Normalise region representations"])
+                   normalise_region_representations=rbp_config["Normalise region representations"])
 
     def pre_compute(self, input_tensors):
         """

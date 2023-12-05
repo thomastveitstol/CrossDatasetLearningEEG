@@ -73,7 +73,7 @@ def main():
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-            model = MainRBPModel.from_config(config["Model"]).to(device)
+            model = MainRBPModel.from_config(rbp_config=config["RBP"], mts_config=config["MTS Module"]).to(device)
 
         # -----------------
         # Train model

@@ -4,7 +4,8 @@ box: &box
   y_min: -0.17
   y_max: 0.17
 
-Model:
+RBP:
+  Normalise region representations: true
   RBP Designs:
     RBP Design 1:
       num_designs: 4
@@ -57,14 +58,12 @@ Model:
         - num_points: 3
           <<: *box
 
-  MTS Module:
-    model: InceptionNetwork
-    kwargs:
-      cnn_units: 32
-      depth: 10
-      num_classes: 1
-
-  Normalise region representations: true
+MTS Module:
+  model: InceptionNetwork
+  kwargs:
+    cnn_units: 32
+    depth: 10
+    num_classes: 1
 
 Shared Dataset Details:
   num_time_steps: &num_time_steps 5000
