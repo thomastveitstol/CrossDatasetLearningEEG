@@ -1,6 +1,7 @@
 """
 Contains only a function for returning a specified region split
 """
+from cdl_eeg.models.region_based_pooling.montage_splits.centroid_polygon import CentroidPolygons
 from cdl_eeg.models.region_based_pooling.montage_splits.voronoi_split import VoronoiSplit
 
 
@@ -23,6 +24,8 @@ def get_region_split(split_method, **kwargs):
     Examples
     --------
     >>> _ = get_region_split("VoronoiSplit", num_points=7, x_min=0, x_max=1, y_min=0, y_max=1)
+    >>> _ = get_region_split("CentroidPolygons", k=(5, 3), channel_positions=("HatlestadHall", "YulinWang"),
+    ...                      min_nodes=2)
     >>> get_region_split("NotASplitMethod")  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
     Traceback (most recent call last):
     ...
@@ -30,7 +33,7 @@ def get_region_split(split_method, **kwargs):
     ('VoronoiSplit',...)
     """
     # All available regions splits must be included here
-    available_region_splits = (VoronoiSplit,)
+    available_region_splits = (VoronoiSplit, CentroidPolygons)
 
     # Loop through and select the correct one
     for region_split in available_region_splits:
