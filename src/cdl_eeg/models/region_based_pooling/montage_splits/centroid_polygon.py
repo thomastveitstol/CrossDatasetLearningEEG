@@ -734,6 +734,7 @@ class RegretRecursion(Exception):
 
 
 if __name__ == "__main__":
+    # todo: sometimes, it looks like it doesn't partition properly (e.g. splits into 5/6/7 instead of 6/6/6)
     import random
 
     import mne
@@ -758,7 +759,7 @@ if __name__ == "__main__":
     # ------------------
     # Generate split and plot it
     # ------------------
-    my_split_ = CentroidPolygons({"my_dataset": my_points_}, min_nodes=1, k=(3, 3, 3))
+    my_split_ = CentroidPolygons({"my_dataset": my_points_}, min_nodes=1, k=(5, 3))
 
     pyplot.figure()
     my_split_.plot(edge_color="black", line_width=2)
