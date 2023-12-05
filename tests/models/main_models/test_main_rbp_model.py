@@ -114,7 +114,7 @@ def test_forward():
     num_classes = 5
     num_regions = num_regions_1 + (num_regions_2,) * num_designs_2 + num_regions_3 + (num_regions_4,) * num_designs_4
 
-    mts_module = "InceptionTime"
+    mts_module = "InceptionNetwork"
     mts_module_kwargs = {"in_channels": sum(num_regions), "num_classes": num_classes}
 
     model = MainRBPModel(mts_module=mts_module, mts_module_kwargs=mts_module_kwargs,
@@ -209,7 +209,7 @@ def test_fit_real_channel_systems():
     num_classes = 5
     num_regions = num_regions_1 + (num_regions_2,) * num_designs_2 + num_regions_3 + (num_regions_4,) * num_designs_4
 
-    mts_module = "InceptionTime"
+    mts_module = "InceptionNetwork"
     mts_module_kwargs = {"in_channels": sum(num_regions), "num_classes": num_classes}
 
     model = MainRBPModel(mts_module=mts_module, mts_module_kwargs=mts_module_kwargs,
@@ -318,7 +318,7 @@ def test_pre_training():
     num_classes = 1
     num_regions = num_regions_1 + num_regions_2 + (num_regions_3,) * num_designs_3
 
-    mts_module = "InceptionTime"
+    mts_module = "InceptionNetwork"
     mts_module_kwargs = {"in_channels": sum(num_regions), "num_classes": num_classes}
 
     # Make model and fit channel systems
