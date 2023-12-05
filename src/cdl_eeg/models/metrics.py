@@ -10,7 +10,8 @@ import random
 from typing import Dict, List, Tuple, Optional, Any, NamedTuple
 
 from scipy.stats import pearsonr, spearmanr
-from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, roc_auc_score
+from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, roc_auc_score, \
+    r2_score
 import torch
 
 from cdl_eeg.data.data_split import Subject
@@ -360,6 +361,11 @@ class Histories:
 
         # Compute and return
         return spearmanr(a=y_true.cpu(), b=y_pred.cpu())[0]
+
+    @staticmethod
+    @regression_metric
+    def r2_score(y_pred: torch.Tensor, y_true: torch.Tensor):
+        return r2_score(y_true=y_true.cpu(), y_pred=y_pred.cpu())
 
     # Classification metrics
     @staticmethod
