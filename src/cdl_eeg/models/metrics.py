@@ -321,6 +321,7 @@ class Histories:
     # -----------------
     # Metrics
     # todo: make tests and add more metrics
+    # todo: add Concordance Correlation Coefficient
     # -----------------
     # Regression metrics
     @staticmethod
