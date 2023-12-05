@@ -9,7 +9,7 @@ from shapely import Polygon, LineString, Point
 
 from cdl_eeg.data.datasets.getter import get_channel_system
 from cdl_eeg.models.region_based_pooling.montage_splits.montage_split_base import MontageSplitBase
-from cdl_eeg.models.region_based_pooling.utils import RegionID, ChannelsInRegionSplit, ChannelsInRegion
+from cdl_eeg.models.region_based_pooling.utils import RegionID, ChannelsInRegionSplit, ChannelsInRegion, project_to_2d
 
 
 # -----------------
@@ -360,8 +360,10 @@ class CentroidPolygons(MontageSplitBase):
         if isinstance(channel_positions, (tuple, list)) and all(isinstance(channel_system, str)
                                                                 for channel_system in channel_positions):
             channel_positions = {
-                channel_system: project_to_2d(get_channel_system(dataset_name=channel_system).electrode_positions)
-                for channel_system in channel_positions
+                channel_system: _electrode_2d_to_point_tuple(
+                    project_to_2d(
+                        get_channel_system(dataset_name=channel_system).electrode_positions)
+                ) for channel_system in channel_positions
             }
 
         # -----------------------
@@ -567,6 +569,21 @@ class CentroidPolygons(MontageSplitBase):
 # -----------------
 # Functions
 # -----------------
+def _electrode_2d_to_point_tuple(electrodes_2d):
+    """
+    Convert from Electrodes2D to a tuple of Point2D (channel names are omitted)
+
+    Parameters
+    ----------
+    electrodes_2d : cdl_eeg.models.region_based_pooling.utils.Electrodes2D
+
+    Returns
+    -------
+    tuple[Point2D, ...]
+    """
+    return tuple(Point2D(*pos) for pos in electrodes_2d.positions.values())
+
+
 def _euclidean_distance(node_1, node_2):
     """
     Compute the Euclidean distance between two nodes
@@ -751,7 +768,7 @@ if __name__ == "__main__":
 
     import mne
 
-    from cdl_eeg.models.region_based_pooling.utils import project_to_2d, Electrodes3D
+    from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
 
     numpy.random.seed(7)
     random.seed(7)
