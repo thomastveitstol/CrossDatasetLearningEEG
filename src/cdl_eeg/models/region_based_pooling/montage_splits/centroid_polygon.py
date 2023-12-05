@@ -347,6 +347,7 @@ class CentroidPolygons(MontageSplitBase):
         channel_positions: dict[str, tuple[Point2D, ...]]
             Keys are channel system/dataset names, values are 2D projected electrode positions
         k: tuple[int, ...]
+            Split vector
         min_nodes: int
             Stopping criteria
         add_node_noise: bool
