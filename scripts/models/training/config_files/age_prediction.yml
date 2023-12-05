@@ -15,12 +15,13 @@ RBP:
         num_regions: [ 5, 5, 5 ]
         num_kernels: 1021
         max_receptive_field: 250
-      split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit ]
+      split_methods: [ VoronoiSplit, CentroidPolygons, VoronoiSplit ]
       split_methods_kwargs:
         - num_points: 5
           <<: *box
-        - num_points: 5
-          <<: *box
+        - channel_positions: [ HatlestadHall, YulinWang, OUS, Rockhill, Miltiadous, CAUEEG ]
+          min_nodes: 2
+          k: [5, 3]
         - num_points: 5
           <<: *box
 
