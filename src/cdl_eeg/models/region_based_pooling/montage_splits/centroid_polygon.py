@@ -7,6 +7,7 @@ import numpy
 from matplotlib import pyplot
 from shapely import Polygon, LineString, Point
 
+from cdl_eeg.data.datasets.getter import get_channel_system
 from cdl_eeg.models.region_based_pooling.montage_splits.montage_split_base import MontageSplitBase
 from cdl_eeg.models.region_based_pooling.utils import RegionID, ChannelsInRegionSplit, ChannelsInRegion
 
@@ -344,7 +345,7 @@ class CentroidPolygons(MontageSplitBase):
 
         Parameters
         ----------
-        channel_positions: dict[str, tuple[Point2D, ...]]
+        channel_positions: dict[str, tuple[Point2D, ...]] | tuple[str, ...]
             Keys are channel system/dataset names, values are 2D projected electrode positions
         k: tuple[int, ...]
             Split vector
@@ -353,6 +354,16 @@ class CentroidPolygons(MontageSplitBase):
         add_node_noise: bool
         _polygon: PolygonGraph | str
         """
+        # -----------------------
+        # Maybe load the channel systems
+        # -----------------------
+        if isinstance(channel_positions, (tuple, list)) and all(isinstance(channel_system, str)
+                                                                for channel_system in channel_positions):
+            channel_positions = {
+                channel_system: project_to_2d(get_channel_system(dataset_name=channel_system).electrode_positions)
+                for channel_system in channel_positions
+            }
+
         # -----------------------
         # Maybe add a small noise to the channel positions.
         # This is to prevent aligned electrodes
