@@ -8,6 +8,7 @@ from matplotlib import pyplot
 from shapely import Polygon, LineString, Point
 
 from cdl_eeg.models.region_based_pooling.montage_splits.montage_split_base import MontageSplitBase
+from cdl_eeg.models.region_based_pooling.utils import RegionID, ChannelsInRegionSplit, ChannelsInRegion
 
 
 # -----------------
@@ -452,9 +453,70 @@ class CentroidPolygons(MontageSplitBase):
             for region in placed_nodes:
                 self._children_split[region] = None
 
+    # ---------------
+    # Methods for placing points in regions
+    # ---------------
+    def _place_single_node(self, node, _color_sequence=()):
+        """
+        Method for placing a single node in a region
+
+        Parameters
+        ----------
+        node : Point2D
+        _color_sequence : tuple[int, ...]
+
+        Returns
+        -------
+        RegionID
+        """
+        # Place the point and add it to the sequence (here, we imagine that the node is 'coloured' with an integer)
+        node_color = _place_single_node_in_polygon(node=node, polygons=self._child_polygons)
+        color_sequence = _color_sequence + (node_color,)
+
+        # Maybe initiate child split
+        region = None
+        for polygon_id, child_split in self._children_split.items():
+            if node_color == polygon_id and child_split is not None:
+                region = child_split._place_single_node(node=node, _color_sequence=color_sequence)
+                break
+
+        # Return RegionID if and only if the node split is the final one
+        if all(child_split is None for child_split in self._children_split.values()):
+            # While the original implementation of RBP used a clever trick with prime numbers to map the color sequence
+            # to a unique integer, here we just convert it to a string
+            return RegionID("|".join(map(str, color_sequence)))
+
+        return region
+
     def place_in_regions(self, electrodes_3d):
-        # todo
-        raise NotImplementedError
+        """
+        Place electrodes in regions
+
+        Parameters
+        ----------
+        electrodes_3d : Electrodes3D
+
+        Returns
+        -------
+        ChannelsInRegionSplit
+        """
+        # Make a 2D-projection
+        electrodes_2d = project_to_2d(electrode_positions=electrodes_3d)
+
+        # Place all electrode using their 2D projections
+        channels_in_regions: Dict[RegionID, List[str]] = dict()
+        for electrode_name, position in electrodes_2d.positions.items():
+            # Place in region and store in dict
+            region = self._place_single_node(node=Point2D(*position))
+
+            if region not in channels_in_regions:
+                channels_in_regions[region] = []
+
+            channels_in_regions[region].append(electrode_name)
+
+        # Return with correct type
+        return ChannelsInRegionSplit({id_: ChannelsInRegion(tuple(ch_names))
+                                      for id_, ch_names in channels_in_regions.items()})
 
     # ---------------
     # Methods for plotting
@@ -600,6 +662,29 @@ def _compute_separating_angles(nodes, centroid, k, seed=None):
     return tuple(separating_angles)
 
 
+def _place_single_node_in_polygon(node, polygons):
+    """
+    Place a single node in a polygon. The index of the first polygon the node is in will be returned.
+
+    Parameters
+    ----------
+    node : Point2D
+    polygons : tuple[PolygonGraph, ...]
+
+    Returns
+    -------
+    int
+    """
+    # Try all polygons
+    for i, polygon in enumerate(polygons):
+        # If the node is contained in the current polygon, return it
+        if Polygon(tuple((node.x, node.y) for node in polygon.nodes)).contains(Point(node.x, node.y)):
+            return i
+
+    # Could not be placed in a polygon
+    return -1
+
+
 def _place_nodes_in_polygons(nodes, polygons):
     """
     Function for placing nodes in polygons. The nodes will be placed in the first polygon it is in. If a node is not in
@@ -664,7 +749,7 @@ if __name__ == "__main__":
     # 3D
     montage = mne.channels.make_standard_montage("standard_1020")
     my_nodes_3d = montage.get_positions()["ch_pos"]
-    my_nodes_3d = {key: (value[1], value[0], value[2]) for key, value in my_nodes_3d.items()}
+    my_nodes_3d = {key: (value[0], value[1], value[2]) for key, value in my_nodes_3d.items()}
 
     # 2D and numpy arrays
     my_nodes_2d = project_to_2d(Electrodes3D(my_nodes_3d))
@@ -673,9 +758,22 @@ if __name__ == "__main__":
     # ------------------
     # Generate split and plot it
     # ------------------
-    my_split_ = CentroidPolygons({"my_dataset": my_points_}, min_nodes=1, k=(3, 3, 3, 3))
+    my_split_ = CentroidPolygons({"my_dataset": my_points_}, min_nodes=1, k=(3, 3, 3))
 
     pyplot.figure()
     my_split_.plot(edge_color="black", line_width=2)
+
+    # ------------------
+    # Plot the electrodes
+    # ------------------
+    # Place in regions
+    my_placed_electrodes = my_split_.place_in_regions(Electrodes3D(my_nodes_3d))
+
+    # Loop through to plot all regions separately
+    for region_, electrodes in my_placed_electrodes.ch_names.items():
+        # Get all channels and their positions
+        positions_ = tuple(my_nodes_2d.positions[ch_name] for ch_name in electrodes.ch_names)
+        x_, y_ = zip(*positions_)
+        pyplot.scatter(x_, y_)
 
     pyplot.show()
