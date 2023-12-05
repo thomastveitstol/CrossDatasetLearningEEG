@@ -5,9 +5,9 @@ from cdl_eeg.models.region_based_pooling.montage_splits.centroid_polygon import 
 from cdl_eeg.models.region_based_pooling.montage_splits.voronoi_split import VoronoiSplit
 
 
-def get_region_split(split_method, **kwargs):
+def get_montage_split(split_method, **kwargs):
     """
-    Function for getting the specified region split.
+    Function for getting the specified montage split.
 
     Parameters
     ----------
@@ -18,15 +18,15 @@ def get_region_split(split_method, **kwargs):
 
     Returns
     -------
-    cdl_eeg.models.region_based_pooling.region_splits.region_split_base.RegionSplitBase
+    cdl_eeg.models.region_based_pooling.montage_splits.montage_split_base.MontageSplitBase
         The region splits
 
     Examples
     --------
-    >>> _ = get_region_split("VoronoiSplit", num_points=7, x_min=0, x_max=1, y_min=0, y_max=1)
-    >>> _ = get_region_split("CentroidPolygons", k=(5, 3), channel_positions=("HatlestadHall", "YulinWang"),
-    ...                      min_nodes=2)
-    >>> get_region_split("NotASplitMethod")  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
+    >>> _ = get_montage_split("VoronoiSplit", num_points=7, x_min=0, x_max=1, y_min=0, y_max=1)
+    >>> _ = get_montage_split("CentroidPolygons", k=(5, 3), channel_positions=("HatlestadHall", "YulinWang"),
+    ...                       min_nodes=2)
+    >>> get_montage_split("NotASplitMethod")  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
     Traceback (most recent call last):
     ...
     ValueError: The split method 'NotASplitMethod' was not recognised. Please select among the following:

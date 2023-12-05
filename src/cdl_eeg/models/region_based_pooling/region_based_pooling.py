@@ -20,7 +20,7 @@ from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.models.region_based_pooling.pooling_modules.getter import get_pooling_module
 from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import SingleChannelSplitPoolingBase, \
     MultiChannelSplitsPoolingBase
-from cdl_eeg.models.region_based_pooling.montage_splits.getter import get_region_split
+from cdl_eeg.models.region_based_pooling.montage_splits.getter import get_montage_split
 from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit
 
 
@@ -127,7 +127,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         # Region splits  todo: montage split
         # -------------------
         # Generate and store region splits
-        self._region_split = get_region_split(split_method, **split_method_kwargs)
+        self._region_split = get_montage_split(split_method, **split_method_kwargs)
 
         # Initialise the mapping from regions to channel names, for all datasets (must be fit later)
         # Should be {dataset_name: tuple[ChannelsInRegionSplit, ...]}
@@ -329,7 +329,7 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         # Channel/Region splits
         # -------------------
         # Generate and store region splits
-        self._region_splits = tuple(get_region_split(split_method, **kwargs)
+        self._region_splits = tuple(get_montage_split(split_method, **kwargs)
                                     for split_method, kwargs in zip(split_methods, split_methods_kwargs))
 
         # Initialise the mapping from regions to channel names, for all datasets (must be fit later)
