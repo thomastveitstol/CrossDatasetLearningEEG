@@ -573,6 +573,29 @@ class CentroidPolygons(MontageSplitBase):
             for child_polygon in self._child_polygons:
                 child_polygon.plot(face_color=face_color, edge_color=edge_color, line_width=line_width)
 
+    # ---------------
+    # Properties
+    # ---------------
+    def _get_num_regions(self, _sum=0):
+        # ------------------
+        # Go to children splits if they exist
+        # ------------------
+        for child_split in self._children_split.values():
+            if child_split is not None:
+                _sum = child_split._get_num_regions(_sum=_sum)
+
+        # ------------------
+        # Return if there are no children nodes
+        # ------------------
+        if all(child_split is None for child_split in self._children_split.values()):
+            return len(self._children_split) + _sum
+
+        return _sum
+
+    @property
+    def num_regions(self) -> int:
+        return self._get_num_regions()
+
 
 # -----------------
 # Functions
@@ -796,8 +819,9 @@ if __name__ == "__main__":
     # ------------------
     # Generate split and plot it
     # ------------------
-    my_split_ = CentroidPolygons({"my_dataset": my_points_}, min_nodes=1, k=(5, 3))
+    my_split_ = CentroidPolygons({"my_dataset": my_points_}, min_nodes=1, k=(5, 5, 3))
 
+    print(f"Number of regions: {my_split_.num_regions}")
     pyplot.figure()
     my_split_.plot(edge_color="black", line_width=2)
 
