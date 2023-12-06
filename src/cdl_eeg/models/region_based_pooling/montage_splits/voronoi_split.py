@@ -63,7 +63,7 @@ class VoronoiSplit(MontageSplitBase):
         _, ax = pyplot.subplots()
         for id_, area in self._voronoi.items():
             # Sample color from colormap
-            cmap = matplotlib.colormaps.get_cmap('YlOrBr')
+            cmap = matplotlib.colormaps['YlOrBr']
 
             # Get face color
             face_color = cmap(numpy.random.randint(low=0, high=cmap.N // 2))
