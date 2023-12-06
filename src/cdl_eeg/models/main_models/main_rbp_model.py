@@ -64,12 +64,6 @@ class MainRBPModel(nn.Module):
                           num_designs=design["num_designs"])
             )
 
-            num_regions = design["pooling_methods_kwargs"]["num_regions"]  # todo: should be specified by split instead
-            if isinstance(num_regions, int):
-                total_num_regions += num_regions * design["num_designs"]
-            else:
-                total_num_regions += sum(num_regions) * design["num_designs"]
-
         # -----------------
         # Read MTS design
         # -----------------
