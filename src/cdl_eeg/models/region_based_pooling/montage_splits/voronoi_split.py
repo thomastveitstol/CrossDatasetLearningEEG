@@ -153,19 +153,6 @@ def _pruned_random_centroids(channel_systems, min_nodes, x_min, x_max, y_min, y_
     voronoi = voronoi_regions_from_coords(numpy.array(centroids), geo_shape=boundary)[0]
     vor_cells = {RegionID(id_): polygon for id_, polygon in voronoi.items()}
 
-    # Store cell centroids
-    cell_centroids = dict()
-    for region_id, polygon in vor_cells.items():
-        # Get centroid of the current polygon
-        _centroid = tuple(centroid for centroid in centroids if polygon.contains(Point(centroid)))
-
-        # Verify that there is only one match
-        assert len(_centroid) == 1, (f"Expected only one centroid in the Voronoi cell, but found {len(_centroid)}. "
-                                     f"This should never happen, please contact the developer")
-
-        # Store the centroid
-        cell_centroids[region_id] = tuple(centroid for centroid in centroids if polygon.contains(Point(centroid)))[0]
-
     # ------------------
     # Remove all centroid which does not contain
     # a single electrode for any channel system
@@ -183,7 +170,9 @@ def _pruned_random_centroids(channel_systems, min_nodes, x_min, x_max, y_min, y_
     # Delete all empty cells and centroids
     for cell in empty_vor_cells:
         del vor_cells[cell]
-        del cell_centroids[cell]
+
+    # Get the cell centroids
+    cell_centroids = _get_cell_centroids(vor_cells=vor_cells, centroids=centroids)
 
     # Recompute the Voronoi cells
     voronoi = voronoi_regions_from_coords(numpy.array(tuple(cell_centroids.values())), geo_shape=boundary)[0]
@@ -226,6 +215,35 @@ def _box_uniform(k, *, x_min, x_max, y_min, y_max):
 
     # Sample and return
     return tuple((x.draw(), y.draw()) for _ in range(k))
+
+
+def _get_cell_centroids(vor_cells, centroids):
+    """
+    Function for matching the centroid to the Voronoi cell
+
+    Parameters
+    ----------
+    vor_cells : dict[RegionID, Polygon]
+    centroids : tuple[tuple[float, float], ...]
+
+    Returns
+    -------
+    dict[RegionID, tuple[float, float]]
+    """
+    # Store cell centroids
+    cell_centroids = dict()
+    for region_id, polygon in vor_cells.items():
+        # Get centroid of the current polygon
+        _centroid = tuple(centroid for centroid in centroids if polygon.contains(Point(centroid)))
+
+        # Verify that there is only one match
+        assert len(_centroid) == 1, (f"Expected only one centroid in the Voronoi cell, but found {len(_centroid)}. "
+                                     f"This should never happen, please contact the developer")
+
+        # Store the centroid
+        cell_centroids[region_id] = tuple(centroid for centroid in centroids if polygon.contains(Point(centroid)))[0]
+
+    return cell_centroids
 
 
 if __name__ == "__main__":
