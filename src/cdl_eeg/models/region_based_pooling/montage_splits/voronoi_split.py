@@ -161,8 +161,8 @@ def _pruned_random_centroids(channel_systems, min_nodes, x_min, x_max, y_min, y_
     empty_vor_cells = set()
     for positions in channel_positions:
         # Compute empty cells in this channel system
-        empty = (region_id for region_id, polygon in vor_cells.items() if not any(polygon.contains(Point(point))
-                                                                                  for point in positions))
+        empty = (region_id for region_id, polygon in vor_cells.items() if region_id not in empty_vor_cells
+                 and not any(polygon.contains(Point(point)) for point in positions))
 
         # Update the Voronoi cells to delete
         empty_vor_cells.update(empty)
