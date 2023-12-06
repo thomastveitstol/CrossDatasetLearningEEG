@@ -110,6 +110,16 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         self._input_checks(pooling_method, pooling_method_kwargs, split_method, split_method_kwargs)
 
         # -------------------
+        # Region splits  todo: montage split
+        # -------------------
+        # Generate and store region splits
+        self._region_split = get_montage_split(split_method, **split_method_kwargs)
+
+        # Initialise the mapping from regions to channel names, for all datasets (must be fit later)
+        # Should be {dataset_name: tuple[ChannelsInRegionSplit, ...]}
+        self._channel_splits: Dict[str, ChannelsInRegionSplit] = dict()
+
+        # -------------------
         # Generate pooling modules
         # -------------------
         # Get the pooling module
@@ -122,16 +132,6 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
 
         # Set as attribute
         self._pooling_module = pooling_module
-
-        # -------------------
-        # Region splits  todo: montage split
-        # -------------------
-        # Generate and store region splits
-        self._region_split = get_montage_split(split_method, **split_method_kwargs)
-
-        # Initialise the mapping from regions to channel names, for all datasets (must be fit later)
-        # Should be {dataset_name: tuple[ChannelsInRegionSplit, ...]}
-        self._channel_splits: Dict[str, ChannelsInRegionSplit] = dict()
 
     @staticmethod
     def _input_checks(pooling_method, pooling_method_kwargs, split_method, split_method_kwargs):
@@ -573,7 +573,6 @@ class RegionBasedPooling(nn.Module):
                     rbp_outputs.append(rbp_module(input_tensors, channel_name_to_index=channel_name_to_index))
             else:
                 if isinstance(rbp_module, MultiChannelSplitsRegionBasedPooling):
-
                     rbp_outputs.extend(rbp_module(input_tensors, channel_name_to_index=channel_name_to_index,
                                                   pre_computed=pre_comp_features))
                 else:
