@@ -43,8 +43,8 @@ class MainRBPModel(nn.Module):
         # ----------------
         # Create MTS module
         # ----------------
-        # todo: the number of in channels must be calculated from/by the RBP layer
-        self._mts_module = get_mts_module(mts_module_name=mts_module, **mts_module_kwargs)
+        self._mts_module = get_mts_module(mts_module_name=mts_module,
+                                          **{"num_region": self._region_based_pooling.num_regions, **mts_module_kwargs})
 
     @classmethod
     def from_config(cls, rbp_config, mts_config):
@@ -53,7 +53,6 @@ class MainRBPModel(nn.Module):
         # -----------------
         designs_config = copy.deepcopy(rbp_config["RBP Designs"])
         rbp_designs = []
-        total_num_regions = 0
         for name, design in designs_config.items():
             rbp_designs.append(
                 RBPDesign(pooling_type=RBPPoolType(design["pooling_type"]),
@@ -69,7 +68,6 @@ class MainRBPModel(nn.Module):
         # -----------------
         # Read configuration file
         mts_design = copy.deepcopy(mts_config)
-        mts_design["kwargs"]["in_channels"] = total_num_regions
 
         # -----------------
         # Make model

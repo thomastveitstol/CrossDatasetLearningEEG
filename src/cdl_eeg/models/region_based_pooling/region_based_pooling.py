@@ -57,6 +57,18 @@ class RegionBasedPoolingBase(nn.Module, abc.ABC):
     Base class for all Region Based Pooling classes
     """
 
+    @property
+    @abc.abstractmethod
+    def num_regions(self) -> int:
+        """
+        Get the total number of regions
+
+        Returns
+        -------
+        int
+            Total number of regions
+        """
+
 
 # ------------------
 # Implementations of RBP  todo: should be possible to combine the different classes
@@ -269,6 +281,10 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
     def supports_precomputing(self):
         return self._pooling_module.supports_precomputing()
 
+    @property
+    def num_regions(self) -> int:
+        return self._region_split.num_regions
+
 
 class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
     """
@@ -457,6 +473,10 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
     @property
     def supports_precomputing(self):
         return self._pooling_module.supports_precomputing()
+
+    @property
+    def num_regions(self) -> int:
+        return sum(split.num_regions for split in self._region_splits)
 
 
 # ------------------
@@ -659,6 +679,11 @@ class RegionBasedPooling(nn.Module):
     # ----------------
     # Properties
     # ----------------
+    @property
+    def num_regions(self) -> int:
+        """Get the total number of regions"""
+        return sum(rbp.num_regions for rbp in self._rbp_modules)
+
     @property
     def supports_precomputing(self):
         return any(rbp_module.supports_precomputing for rbp_module in self._rbp_modules)
