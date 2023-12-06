@@ -341,7 +341,7 @@ class CentroidPolygons(MontageSplitBase):
     """
     The algorithm used in the original RBP paper (Tveitstøl et al., submitted)
 
-    However, I am struggling to make thi work for multiple channel systems...
+    However, I am struggling to make this work for multiple channel systems...
     """
 
     __slots__ = "_polygon", "_centroid", "_angles", "_child_polygons", "_children_split"
