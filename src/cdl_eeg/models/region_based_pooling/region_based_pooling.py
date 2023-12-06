@@ -313,21 +313,7 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         self._input_checks(pooling_method_kwargs, split_methods, split_methods_kwargs)
 
         # -------------------
-        # Generate pooling modules
-        # -------------------
-        # Get correct pooling module in a list
-        pooling_module = get_pooling_module(pooling_method, **pooling_method_kwargs)
-
-        # Verify that it has have correct type
-        if not isinstance(pooling_module, MultiChannelSplitsPoolingBase):
-            raise TypeError(f"Expected all pooling module to inherit from {MultiChannelSplitsPoolingBase.__name__}, "
-                            f"but found {type(pooling_module)}")
-
-        # Store pooling module
-        self._pooling_module = pooling_module
-
-        # -------------------
-        # Channel/Region splits
+        # Channel/Region splits  todo: montage splits
         # -------------------
         # Generate and store region splits
         self._region_splits = tuple(get_montage_split(split_method, **kwargs)
@@ -336,6 +322,21 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         # Initialise the mapping from regions to channel names, for all datasets (must be fit later)
         # Should be {dataset_name: tuple[ChannelsInRegionSplit, ...]}
         self._channel_splits: Dict[str, Tuple[ChannelsInRegionSplit, ...]] = dict()
+
+        # -------------------
+        # Generate pooling modules
+        # -------------------
+        # Get correct pooling module in a list
+        _num_regions = tuple(split.num_regions for split in self._region_splits)
+        pooling_module = get_pooling_module(pooling_method, **{"num_regions": _num_regions, **pooling_method_kwargs})
+
+        # Verify that it has have correct type
+        if not isinstance(pooling_module, MultiChannelSplitsPoolingBase):
+            raise TypeError(f"Expected all pooling module to inherit from {MultiChannelSplitsPoolingBase.__name__}, "
+                            f"but found {type(pooling_module)}")
+
+        # Store pooling module
+        self._pooling_module = pooling_module
 
     # ----------------
     # Checks
