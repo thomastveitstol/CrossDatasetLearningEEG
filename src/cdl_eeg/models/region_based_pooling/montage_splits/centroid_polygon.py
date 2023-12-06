@@ -446,7 +446,8 @@ class CentroidPolygons(MontageSplitBase):
 
         # Maybe regret recursion (this step was part of RBP)
         if not (len(placed_nodes) == len(self._child_polygons) == k[0]):
-            raise RegretRecursion  # todo: is this really needed?
+            raise RegretRecursion(f"Inconsistencies in calculating the nuber of regions: "
+                                  f"{len(placed_nodes), len(self._child_polygons), k[0]}")
 
         # -----------------------
         # (Maybe) split children polygons
