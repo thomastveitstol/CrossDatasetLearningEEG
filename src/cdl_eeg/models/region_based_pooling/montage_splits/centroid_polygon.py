@@ -338,6 +338,13 @@ class PolygonGraph:
 # Main class
 # -----------------
 class CentroidPolygons(MontageSplitBase):
+    """
+    The algorithm used in the original RBP paper (Tveitstøl et al., submitted)
+
+    However, I am struggling to make thi work for multiple channel systems...
+    """
+
+    __slots__ = "_polygon", "_centroid", "_angles", "_child_polygons", "_children_split"
 
     def __init__(self, channel_positions, k, min_nodes, add_node_noise=True, _polygon="auto"):
         """
