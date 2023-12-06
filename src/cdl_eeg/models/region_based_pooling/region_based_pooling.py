@@ -283,7 +283,7 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
 
     @property
     def num_regions(self) -> int:
-        return self._region_split.num_regions
+        return self._region_split.num_regions  # type: ignore[no-any-return]
 
 
 class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
