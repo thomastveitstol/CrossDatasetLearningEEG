@@ -122,8 +122,9 @@ class SingleChannelSplitRegionBasedPooling(RegionBasedPoolingBase):
         # -------------------
         # Generate pooling modules
         # -------------------
-        # Get the pooling module
-        pooling_module = get_pooling_module(pooling_method, **pooling_method_kwargs)
+        # Get the pooling module (and add number of regions)
+        pooling_module = get_pooling_module(pooling_method, **{"num_regions": self._region_split.num_regions,
+                                                               **pooling_method_kwargs})
 
         # Verify that it has correct type
         if not isinstance(pooling_module, SingleChannelSplitPoolingBase):
