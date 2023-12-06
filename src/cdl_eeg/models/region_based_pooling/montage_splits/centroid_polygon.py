@@ -576,7 +576,20 @@ class CentroidPolygons(MontageSplitBase):
     # ---------------
     # Properties
     # ---------------
-    def _get_num_regions(self, _sum=0):
+    def _get_num_regions(self, _sum: int = 0) -> int:
+        """
+        Method for computing the number of regions
+
+        Parameters
+        ----------
+        _sum : int
+            Internal use only!
+
+        Returns
+        -------
+        int
+            Number of regions
+        """
         # ------------------
         # Go to children splits if they exist
         # ------------------
