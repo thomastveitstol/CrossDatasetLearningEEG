@@ -32,3 +32,18 @@ class MontageSplitBase(abc.ABC):
         -------
         None
         """
+
+    # -------------
+    # Properties
+    # -------------
+    @property
+    @abc.abstractmethod
+    def num_regions(self) -> int:
+        """
+        Get the number of regions
+
+        Returns
+        -------
+        int
+            Number of regions
+        """

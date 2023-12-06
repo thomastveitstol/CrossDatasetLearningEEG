@@ -71,9 +71,16 @@ class VoronoiSplit(MontageSplitBase):
             x, y = area.exterior.xy
             ax.fill(x, y, linewidth=2, facecolor=face_color, edgecolor=edge_color)
 
+    # -------------
+    # Properties
+    # -------------
     @property
     def regions(self) -> Tuple[RegionID, ...]:
         return tuple(self._voronoi.keys())
+
+    @property
+    def num_regions(self) -> int:
+        return len(self.regions)
 
 
 # ----------------
