@@ -506,7 +506,7 @@ class CentroidPolygons(MontageSplitBase):
         if all(child_split is None for child_split in self._children_split.values()):
             # While the original implementation of RBP used a clever trick with prime numbers to map the color sequence
             # to a unique integer, here we just convert it to a string
-            return RegionID("|".join(map(str, color_sequence)))
+            return RegionID("|".join(str(color) for color in color_sequence))
 
         return region
 
