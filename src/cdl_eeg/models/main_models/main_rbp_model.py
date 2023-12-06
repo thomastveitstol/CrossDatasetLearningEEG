@@ -43,8 +43,9 @@ class MainRBPModel(nn.Module):
         # ----------------
         # Create MTS module
         # ----------------
-        self._mts_module = get_mts_module(mts_module_name=mts_module,
-                                          **{"num_region": self._region_based_pooling.num_regions, **mts_module_kwargs})
+        self._mts_module = get_mts_module(
+            mts_module_name=mts_module, **{"in_channels": self._region_based_pooling.num_regions, **mts_module_kwargs}
+        )
 
     @classmethod
     def from_config(cls, rbp_config, mts_config):
