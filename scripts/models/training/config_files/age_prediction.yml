@@ -12,17 +12,20 @@ RBP:
       pooling_type: multi_cs
       pooling_methods: MultiCSSharedRocket
       pooling_methods_kwargs:
-        num_regions: [ 5, 9, 5 ]
         num_kernels: 1021
         max_receptive_field: 250
       split_methods: [ VoronoiSplit, CentroidPolygons, VoronoiSplit ]
       split_methods_kwargs:
-        - num_points: 5
+        - channel_systems: [ rockhill, miltiadous, hatlestad_hall, yulin_wang, ous, cau_eeg ]
+          min_nodes: 1
+          num_initial_centroids: 500
           <<: *box
         - channel_positions: [ CAUEEG ]
-          min_nodes: 2
+          min_nodes: 1
           k: [ 3, 3 ]
-        - num_points: 5
+        - channel_systems: [ rockhill, miltiadous, hatlestad_hall, yulin_wang, ous, cau_eeg ]
+          min_nodes: 1
+          num_initial_centroids: 500
           <<: *box
 
     RBP Design 2:
@@ -30,12 +33,13 @@ RBP:
       pooling_type: single_cs
       pooling_methods: SingleCSSharedRocket
       pooling_methods_kwargs:
-        num_regions: &num_regions_2 4
         num_kernels: 1000
         max_receptive_field: 100
       split_methods: VoronoiSplit
       split_methods_kwargs:
-        num_points: *num_regions_2
+        channel_systems: [ rockhill, miltiadous, hatlestad_hall, yulin_wang, ous, cau_eeg ]
+        min_nodes: 1
+        num_initial_centroids: 500
         <<: *box
 
     RBP Design 3:
@@ -43,20 +47,25 @@ RBP:
       pooling_type: multi_cs
       pooling_methods: MultiCSSharedRocket
       pooling_methods_kwargs:
-        num_regions: [ 3, 3, 5, 3, 3 ]
         num_kernels: 400
         max_receptive_field: 200
-      split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit ]
+      split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit ]
       split_methods_kwargs:
-        - num_points: 3
+        - channel_systems: [ rockhill, miltiadous, hatlestad_hall, yulin_wang, ous, cau_eeg ]
+          min_nodes: 1
+          num_initial_centroids: 500
           <<: *box
-        - num_points: 3
+        - channel_systems: [ rockhill, miltiadous, hatlestad_hall, yulin_wang, ous, cau_eeg ]
+          min_nodes: 1
+          num_initial_centroids: 500
           <<: *box
-        - num_points: 5
+        - channel_systems: [ rockhill, miltiadous, hatlestad_hall, yulin_wang, ous, cau_eeg ]
+          min_nodes: 1
+          num_initial_centroids: 500
           <<: *box
-        - num_points: 3
-          <<: *box
-        - num_points: 3
+        - channel_systems: [ rockhill, miltiadous, hatlestad_hall, yulin_wang, ous, cau_eeg ]
+          min_nodes: 1
+          num_initial_centroids: 500
           <<: *box
 
 MTS Module:
@@ -73,7 +82,7 @@ Shared Dataset Details:
 Training:
   learning_rate: 0.0001
   batch_size: 16
-  num_epochs: 1
+  num_epochs: 200
   verbose: true
   val_split: 0.2
   loss: MSELoss
