@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Set
 
 from geovoronoi import voronoi_regions_from_coords
 import matplotlib
@@ -158,7 +158,7 @@ def _pruned_random_centroids(channel_systems, min_nodes, x_min, x_max, y_min, y_
     # a single electrode for any channel system
     # ------------------
     # Loop through all channel systems
-    empty_vor_cells = set()
+    empty_vor_cells: Set[RegionID] = set()
     for positions in channel_positions:
         # Compute empty cells in this channel system
         empty = (region_id for region_id, polygon in vor_cells.items() if region_id not in empty_vor_cells
