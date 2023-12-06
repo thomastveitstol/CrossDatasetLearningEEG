@@ -12,16 +12,16 @@ RBP:
       pooling_type: multi_cs
       pooling_methods: MultiCSSharedRocket
       pooling_methods_kwargs:
-        num_regions: [ 5, 5, 5 ]
+        num_regions: [ 5, 9, 5 ]
         num_kernels: 1021
         max_receptive_field: 250
       split_methods: [ VoronoiSplit, CentroidPolygons, VoronoiSplit ]
       split_methods_kwargs:
         - num_points: 5
           <<: *box
-        - channel_positions: [ HatlestadHall, YulinWang, OUS, Rockhill, Miltiadous, CAUEEG ]
+        - channel_positions: [ CAUEEG ]
           min_nodes: 2
-          k: [5, 3]
+          k: [ 3, 3 ]
         - num_points: 5
           <<: *box
 
@@ -73,7 +73,7 @@ Shared Dataset Details:
 Training:
   learning_rate: 0.0001
   batch_size: 16
-  num_epochs: 200
+  num_epochs: 1
   verbose: true
   val_split: 0.2
   loss: MSELoss
@@ -89,26 +89,26 @@ Training:
       seed: 42
   Datasets:
     rockhill:
-      num_subjects: 31
+      num_subjects: 15
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     miltiadous:
-      num_subjects: 88
+      num_subjects: 15
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     hatlestad_hall:
-      num_subjects: 111
+      num_subjects: 15
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     yulin_wang:
-      num_subjects: 60
+      num_subjects: 15
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     ous:
-      num_subjects: 150
+      num_subjects: 15
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     cau_eeg:
-      num_subjects: 150
+      num_subjects: 15
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
