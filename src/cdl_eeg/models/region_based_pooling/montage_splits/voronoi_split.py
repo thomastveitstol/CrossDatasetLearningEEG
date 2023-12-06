@@ -12,7 +12,6 @@ from cdl_eeg.models.transformations.utils import UnivariateUniform
 
 
 class VoronoiSplit(MontageSplitBase):
-    # TODO: RuntimeWarning all over the place due to Polygons and MatplotlibDeprecationWarning on get_cmap
 
     __slots__ = "_voronoi"
 
