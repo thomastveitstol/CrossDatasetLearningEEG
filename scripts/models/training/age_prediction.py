@@ -66,6 +66,7 @@ def main():
     for i, test_subjects in enumerate(folds):
         print(f"\nFold {i+1}/{len(folds)}")
         print(f"{' Training ':-^20}")
+
         # -----------------
         # Define model
         # -----------------
@@ -134,10 +135,10 @@ def main():
         criterion = get_loss_function(loss=train_config["loss"])
 
         # Train model
-        model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics=train_config["metrics"],
-                        criterion=criterion, optimiser=optimiser, num_epochs=train_config["num_epochs"],
-                        verbose=train_config["verbose"], channel_name_to_index=channel_name_to_index,
-                        device=device, target_scaler=target_scaler)
+        model.train_model(train_loader=train_loader, val_loader=val_loader, metrics=train_config["metrics"],
+                          criterion=criterion, optimiser=optimiser, num_epochs=train_config["num_epochs"],
+                          verbose=train_config["verbose"], channel_name_to_index=channel_name_to_index,
+                          device=device, target_scaler=target_scaler)
 
         # -----------------
         # Test model on test fold

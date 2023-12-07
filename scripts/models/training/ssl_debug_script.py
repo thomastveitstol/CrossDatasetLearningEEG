@@ -157,9 +157,9 @@ def main():
 
     # Pre-train
     print("Pre-training...")
-    model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
-                    optimiser=optimiser, num_epochs=config_training["num_epochs"], verbose=config_training["verbose"],
-                    channel_name_to_index=channel_name_to_index, device=device)
+    model.train_model(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
+                      optimiser=optimiser, num_epochs=config_training["num_epochs"], verbose=config_training["verbose"],
+                      channel_name_to_index=channel_name_to_index, device=device)
 
     # -----------------
     # Perform downstream training
@@ -216,9 +216,9 @@ def main():
 
     # Train model
     print("Downstream training...")
-    model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
-                    optimiser=optimiser, num_epochs=config_training["num_epochs"], verbose=config_training["verbose"],
-                    channel_name_to_index=channel_name_to_index, device=device)
+    model.train_model(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
+                      optimiser=optimiser, num_epochs=config_training["num_epochs"], verbose=config_training["verbose"],
+                      channel_name_to_index=channel_name_to_index, device=device)
 
 
 if __name__ == "__main__":

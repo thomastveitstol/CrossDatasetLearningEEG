@@ -129,10 +129,9 @@ def main():
         criterion = get_loss_function(loss=train_config["loss"])
 
         print("Training expert...")
-        model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
-                        optimiser=optimiser, num_epochs=train_config["num_epochs"],
-                        verbose=train_config["verbose"],
-                        channel_name_to_index=channel_name_to_index, device=device)
+        model.train_model(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
+                          optimiser=optimiser, num_epochs=train_config["num_epochs"], verbose=train_config["verbose"],
+                          channel_name_to_index=channel_name_to_index, device=device)
 
         # Freeze parameters and add to experts
         for params in model.parameters():

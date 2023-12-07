@@ -360,6 +360,6 @@ def test_pre_training():
     criterion = nn.MSELoss(reduction="mean")
 
     # Pre-train
-    model.pre_train(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
-                    optimiser=optimiser, num_epochs=5, verbose=False, channel_name_to_index=channel_name_to_index,
-                    device=device)
+    model.train_model(train_loader=train_loader, val_loader=val_loader, metrics="regression", criterion=criterion,
+                      optimiser=optimiser, num_epochs=5, verbose=False, channel_name_to_index=channel_name_to_index,
+                      device=device)
