@@ -149,14 +149,11 @@ class MainRBPModel(nn.Module):
 
     # ----------------
     # Methods for training
-    # todo: don't know if I should have another class, and if this generalisation really works...
     # ----------------
     def train_model(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser, device,
                     channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
         """
-        Method for pre-training
-
-        TODO: make tests. Also, is this really specific to pre-training?
+        Method for training
 
         Parameters
         ----------
