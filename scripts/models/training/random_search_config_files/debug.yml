@@ -1,0 +1,16 @@
+DL Architecture:
+  kwargs:
+    n_filters_spat: 35
+    n_filters_time: 35
+    num_classes: 1
+    num_time_steps: 5000
+  model: ShallowFBCSPNetMTS
+Training:
+  batch_size: 16
+  learning_rate: 0.001
+  loss: L1Loss
+  num_epochs: 200
+  val_split: 0.2
+  verbose: true
+Varied Numbers of Channels:
+  SphericalSplineInterpolation: YulinWang
