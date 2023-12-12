@@ -9,13 +9,15 @@ import random
 
 import yaml
 
+from cdl_eeg.models.hyperparameter_sampling import sample_rbp_designs
+
 
 def main():
     # -----------------
     # Load domains of design choices/hyperparameters (.yml file)
     # -----------------
-    config_file = "hyperparameter_random_search.yml"
-    path = os.path.join(os.path.dirname(__file__), "config_files", config_file)
+    config_path = "hyperparameter_random_search.yml"
+    path = os.path.join(os.path.dirname(__file__), "config_files", config_path)
     with open(path, "r") as f:
         config = yaml.safe_load(f)
 
@@ -37,7 +39,10 @@ def main():
     method = random.choice(tuple(config["Varied Numbers of Channels"].keys()))
     if method == "RegionBasedPooling":
         # Todo: Implement how RBP should be sampled
-        varied_numbers_of_channels[method] = config["Varied Numbers of Channels"][method]
+        varied_numbers_of_channels[method] = sample_rbp_designs(
+            config["Varied Numbers of Channels"][method]
+        )
+        # config["Varied Numbers of Channels"][method]
     elif method == "SphericalSplineInterpolation":
         # Todo: Implement how to sample, and the code should NOT be in this script (even if it is trivial code)
         varied_numbers_of_channels[method] = random.choice(config["Varied Numbers of Channels"][method])

@@ -18,73 +18,42 @@ box: &box
   y_min: -0.17
   y_max: 0.17
 
-RegionBasedPooling: &RegionBasedPooling
-  Normalise region representations: true
-  RBP Designs:
-    RBP Design 1:
-      num_designs: 4
-      pooling_type: multi_cs
-      pooling_methods: MultiCSSharedRocket
-      pooling_methods_kwargs:
-        num_regions: [ 5, 5, 5 ]
-        num_kernels: 1021
-        max_receptive_field: 250
-      split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit ]
-      split_methods_kwargs:
-        - num_points: 5
-          <<: *box
-        - num_points: 5
-          <<: *box
-        - num_points: 5
-          <<: *box
+# Pooling methods
+MultiCSSharedRocket: &MultiCSSharedRocket
+  num_kernels: [500, 1000, 5000, 10000]
+  max_receptive_field: [100, 250, 500]
 
-    RBP Design 2:
-      num_designs: 11
-      pooling_type: single_cs
-      pooling_methods: SingleCSSharedRocket
-      pooling_methods_kwargs:
-        num_regions: &num_regions_2 4
-        num_kernels: 1000
-        max_receptive_field: 100
-      split_methods: VoronoiSplit
-      split_methods_kwargs:
-        num_points: *num_regions_2
-        <<: *box
+PoolingModules: &PoolingModules
+  MultiCSSharedRocket: *MultiCSSharedRocket
 
-    RBP Design 3:
-      num_designs: 5
-      pooling_type: multi_cs
-      pooling_methods: MultiCSSharedRocket
-      pooling_methods_kwargs:
-        num_regions: [ 3, 3, 5, 3, 3 ]
-        num_kernels: 400
-        max_receptive_field: 200
-      split_methods: [ VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit, VoronoiSplit ]
-      split_methods_kwargs:
-        - num_points: 3
-          <<: *box
-        - num_points: 3
-          <<: *box
-        - num_points: 5
-          <<: *box
-        - num_points: 3
-          <<: *box
-        - num_points: 3
-          <<: *box
-
-# Montage splits
-# todo: the hyperparameter domain must be further investigated
+# Montage splits  todo: update the kwargs
 VoronoiSplit: &VoronoiSplit
+  channel_systems: [ [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg ] ]
   num_points: [3, 4, 5, 6, 7, 8, 9]
+  num_initial_centroids: [ 100, 250, 500 ]
   <<: *box
 
 CentroidPolygons: &CentroidPolygons
+  channel_systems: cau_eeg
   min_nodes: [1, 2, 3, 4, 5]
   k: [[2, 2, 2, 2, 2, 2, 2], [3, 3, 3, 3, 3, 3, 3, 3], [2, 3, 2, 3, 2, 3, 2, 3, 2], [4, 3, 2, 3, 4, 3, 2, 3, 4]]
 
-Montage Splits:
+MontageSplits: &MontageSplits
   VoronoiSplit: *VoronoiSplit
   CentroidPolygons: *CentroidPolygons
+
+RegionBasedPooling: &RegionBasedPooling
+  Normalise region representations: true
+  num_montage_splits:
+    min: 3
+    max: 70
+  share_all_pooling_modules: [ true, false ]
+  num_pooling_modules: [ 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+  RBPDesign:
+    num_designs: 1
+    pooling_type: multi_cs
+    pooling_module: *PoolingModules
+    montage_split: *MontageSplits
 
 # Interpolation
 SphericalSplineInterpolation: &SphericalSplineInterpolation [ HatlestadHall, YulinWang ]
