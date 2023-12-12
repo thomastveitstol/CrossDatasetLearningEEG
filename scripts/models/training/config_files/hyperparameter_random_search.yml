@@ -1,3 +1,7 @@
+Shared Dataset Details:
+  num_time_steps: &num_time_steps 5000
+  time_series_start: &time_series_start null
+
 Training:
   learning_rate: [ 0.005, 0.001, 0.0005, 0.0001 ]
   batch_size: 16
@@ -5,9 +9,39 @@ Training:
   verbose: true
   val_split: 0.2
   loss: [ MSELoss, L1Loss ]
-
-Shared Dataset Details:
-  num_time_steps: &num_time_steps 5000
+  Scalers:
+    target:
+      name: ZNormalisation
+      kwargs: { }
+  Data Split:
+    name: SplitOnDataset
+    kwargs:
+      seed: 42
+  Datasets:
+    rockhill:
+      num_subjects: 15
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
+    miltiadous:
+      num_subjects: 15
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
+    hatlestad_hall:
+      num_subjects: 15
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
+    yulin_wang:
+      num_subjects: 15
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
+    ous:
+      num_subjects: 15
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
+    cau_eeg:
+      num_subjects: 15
+      num_time_steps: *num_time_steps
+      time_series_start: *time_series_start
 
 # -----------------
 # Methods for handling a varied number of channels
