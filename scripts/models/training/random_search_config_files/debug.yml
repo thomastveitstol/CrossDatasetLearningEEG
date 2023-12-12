@@ -1,10 +1,20 @@
 DL Architecture:
   kwargs:
-    n_filters_spat: 25
-    n_filters_time: 35
+    batch_norm: false
+    drop_prob: 0.25
+    filter_length_2: 20
+    filter_length_3: 20
+    filter_length_4: 5
+    filter_time_length: 15
+    n_filters_2: 200
+    n_filters_3: 100
+    n_filters_4: 200
+    n_filters_spat: 60
+    n_filters_time: 20
     num_classes: 1
     num_time_steps: 5000
-  model: ShallowFBCSPNetMTS
+    split_first_layer: false
+  model: Deep4NetMTS
 Training:
   Data Split:
     kwargs:
@@ -40,10 +50,755 @@ Training:
       kwargs: {}
       name: ZNormalisation
   batch_size: 16
-  learning_rate: 0.005
+  learning_rate: 0.001
   loss: L1Loss
   num_epochs: 200
+  target: age
   val_split: 0.2
   verbose: true
 Varied Numbers of Channels:
-  SphericalSplineInterpolation: YulinWang
+  RegionBasedPooling:
+    RBPDesign0:
+      num_designs: 1
+      pooling_methods: MultiCSSharedRocket
+      pooling_methods_kwargs:
+        max_receptive_field: 500
+        num_kernels: 5000
+      pooling_type: multi_cs
+      split_methods:
+      - CentroidPolygons
+      - VoronoiSplit
+      - CentroidPolygons
+      - VoronoiSplit
+      - VoronoiSplit
+      - CentroidPolygons
+      - CentroidPolygons
+      - VoronoiSplit
+      - CentroidPolygons
+      - VoronoiSplit
+      - CentroidPolygons
+      - VoronoiSplit
+      - VoronoiSplit
+      - CentroidPolygons
+      - CentroidPolygons
+      - CentroidPolygons
+      - VoronoiSplit
+      - VoronoiSplit
+      - VoronoiSplit
+      - CentroidPolygons
+      - CentroidPolygons
+      - VoronoiSplit
+      - CentroidPolygons
+      split_methods_kwargs:
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        min_nodes: 3
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 250
+        num_points: 8
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        min_nodes: 5
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 500
+        num_points: 9
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 500
+        num_points: 3
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        min_nodes: 1
+      - channel_systems: cau_eeg
+        k:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        min_nodes: 4
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 250
+        num_points: 3
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        min_nodes: 4
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 500
+        num_points: 6
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        min_nodes: 2
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 100
+        num_points: 6
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 250
+        num_points: 9
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        min_nodes: 3
+      - channel_systems: cau_eeg
+        k:
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        min_nodes: 3
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        min_nodes: 5
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 250
+        num_points: 9
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 500
+        num_points: 7
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 250
+        num_points: 3
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        min_nodes: 3
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        min_nodes: 5
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 250
+        num_points: 8
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        min_nodes: 1
+    RBPDesign1:
+      num_designs: 1
+      pooling_methods: MultiCSSharedRocket
+      pooling_methods_kwargs:
+        max_receptive_field: 250
+        num_kernels: 5000
+      pooling_type: multi_cs
+      split_methods:
+      - VoronoiSplit
+      - VoronoiSplit
+      - VoronoiSplit
+      - VoronoiSplit
+      - CentroidPolygons
+      - VoronoiSplit
+      - VoronoiSplit
+      - CentroidPolygons
+      - CentroidPolygons
+      - CentroidPolygons
+      - CentroidPolygons
+      - VoronoiSplit
+      - VoronoiSplit
+      - CentroidPolygons
+      - VoronoiSplit
+      split_methods_kwargs:
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 500
+        num_points: 4
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 100
+        num_points: 6
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 250
+        num_points: 6
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 250
+        num_points: 4
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        min_nodes: 3
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 100
+        num_points: 9
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 250
+        num_points: 4
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        min_nodes: 4
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        min_nodes: 3
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        min_nodes: 1
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        min_nodes: 1
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 100
+        num_points: 5
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 250
+        num_points: 9
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        min_nodes: 3
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 250
+        num_points: 7
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+    RBPDesign2:
+      num_designs: 1
+      pooling_methods: MultiCSSharedRocket
+      pooling_methods_kwargs:
+        max_receptive_field: 500
+        num_kernels: 500
+      pooling_type: multi_cs
+      split_methods:
+      - CentroidPolygons
+      - VoronoiSplit
+      - CentroidPolygons
+      - CentroidPolygons
+      - CentroidPolygons
+      - VoronoiSplit
+      - CentroidPolygons
+      - CentroidPolygons
+      - CentroidPolygons
+      - VoronoiSplit
+      - VoronoiSplit
+      - CentroidPolygons
+      - VoronoiSplit
+      - VoronoiSplit
+      - VoronoiSplit
+      - CentroidPolygons
+      - CentroidPolygons
+      - CentroidPolygons
+      - CentroidPolygons
+      split_methods_kwargs:
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        min_nodes: 3
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 500
+        num_points: 9
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        min_nodes: 5
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        min_nodes: 4
+      - channel_systems: cau_eeg
+        k:
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        min_nodes: 1
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 500
+        num_points: 3
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        min_nodes: 2
+      - channel_systems: cau_eeg
+        k:
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        - 3
+        - 2
+        - 3
+        - 4
+        min_nodes: 5
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        min_nodes: 2
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 100
+        num_points: 7
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 500
+        num_points: 5
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        min_nodes: 3
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 100
+        num_points: 6
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 500
+        num_points: 9
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems:
+        - rockhill
+        - miltiadous
+        - hatlestad_hall
+        - yulin_wang
+        - cau_eeg
+        num_initial_centroids: 100
+        num_points: 5
+        x_max: 0.17
+        x_min: -0.17
+        y_max: 0.17
+        y_min: -0.17
+      - channel_systems: cau_eeg
+        k:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        min_nodes: 4
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        - 2
+        min_nodes: 5
+      - channel_systems: cau_eeg
+        k:
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        - 3
+        - 2
+        min_nodes: 4
+      - channel_systems: cau_eeg
+        k:
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        - 3
+        min_nodes: 1
