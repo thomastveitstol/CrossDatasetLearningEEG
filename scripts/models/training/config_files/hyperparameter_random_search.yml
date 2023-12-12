@@ -9,6 +9,7 @@ Training:
   verbose: true
   val_split: 0.2
   loss: [ MSELoss, L1Loss ]
+  target: age
   Scalers:
     target:
       name: ZNormalisation
