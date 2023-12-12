@@ -106,7 +106,6 @@ class MainRBPModel(nn.Module):
         torch.Tensor
             Outputs of MTS module without applying a final activation function
         """
-        # TODO: Would be nice to be able to have different channel systems in the same batch
         # Pass through RBP layer
         x = self._region_based_pooling(input_tensors, channel_name_to_index=channel_name_to_index,
                                        pre_computed=pre_computed)
