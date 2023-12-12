@@ -75,7 +75,7 @@ class MainRBPModel(nn.Module):
         # -----------------
         return cls(mts_module=mts_design["model"], mts_module_kwargs=mts_design["kwargs"],
                    rbp_designs=tuple(rbp_designs),
-                   normalise_region_representations=rbp_config["Normalise region representations"])
+                   normalise_region_representations=rbp_config["normalise_region_representations"])
 
     def pre_compute(self, input_tensors):
         """
