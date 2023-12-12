@@ -141,9 +141,9 @@ Deep4NetMTS: &Deep4NetMTS
   filter_length_3: [ 5, 10, 20 ]
   filter_length_4: [ 5, 10, 20 ]
 
-MTS Module:
+MTS Module:  # todo: the braindecode models have activation functions
   InceptionNetwork: *InceptionNetwork
-  EEGNetv4MTS: *EEGNetv4MTS
-  EEGResNetMTS: *EEGResNetMTS
-  ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
-  Deep4NetMTS: *Deep4NetMTS
+  # EEGNetv4MTS: *EEGNetv4MTS
+  # EEGResNetMTS: *EEGResNetMTS
+  # ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
+  # Deep4NetMTS: *Deep4NetMTS

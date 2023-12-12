@@ -1,20 +1,9 @@
 DL Architecture:
   kwargs:
-    batch_norm: true
-    drop_prob: 0.5
-    filter_length_2: 5
-    filter_length_3: 20
-    filter_length_4: 20
-    filter_time_length: 15
-    n_filters_2: 200
-    n_filters_3: 100
-    n_filters_4: 50
-    n_filters_spat: 60
-    n_filters_time: 40
+    cnn_units: 16
+    depth: 4
     num_classes: 1
-    num_time_steps: 5000
-    split_first_layer: false
-  model: Deep4NetMTS
+  model: InceptionNetwork
 Training:
   Data Split:
     kwargs:
@@ -50,8 +39,8 @@ Training:
       kwargs: {}
       name: ZNormalisation
   batch_size: 16
-  learning_rate: 0.001
-  loss: L1Loss
+  learning_rate: 0.0001
+  loss: MSELoss
   metrics: regression
   num_epochs: 200
   target: age
@@ -68,40 +57,25 @@ Varied Numbers of Channels:
           num_kernels: 1000
         pooling_type: multi_cs
         split_methods:
+        - CentroidPolygons
         - VoronoiSplit
         - VoronoiSplit
         - CentroidPolygons
         - VoronoiSplit
         - CentroidPolygons
+        - VoronoiSplit
+        - CentroidPolygons
+        - CentroidPolygons
         - CentroidPolygons
         - VoronoiSplit
+        - CentroidPolygons
+        - CentroidPolygons
+        - CentroidPolygons
         - VoronoiSplit
+        - CentroidPolygons
+        - CentroidPolygons
         - VoronoiSplit
         split_methods_kwargs:
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 100
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 500
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
         - channel_positions:
           - cau_eeg
           k:
@@ -114,45 +88,7 @@ Varied Numbers of Channels:
           - 2
           - 3
           - 4
-          min_nodes: 4
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 500
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 2
-          - 3
-          - 2
-          - 3
-          - 2
-          - 3
-          - 2
-          - 3
-          - 2
-          min_nodes: 4
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          min_nodes: 5
+          min_nodes: 3
         - channel_systems:
           - rockhill
           - miltiadous
@@ -177,6 +113,44 @@ Varied Numbers of Channels:
           x_min: -0.17
           y_max: 0.17
           y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          min_nodes: 3
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 500
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          min_nodes: 1
         - channel_systems:
           - rockhill
           - miltiadous
@@ -185,6 +159,136 @@ Varied Numbers of Channels:
           - cau_eeg
           min_nodes: 1
           num_initial_centroids: 100
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 5
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 1
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          min_nodes: 3
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 500
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          min_nodes: 4
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 5
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 1
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 500
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          min_nodes: 4
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 3
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 250
           x_max: 0.17
           x_min: -0.17
           y_max: 0.17
@@ -193,225 +297,20 @@ Varied Numbers of Channels:
         num_designs: 1
         pooling_methods: MultiCSSharedRocket
         pooling_methods_kwargs:
-          max_receptive_field: 75
-          num_kernels: 250
-        pooling_type: multi_cs
-        split_methods:
-        - CentroidPolygons
-        - CentroidPolygons
-        - CentroidPolygons
-        - CentroidPolygons
-        split_methods_kwargs:
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          min_nodes: 4
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          min_nodes: 4
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          min_nodes: 5
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          min_nodes: 4
-      RBPDesign2:
-        num_designs: 1
-        pooling_methods: MultiCSSharedRocket
-        pooling_methods_kwargs:
-          max_receptive_field: 75
-          num_kernels: 250
-        pooling_type: multi_cs
-        split_methods:
-        - CentroidPolygons
-        - VoronoiSplit
-        - CentroidPolygons
-        split_methods_kwargs:
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
-          min_nodes: 4
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 500
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 2
-          - 3
-          - 2
-          - 3
-          - 2
-          - 3
-          - 2
-          - 3
-          - 2
-          min_nodes: 4
-      RBPDesign3:
-        num_designs: 1
-        pooling_methods: MultiCSSharedRocket
-        pooling_methods_kwargs:
-          max_receptive_field: 100
-          num_kernels: 5000
-        pooling_type: multi_cs
-        split_methods:
-        - VoronoiSplit
-        - VoronoiSplit
-        - VoronoiSplit
-        - VoronoiSplit
-        - CentroidPolygons
-        - VoronoiSplit
-        - VoronoiSplit
-        split_methods_kwargs:
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 250
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 500
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 100
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 100
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          min_nodes: 5
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 100
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 100
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-      RBPDesign4:
-        num_designs: 1
-        pooling_methods: MultiCSSharedRocket
-        pooling_methods_kwargs:
-          max_receptive_field: 100
+          max_receptive_field: 250
           num_kernels: 500
         pooling_type: multi_cs
         split_methods:
         - CentroidPolygons
+        - CentroidPolygons
+        - CentroidPolygons
+        - VoronoiSplit
+        - VoronoiSplit
         - VoronoiSplit
         - CentroidPolygons
         - VoronoiSplit
+        - CentroidPolygons
+        - CentroidPolygons
         - CentroidPolygons
         - CentroidPolygons
         - CentroidPolygons
@@ -426,31 +325,30 @@ Varied Numbers of Channels:
           - 2
           - 2
           - 2
-          min_nodes: 1
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 100
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
+          min_nodes: 4
         - channel_positions:
           - cau_eeg
           k:
-          - 4
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 3
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
           - 3
           - 2
           - 3
-          - 4
+          - 2
           - 3
           - 2
           - 3
-          - 4
+          - 2
           min_nodes: 2
         - channel_systems:
           - rockhill
@@ -459,11 +357,92 @@ Varied Numbers of Channels:
           - yulin_wang
           - cau_eeg
           min_nodes: 1
+          num_initial_centroids: 250
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
           num_initial_centroids: 500
           x_max: 0.17
           x_min: -0.17
           y_max: 0.17
           y_min: -0.17
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 500
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          min_nodes: 1
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 250
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 4
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 1
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 1
         - channel_positions:
           - cau_eeg
           k:
@@ -480,57 +459,6 @@ Varied Numbers of Channels:
         - channel_positions:
           - cau_eeg
           k:
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
-          min_nodes: 5
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 2
-          - 3
-          - 2
-          - 3
-          - 2
-          - 3
-          - 2
-          - 3
-          - 2
-          min_nodes: 5
-      RBPDesign5:
-        num_designs: 1
-        pooling_methods: MultiCSSharedRocket
-        pooling_methods_kwargs:
-          max_receptive_field: 250
-          num_kernels: 1000
-        pooling_type: multi_cs
-        split_methods:
-        - VoronoiSplit
-        - CentroidPolygons
-        - VoronoiSplit
-        - VoronoiSplit
-        - CentroidPolygons
-        split_methods_kwargs:
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 250
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_positions:
-          - cau_eeg
-          k:
           - 2
           - 2
           - 2
@@ -538,166 +466,5 @@ Varied Numbers of Channels:
           - 2
           - 2
           - 2
-          min_nodes: 5
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 100
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 100
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          min_nodes: 2
-      RBPDesign6:
-        num_designs: 1
-        pooling_methods: MultiCSSharedRocket
-        pooling_methods_kwargs:
-          max_receptive_field: 250
-          num_kernels: 500
-        pooling_type: multi_cs
-        split_methods:
-        - VoronoiSplit
-        - VoronoiSplit
-        - CentroidPolygons
-        - VoronoiSplit
-        - CentroidPolygons
-        - VoronoiSplit
-        - VoronoiSplit
-        - VoronoiSplit
-        - CentroidPolygons
-        split_methods_kwargs:
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 100
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 250
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          min_nodes: 1
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 100
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          min_nodes: 5
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 100
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 500
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 250
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
-          - 3
           min_nodes: 3
     normalise_region_representations: false
