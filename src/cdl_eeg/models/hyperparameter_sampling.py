@@ -32,7 +32,10 @@ def sample_rbp_designs(config):
         # Generate a single RBP design
         designs[f"RBPDesign{i}"] = _sample_single_rbp_design(config=config["RBPDesign"], num_montage_splits=k)
 
-    return designs
+    # Sample if the region representations should be normalised or not
+    normalise = random.choice(config["normalise_region_representations"])
+
+    return {"RBPDesigns": designs, "normalise_region_representations": normalise}
 
 
 def _sample_single_rbp_design(config, num_montage_splits):

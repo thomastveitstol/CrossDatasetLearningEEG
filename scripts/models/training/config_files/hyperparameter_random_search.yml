@@ -79,7 +79,7 @@ MontageSplits: &MontageSplits
   CentroidPolygons: *CentroidPolygons
 
 RegionBasedPooling: &RegionBasedPooling
-  Normalise region representations: true
+  normalise_region_representations: [ true, false ]
   num_montage_splits:
     min: 3
     max: 70

@@ -52,7 +52,7 @@ class MainRBPModel(nn.Module):
         # -----------------
         # Read RBP designs
         # -----------------
-        designs_config = copy.deepcopy(rbp_config["RBP Designs"])
+        designs_config = copy.deepcopy(rbp_config["RBPDesigns"])
         rbp_designs = []
         for name, design in designs_config.items():
             rbp_designs.append(
