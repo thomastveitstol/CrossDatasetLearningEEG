@@ -12,7 +12,7 @@ def precomputing_method(func):
 
 
 # --------------------
-# Base classes
+# Base classes  todo: montage splits
 # --------------------
 class PoolingModuleBase(nn.Module, abc.ABC):  # todo: not sure if inheriting from abc.ABC is important pr. now
     """
