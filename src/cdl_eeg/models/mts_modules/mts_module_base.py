@@ -13,8 +13,15 @@ class MTSModuleBase(nn.Module, abc.ABC):
 
     @classmethod
     def supports_latent_feature_extraction(cls):
-        """Check if the class supports pre-computing by checking if there are any methods with the
-        'latent_feature_extraction_method' decorator"""
+        """
+        Check if the class supports pre-computing by checking if there are any methods with the
+        'latent_feature_extraction_method' decorator
+
+        Returns
+        -------
+        bool
+            True if the inheriting module supports latent feature extraction, False otherwise
+        """
         # Get all methods
         methods = tuple(getattr(cls, method) for method in dir(cls) if callable(getattr(cls, method)))
 
@@ -23,8 +30,14 @@ class MTSModuleBase(nn.Module, abc.ABC):
 
     @classmethod
     def get_available_latent_feature_extractions(cls):
-        """Get all latent feature extraction methods available for the class. The target method must be decorated by
-        @latent_feature_extraction_method to be properly registered"""
+        """
+        Get all latent feature extraction methods available for the class. The target method must be decorated by
+        @latent_feature_extraction_method to be properly registered
+
+        Returns
+        -------
+        tuple[str, ...]
+        """
         # Get all target methods
         feature_extraction_methods: List[str] = []
         for method in dir(cls):
@@ -38,7 +51,19 @@ class MTSModuleBase(nn.Module, abc.ABC):
         return tuple(feature_extraction_methods)
 
     def extract_latent_features(self, data, method="default_latent_feature_extraction"):
-        """Method for extracting latent features"""
+        """
+        Method for extracting latent features
+
+        Parameters
+        ----------
+        data : torch.Tensor
+        method : str
+
+        Returns
+        -------
+        torch.Tensor
+            Latent features
+        """
         # Input check
         if method not in self.get_available_latent_feature_extractions():
             raise ValueError(f"Latent feature extraction method '{method}' was not recognised. Make sure that the "
