@@ -200,6 +200,43 @@ class InceptionNetwork(MTSModuleBase):
     --------
     >>> InceptionNetwork(64, 5).supports_latent_feature_extraction()
     True
+
+    How it looks like (but note that the ordering does not reflect the forward pass, as this is not a Sequential model)
+
+    >>> InceptionNetwork(64, 5)
+    InceptionNetwork(
+      (_inception_modules): ModuleList(
+        (0): _InceptionModule(
+          (_input_conv): Conv1d(64, 32, kernel_size=(1,), stride=(1,), padding=same, bias=False)
+          (_conv_list): ModuleList(
+            (0): Conv1d(32, 32, kernel_size=(40,), stride=(1,), padding=same, bias=False)
+            (1): Conv1d(32, 32, kernel_size=(20,), stride=(1,), padding=same, bias=False)
+            (2): Conv1d(32, 32, kernel_size=(10,), stride=(1,), padding=same, bias=False)
+          )
+          (_max_pool): MaxPool1d(kernel_size=3, stride=1, padding=1, dilation=1, ceil_mode=False)
+          (_conv_after_max_pool): Conv1d(64, 32, kernel_size=(1,), stride=(1,), padding=same, bias=False)
+          (_batch_norm): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (1-5): 5 x _InceptionModule(
+          (_input_conv): Conv1d(128, 32, kernel_size=(1,), stride=(1,), padding=same, bias=False)
+          (_conv_list): ModuleList(
+            (0): Conv1d(32, 32, kernel_size=(40,), stride=(1,), padding=same, bias=False)
+            (1): Conv1d(32, 32, kernel_size=(20,), stride=(1,), padding=same, bias=False)
+            (2): Conv1d(32, 32, kernel_size=(10,), stride=(1,), padding=same, bias=False)
+          )
+          (_max_pool): MaxPool1d(kernel_size=3, stride=1, padding=1, dilation=1, ceil_mode=False)
+          (_conv_after_max_pool): Conv1d(128, 32, kernel_size=(1,), stride=(1,), padding=same, bias=False)
+          (_batch_norm): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      (_shortcut_layers): ModuleList(
+        (0-1): 2 x _ShortcutLayer(
+          (_conv): Conv1d(64, 128, kernel_size=(1,), stride=(1,), padding=same)
+          (_batch_norm): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+      )
+      (_fc_layer): Linear(in_features=128, out_features=5, bias=True)
+    )
     """
 
     def __init__(self, in_channels, num_classes, *, cnn_units=32, depth=6, use_bottleneck=True, activation=None,
