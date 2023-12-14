@@ -19,7 +19,7 @@ import torch.nn as nn
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.models.region_based_pooling.pooling_modules.getter import get_pooling_module
 from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import SingleChannelSplitPoolingBase, \
-    MultiChannelSplitsPoolingBase
+    MultiMontageSplitsPoolingBase
 from cdl_eeg.models.region_based_pooling.montage_splits.getter import get_montage_split
 from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit
 
@@ -347,8 +347,8 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         pooling_module = get_pooling_module(pooling_method, **{"num_regions": _num_regions, **pooling_method_kwargs})
 
         # Verify that it has have correct type
-        if not isinstance(pooling_module, MultiChannelSplitsPoolingBase):
-            raise TypeError(f"Expected all pooling module to inherit from {MultiChannelSplitsPoolingBase.__name__}, "
+        if not isinstance(pooling_module, MultiMontageSplitsPoolingBase):
+            raise TypeError(f"Expected all pooling module to inherit from {MultiMontageSplitsPoolingBase.__name__}, "
                             f"but found {type(pooling_module)}")
 
         # Store pooling module

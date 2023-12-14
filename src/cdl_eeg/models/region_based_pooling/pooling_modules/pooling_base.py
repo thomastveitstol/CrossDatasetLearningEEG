@@ -51,8 +51,8 @@ class SingleChannelSplitPoolingBase(PoolingModuleBase):
     """
 
 
-class MultiChannelSplitsPoolingBase(PoolingModuleBase):
+class MultiMontageSplitsPoolingBase(PoolingModuleBase):
     """
-    Base class for pooling modules operating on multiple channel splits. This may be preferred, as it allows for more
+    Base class for pooling modules operating on multiple montage splits. This may be preferred, as it allows for more
     time-efficient implementations
     """

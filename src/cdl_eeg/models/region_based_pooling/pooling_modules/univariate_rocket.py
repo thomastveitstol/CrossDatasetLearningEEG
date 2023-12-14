@@ -16,7 +16,7 @@ import torch.nn as nn
 
 from cdl_eeg.data.datasets.dataset_base import channel_names_to_indices
 from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import SingleChannelSplitPoolingBase, \
-    precomputing_method, MultiChannelSplitsPoolingBase
+    precomputing_method, MultiMontageSplitsPoolingBase
 
 
 # ---------------------
@@ -167,7 +167,7 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
         return len(self._fc_modules)
 
 
-class MultiCSSharedRocket(MultiChannelSplitsPoolingBase):
+class MultiCSSharedRocket(MultiMontageSplitsPoolingBase):
     """
     Same as SingleCSSharedRocket, but the ROCKET-based features are shared across multiple channel/region splits
 
