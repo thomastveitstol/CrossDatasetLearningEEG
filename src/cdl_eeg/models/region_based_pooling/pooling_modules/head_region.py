@@ -223,7 +223,7 @@ class MultiMSSharedRocketHeadRegion(MultiMontageSplitsPoolingBase):
                        cycle((None,)) if self._head_search_linear is None else self._head_search_linear,
                        self._head_search_gates):
             # Input check
-            num_regions = len(receivers)
+            num_regions = len(receivers) + 1  # Need to add one for the head region
             assert len(channel_split) == num_regions, (f"Expected {num_regions} number of regions, but input "
                                                        f"channel split suggests {len(channel_split)}")
 
