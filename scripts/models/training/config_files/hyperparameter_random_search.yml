@@ -21,19 +21,19 @@ Training:
       seed: 42
   Datasets:
     rockhill:
-      num_subjects: 20
+      num_subjects: 31
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     miltiadous:
-      num_subjects: 20
+      num_subjects: 88
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     hatlestad_hall:
-      num_subjects: 20
+      num_subjects: 111
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     yulin_wang:
-      num_subjects: 20
+      num_subjects: 60
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     ous:
@@ -41,7 +41,7 @@ Training:
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     cau_eeg:
-      num_subjects: 20
+      num_subjects: 150
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
 
