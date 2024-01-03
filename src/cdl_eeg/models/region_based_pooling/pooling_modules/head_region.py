@@ -216,7 +216,7 @@ class MultiMSSharedRocketHeadRegion(MultiMontageSplitsPoolingBase):
         # --------------
         outputs = []
         for channel_split, head_region_idx, receivers, head_region_self_module, search_linear, search_gates \
-                in zip(channel_splits,
+                in zip(channel_splits,  # type: ignore[call-overload]
                        self._head_region_indices,
                        self._receiver_modules,
                        self._head_region_self_modules,
