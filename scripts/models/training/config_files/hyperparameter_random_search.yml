@@ -64,6 +64,7 @@ MultiMSSharedRocketHeadRegion: &MultiMSSharedRocketHeadRegion
   max_receptive_field: [ 75, 100, 250 ]
   latent_search_features: [ 16, 32, 64 ]
   share_search_receiver_modules: [ true, false]
+  bias: false
 
 PoolingModules: &PoolingModules
   MultiCSSharedRocket: *MultiCSSharedRocket
