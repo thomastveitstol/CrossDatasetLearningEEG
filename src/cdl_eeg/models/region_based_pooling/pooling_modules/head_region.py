@@ -234,7 +234,7 @@ class MultiMSSharedRocketHeadRegion(MultiMontageSplitsPoolingBase):
             # Compute channel indices of head region  todo: poor variable naming?
             ch_names = tuple(channel_split.ch_names.values())
             head_region_indices = channel_names_to_indices(
-                ch_names=ch_names[head_region_idx],
+                ch_names=ch_names[head_region_idx].ch_names,
                 channel_name_to_index=channel_name_to_index
             )
 
@@ -247,7 +247,7 @@ class MultiMSSharedRocketHeadRegion(MultiMontageSplitsPoolingBase):
                     in enumerate(zip(non_head_ch_names, receivers, search_gates,
                                      cycle((None,)) if search_linear is None else search_linear)):
                 # Extract the indices of the legal channels for this region
-                allowed_node_indices = channel_names_to_indices(ch_names=legal_ch_names,
+                allowed_node_indices = channel_names_to_indices(ch_names=legal_ch_names.ch_names,
                                                                 channel_name_to_index=channel_name_to_index)
 
                 # Compute receive vectors. Will have shape=(batch, channel, latent)
@@ -278,8 +278,8 @@ class MultiMSSharedRocketHeadRegion(MultiMontageSplitsPoolingBase):
             head_attention = torch.softmax(head_region_self_module(pre_computed[:, head_region_indices]), dim=1)
 
             # Insert head region representation as the last region
-            region_representations[:, -1] = torch.matmul(torch.transpose(head_attention, dim0=1, dim1=2),
-                                                         x[:, head_region_indices])
+            region_representations[:, -1] = torch.squeeze(torch.matmul(torch.transpose(head_attention, dim0=1, dim1=2),
+                                                                       x[:, head_region_indices]), dim=1)
 
             # Append as output
             outputs.append(region_representations)
