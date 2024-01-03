@@ -33,6 +33,7 @@ src/cdl_eeg/data/scalers/__init__.py
 src/cdl_eeg/data/scalers/scaler_base.py
 src/cdl_eeg/data/scalers/target_scalers.py
 src/cdl_eeg/models/__init__.py
+src/cdl_eeg/models/hyperparameter_sampling.py
 src/cdl_eeg/models/losses.py
 src/cdl_eeg/models/metrics.py
 src/cdl_eeg/models/py.typed
@@ -56,6 +57,7 @@ src/cdl_eeg/models/region_based_pooling/montage_splits/montage_split_base.py
 src/cdl_eeg/models/region_based_pooling/montage_splits/voronoi_split.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/__init__.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/getter.py
+src/cdl_eeg/models/region_based_pooling/pooling_modules/head_region.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/mean.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/pooling_base.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/univariate_rocket.py

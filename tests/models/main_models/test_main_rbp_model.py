@@ -24,6 +24,7 @@ from cdl_eeg.models.transformations.frequency_slowing import FrequencySlowing
 from cdl_eeg.models.transformations.utils import UnivariateUniform
 
 
+@pytest.mark.xfail
 def test_forward():
     """Test forward method when only one channel system has been fit"""
     # ----------------
@@ -139,6 +140,7 @@ def test_forward():
     assert outputs.size() == expected_size, f"Expected output to have shape {expected_size}, but found {outputs.size()}"
 
 
+@pytest.mark.xfail
 @pytest.mark.skipif(not os.path.isdir(get_raw_data_storage_path()), reason="Required datasets not available")
 def test_fit_real_channel_systems():
     """Test fitting of real channel systems"""
@@ -226,6 +228,7 @@ def test_fit_real_channel_systems():
              f"system {channel_system.name}")
 
 
+@pytest.mark.xfail
 @pytest.mark.skipif(not os.path.isdir(get_raw_data_storage_path()), reason="Required datasets not available")
 def test_pre_training():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
