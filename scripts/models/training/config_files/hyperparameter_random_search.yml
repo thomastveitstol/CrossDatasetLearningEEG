@@ -1,11 +1,11 @@
 Shared Dataset Details:
-  num_time_steps: &num_time_steps 5000
+  num_time_steps: &num_time_steps 2500
   time_series_start: &time_series_start null
 
 Training:
   learning_rate: [ 0.005, 0.001, 0.0005, 0.0001 ]
   batch_size: 16
-  num_epochs: 200
+  num_epochs: 50
   verbose: true
   val_split: 0.2
   loss: [ MSELoss, L1Loss ]
