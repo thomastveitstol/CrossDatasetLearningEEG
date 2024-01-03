@@ -333,4 +333,4 @@ class MultiMSSharedRocketHeadRegion(MultiMontageSplitsPoolingBase):
     @property
     def num_montage_splits(self):
         """Get the number of montage splits"""
-        return len(self._receiver_modules) + 1  # Need to add one for the head region
+        return len(self._receiver_modules)
