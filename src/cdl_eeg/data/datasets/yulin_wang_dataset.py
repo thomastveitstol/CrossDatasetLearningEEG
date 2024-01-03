@@ -15,6 +15,8 @@ class YulinWang(EEGDatasetBase):
     ----------
     >>> YulinWang().name
     'yulin_wang'
+    >>> len(YulinWang().get_subject_ids())
+    60
     """
 
     __slots__ = ()

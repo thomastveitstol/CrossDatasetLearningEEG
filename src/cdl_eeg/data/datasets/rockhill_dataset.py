@@ -15,6 +15,8 @@ class Rockhill(EEGDatasetBase):
     'rockhill'
     >>> Rockhill.get_available_targets()
     ('age', 'mmse', 'naart', 'parkinsons')
+    >>> len(Rockhill().get_subject_ids())
+    31
     """
 
     __slots__ = ()

@@ -14,7 +14,9 @@ class HatlestadHall(EEGDatasetBase):
     >>> HatlestadHall().name
     'hatlestad_hall'
     >>> HatlestadHall.get_available_targets()
-    ('age',)
+    ('age', 'ravlt_del', 'ravlt_rec', 'ravlt_tot')
+    >>> len(HatlestadHall().get_subject_ids())
+    111
     """
 
     __slots__ = ()
