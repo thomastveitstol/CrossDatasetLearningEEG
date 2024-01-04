@@ -60,6 +60,25 @@ class EEGNetv4MTS(MTSModuleBase):
         del self._model.softmax
 
     def forward(self, x):
+        """
+        Forward method
+
+        Parameters
+        ----------
+        x : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> import torch
+        >>> my_batch, my_channels, my_time_steps = 10, 103, 300
+        >>> my_model = EEGNetv4MTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps)
+        >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps))).size()
+        torch.Size([10, 3])
+        """
         return self._model(x)
 
 
@@ -192,6 +211,25 @@ class EEGResNetMTS(MTSModuleBase):
         del self._model.softmax
 
     def forward(self, x):
+        """
+        Forward method
+
+        Parameters
+        ----------
+        x : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> import torch
+        >>> my_batch, my_channels, my_time_steps = 10, 103, 300
+        >>> my_model = EEGResNetMTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps)
+        >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps))).size()
+        torch.Size([10, 3])
+        """
         return self._model(x)
 
 
@@ -238,6 +276,25 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
         del self._model.softmax
 
     def forward(self, x):
+        """
+        Forward method
+
+        Parameters
+        ----------
+        x : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> import torch
+        >>> my_batch, my_channels, my_time_steps = 10, 103, 600*3
+        >>> my_model = ShallowFBCSPNetMTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps)
+        >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps))).size()
+        torch.Size([10, 3])  TODO: failing
+        """
         return self._model(x)
 
 
@@ -308,4 +365,23 @@ class Deep4NetMTS(MTSModuleBase):
         del self._model.softmax
 
     def forward(self, x):
+        """
+        Forward method
+
+        Parameters
+        ----------
+        x : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> import torch
+        >>> my_batch, my_channels, my_time_steps = 10, 103, 600*3
+        >>> my_model = Deep4NetMTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps)
+        >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps))).size()
+        torch.Size([10, 3])
+        """
         return self._model(x)
