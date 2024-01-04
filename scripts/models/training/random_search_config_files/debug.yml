@@ -1,7 +1,7 @@
 DL Architecture:
   kwargs:
     cnn_units: 32
-    depth: 9
+    depth: 15
     num_classes: 1
   model: InceptionNetwork
 Training:
@@ -39,10 +39,10 @@ Training:
       kwargs: {}
       name: ZNormalisation
   batch_size: 16
-  learning_rate: 0.0005
+  learning_rate: 0.00001
   loss: MSELoss
   metrics: regression
-  num_epochs: 50
+  num_epochs: 200
   target: age
   val_split: 0.2
   verbose: true
