@@ -1,6 +1,6 @@
 DL Architecture:
   kwargs:
-    cnn_units: 16
+    cnn_units: 32
     depth: 9
     num_classes: 1
   model: InceptionNetwork
