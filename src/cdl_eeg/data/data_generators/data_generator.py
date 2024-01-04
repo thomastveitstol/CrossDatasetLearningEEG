@@ -2,6 +2,8 @@ import numpy
 import torch
 from torch.utils.data import Dataset
 
+from cdl_eeg.data.data_split import Subject
+
 
 class SelfSupervisedFixedChannelsDataGenerator(Dataset):  # type: ignore[type-arg]
     """
@@ -160,7 +162,10 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
     # Remember to remove the yielded -1 tensors!
     strip_outputs = True
 
-    def __init__(self, data, targets, *, pre_computed=None):
+    # --------------
+    # Magic/dunder methods
+    # --------------
+    def __init__(self, data, targets, subjects, *, pre_computed=None):
         """
         Initialise
 
@@ -168,12 +173,14 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
         ----------
         data : dict[str, numpy.ndarray]
         targets : dict[str, numpy.ndarray]
+        subjects : dict[str, tuple[str, ...]]
         pre_computed : tuple[dict[str, typing.Any], ...]
         """
         super().__init__()
 
         self._data = data
         self._targets = targets
+        self._subjects = subjects
         self._pre_computed = pre_computed
 
     def __len__(self):
@@ -199,7 +206,7 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
 
         # TODO: quite hard coded?
         if self._pre_computed is None:
-            return data, targets
+            return data, targets, item
         else:
             # assert False, {type(pre_comp) for pre_comp in self._pre_computed}
             pre_computed = []
@@ -210,7 +217,45 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
 
             # TODO: must fix return, as KeyError is raised when collating
             # Don't think I should convert pre_computed to tuple, as I must strip it anyway
-            return data, pre_computed, targets
+            return data, pre_computed, targets, item
+
+    # --------------
+    # Convenient methods
+    # --------------
+    def get_subject_from_idx(self, item):
+        """
+        Get the subject from the index. It is needed because the subject information cannot easily be returned in the
+        __getitem__ method. Therefore, the index is returned instead, and the subject information can be extracted by
+        passing the index to this method.
+
+        Parameters
+        ----------
+        item : torch.Tensor
+
+        Returns
+        -------
+        Subject
+        """
+        # Get the dataset name and index
+        dataset_sizes = {dataset_name: len(subjects) for dataset_name, subjects in self._subjects.items()}
+        dataset_name, idx = _select_dataset_and_index(item=int(item), dataset_sizes=dataset_sizes)
+
+        # Use correct type and return
+        return Subject(subject_id=self._subjects[dataset_name][idx], dataset_name=dataset_name)
+
+    def get_subjects_from_indices(self, items):
+        """
+        Get the subjects from the indices returned by the __getitem__ method (and later collated).
+
+        Parameters
+        ----------
+        items : torch.Tensor
+
+        Returns
+        -------
+        tuple[Subject, ...]
+        """
+        return tuple(self.get_subject_from_idx(item=item) for item in items)
 
 
 # ----------------
