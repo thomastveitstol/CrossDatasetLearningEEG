@@ -3,7 +3,9 @@ Age prediction from a randomly generated .yml file
 """
 import os
 import random
+import shutil
 import warnings
+from datetime import date, datetime
 
 import numpy
 import torch
@@ -14,6 +16,7 @@ from torch.utils.data import DataLoader
 from cdl_eeg.data.combined_datasets import CombinedDatasets
 from cdl_eeg.data.data_generators.data_generator import DownstreamDataGenerator
 from cdl_eeg.data.data_split import get_data_split, leave_1_fold_out
+from cdl_eeg.data.paths import get_results_dir
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
 from cdl_eeg.models.losses import get_loss_function
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
@@ -29,8 +32,8 @@ def main():
     # Load settings (.yml file)
     # -----------------
     config_file = "debug.yml"
-    path = os.path.join(os.path.dirname(__file__), "random_search_config_files", config_file)
-    with open(path, "r") as f:
+    config_path = os.path.join(os.path.dirname(__file__), "random_search_config_files", config_file)
+    with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
     # -----------------
@@ -41,6 +44,20 @@ def main():
     print("Loading data...")
     combined_dataset = CombinedDatasets.from_config(config=train_config["Datasets"], target=train_config["target"])
 
+    # -----------------
+    # Create folder for storing results, config file etc.
+    # -----------------
+    results_path = os.path.join(get_results_dir(), f"debug_{train_config['Data Split']['name']}_"
+                                                   f"{config['DL Architecture']['model']}_{date.today()}_"
+                                                   f"{datetime.now().strftime('%H%M%S')}")
+    os.mkdir(results_path)
+
+    # Save config file
+    shutil.copy(src=config_path, dst=results_path)
+
+    # -----------------
+    # Extract dataset details and perform data split
+    # -----------------
     # Extract some details of the datasets
     subjects = combined_dataset.dataset_subjects
     datasets = combined_dataset.datasets
@@ -58,6 +75,12 @@ def main():
     for i, test_subjects in enumerate(folds):
         print(f"\nFold {i+1}/{len(folds)}")
         print(f"{' Training ':-^20}")
+
+        # -----------------
+        # Make folder for the current fold
+        # -----------------
+        fold_path = os.path.join(results_path, f"Fold_{i}")
+        os.mkdir(fold_path)
 
         # -----------------
         # Define model
@@ -130,10 +153,17 @@ def main():
         criterion = get_loss_function(loss=train_config["loss"])
 
         # Train model
-        model.train_model(train_loader=train_loader, val_loader=val_loader, metrics=train_config["metrics"],
-                          criterion=criterion, optimiser=optimiser, num_epochs=train_config["num_epochs"],
-                          verbose=train_config["verbose"], channel_name_to_index=channel_name_to_index,
-                          device=device, target_scaler=target_scaler)
+        train_history, val_history = model.train_model(
+            train_loader=train_loader, val_loader=val_loader, metrics=train_config["metrics"], criterion=criterion,
+            optimiser=optimiser, num_epochs=train_config["num_epochs"], verbose=train_config["verbose"],
+            channel_name_to_index=channel_name_to_index, device=device, target_scaler=target_scaler
+        )
+
+        # -----------------
+        # Save train and validation prediction histories
+        # -----------------
+        train_history.save_prediction_history(history_name="train_history", path=fold_path)
+        val_history.save_prediction_history(history_name="val_history", path=fold_path)
 
         # -----------------
         # Test model on test fold
@@ -155,6 +185,9 @@ def main():
             # Update test history
             test_history.store_batch_evaluation(y_pred=predictions, y_true=test_targets, subjects=test_subjects)
             test_history.on_epoch_end(verbose=train_config["verbose"])
+
+        # Save results
+        test_history.save_prediction_history(history_name="test_history", path=fold_path)
 
     # -----------------
     # Print summary
