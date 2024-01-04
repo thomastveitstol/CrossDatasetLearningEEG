@@ -6,9 +6,11 @@ https://github.com/thomastveitstol/RegionBasedPoolingEEG/blob/master/src/metrics
 
 Author: Thomas Tveitstøl (Oslo University Hospital)
 """
+import os
 import random
 from typing import Dict, List, Tuple, Optional, Any, NamedTuple
 
+import pandas
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, roc_auc_score, \
     r2_score
@@ -61,7 +63,8 @@ class Histories:
     ('mae', 'mape', 'mse', 'pearson_r', 'spearman_rho')
     """
 
-    __slots__ = "_history", "_splits_histories", "_epoch_y_pred", "_epoch_y_true", "_epoch_subjects", "_name"
+    __slots__ = ("_history", "_prediction_history", "_splits_histories", "_epoch_y_pred", "_epoch_y_true",
+                 "_epoch_subjects", "_name")
 
     def __init__(self, metrics, name=None, splits: Optional[Tuple[_SPLIT, ...]] = None):
         """
@@ -101,6 +104,9 @@ class Histories:
         # The "normal" one
         self._history: Dict[str, List[float]] = {f"{metric}": [] for metric in metrics}
 
+        # For storing all predictions .
+        self._prediction_history: Dict[Subject, List[float]] = dict()
+
         # Histories per subgroup
         splits_histories: Optional[List[Tuple[Dict[str, Tuple[Any, ...]],
                                               Dict[str, Dict[Criterion, Dict[str, List[float]]]]]]]
@@ -133,7 +139,7 @@ class Histories:
         # ----------------
         self._epoch_y_pred: List[torch.Tensor] = []
         self._epoch_y_true: List[torch.Tensor] = []
-        self._epoch_subjects: List[Subject] = []
+        self._epoch_subjects: List[Subject] = []  # todo: do we really need this?
 
     def store_batch_evaluation(self, y_pred, y_true, subjects=None):
         """
@@ -151,6 +157,13 @@ class Histories:
         """
         self._epoch_y_pred.append(y_pred)
         self._epoch_y_true.append(y_true)
+
+        # Store prediction in predictions history
+        for prediction, subject in zip(y_pred, subjects):
+            if subject in self._prediction_history:
+                self._prediction_history[subject].append(float(prediction.cpu()))
+            else:
+                self._prediction_history[subject] = [float(prediction.cpu())]
 
         # Store the corresponding subjects, if provided
         if subjects is not None:
@@ -282,6 +295,42 @@ class Histories:
     def history(self):
         # todo: consider returning values as tuples
         return self._history
+
+    # -----------------
+    # Methods for saving
+    # -----------------
+    def save_prediction_history(self, history_name, path):
+        """
+        Method for saving the predictions in a csv file
+
+        Parameters
+        ----------
+        history_name : str
+        path : str
+
+        Returns
+        -------
+        None
+        """
+        # Sanity check
+        num_epochs = len(tuple(self._prediction_history.values())[0])  # type: ignore
+        assert all(len(predictions) == num_epochs for predictions in self._prediction_history.values())
+
+        # Create pandas dataframe with the prediction histories
+        df = pandas.DataFrame.from_dict(self._prediction_history, orient="index",
+                                        columns=[f"epoch{i+1}" for i in range(num_epochs)])
+
+        # Add dataset and subject ID
+        df.insert(loc=0, value=tuple(subject.subject_id for subject in self._prediction_history),  # type: ignore
+                  column="sub_id")
+        df.insert(loc=0, value=tuple(subject.dataset_name for subject in self._prediction_history),  # type: ignore
+                  column="dataset")
+
+        # Drop the index
+        df.reset_index(inplace=True, drop=True)
+
+        # Save csv file
+        df.to_csv(os.path.join(path, f"{history_name}.csv"))
 
     # -----------------
     # Methods for getting the available metrics
