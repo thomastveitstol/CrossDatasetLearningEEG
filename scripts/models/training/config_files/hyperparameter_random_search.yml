@@ -127,7 +127,7 @@ EEGResNetMTS: &EEGResNetMTS
   n_layers_per_block: [ 2, 3, 4 ]
   first_filter_length: [ 3, 5, 7 ]
 
-ShallowFBCSPNetMTS: &ShallowFBCSPNetMTS
+ShallowFBCSPNetMTS: &ShallowFBCSPNetMTS  # todo: output dimension have ndim=3
   num_classes: 1
   num_time_steps: *num_time_steps
   n_filters_time: [ 15, 25, 35 ]
@@ -153,5 +153,5 @@ MTS Module:
   InceptionNetwork: *InceptionNetwork
   EEGNetv4MTS: *EEGNetv4MTS
   EEGResNetMTS: *EEGResNetMTS
-  ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
+  # ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
   Deep4NetMTS: *Deep4NetMTS
