@@ -186,6 +186,38 @@ class CombinedDatasets:
         return {dataset_name: numpy.concatenate(numpy.expand_dims(data_matrix, axis=0), axis=0)
                 for dataset_name, data_matrix in data.items()}
 
+    @staticmethod
+    def get_subjects_dict(subjects):
+        """
+        Method for the subjects as a dictionary
+
+        Parameters
+        ----------
+        subjects : tuple[cdl_eeg.data.data_split.Subject, ...]
+            Subjects to extract
+
+        Returns
+        -------
+        dict[str, tuple[str, ...]]
+
+        Examples
+        --------
+        >>> from cdl_eeg.data.data_split import Subject
+        >>> my_drivers = (Subject(dataset_name="Merc", subject_id="LH"), Subject(dataset_name="RB", subject_id="SP"),
+        ...               Subject(dataset_name="AM", subject_id="FA"), Subject(dataset_name="RB", subject_id="MV"),
+        ...               Subject(dataset_name="Merc", subject_id="GR"))
+        >>> CombinedDatasets.get_subjects_dict(my_drivers)
+        {'Merc': ('LH', 'GR'), 'RB': ('SP', 'MV'), 'AM': ('FA',)}
+        """
+        subjects_dict = dict()
+        for subject in subjects:
+            # Add the subject data
+            if subject.dataset_name in subjects_dict:
+                subjects_dict[subject.dataset_name].append(subject.subject_id)
+            else:
+                subjects_dict[subject.dataset_name] = [subject.subject_id]
+        return {dataset_name: tuple(subject_ids) for dataset_name, subject_ids in subjects_dict.items()}
+
     # ----------------
     # Properties
     # ----------------
