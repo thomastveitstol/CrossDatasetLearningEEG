@@ -208,8 +208,6 @@ class MainRBPModel(nn.Module):
                 output = self(x_train, pre_computed=train_pre_computed, channel_name_to_index=channel_name_to_index)
 
                 # Compute loss
-                # print(f"Output shape: {output.size()}")
-                # print(f"Target shape: {y_train.size()}")
                 loss = criterion(output, y_train)
                 loss.backward()
                 optimiser.step()
