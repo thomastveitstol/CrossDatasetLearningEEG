@@ -191,7 +191,7 @@ class MainRBPModel(nn.Module):
             # Training
             # ----------------
             self.train()
-            for x_train, train_pre_computed, y_train in train_loader:
+            for x_train, train_pre_computed, y_train, subject_indices in train_loader:
                 # todo: Only works for train loaders with this specific __getitem__ return
                 # Strip the dictionaries for 'ghost tensors'
                 x_train = strip_tensors(x_train)
@@ -208,6 +208,8 @@ class MainRBPModel(nn.Module):
                 output = self(x_train, pre_computed=train_pre_computed, channel_name_to_index=channel_name_to_index)
 
                 # Compute loss
+                # print(f"Output shape: {output.size()}")
+                # print(f"Target shape: {y_train.size()}")
                 loss = criterion(output, y_train)
                 loss.backward()
                 optimiser.step()
@@ -223,7 +225,10 @@ class MainRBPModel(nn.Module):
                     if target_scaler is not None:
                         y_pred = target_scaler.inv_transform(scaled_data=y_pred)
                         y_train = target_scaler.inv_transform(scaled_data=y_train)
-                    train_history.store_batch_evaluation(y_pred=y_pred, y_true=y_train)
+                    train_history.store_batch_evaluation(
+                        y_pred=y_pred, y_true=y_train,
+                        subjects=train_loader.dataset.get_subjects_from_indices(subject_indices)
+                    )
 
                 # Update progress bar
                 pbar.update()
@@ -236,7 +241,7 @@ class MainRBPModel(nn.Module):
             # ----------------
             self.eval()
             with torch.no_grad():
-                for x_val, val_pre_computed, y_val in val_loader:
+                for x_val, val_pre_computed, y_val, val_subject_indices in val_loader:
                     # Strip the dictionaries for 'ghost tensors'
                     x_val = strip_tensors(x_val)
                     y_val = strip_tensors(y_val)
@@ -259,7 +264,10 @@ class MainRBPModel(nn.Module):
                     if target_scaler is not None:
                         y_pred = target_scaler.inv_transform(scaled_data=y_pred)
                         y_val = target_scaler.inv_transform(scaled_data=y_val)
-                    val_history.store_batch_evaluation(y_pred=y_pred, y_true=y_val)
+                    val_history.store_batch_evaluation(
+                        y_pred=y_pred, y_true=y_val,
+                        subjects=val_loader.dataset.get_subjects_from_indices(val_subject_indices)
+                    )
 
                 # Finalise epoch for validation history object
                 val_history.on_epoch_end(verbose=verbose)

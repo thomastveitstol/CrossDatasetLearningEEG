@@ -116,8 +116,10 @@ def main():
                                  for pre_comp in val_pre_computed)
 
         # Create data generators
-        train_gen = DownstreamDataGenerator(data=train_data, targets=train_targets, pre_computed=train_pre_computed)
-        val_gen = DownstreamDataGenerator(data=val_data, targets=val_targets, pre_computed=val_pre_computed)
+        train_gen = DownstreamDataGenerator(data=train_data, targets=train_targets, pre_computed=train_pre_computed,
+                                            subjects=combined_dataset.get_subjects_dict(train_subjects))
+        val_gen = DownstreamDataGenerator(data=val_data, targets=val_targets, pre_computed=val_pre_computed,
+                                          subjects=combined_dataset.get_subjects_dict(val_subjects))
 
         # Create data loaders
         train_loader = DataLoader(dataset=train_gen, batch_size=train_config["batch_size"], shuffle=True)
@@ -151,7 +153,7 @@ def main():
             predictions = target_scaler.inv_transform(scaled_data=predictions)
 
             # Update test history
-            test_history.store_batch_evaluation(y_pred=predictions, y_true=test_targets)
+            test_history.store_batch_evaluation(y_pred=predictions, y_true=test_targets, subjects=test_subjects)
             test_history.on_epoch_end(verbose=train_config["verbose"])
 
     # -----------------
