@@ -209,7 +209,7 @@ class CombinedDatasets:
         >>> CombinedDatasets.get_subjects_dict(my_drivers)
         {'Merc': ('LH', 'GR'), 'RB': ('SP', 'MV'), 'AM': ('FA',)}
         """
-        subjects_dict = dict()
+        subjects_dict: Dict[str, List[str]] = dict()
         for subject in subjects:
             # Add the subject data
             if subject.dataset_name in subjects_dict:
