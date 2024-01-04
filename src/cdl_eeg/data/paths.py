@@ -4,6 +4,22 @@ Functions for getting the path to different files related to the data and result
 import os
 
 
+def get_results_dir():
+    """
+    Get the path to where the results of the experiments are to be stored
+
+    Returns
+    -------
+    str
+
+    Examples
+    --------
+    >>> get_results_dir()  # doctest: +ELLIPSIS
+    '.../CrossDatasetLearningEEG/src/cdl_eeg/data/results'
+    """
+    return os.path.join(os.path.dirname(__file__), "results")
+
+
 def get_raw_data_storage_path():
     """
     Get the path to where the newly downloaded data is (supposed to be) stored.
