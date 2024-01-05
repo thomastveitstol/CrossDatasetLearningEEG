@@ -299,7 +299,7 @@ class Histories:
     # -----------------
     # Methods for saving
     # -----------------
-    def save_prediction_history(self, history_name, path):
+    def save_prediction_history(self, history_name, path, decimals=3):
         """
         Method for saving the predictions in a csv file
 
@@ -307,6 +307,8 @@ class Histories:
         ----------
         history_name : str
         path : str
+        decimals : int
+            Number of decimal places for storing the predictions
 
         Returns
         -------
@@ -317,8 +319,8 @@ class Histories:
         assert all(len(predictions) == num_epochs for predictions in self._prediction_history.values())
 
         # Create pandas dataframe with the prediction histories
-        df = pandas.DataFrame.from_dict(self._prediction_history, orient="index",
-                                        columns=[f"epoch{i+1}" for i in range(num_epochs)])
+        epochs_column_names = [f"epoch{i+1}" for i in range(num_epochs)]
+        df = pandas.DataFrame.from_dict(self._prediction_history, orient="index", columns=epochs_column_names)
 
         # Add dataset and subject ID
         df.insert(loc=0, value=tuple(subject.subject_id for subject in self._prediction_history),  # type: ignore
@@ -328,6 +330,9 @@ class Histories:
 
         # Drop the index
         df.reset_index(inplace=True, drop=True)
+
+        # Round the predictions
+        df.round({col: decimals for col in epochs_column_names})
 
         # Save csv file
         df.to_csv(os.path.join(path, f"{history_name}.csv"), index=False)
