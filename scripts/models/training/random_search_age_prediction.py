@@ -167,26 +167,38 @@ def main():
         # Test model on test fold  todo: this needs a DataLoader, and be moved to a class method of the model
         # -----------------
         print(f"\n{' Testing ':-^20}")
-        test_history = Histories(metrics=train_config["metrics"], name="test")
         model.eval()
 
-        test_data = {name: torch.tensor(data, dtype=torch.float).to(device)
-                     for name, data in combined_dataset.get_data(subjects=test_subjects).items()}
-        test_targets = flatten_targets(combined_dataset.get_targets(subjects=test_subjects)).to(device)
+        # Extract input and target data
+        test_data = combined_dataset.get_data(subjects=test_subjects)
+        test_targets = combined_dataset.get_targets(subjects=test_subjects)
+
+        # Scale targets
+        test_targets = target_scaler.transform(test_targets)
+
         with torch.no_grad():
             # Perform pre-computing
-            test_pre_computed = model.pre_compute(input_tensors=test_data)
+            test_pre_computed = model.pre_compute(
+                input_tensors={dataset_name: torch.tensor(data, dtype=torch.float).to(device)
+                               for dataset_name, data in train_data.items()})
 
-            # Forward pass
-            predictions = model(test_data, pre_computed=test_pre_computed, channel_name_to_index=channel_name_to_index)
-            predictions = target_scaler.inv_transform(scaled_data=predictions)
+            # Send to cpu
+            test_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=torch.device("cpu"))
+                                      for pre_comp in test_pre_computed)
 
-            # Update test history
-            test_history.store_batch_evaluation(y_pred=predictions, y_true=test_targets, subjects=test_subjects)
-            test_history.on_epoch_end(verbose=train_config["verbose"])
+            # Create data generator and loader
+            test_gen = DownstreamDataGenerator(data=test_data, targets=test_targets, pre_computed=test_pre_computed,
+                                               subjects=combined_dataset.get_subjects_dict(test_subjects))
+            test_loader = DataLoader(dataset=test_gen, batch_size=train_config["batch_size"], shuffle=True)
 
-        # Save predictions
-        test_history.save_prediction_history(history_name="test_history", path=fold_path)
+            # Test model on test data
+            test_history = model.test_model(
+                data_loader=test_loader, metrics=train_config["metrics"], verbose=train_config["verbose"],
+                channel_name_to_index=channel_name_to_index, device=device, target_scaler=target_scaler
+            )
+
+            # Save predictions
+            test_history.save_prediction_history(history_name="test_history", path=fold_path)
 
         # -----------------
         # Save plots
