@@ -468,7 +468,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
         # Maybe plot training history
         if train_history is not None:
             pyplot.plot(range(1, len(train_history.history[metric]) + 1), train_history.history[metric],
-                        label="Train", color="blue")  # todo: line width?
+                        label="Train", color="blue")
 
         # Maybe plot validation history
         if val_history is not None:
