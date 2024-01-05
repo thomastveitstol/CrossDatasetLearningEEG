@@ -164,7 +164,7 @@ def main():
         val_history.save_prediction_history(history_name="val_history", path=fold_path)
 
         # -----------------
-        # Test model on test fold
+        # Test model on test fold  todo: this needs a DataLoader, and be moved to a class method of the model
         # -----------------
         print(f"\n{' Testing ':-^20}")
         test_history = Histories(metrics=train_config["metrics"], name="test")
