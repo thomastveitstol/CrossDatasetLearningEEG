@@ -332,7 +332,7 @@ class Histories:
         df.reset_index(inplace=True, drop=True)
 
         # Round the predictions
-        df.round({col: decimals for col in epochs_column_names})
+        df = df.round({col: decimals for col in epochs_column_names})
 
         # Save csv file
         df.to_csv(os.path.join(path, f"{history_name}.csv"), index=False)
