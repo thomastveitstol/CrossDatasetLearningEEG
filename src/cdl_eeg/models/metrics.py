@@ -330,7 +330,7 @@ class Histories:
         df.reset_index(inplace=True, drop=True)
 
         # Save csv file
-        df.to_csv(os.path.join(path, f"{history_name}.csv"))
+        df.to_csv(os.path.join(path, f"{history_name}.csv"), index=False)
 
     # -----------------
     # Methods for getting the available metrics
