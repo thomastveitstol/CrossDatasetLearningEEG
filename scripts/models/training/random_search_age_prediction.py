@@ -7,7 +7,6 @@ import shutil
 import warnings
 from datetime import date, datetime
 
-import numpy
 import torch
 import yaml
 from torch import optim
