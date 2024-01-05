@@ -463,7 +463,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
                       + tuple(test_history.history.keys()))
 
     for metric in all_metrics:
-        pyplot.figure(figsize=(16, 9))
+        pyplot.figure(figsize=(10, 5))
 
         # Maybe plot training history
         if train_history is not None:
