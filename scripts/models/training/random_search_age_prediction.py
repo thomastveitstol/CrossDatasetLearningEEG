@@ -19,8 +19,8 @@ from cdl_eeg.data.paths import get_results_dir
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
 from cdl_eeg.models.losses import get_loss_function
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
-from cdl_eeg.models.metrics import Histories, save_histories_plots
-from cdl_eeg.models.utils import tensor_dict_to_device, flatten_targets
+from cdl_eeg.models.metrics import save_histories_plots
+from cdl_eeg.models.utils import tensor_dict_to_device
 
 
 def main():
