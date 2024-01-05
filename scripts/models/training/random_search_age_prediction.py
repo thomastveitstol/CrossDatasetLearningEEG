@@ -180,7 +180,7 @@ def main():
             # Perform pre-computing
             test_pre_computed = model.pre_compute(
                 input_tensors={dataset_name: torch.tensor(data, dtype=torch.float).to(device)
-                               for dataset_name, data in train_data.items()})
+                               for dataset_name, data in test_data.items()})
 
             # Send to cpu
             test_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=torch.device("cpu"))
