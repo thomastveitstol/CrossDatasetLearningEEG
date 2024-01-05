@@ -463,7 +463,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
                       + tuple(test_history.history.keys()))
 
     for metric in all_metrics:
-        pyplot.figure()
+        pyplot.figure(figsize=(16, 9))
 
         # Maybe plot training history
         if train_history is not None:
@@ -484,7 +484,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
                 x_max.append(len(train_history.history[metric]))
             if val_history is not None:
                 x_max.append(len(val_history.history[metric]))
-            x_stop = max(x_max) + 1 if x_max else 2
+            x_stop = max(x_max) if x_max else 2
 
             # Plot
             pyplot.plot((1, x_stop), (test_history.history[metric], test_history.history[metric]),
@@ -497,7 +497,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
 
         pyplot.title(f"Performance ({metric.capitalize()})")
         pyplot.xlabel("Epoch", fontsize=font_size)
-        pyplot.xlabel(metric.capitalize(), fontsize=font_size)
+        pyplot.ylabel(metric.capitalize(), fontsize=font_size)
         pyplot.tick_params(labelsize=font_size)
         pyplot.legend(fontsize=font_size)
         pyplot.grid()
