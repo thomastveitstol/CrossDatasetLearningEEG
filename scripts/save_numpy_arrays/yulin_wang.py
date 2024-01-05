@@ -11,8 +11,8 @@ def main():
 
     # Pre-processing
     derivatives = True
-    filtering = (1, 40)
-    sampling_freq = 500
+    filtering = (1, 45)
+    sampling_freq = 180
     notch_filter = 50
     avg_reference = True
 

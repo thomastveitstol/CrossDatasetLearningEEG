@@ -7,8 +7,8 @@ def main():
     # ----------------
     # Pre-processing
     derivatives = False  # setting derivatives to True may give boundary events
-    filtering = (1, 40)
-    sampling_freq = 500
+    filtering = (1, 45)
+    sampling_freq = 180
     notch_filter = 50
     avg_reference = True
 

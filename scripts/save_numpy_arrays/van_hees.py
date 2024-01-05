@@ -7,8 +7,8 @@ def main():
     # ----------------
     # Pre-processing
     derivatives = False
-    filtering = (1, 40)
-    sampling_freq = 500
+    filtering = (1, 45)
+    sampling_freq = 180
     notch_filter = None
     avg_reference = True
 
