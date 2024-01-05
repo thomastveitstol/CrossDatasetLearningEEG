@@ -8,9 +8,11 @@ Author: Thomas Tveitstøl (Oslo University Hospital)
 """
 import os
 import random
+import warnings
 from typing import Dict, List, Tuple, Optional, Any, NamedTuple
 
 import pandas
+from matplotlib import pyplot
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, roc_auc_score, \
     r2_score
@@ -427,6 +429,83 @@ class Histories:
     @classification_metric
     def auc(y_pred: torch.Tensor, y_true: torch.Tensor):
         return roc_auc_score(y_true=y_true.cpu(), y_score=y_pred.cpu())
+
+
+# ----------------
+# Functions
+# ----------------
+def save_histories_plots(path, *, train_history=None, val_history=None, test_history=None):
+    """
+    Function for saving histories plots
+
+    Parameters
+    ----------
+    path : str
+    train_history : Histories
+    val_history : Histories
+    test_history : Histories
+
+    Returns
+    -------
+    None
+    """
+    # If no history object is passed, a warning is raised and None is returned (better to do nothing than potentially
+    # ruin an experiment with an unnecessary error)
+    if all(history for history in (train_history, val_history, test_history)):
+        warnings.warn("No history object was passed, skip saving histories plots...")
+        return None
+
+    # ----------------
+    # Loop through all metrics
+    # ----------------
+    # Get all available metrics
+    all_metrics = set(tuple(train_history.history.keys()) + tuple(val_history.history.keys())
+                      + tuple(test_history.history.keys()))
+
+    for metric in all_metrics:
+        pyplot.figure()
+
+        # Maybe plot training history
+        if train_history is not None:
+            pyplot.plot(range(1, len(train_history.history[metric]) + 1), train_history.history[metric],
+                        label="Train", color="blue")  # todo: line width?
+
+        # Maybe plot validation history
+        if val_history is not None:
+            pyplot.plot(range(1, len(val_history.history[metric]) + 1), val_history.history[metric], label="Validation",
+                        color="orange")
+
+        # Maybe plot test history
+        if test_history is not None:
+            # The test metric will just be a line across the figure. Need to get stop x value
+            # Start value
+            x_max = []
+            if train_history is not None:
+                x_max.append(len(train_history.history[metric]))
+            if val_history is not None:
+                x_max.append(len(val_history.history[metric]))
+            x_stop = max(x_max) + 1 if x_max else 2
+
+            # Plot
+            pyplot.plot((1, x_stop), (test_history.history[metric], test_history.history[metric]),
+                        label="Test", color="green")
+
+        # ------------
+        # Plot cosmetics
+        # ------------
+        font_size = 15
+
+        pyplot.title(f"Performance ({metric.capitalize()})")
+        pyplot.xlabel("Epoch", fontsize=font_size)
+        pyplot.xlabel(metric.capitalize(), fontsize=font_size)
+        pyplot.tick_params(labelsize=font_size)
+        pyplot.legend(fontsize=font_size)
+        pyplot.grid()
+
+        # Save figure and close it
+        pyplot.savefig(os.path.join(path, f"{metric}.png"))
+
+        pyplot.close()
 
 
 if __name__ == "__main__":
