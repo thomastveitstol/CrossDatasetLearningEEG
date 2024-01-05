@@ -451,7 +451,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
     """
     # If no history object is passed, a warning is raised and None is returned (better to do nothing than potentially
     # ruin an experiment with an unnecessary error)
-    if all(history for history in (train_history, val_history, test_history)):
+    if all(history is None for history in (train_history, val_history, test_history)):
         warnings.warn("No history object was passed, skip saving histories plots...")
         return None
 
