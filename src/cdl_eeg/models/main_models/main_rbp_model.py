@@ -147,7 +147,7 @@ class MainRBPModel(nn.Module):
         self._region_based_pooling.fit_channel_systems(channel_systems)
 
     # ----------------
-    # Methods for training
+    # Methods for training and testing
     # ----------------
     def train_model(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser, device,
                     channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
@@ -271,6 +271,46 @@ class MainRBPModel(nn.Module):
                 val_history.on_epoch_end(verbose=verbose)
 
         return train_history, val_history
+
+    def test_model(self, *, data_loader, metrics, device, channel_name_to_index, prediction_activation_function=None,
+                   verbose=True, target_scaler=None):
+        # Defining histories objects
+        history = Histories(metrics=metrics, name="test")
+
+        # No gradients needed
+        self.eval()
+        with torch.no_grad():
+            for x, pre_computed, y, subject_indices in data_loader:
+                # Strip the dictionaries for 'ghost tensors'
+                x = strip_tensors(x)
+                y = strip_tensors(y)
+                pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in pre_computed)
+
+                # Send data to correct device
+                x = tensor_dict_to_device(x, device=device)
+                y = flatten_targets(y).to(device)
+                pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device) for pre_comp in pre_computed)
+
+                # Forward pass
+                y_pred = self(x, pre_computed=pre_computed, channel_name_to_index=channel_name_to_index)
+
+                # Update validation history
+                if prediction_activation_function is not None:
+                    y_pred = prediction_activation_function(y_pred)
+
+                # (Maybe) re-scale targets and predictions before computing metrics
+                if target_scaler is not None:
+                    y_pred = target_scaler.inv_transform(scaled_data=y_pred)
+                    y = target_scaler.inv_transform(scaled_data=y)
+                history.store_batch_evaluation(
+                    y_pred=y_pred, y_true=y,
+                    subjects=data_loader.dataset.get_subjects_from_indices(subject_indices)
+                )
+
+            # Finalise epoch for validation history object
+            history.on_epoch_end(verbose=verbose)
+
+        return history
 
     # ----------------
     # Methods for t-SNE
