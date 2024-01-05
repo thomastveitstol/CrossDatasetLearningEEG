@@ -19,7 +19,7 @@ from cdl_eeg.data.paths import get_results_dir
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
 from cdl_eeg.models.losses import get_loss_function
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
-from cdl_eeg.models.metrics import Histories
+from cdl_eeg.models.metrics import Histories, save_histories_plots
 from cdl_eeg.models.utils import tensor_dict_to_device, flatten_targets
 
 
@@ -185,8 +185,14 @@ def main():
             test_history.store_batch_evaluation(y_pred=predictions, y_true=test_targets, subjects=test_subjects)
             test_history.on_epoch_end(verbose=train_config["verbose"])
 
-        # Save results
+        # Save predictions
         test_history.save_prediction_history(history_name="test_history", path=fold_path)
+
+        # -----------------
+        # Save plots
+        # -----------------
+        save_histories_plots(path=fold_path, train_history=train_history, val_history=val_history,
+                             test_history=test_history)
 
 
 if __name__ == "__main__":
