@@ -189,17 +189,6 @@ def main():
         # Save results
         test_history.save_prediction_history(history_name="test_history", path=fold_path)
 
-    # -----------------
-    # Print summary
-    # -----------------
-    for metric, performance in test_history.history.items():
-        print(f"\n----- Metric: {metric.capitalize()} -----")
-
-        print(f"\tMean: {numpy.mean(performance):.2f}")
-        print(f"\tSTD: {numpy.std(performance):.2f}")
-
-        print(f"\tAll folds: {tuple(round(p, 2) for p in performance)}")
-
 
 if __name__ == "__main__":
     main()
