@@ -71,7 +71,6 @@ def main():
     # -----------------
     # Perform (e.g.) cross validation
     # -----------------
-    test_history = Histories(metrics=train_config["metrics"], name="test")
     for i, test_subjects in enumerate(folds):
         print(f"\nFold {i+1}/{len(folds)}")
         print(f"{' Training ':-^20}")
@@ -169,6 +168,7 @@ def main():
         # Test model on test fold
         # -----------------
         print(f"\n{' Testing ':-^20}")
+        test_history = Histories(metrics=train_config["metrics"], name="test")
         model.eval()
 
         test_data = {name: torch.tensor(data, dtype=torch.float).to(device)
