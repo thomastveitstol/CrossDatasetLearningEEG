@@ -519,7 +519,7 @@ def is_improved_model(old_metrics, new_metrics, main_metric):
 
     Parameters
     ----------
-    old_metrics : dict[str, float]
+    old_metrics : dict[str, float] | None
     new_metrics : dict[str, float]
     main_metric : str
 
@@ -531,6 +531,8 @@ def is_improved_model(old_metrics, new_metrics, main_metric):
     --------
     >>> my_old_metrics = {"mae": 3, "mse": 7.7, "mape": 0.3, "pearson_r": 0.9, "spearman_rho": 0.8, "r2_score": -3.1}
     >>> my_new_metrics = {"mae": 3.2, "mse": 4.4, "mape": 0.2, "pearson_r": 0.7, "spearman_rho": 0.9, "r2_score": -3.05}
+    >>> is_improved_model(None, my_new_metrics, main_metric="mae")
+    True
     >>> is_improved_model(my_old_metrics, my_new_metrics, main_metric="mae")
     False
     >>> is_improved_model(my_old_metrics, my_new_metrics, main_metric="mse")
@@ -549,6 +551,10 @@ def is_improved_model(old_metrics, new_metrics, main_metric):
     ValueError: Expected the metric to be in ('pearson_r', 'spearman_rho', 'r2_score', 'auc', 'mae', 'mse', 'mape'),
     but found 'not_a_metric'
     """
+    # If the old metrics is None, it means that this is the first epoch
+    if old_metrics is None:
+        return True
+
     # Define the metrics where the higher, the better, and the lower, the better
     higher_is_better = ("pearson_r", "spearman_rho", "r2_score", "auc")
     lower_is_better = ("mae", "mse", "mape")
