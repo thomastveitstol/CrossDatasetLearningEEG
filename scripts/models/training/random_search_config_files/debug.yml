@@ -38,6 +38,7 @@ Training:
   learning_rate: 0.00001
   loss: MSELoss
   metrics: regression
+  main_metric: mae
   num_epochs: 200
   target: age
   val_split: 0.2
