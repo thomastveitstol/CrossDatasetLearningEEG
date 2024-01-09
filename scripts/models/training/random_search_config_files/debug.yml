@@ -1,9 +1,20 @@
 DL Architecture:
   kwargs:
-    cnn_units: 32
-    depth: 15
+    batch_norm: true
+    drop_prob: 0.25
+    filter_length_2: 10
+    filter_length_3: 10
+    filter_length_4: 5
+    filter_time_length: 35
+    n_filters_2: 50
+    n_filters_3: 200
+    n_filters_4: 200
+    n_filters_spat: 60
+    n_filters_time: 40
     num_classes: 1
-  model: InceptionNetwork
+    num_time_steps: 2500
+    split_first_layer: false
+  model: Deep4NetMTS
 Training:
   Data Split:
     kwargs:
@@ -35,11 +46,11 @@ Training:
       kwargs: {}
       name: ZNormalisation
   batch_size: 16
-  learning_rate: 0.00001
-  loss: MSELoss
-  metrics: regression
+  learning_rate: 0.0001
+  loss: L1Loss
   main_metric: mae
-  num_epochs: 200
+  metrics: regression
+  num_epochs: 50
   target: age
   val_split: 0.2
   verbose: true
@@ -54,14 +65,169 @@ Varied Numbers of Channels:
           latent_search_features: 16
           max_receptive_field: 100
           num_kernels: 500
+          share_search_receiver_modules: false
+        pooling_type: multi_cs
+        split_methods:
+        - CentroidPolygons
+        - CentroidPolygons
+        - CentroidPolygons
+        - CentroidPolygons
+        split_methods_kwargs:
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          min_nodes: 5
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          min_nodes: 2
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          min_nodes: 2
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 5
+      RBPDesign1:
+        num_designs: 1
+        pooling_methods: MultiMSSharedRocketHeadRegion
+        pooling_methods_kwargs:
+          bias: false
+          latent_search_features: 64
+          max_receptive_field: 75
+          num_kernels: 250
+          share_search_receiver_modules: false
+        pooling_type: multi_cs
+        split_methods:
+        - CentroidPolygons
+        - CentroidPolygons
+        - VoronoiSplit
+        - CentroidPolygons
+        - CentroidPolygons
+        - CentroidPolygons
+        split_methods_kwargs:
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          min_nodes: 4
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          min_nodes: 2
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 500
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          min_nodes: 2
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 5
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          min_nodes: 3
+      RBPDesign2:
+        num_designs: 1
+        pooling_methods: MultiMSSharedRocketHeadRegion
+        pooling_methods_kwargs:
+          bias: false
+          latent_search_features: 64
+          max_receptive_field: 100
+          num_kernels: 5000
           share_search_receiver_modules: true
         pooling_type: multi_cs
         split_methods:
         - CentroidPolygons
-        - VoronoiSplit
         - CentroidPolygons
         - VoronoiSplit
-        - CentroidPolygons
         - CentroidPolygons
         - VoronoiSplit
         split_methods_kwargs:
@@ -76,119 +242,19 @@ Varied Numbers of Channels:
           - 3
           - 3
           - 3
-          min_nodes: 5
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 500
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          min_nodes: 3
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 250
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          - 3
-          - 2
-          - 3
-          - 4
-          min_nodes: 2
-        - channel_positions:
-          - cau_eeg
-          k:
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
-          - 2
           min_nodes: 4
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 250
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-      RBPDesign1:
-        num_designs: 1
-        pooling_methods: MultiCSSharedRocket
-        pooling_methods_kwargs:
-          max_receptive_field: 250
-          num_kernels: 500
-        pooling_type: multi_cs
-        split_methods:
-        - VoronoiSplit
-        - CentroidPolygons
-        - VoronoiSplit
-        - VoronoiSplit
-        - VoronoiSplit
-        - CentroidPolygons
-        - VoronoiSplit
-        split_methods_kwargs:
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 250
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
         - channel_positions:
           - cau_eeg
           k:
+          - 2
           - 3
+          - 2
           - 3
+          - 2
           - 3
+          - 2
           - 3
-          - 3
-          - 3
-          - 3
-          - 3
+          - 2
           min_nodes: 3
         - channel_systems:
           - rockhill
@@ -197,31 +263,7 @@ Varied Numbers of Channels:
           - yulin_wang
           - cau_eeg
           min_nodes: 1
-          num_initial_centroids: 500
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
           num_initial_centroids: 250
-          x_max: 0.17
-          x_min: -0.17
-          y_max: 0.17
-          y_min: -0.17
-        - channel_systems:
-          - rockhill
-          - miltiadous
-          - hatlestad_hall
-          - yulin_wang
-          - cau_eeg
-          min_nodes: 1
-          num_initial_centroids: 500
           x_max: 0.17
           x_min: -0.17
           y_max: 0.17
@@ -230,13 +272,15 @@ Varied Numbers of Channels:
           - cau_eeg
           k:
           - 2
+          - 3
           - 2
+          - 3
           - 2
+          - 3
           - 2
+          - 3
           - 2
-          - 2
-          - 2
-          min_nodes: 2
+          min_nodes: 1
         - channel_systems:
           - rockhill
           - miltiadous
@@ -249,21 +293,69 @@ Varied Numbers of Channels:
           x_min: -0.17
           y_max: 0.17
           y_min: -0.17
-      RBPDesign2:
+      RBPDesign3:
         num_designs: 1
         pooling_methods: MultiMSSharedRocketHeadRegion
         pooling_methods_kwargs:
           bias: false
           latent_search_features: 16
           max_receptive_field: 100
+          num_kernels: 250
+          share_search_receiver_modules: true
+        pooling_type: multi_cs
+        split_methods:
+        - CentroidPolygons
+        - CentroidPolygons
+        - CentroidPolygons
+        split_methods_kwargs:
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          min_nodes: 1
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          min_nodes: 4
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 5
+      RBPDesign4:
+        num_designs: 1
+        pooling_methods: MultiCSSharedRocket
+        pooling_methods_kwargs:
+          max_receptive_field: 75
           num_kernels: 500
-          share_search_receiver_modules: false
         pooling_type: multi_cs
         split_methods:
         - VoronoiSplit
         - VoronoiSplit
         - CentroidPolygons
-        - CentroidPolygons
+        - VoronoiSplit
         - CentroidPolygons
         split_methods_kwargs:
         - channel_systems:
@@ -294,6 +386,157 @@ Varied Numbers of Channels:
           - cau_eeg
           k:
           - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          min_nodes: 5
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 100
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          min_nodes: 3
+      RBPDesign5:
+        num_designs: 1
+        pooling_methods: MultiCSSharedRocket
+        pooling_methods_kwargs:
+          max_receptive_field: 100
+          num_kernels: 1000
+        pooling_type: multi_cs
+        split_methods:
+        - CentroidPolygons
+        - VoronoiSplit
+        - VoronoiSplit
+        - CentroidPolygons
+        - CentroidPolygons
+        split_methods_kwargs:
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          min_nodes: 4
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 100
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 250
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          - 3
+          min_nodes: 5
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          - 3
+          - 2
+          min_nodes: 5
+      RBPDesign6:
+        num_designs: 1
+        pooling_methods: MultiMSSharedRocketHeadRegion
+        pooling_methods_kwargs:
+          bias: false
+          latent_search_features: 16
+          max_receptive_field: 100
+          num_kernels: 500
+          share_search_receiver_modules: true
+        pooling_type: multi_cs
+        split_methods:
+        - CentroidPolygons
+        - VoronoiSplit
+        - CentroidPolygons
+        split_methods_kwargs:
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 2
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 500
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
           - 2
           - 2
           - 2
@@ -301,18 +544,84 @@ Varied Numbers of Channels:
           - 2
           - 2
           min_nodes: 3
+      RBPDesign7:
+        num_designs: 1
+        pooling_methods: MultiMSSharedRocketHeadRegion
+        pooling_methods_kwargs:
+          bias: false
+          latent_search_features: 16
+          max_receptive_field: 250
+          num_kernels: 250
+          share_search_receiver_modules: true
+        pooling_type: multi_cs
+        split_methods:
+        - VoronoiSplit
+        - CentroidPolygons
+        - VoronoiSplit
+        - VoronoiSplit
+        - CentroidPolygons
+        - CentroidPolygons
+        - CentroidPolygons
+        split_methods_kwargs:
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 500
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
         - channel_positions:
           - cau_eeg
           k:
-          - 4
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 4
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 100
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 250
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
           - 3
           - 2
           - 3
-          - 4
+          - 2
           - 3
           - 2
           - 3
-          - 4
+          - 2
           min_nodes: 5
         - channel_positions:
           - cau_eeg
@@ -325,5 +634,154 @@ Varied Numbers of Channels:
           - 3
           - 3
           - 3
-          min_nodes: 5
-    normalise_region_representations: true
+          min_nodes: 4
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          - 3
+          - 2
+          - 3
+          - 4
+          min_nodes: 4
+      RBPDesign8:
+        num_designs: 1
+        pooling_methods: MultiCSSharedRocket
+        pooling_methods_kwargs:
+          max_receptive_field: 75
+          num_kernels: 5000
+        pooling_type: multi_cs
+        split_methods:
+        - CentroidPolygons
+        - VoronoiSplit
+        - VoronoiSplit
+        - VoronoiSplit
+        - VoronoiSplit
+        - VoronoiSplit
+        split_methods_kwargs:
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 1
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 500
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 500
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 100
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 100
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 100
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+      RBPDesign9:
+        num_designs: 1
+        pooling_methods: MultiMSSharedRocketHeadRegion
+        pooling_methods_kwargs:
+          bias: false
+          latent_search_features: 32
+          max_receptive_field: 75
+          num_kernels: 1000
+          share_search_receiver_modules: false
+        pooling_type: multi_cs
+        split_methods:
+        - CentroidPolygons
+        - VoronoiSplit
+        - VoronoiSplit
+        split_methods_kwargs:
+        - channel_positions:
+          - cau_eeg
+          k:
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          - 2
+          min_nodes: 1
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 100
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+        - channel_systems:
+          - rockhill
+          - miltiadous
+          - hatlestad_hall
+          - yulin_wang
+          - cau_eeg
+          min_nodes: 1
+          num_initial_centroids: 100
+          x_max: 0.17
+          x_min: -0.17
+          y_max: 0.17
+          y_min: -0.17
+    normalise_region_representations: false

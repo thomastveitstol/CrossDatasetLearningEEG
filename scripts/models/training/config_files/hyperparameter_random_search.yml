@@ -3,7 +3,7 @@ Shared Dataset Details:
   time_series_start: &time_series_start null
 
 Training:
-  learning_rate: [ 0.005, 0.001, 0.0005, 0.0001 ]
+  learning_rate: [ 0.005, 0.001, 0.0005, 0.0001, 0.00005, 0.00001 ]
   batch_size: 16
   num_epochs: 50
   verbose: true
@@ -37,12 +37,8 @@ Training:
       num_subjects: 60
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
-    ous:
-      num_subjects: 20
-      num_time_steps: *num_time_steps
-      time_series_start: *time_series_start
     cau_eeg:
-      num_subjects: 150
+      num_subjects: 1379
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
 
