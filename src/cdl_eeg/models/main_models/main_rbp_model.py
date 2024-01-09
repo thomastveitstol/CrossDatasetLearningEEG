@@ -6,7 +6,7 @@ import torch.nn as nn
 from sklearn.manifold import TSNE
 
 from cdl_eeg.data.data_generators.data_generator import strip_tensors
-from cdl_eeg.models.metrics import Histories
+from cdl_eeg.models.metrics import Histories, is_improved_model
 from cdl_eeg.models.mts_modules.getter import get_mts_module
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RegionBasedPooling, RBPDesign, RBPPoolType
 from cdl_eeg.models.utils import tensor_dict_to_device, flatten_targets
@@ -149,8 +149,8 @@ class MainRBPModel(nn.Module):
     # ----------------
     # Methods for training and testing
     # ----------------
-    def train_model(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser, device,
-                    channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
+    def train_model(self, *, train_loader, val_loader, metrics, main_metric, num_epochs, criterion, optimiser, device,
+                    channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,):
         """
         Method for training
 
@@ -159,6 +159,8 @@ class MainRBPModel(nn.Module):
         train_loader : torch.utils.data.DataLoader
         val_loader : torch.utils.data.DataLoader
         metrics : str | tuple[str, ...]
+        main_metric : str
+            Main metric for model selection
         num_epochs : int
         criterion : nn.modules.loss._Loss
         optimiser : torch.optim.Optimizer
@@ -182,6 +184,8 @@ class MainRBPModel(nn.Module):
         # ------------------------
         # Fit model
         # ------------------------
+        best_metrics = None
+        best_model_state = {k: v.cpu() for k, v in self.state_dict().items()}
         for epoch in range(num_epochs):
             # Start progress bar
             pbar = enlighten.Counter(total=int(len(train_loader) / train_loader.batch_size + 1),
@@ -270,6 +274,21 @@ class MainRBPModel(nn.Module):
                 # Finalise epoch for validation history object
                 val_history.on_epoch_end(verbose=verbose)
 
+            # ----------------
+            # If this is the highest performing model, store it
+            # ----------------
+            if is_improved_model(old_metrics=best_metrics, new_metrics=val_history.newest_metrics,
+                                 main_metric=main_metric):
+                # Store the model on the cpu
+                best_model_state = copy.deepcopy({k: v.cpu() for k, v in self.state_dict().items()})
+
+                # Update the best metrics
+                best_metrics = val_history.newest_metrics
+
+        # Set the parameters back to those of the best model
+        self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})
+
+        # Return the histories
         return train_history, val_history
 
     def test_model(self, *, data_loader, metrics, device, channel_name_to_index, prediction_activation_function=None,
