@@ -164,7 +164,7 @@ def main():
         val_history.save_prediction_history(history_name="val_history", path=fold_path)
 
         # -----------------
-        # Test model on test fold  todo: this needs a DataLoader, and be moved to a class method of the model
+        # Test model on test fold
         # -----------------
         print(f"\n{' Testing ':-^20}")
         model.eval()
