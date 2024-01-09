@@ -298,6 +298,10 @@ class Histories:
         # todo: consider returning values as tuples
         return self._history
 
+    @property
+    def newest_metrics(self):
+        return {metric_name: performance[-1] for metric_name, performance in self._history.items()}
+
     # -----------------
     # Methods for saving
     # -----------------
