@@ -508,6 +508,59 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
         pyplot.close()
 
 
+def is_improved_model(old_metrics, new_metrics, main_metric):
+    """
+    Function for checking if the new set of metrics is evaluated as better than the old metrics, defined by a main
+    metric
+
+    Parameters
+    ----------
+    old_metrics : dict[str, float]
+    new_metrics : dict[str, float]
+    main_metric : str
+
+    Returns
+    -------
+    bool
+
+    Examples
+    --------
+    >>> my_old_metrics = {"mae": 3, "mse": 7.7, "mape": 0.3, "pearson_r": 0.9, "spearman_rho": 0.8, "r2_score": -3.1}
+    >>> my_new_metrics = {"mae": 3.2, "mse": 4.4, "mape": 0.2, "pearson_r": 0.7, "spearman_rho": 0.9, "r2_score": -3.05}
+    >>> is_improved_model(my_old_metrics, my_new_metrics, main_metric="mae")
+    False
+    >>> is_improved_model(my_old_metrics, my_new_metrics, main_metric="mse")
+    True
+    >>> is_improved_model(my_old_metrics, my_new_metrics, main_metric="mape")
+    True
+    >>> is_improved_model(my_old_metrics, my_new_metrics, main_metric="pearson_r")
+    False
+    >>> is_improved_model(my_old_metrics, my_new_metrics, main_metric="spearman_rho")
+    True
+    >>> is_improved_model(my_old_metrics, my_new_metrics, main_metric="r2_score")
+    True
+    >>> is_improved_model(my_old_metrics, my_new_metrics, main_metric="not_a_metric")  # doctest: +NORMALIZE_WHITESPACE
+    Traceback (most recent call last):
+    ...
+    ValueError: Expected the metric to be in ('pearson_r', 'spearman_rho', 'r2_score', 'auc', 'mae', 'mse', 'mape'),
+    but found 'not_a_metric'
+    """
+    # Define the metrics where the higher, the better, and the lower, the better
+    higher_is_better = ("pearson_r", "spearman_rho", "r2_score", "auc")
+    lower_is_better = ("mae", "mse", "mape")
+
+    # ----------------
+    # Evaluate
+    # ----------------
+    if main_metric in higher_is_better:
+        return old_metrics[main_metric] < new_metrics[main_metric]
+    elif main_metric in lower_is_better:
+        return old_metrics[main_metric] > new_metrics[main_metric]
+    else:
+        raise ValueError(f"Expected the metric to be in {higher_is_better + lower_is_better}, but found "
+                         f"'{main_metric}'")
+
+
 if __name__ == "__main__":
     # Define splits
     my_splits = (
