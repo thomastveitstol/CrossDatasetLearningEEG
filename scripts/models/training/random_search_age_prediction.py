@@ -151,12 +151,28 @@ def main():
                                betas=(train_config["beta_1"], train_config["beta_2"]), eps=train_config["eps"])
         criterion = get_loss_function(loss=train_config["loss"])
 
+        # (Maybe) create optimiser and loss for domain discriminator
+        if train_config["DomainDiscriminator"] is not None:
+            discriminator_optimiser = optim.Adam(
+                model.parameters(), lr=train_config["DomainDiscriminator"]["learning_rate"],
+                betas=(train_config["DomainDiscriminator"]["beta_1"], train_config["DomainDiscriminator"]["beta_2"]),
+                eps=train_config["DomainDiscriminator"]["epsilon"]
+            )
+            discriminator_criterion = get_loss_function(loss=train_config["DomainDiscriminator"]["loss"])
+            discriminator_weight = train_config["DomainDiscriminator"]["lambda"]
+        else:
+            discriminator_optimiser = None
+            discriminator_criterion = None
+            discriminator_weight = None
+
         # Train model
         train_history, val_history = model.train_model(
             train_loader=train_loader, val_loader=val_loader, metrics=train_config["metrics"],
-            main_metric=train_config["main_metric"], criterion=criterion, optimiser=optimiser,
-            num_epochs=train_config["num_epochs"], verbose=train_config["verbose"],
-            channel_name_to_index=channel_name_to_index, device=device, target_scaler=target_scaler
+            main_metric=train_config["main_metric"], classifier_criterion=criterion, classifier_optimiser=optimiser,
+            discriminator_criterion=discriminator_criterion, discriminator_optimiser=discriminator_optimiser,
+            discriminator_weight=discriminator_weight, num_epochs=train_config["num_epochs"],
+            verbose=train_config["verbose"], channel_name_to_index=channel_name_to_index, device=device,
+            target_scaler=target_scaler
         )
 
         # -----------------
