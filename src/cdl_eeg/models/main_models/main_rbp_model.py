@@ -1,4 +1,5 @@
 import copy
+from typing import List, Dict
 
 import enlighten
 import torch
@@ -6,6 +7,7 @@ import torch.nn as nn
 from sklearn.manifold import TSNE
 
 from cdl_eeg.data.data_generators.data_generator import strip_tensors
+from cdl_eeg.data.data_split import Subject
 from cdl_eeg.models.domain_discriminators.getter import get_domain_discriminator
 from cdl_eeg.models.metrics import Histories, is_improved_model
 from cdl_eeg.models.mts_modules.getter import get_mts_module
@@ -176,11 +178,169 @@ class MainRBPModel(nn.Module):
     # ----------------
     # Methods for training and testing
     # ----------------
+    def train_model_with_domain_adversarial_learning(
+            self, *, train_loader, val_loader, metrics, main_metric, num_epochs, classifier_criterion,
+            classifier_optimiser, discriminator_criterion, discriminator_optimiser, discriminator_weight, device,
+            channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
+        """
+        Method for training with domain adversarial learning
+
+        Parameters
+        ----------
+        train_loader
+        val_loader
+        metrics
+        main_metric
+        num_epochs
+        classifier_criterion
+        classifier_optimiser
+        discriminator_criterion
+        discriminator_optimiser
+        discriminator_weight : float
+        device
+        channel_name_to_index
+        prediction_activation_function
+        verbose
+        target_scaler
+
+        Returns
+        -------
+
+        """
+        # Defining histories objects
+        train_history = Histories(metrics=metrics)
+        val_history = Histories(metrics=metrics, name="val")
+
+        # ------------------------
+        # Fit model
+        # ------------------------
+        best_metrics = None
+        best_model_state = {k: v.cpu() for k, v in self.state_dict().items()}
+        for epoch in range(num_epochs):
+            # Start progress bar
+            pbar = enlighten.Counter(total=int(len(train_loader) / train_loader.batch_size + 1),
+                                     desc=f"Epoch {epoch + 1}/{num_epochs}", unit="batch")
+
+            # ----------------
+            # Training
+            # ----------------
+            self.train()
+            for x_train, train_pre_computed, y_train, subject_indices in train_loader:
+                # todo: Only works for train loaders with this specific __getitem__ return
+                # Strip the dictionaries for 'ghost tensors'
+                x_train = strip_tensors(x_train)
+                y_train = strip_tensors(y_train)
+                train_pre_computed = [strip_tensors(pre_comp) for pre_comp in train_pre_computed]
+
+                # Extract subjects and correct the ordering
+                subjects = reorder_subjects(order=tuple(x_train.keys()),
+                                            subjects=train_loader.dataset.get_subjects_from_indices(subject_indices))
+
+                # Send data to correct device
+                x_train = tensor_dict_to_device(x_train, device=device)
+                y_train = flatten_targets(y_train).to(device)
+                train_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                           for pre_comp in train_pre_computed)
+
+                # Forward pass
+                classifier_output, discriminator_output = self(x_train, pre_computed=train_pre_computed,
+                                                               channel_name_to_index=channel_name_to_index,
+                                                               use_domain_discriminator=True)
+
+                # Compute dataset belonging (targets for discriminator)
+                discriminator_targets = train_loader.dataset.get_dataset_indices_from_subjects(subjects=subjects)
+
+                # Compute loss
+                loss = (classifier_criterion(classifier_output, y_train)
+                        - discriminator_weight * discriminator_criterion(discriminator_output, discriminator_targets))
+
+                # Optimise
+                classifier_optimiser.zero_grad()
+                discriminator_optimiser.zero_grad()
+                loss.backward()
+                classifier_optimiser.step()  # Todo: is this correct???
+                discriminator_optimiser.step()
+
+                # Update train history
+                # todo: see if you can optimise more here
+                with torch.no_grad():
+                    y_pred = torch.clone(classifier_output)
+                    if prediction_activation_function is not None:
+                        y_pred = prediction_activation_function(y_pred)
+
+                    # (Maybe) re-scale targets and predictions before computing metrics
+                    if target_scaler is not None:
+                        y_pred = target_scaler.inv_transform(scaled_data=y_pred)
+                        y_train = target_scaler.inv_transform(scaled_data=y_train)
+                    train_history.store_batch_evaluation(y_pred=y_pred, y_true=y_train, subjects=subjects)
+
+                # Update progress bar
+                pbar.update()
+
+            # Finalise epoch for train history object
+            train_history.on_epoch_end(verbose=verbose)
+
+            # ----------------
+            # Validation
+            # ----------------
+            self.eval()
+            with torch.no_grad():
+                for x_val, val_pre_computed, y_val, val_subject_indices in val_loader:
+                    # Strip the dictionaries for 'ghost tensors'
+                    x_val = strip_tensors(x_val)
+                    y_val = strip_tensors(y_val)
+                    val_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in val_pre_computed)
+
+                    # Extract subjects and correct the ordering
+                    val_subjects = reorder_subjects(
+                        order=tuple(x_val.keys()),
+                        subjects=val_loader.dataset.get_subjects_from_indices(val_subject_indices)
+                    )
+
+                    # Send data to correct device
+                    x_val = tensor_dict_to_device(x_val, device=device)
+                    y_val = flatten_targets(y_val).to(device)
+                    val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                             for pre_comp in val_pre_computed)
+
+                    # Forward pass  todo: why did I use .clone() in the PhD course tasks?
+                    y_pred = self(x_val, pre_computed=val_pre_computed, channel_name_to_index=channel_name_to_index)
+
+                    # Update validation history
+                    if prediction_activation_function is not None:
+                        y_pred = prediction_activation_function(y_pred)
+
+                    # (Maybe) re-scale targets and predictions before computing metrics
+                    if target_scaler is not None:
+                        y_pred = target_scaler.inv_transform(scaled_data=y_pred)
+                        y_val = target_scaler.inv_transform(scaled_data=y_val)
+                    val_history.store_batch_evaluation(y_pred=y_pred, y_true=y_val, subjects=val_subjects)
+
+                # Finalise epoch for validation history object
+                val_history.on_epoch_end(verbose=verbose)
+
+            # ----------------
+            # If this is the highest performing model, store it
+            # ----------------
+            if is_improved_model(old_metrics=best_metrics, new_metrics=val_history.newest_metrics,
+                                 main_metric=main_metric):
+                # Store the model on the cpu
+                best_model_state = copy.deepcopy({k: v.cpu() for k, v in self.state_dict().items()})
+
+                # Update the best metrics
+                best_metrics = val_history.newest_metrics
+
+            # Set the parameters back to those of the best model
+        self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})
+
+        # Return the histories
+        return train_history, val_history
+
     def train_model(self, *, train_loader, val_loader, metrics, main_metric, num_epochs, criterion, optimiser, device,
                     channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,):
         """
         Method for training
-
+        # TODO: NEED TO FIX SUB IDS!!!!
         Parameters
         ----------
         train_loader : torch.utils.data.DataLoader
@@ -229,6 +389,10 @@ class MainRBPModel(nn.Module):
                 y_train = strip_tensors(y_train)
                 train_pre_computed = [strip_tensors(pre_comp) for pre_comp in train_pre_computed]
 
+                # Extract subjects and correct the ordering
+                subjects = reorder_subjects(order=tuple(x_train.keys()),
+                                            subjects=train_loader.dataset.get_subjects_from_indices(subject_indices))
+
                 # Send data to correct device
                 x_train = tensor_dict_to_device(x_train, device=device)
                 y_train = flatten_targets(y_train).to(device)
@@ -239,6 +403,7 @@ class MainRBPModel(nn.Module):
                 output = self(x_train, pre_computed=train_pre_computed, channel_name_to_index=channel_name_to_index)
 
                 # Compute loss
+                optimiser.zero_grad()
                 loss = criterion(output, y_train)
                 loss.backward()
                 optimiser.step()
@@ -254,10 +419,7 @@ class MainRBPModel(nn.Module):
                     if target_scaler is not None:
                         y_pred = target_scaler.inv_transform(scaled_data=y_pred)
                         y_train = target_scaler.inv_transform(scaled_data=y_train)
-                    train_history.store_batch_evaluation(
-                        y_pred=y_pred, y_true=y_train,
-                        subjects=train_loader.dataset.get_subjects_from_indices(subject_indices)
-                    )
+                    train_history.store_batch_evaluation(y_pred=y_pred, y_true=y_train, subjects=subjects)
 
                 # Update progress bar
                 pbar.update()
@@ -276,6 +438,12 @@ class MainRBPModel(nn.Module):
                     y_val = strip_tensors(y_val)
                     val_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in val_pre_computed)
 
+                    # Extract subjects and correct the ordering
+                    val_subjects = reorder_subjects(
+                        order=tuple(x_val.keys()),
+                        subjects=val_loader.dataset.get_subjects_from_indices(val_subject_indices)
+                    )
+
                     # Send data to correct device
                     x_val = tensor_dict_to_device(x_val, device=device)
                     y_val = flatten_targets(y_val).to(device)
@@ -293,10 +461,7 @@ class MainRBPModel(nn.Module):
                     if target_scaler is not None:
                         y_pred = target_scaler.inv_transform(scaled_data=y_pred)
                         y_val = target_scaler.inv_transform(scaled_data=y_val)
-                    val_history.store_batch_evaluation(
-                        y_pred=y_pred, y_true=y_val,
-                        subjects=val_loader.dataset.get_subjects_from_indices(val_subject_indices)
-                    )
+                    val_history.store_batch_evaluation(y_pred=y_pred, y_true=y_val, subjects=val_subjects)
 
                 # Finalise epoch for validation history object
                 val_history.on_epoch_end(verbose=verbose)
@@ -400,3 +565,45 @@ class MainRBPModel(nn.Module):
         # Create and fit t-SNE
         tsne = TSNE(n_components=n_components)
         return tsne.fit_transform(x)
+
+
+# ----------------
+# Functions
+# ----------------
+def reorder_subjects(order, subjects):
+    """
+    Function for re-ordering subjects such that they align with how the input and target tensors are concatenated
+
+    Parameters
+    ----------
+    order : tuple[str, ...]
+        Ordering of the datasets
+    subjects : tuple[Subject, ...]
+        Subjects to re-order
+
+    Returns
+    -------
+    tuple[Subject, ...]
+
+    Examples
+    --------
+    >>> my_subjects = (Subject("P3", "D2"), Subject("P1", "D2"), Subject("P1", "D1"), Subject("P4", "D1"),
+    ...                Subject("P2", "D2"))
+    >>> reorder_subjects(order=("D1", "D2"), subjects=my_subjects)  # doctest: +NORMALIZE_WHITESPACE
+    (Subject(subject_id='P1', dataset_name='D1', details=None),
+     Subject(subject_id='P4', dataset_name='D1', details=None),
+     Subject(subject_id='P3', dataset_name='D2', details=None),
+     Subject(subject_id='P1', dataset_name='D2', details=None),
+     Subject(subject_id='P2', dataset_name='D2', details=None))
+    """
+    subjects_dict: Dict[str, List[Subject]] = {dataset_name: [] for dataset_name in order}
+    for subject in subjects:
+        subjects_dict[subject.dataset_name].append(subject)
+
+    # Convert to list
+    corrected_subjects = []
+    for subject_list in subjects_dict.values():
+        corrected_subjects.extend(subject_list)
+
+    # return as a tuple
+    return tuple(corrected_subjects)
