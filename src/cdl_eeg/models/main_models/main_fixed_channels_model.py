@@ -55,20 +55,15 @@ class MainFixedChannelsModel(nn.Module):
         # Run through MTS module and return
         return self._mts_module(x)
 
-    def extract_latent_features(self, x, method="default_latent_feature_extraction"):
+    def extract_latent_features(self, x):
         """Method for extracting latent features"""
-        # Input check
-        if not self._mts_module.supports_latent_feature_extraction():
-            raise ValueError(f"The MTS module {type(self._mts_module).__name__} does not support latent feature "
-                             f"extraction")
-
         # (Maybe) concatenate all tensors. This should be possible, as this class should ony be used with a fixed number
         # of input channels
         if isinstance(x, dict):
             x = torch.cat(tuple(x.values()), dim=0)
 
         # Run through MTS module and return
-        return self._mts_module.extract_latent_features(x, method=method)
+        return self._mts_module.extract_latent_features(x)
 
     # ---------------
     # Methods for training

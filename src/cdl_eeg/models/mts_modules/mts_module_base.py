@@ -4,11 +4,6 @@ from typing import List
 import torch.nn as nn
 
 
-def latent_feature_extraction_method(func):
-    setattr(func, "_is_latent_feature_extraction_method", True)
-    return func
-
-
 class MTSModuleBase(nn.Module, abc.ABC):
 
     @classmethod
@@ -50,29 +45,20 @@ class MTSModuleBase(nn.Module, abc.ABC):
         # Convert to tuple and return
         return tuple(feature_extraction_methods)
 
-    def extract_latent_features(self, data, method="default_latent_feature_extraction"):
+    def extract_latent_features(self, input_tensor):
         """
         Method for extracting latent features
 
         Parameters
         ----------
-        data : torch.Tensor
-        method : str
+        input_tensor : torch.Tensor
 
         Returns
         -------
         torch.Tensor
             Latent features
         """
-        # Input check
-        if method not in self.get_available_latent_feature_extractions():
-            raise ValueError(f"Latent feature extraction method '{method}' was not recognised. Make sure that the "
-                             f"method passed shares the name with the implemented method you want to use. The latent "
-                             f"feature extraction methods available for this class ({type(self).__name__}) are: "
-                             f"{self.get_available_latent_feature_extractions()}")
-
-        # Run and return
-        return getattr(self, method)(data)
+        raise NotImplementedError
 
     def classify_latent_features(self, input_tensor):
         """

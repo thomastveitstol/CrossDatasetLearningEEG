@@ -137,14 +137,8 @@ class MainRBPModel(nn.Module):
         # Pass through MTS module and return
         return self._mts_module(x)
 
-    def extract_latent_features(self, input_tensors, *, channel_name_to_index, pre_computed=None,
-                                method="default_latent_feature_extraction"):
+    def extract_latent_features(self, input_tensors, *, channel_name_to_index, pre_computed=None):
         """Method for extracting latent features"""
-        # Input check
-        if not self._mts_module.supports_latent_feature_extraction():
-            raise ValueError(f"The MTS module {type(self._mts_module).__name__} does not support latent feature "
-                             f"extraction")
-
         # Pass through RBP layer
         x = self._region_based_pooling(input_tensors, channel_name_to_index=channel_name_to_index,
                                        pre_computed=pre_computed)
@@ -152,7 +146,7 @@ class MainRBPModel(nn.Module):
         x = torch.cat(x, dim=1)
 
         # Pass through MTS module and return
-        return self._mts_module.extract_latent_features(x, method=method)
+        return self._mts_module.extract_latent_features(x)
 
     def forward(self, input_tensors, *, channel_name_to_index, pre_computed=None, use_domain_discriminator=False):
         # If no domain discriminator is used, just run the normal forward method
@@ -163,7 +157,7 @@ class MainRBPModel(nn.Module):
         # Extract latent features
         # ----------------
         x = self.extract_latent_features(input_tensors, channel_name_to_index=channel_name_to_index,
-                                         pre_computed=pre_computed, method=domain_discriminator)
+                                         pre_computed=pre_computed)
 
         # ----------------
         # Pass through both the classifier and domain discriminator

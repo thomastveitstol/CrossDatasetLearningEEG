@@ -13,7 +13,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 
-from cdl_eeg.models.mts_modules.mts_module_base import MTSModuleBase, latent_feature_extraction_method
+from cdl_eeg.models.mts_modules.mts_module_base import MTSModuleBase
 
 
 # ---------------------------
@@ -298,8 +298,7 @@ class InceptionNetwork(MTSModuleBase):
         # -----------------------------
         self._fc_layer = nn.Linear(in_features=output_channels, out_features=num_classes)
 
-    @latent_feature_extraction_method
-    def default_latent_feature_extraction(self, input_tensor):
+    def extract_latent_features(self, input_tensor):
         """
         Get the features right after performing global average pooling in temporal dimension
 
