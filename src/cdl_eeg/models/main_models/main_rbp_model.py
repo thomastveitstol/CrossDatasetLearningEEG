@@ -59,12 +59,16 @@ class MainRBPModel(nn.Module):
         else:
             # Set kwargs to empty dict if none are passed
             domain_discriminator_kwargs = dict() if domain_discriminator_kwargs is None else domain_discriminator_kwargs
+
+            # Need to get input features from MTS module
+            domain_discriminator_kwargs["in_features"] = self._mts_module.latent_features_dim
+
             self._domain_discriminator = get_domain_discriminator(
                 name=domain_discriminator, **domain_discriminator_kwargs
             )
 
     @classmethod
-    def from_config(cls, rbp_config, mts_config):
+    def from_config(cls, rbp_config, mts_config, discriminator_config):
         # -----------------
         # Read RBP designs
         # -----------------
@@ -91,7 +95,9 @@ class MainRBPModel(nn.Module):
         # -----------------
         return cls(mts_module=mts_design["model"], mts_module_kwargs=mts_design["kwargs"],
                    rbp_designs=tuple(rbp_designs),
-                   normalise_region_representations=rbp_config["normalise_region_representations"])
+                   normalise_region_representations=rbp_config["normalise_region_representations"],
+                   domain_discriminator=discriminator_config["name"],
+                   domain_discriminator_kwargs=discriminator_config["kwargs"])
 
     # ----------------
     # Methods for forward pass and related
