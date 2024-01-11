@@ -73,3 +73,24 @@ class MTSModuleBase(nn.Module, abc.ABC):
 
         # Run and return
         return getattr(self, method)(data)
+
+    def classify_latent_features(self, input_tensor):
+        """
+        Method for classifying the latent features extracted
+
+        Parameters
+        ----------
+        input_tensor : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+        """
+        raise NotImplementedError
+
+    # ----------------
+    # Properties
+    # ----------------
+    @property
+    def latent_features_dim(self):
+        raise NotImplementedError

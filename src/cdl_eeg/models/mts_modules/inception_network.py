@@ -277,6 +277,7 @@ class InceptionNetwork(MTSModuleBase):
                               max_kernel_size=max_kernel_size)
              for i, in_channel in enumerate([in_channels] + [output_channels]*(depth - 1))]
         )
+        self._cnn_units = cnn_units  # Needed for computing the dimensions of latent features
 
         # -----------------------------
         # Define Shortcut layers
@@ -314,13 +315,33 @@ class InceptionNetwork(MTSModuleBase):
 
         Examples
         --------
-        >>> my_model = InceptionNetwork(in_channels=43, num_classes=3, cnn_units=23)
+        >>> my_model = InceptionNetwork(in_channels=43, num_classes=3, cnn_units=23, depth=30)
         >>> my_model.default_latent_feature_extraction(torch.rand(size=(10, 43, 500))).size()
         torch.Size([10, 92])
         >>> my_model.extract_latent_features(torch.rand(size=(10, 43, 500))).size()
         torch.Size([10, 92])
         """
         return self(input_tensor, return_features=True)
+
+    def classify_latent_features(self, input_tensor):
+        """
+        Method for classifying the extracted latent features
+
+        Parameters
+        ----------
+        input_tensor : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> my_model = InceptionNetwork(in_channels=43, num_classes=3, cnn_units=23)
+        >>> my_model.classify_latent_features(torch.rand(size=(10, 92))).size()
+        torch.Size([10, 3])
+        """
+        return self._fc_layer(input_tensor)
 
     def forward(self, input_tensor, return_features=False):
         """
@@ -381,6 +402,13 @@ class InceptionNetwork(MTSModuleBase):
 
         # Pass through FC layer and return. No activation function used
         return self._fc_layer(x)
+
+    # ----------------
+    # Properties
+    # ----------------
+    @property
+    def latent_features_dim(self):
+        return self._cnn_units * 4
 
 
 # ------------------
