@@ -178,7 +178,30 @@ class MainRBPModel(nn.Module):
     # ----------------
     # Methods for training and testing
     # ----------------
-    def train_model_with_domain_adversarial_learning(
+    def train_model(
+            self, *, train_loader, val_loader, metrics, main_metric, num_epochs, classifier_criterion,
+            classifier_optimiser, discriminator_criterion=None, discriminator_optimiser=None, discriminator_weight=None,
+            device, channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
+        if any(discriminator_arg is None for discriminator_arg
+               in (discriminator_criterion, discriminator_optimiser, discriminator_weight)):
+            return self._train_model(
+                train_loader=train_loader, val_loader=val_loader, metrics=metrics, main_metric=main_metric,
+                num_epochs=num_epochs, criterion=classifier_criterion, optimiser=classifier_optimiser, device=device,
+                channel_name_to_index=channel_name_to_index, verbose=verbose, target_scaler=target_scaler,
+                prediction_activation_function=prediction_activation_function
+            )
+        else:
+            return self._train_model_with_domain_adversarial_learning(
+                train_loader=train_loader, val_loader=val_loader, metrics=metrics, main_metric=main_metric,
+                num_epochs=num_epochs, classifier_criterion=classifier_criterion,
+                classifier_optimiser=classifier_optimiser, discriminator_criterion=discriminator_criterion,
+                discriminator_optimiser=discriminator_optimiser, discriminator_weight=discriminator_weight,
+                device=device, channel_name_to_index=channel_name_to_index,
+                prediction_activation_function=prediction_activation_function, verbose=verbose,
+                target_scaler=target_scaler
+            )
+
+    def _train_model_with_domain_adversarial_learning(
             self, *, train_loader, val_loader, metrics, main_metric, num_epochs, classifier_criterion,
             classifier_optimiser, discriminator_criterion, discriminator_optimiser, discriminator_weight, device,
             channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
@@ -336,11 +359,11 @@ class MainRBPModel(nn.Module):
         # Return the histories
         return train_history, val_history
 
-    def train_model(self, *, train_loader, val_loader, metrics, main_metric, num_epochs, criterion, optimiser, device,
-                    channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,):
+    def _train_model(self, *, train_loader, val_loader, metrics, main_metric, num_epochs, criterion, optimiser, device,
+                     channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,):
         """
         Method for training
-        # TODO: NEED TO FIX SUB IDS!!!!
+
         Parameters
         ----------
         train_loader : torch.utils.data.DataLoader
