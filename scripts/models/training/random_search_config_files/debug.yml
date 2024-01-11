@@ -1,7 +1,7 @@
 DL Architecture:
   kwargs:
-    cnn_units: 64
-    depth: 6
+    cnn_units: 8
+    depth: 3
     num_classes: 1
   model: InceptionNetwork
 Training:
