@@ -155,12 +155,13 @@ def main():
         # (Maybe) create optimiser and loss for domain discriminator
         if config["DomainDiscriminator"] is not None:
             discriminator_optimiser = optim.Adam(
-                model.parameters(), lr=config["DomainDiscriminator"]["learning_rate"],
-                betas=(config["DomainDiscriminator"]["beta_1"], config["DomainDiscriminator"]["beta_2"]),
-                eps=config["DomainDiscriminator"]["epsilon"]
+                model.parameters(), lr=config["DomainDiscriminator"]["training"]["learning_rate"],
+                betas=(config["DomainDiscriminator"]["training"]["beta_1"],
+                       config["DomainDiscriminator"]["training"]["beta_2"]),
+                eps=config["DomainDiscriminator"]["training"]["epsilon"]
             )
-            discriminator_criterion = get_loss_function(loss=config["DomainDiscriminator"]["loss"])
-            discriminator_weight = config["DomainDiscriminator"]["lambda"]
+            discriminator_criterion = get_loss_function(loss=config["DomainDiscriminator"]["training"]["loss"])
+            discriminator_weight = config["DomainDiscriminator"]["training"]["lambda"]
         else:
             discriminator_optimiser = None
             discriminator_criterion = None
