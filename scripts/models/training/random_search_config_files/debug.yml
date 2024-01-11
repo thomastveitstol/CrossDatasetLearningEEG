@@ -15,7 +15,7 @@ DomainDiscriminator:
     beta_2: 0.999
     epsilon: 1.0e-08
     loss: CrossEntropyLoss
-    lambda: 100
+    lambda: 25
 Training:
   Data Split:
     kwargs:
