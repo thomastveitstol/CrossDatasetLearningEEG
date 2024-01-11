@@ -4,7 +4,7 @@ import torch.nn as nn
 def get_loss_function(loss):
     # All available loss functions must be included here
     available_losses = (nn.MSELoss(reduction="mean"), nn.L1Loss(reduction="mean"), nn.BCELoss(reduction="mean"),
-                        nn.BCEWithLogitsLoss(reduction="mean"))
+                        nn.BCEWithLogitsLoss(reduction="mean"), nn.CrossEntropyLoss(reduction="mean"))
 
     # Loop through and select the correct one
     for available_loss in available_losses:
