@@ -170,7 +170,7 @@ class MainRBPModel(nn.Module):
         # ----------------
         # Pass through both the classifier and domain discriminator
         # ----------------
-        return self._mts_module.classify_latent_features(x), self._domain_discriminator(x)
+        return self._mts_module.classify_latent_features(x), self._domain_discriminator(x)  # type: ignore[misc]
 
     # ----------------
     # Methods for fitting channel systems
@@ -361,7 +361,7 @@ class MainRBPModel(nn.Module):
                 best_metrics = val_history.newest_metrics
 
             # Set the parameters back to those of the best model
-        self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})
+        self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})  # type: ignore[arg-type]
 
         # Return the histories
         return train_history, val_history
@@ -508,7 +508,7 @@ class MainRBPModel(nn.Module):
                 best_metrics = val_history.newest_metrics
 
         # Set the parameters back to those of the best model
-        self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})
+        self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})  # type: ignore[arg-type]
 
         # Return the histories
         return train_history, val_history
