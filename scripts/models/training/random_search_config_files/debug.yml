@@ -7,7 +7,7 @@ DL Architecture:
 DomainDiscriminator:
   name: FCModule
   kwargs:
-    hidden_units: [ 64, 64 ]
+    hidden_units: [ 64 ]
     num_classes: 4
   training:
     learning_rate: 0.0001
