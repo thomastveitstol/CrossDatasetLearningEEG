@@ -15,7 +15,7 @@ DomainDiscriminator:
     beta_2: 0.999
     epsilon: 1.0e-08
     loss: CrossEntropyLoss
-    lambda: 500
+    lambda: 100
 Training:
   Data Split:
     kwargs:
@@ -47,10 +47,10 @@ Training:
       kwargs: {}
       name: ZNormalisation
   batch_size: 16
-  learning_rate: 1.0e-05
-  eps: 1.0e-07
-  beta_1: 0.25
-  beta_2: 0.29
+  learning_rate: 1.0e-04
+  eps: 1.0e-08
+  beta_1: 0.9
+  beta_2: 0.999
   loss: MSELoss
   main_metric: mae
   metrics: regression
