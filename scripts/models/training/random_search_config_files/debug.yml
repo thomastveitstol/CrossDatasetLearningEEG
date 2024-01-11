@@ -4,8 +4,19 @@ DL Architecture:
     depth: 3
     num_classes: 1
   model: InceptionNetwork
+DomainDiscriminator:
+  name: FCModule
+  kwargs:
+    hidden_units: [ 5, 5, 5 ]
+    num_classes: 4
+  training:
+    learning_rate: 0.0001
+    beta_1: 0.9
+    beta_2: 0.999
+    epsilon: 1.0e-08
+    loss: CrossEntropyLoss
+    lambda: 20
 Training:
-  DomainDiscriminator: null
   Data Split:
     kwargs:
       seed: 42

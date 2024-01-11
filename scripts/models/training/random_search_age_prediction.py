@@ -88,7 +88,8 @@ def main():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
 
             model = MainRBPModel.from_config(rbp_config=config["Varied Numbers of Channels"]["RegionBasedPooling"],
-                                             mts_config=config["DL Architecture"]).to(device)
+                                             mts_config=config["DL Architecture"],
+                                             discriminator_config=config["DomainDiscriminator"]).to(device)
 
         # -----------------
         # Train model
@@ -152,14 +153,14 @@ def main():
         criterion = get_loss_function(loss=train_config["loss"])
 
         # (Maybe) create optimiser and loss for domain discriminator
-        if train_config["DomainDiscriminator"] is not None:
+        if config["DomainDiscriminator"] is not None:
             discriminator_optimiser = optim.Adam(
-                model.parameters(), lr=train_config["DomainDiscriminator"]["learning_rate"],
-                betas=(train_config["DomainDiscriminator"]["beta_1"], train_config["DomainDiscriminator"]["beta_2"]),
-                eps=train_config["DomainDiscriminator"]["epsilon"]
+                model.parameters(), lr=config["DomainDiscriminator"]["learning_rate"],
+                betas=(config["DomainDiscriminator"]["beta_1"], config["DomainDiscriminator"]["beta_2"]),
+                eps=config["DomainDiscriminator"]["epsilon"]
             )
-            discriminator_criterion = get_loss_function(loss=train_config["DomainDiscriminator"]["loss"])
-            discriminator_weight = train_config["DomainDiscriminator"]["lambda"]
+            discriminator_criterion = get_loss_function(loss=config["DomainDiscriminator"]["loss"])
+            discriminator_weight = config["DomainDiscriminator"]["lambda"]
         else:
             discriminator_optimiser = None
             discriminator_criterion = None
