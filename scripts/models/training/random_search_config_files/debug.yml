@@ -1,13 +1,13 @@
 DL Architecture:
   kwargs:
-    cnn_units: 8
-    depth: 3
+    cnn_units: 32
+    depth: 15
     num_classes: 1
   model: InceptionNetwork
 DomainDiscriminator:
   name: FCModule
   kwargs:
-    hidden_units: [ 5, 5, 5 ]
+    hidden_units: [ 64, 64 ]
     num_classes: 4
   training:
     learning_rate: 0.0001
@@ -52,7 +52,7 @@ Training:
   beta_1: 0.25
   beta_2: 0.29
   loss: MSELoss
-  main_metric: spearman_rho
+  main_metric: mae
   metrics: regression
   num_epochs: 50
   target: age
