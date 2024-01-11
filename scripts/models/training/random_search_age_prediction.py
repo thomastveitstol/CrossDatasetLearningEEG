@@ -147,7 +147,8 @@ def main():
         val_loader = DataLoader(dataset=val_gen, batch_size=train_config["batch_size"], shuffle=True)
 
         # Create optimiser and loss
-        optimiser = optim.Adam(model.parameters(), lr=train_config["learning_rate"])
+        optimiser = optim.Adam(model.parameters(), lr=train_config["learning_rate"],
+                               betas=(train_config["beta_1"], train_config["beta_1"]), eps=train_config["eps"])
         criterion = get_loss_function(loss=train_config["loss"])
 
         # Train model
