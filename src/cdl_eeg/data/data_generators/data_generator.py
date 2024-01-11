@@ -257,6 +257,38 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
         """
         return tuple(self.get_subject_from_idx(item=item) for item in items)
 
+    def get_dataset_indices_from_subjects(self, subjects):
+        """
+        Get the dataset indices from a tuple of subjects
+
+        Parameters
+        ----------
+        subjects : tuple[Subject, ...]
+
+        Returns
+        -------
+        torch.Tensor
+        """
+        # Get the dictionary mapping from dataset name to dataset index
+        dataset_mapping = self.dataset_indices
+
+        # return indices as a torch tensor
+        return torch.tensor([dataset_mapping[subject.dataset_name] for subject in subjects])
+
+    # --------------
+    # Properties
+    # --------------
+    @property
+    def dataset_names(self):
+        """Get the dataset names included in the data. The order is as the keys of the data passed to the __init__
+        method"""
+        return tuple(self._data.keys())
+
+    @property
+    def dataset_indices(self):
+        """Get a dictionary mapping the dataset name to the dataset index"""
+        return {dataset_name: i for i, dataset_name in enumerate(self._data)}
+
 
 # ----------------
 # Functions
