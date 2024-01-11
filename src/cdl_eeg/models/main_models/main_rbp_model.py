@@ -277,7 +277,8 @@ class MainRBPModel(nn.Module):
                                                                use_domain_discriminator=True)
 
                 # Compute dataset belonging (targets for discriminator)
-                discriminator_targets = train_loader.dataset.get_dataset_indices_from_subjects(subjects=subjects)
+                discriminator_targets = train_loader.dataset.get_dataset_indices_from_subjects(
+                    subjects=subjects).to(device)
 
                 # Compute loss
                 loss = (classifier_criterion(classifier_output, y_train)
