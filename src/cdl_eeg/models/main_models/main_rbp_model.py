@@ -6,6 +6,7 @@ import torch.nn as nn
 from sklearn.manifold import TSNE
 
 from cdl_eeg.data.data_generators.data_generator import strip_tensors
+from cdl_eeg.models.domain_discriminators.getter import get_domain_discriminator
 from cdl_eeg.models.metrics import Histories, is_improved_model
 from cdl_eeg.models.mts_modules.getter import get_mts_module
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RegionBasedPooling, RBPDesign, RBPPoolType
@@ -21,7 +22,8 @@ class MainRBPModel(nn.Module):
     PS: Merges channel splits by concatenation
     """
 
-    def __init__(self, *, mts_module, mts_module_kwargs, rbp_designs, normalise_region_representations=True):
+    def __init__(self, *, mts_module, mts_module_kwargs, rbp_designs, normalise_region_representations=True,
+                 domain_discriminator=None, domain_discriminator_kwargs=None):
         """
         Initialise
 
@@ -46,6 +48,18 @@ class MainRBPModel(nn.Module):
         self._mts_module = get_mts_module(
             mts_module_name=mts_module, **{"in_channels": self._region_based_pooling.num_regions, **mts_module_kwargs}
         )
+
+        # ----------------
+        # (Maybe) create domain discriminator
+        # ----------------
+        if domain_discriminator is None:
+            self._domain_discriminator = None
+        else:
+            # Set kwargs to empty dict if none are passed
+            domain_discriminator_kwargs = dict() if domain_discriminator_kwargs is None else domain_discriminator_kwargs
+            self._domain_discriminator = get_domain_discriminator(
+                name=domain_discriminator, **domain_discriminator_kwargs
+            )
 
     @classmethod
     def from_config(cls, rbp_config, mts_config):
@@ -77,6 +91,9 @@ class MainRBPModel(nn.Module):
                    rbp_designs=tuple(rbp_designs),
                    normalise_region_representations=rbp_config["normalise_region_representations"])
 
+    # ----------------
+    # Methods for forward pass and related
+    # ----------------
     def pre_compute(self, input_tensors):
         """
         Pre-compute
@@ -91,7 +108,7 @@ class MainRBPModel(nn.Module):
         """
         return self._region_based_pooling.pre_compute(input_tensors)
 
-    def forward(self, input_tensors, *, channel_name_to_index, pre_computed=None):
+    def _forward(self, input_tensors, *, channel_name_to_index, pre_computed=None):
         """
         Forward method
 
@@ -136,6 +153,22 @@ class MainRBPModel(nn.Module):
 
         # Pass through MTS module and return
         return self._mts_module.extract_latent_features(x, method=method)
+
+    def forward(self, input_tensors, *, channel_name_to_index, pre_computed=None, use_domain_discriminator=False):
+        # If no domain discriminator is used, just run the normal forward method
+        if not use_domain_discriminator:
+            return self._forward(input_tensors, channel_name_to_index=channel_name_to_index, pre_computed=pre_computed)
+
+        # ----------------
+        # Extract latent features
+        # ----------------
+        x = self.extract_latent_features(input_tensors, channel_name_to_index=channel_name_to_index,
+                                         pre_computed=pre_computed, method=domain_discriminator)
+
+        # ----------------
+        # Pass through both the classifier and domain discriminator
+        # ----------------
+        return self._mts_module.classify_latent_features(x), self._domain_discriminator(x)
 
     # ----------------
     # Methods for fitting channel systems
