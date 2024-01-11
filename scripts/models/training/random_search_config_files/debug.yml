@@ -5,6 +5,7 @@ DL Architecture:
     num_classes: 1
   model: InceptionNetwork
 Training:
+  DomainDiscriminator: null
   Data Split:
     kwargs:
       seed: 42
