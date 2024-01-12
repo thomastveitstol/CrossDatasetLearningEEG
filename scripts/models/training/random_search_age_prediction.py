@@ -86,7 +86,7 @@ def main():
         # Filter some warnings from Voronoi split
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
-
+            discriminator_config = None if config["DomainDiscriminator"] is None else config["DomainDiscriminator"]
             model = MainRBPModel.from_config(rbp_config=config["Varied Numbers of Channels"]["RegionBasedPooling"],
                                              mts_config=config["DL Architecture"],
                                              discriminator_config=config["DomainDiscriminator"]).to(device)

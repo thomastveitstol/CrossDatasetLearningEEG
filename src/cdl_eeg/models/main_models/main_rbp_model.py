@@ -68,7 +68,7 @@ class MainRBPModel(nn.Module):
             )
 
     @classmethod
-    def from_config(cls, rbp_config, mts_config, discriminator_config):
+    def from_config(cls, rbp_config, mts_config, discriminator_config=None):
         # -----------------
         # Read RBP designs
         # -----------------
@@ -96,8 +96,8 @@ class MainRBPModel(nn.Module):
         return cls(mts_module=mts_design["model"], mts_module_kwargs=mts_design["kwargs"],
                    rbp_designs=tuple(rbp_designs),
                    normalise_region_representations=rbp_config["normalise_region_representations"],
-                   domain_discriminator=discriminator_config["name"],
-                   domain_discriminator_kwargs=discriminator_config["kwargs"])
+                   domain_discriminator=None if discriminator_config is None else discriminator_config["name"],
+                   domain_discriminator_kwargs=None if discriminator_config is None else discriminator_config["kwargs"])
 
     # ----------------
     # Methods for forward pass and related
