@@ -186,22 +186,21 @@ class MainRBPModel(nn.Module):
     # ----------------
     def train_model(
             self, *, train_loader, val_loader, metrics, main_metric, num_epochs, classifier_criterion,
-            classifier_optimiser, discriminator_criterion=None, discriminator_optimiser=None, discriminator_weight=None,
-            device, channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
+            optimiser, discriminator_criterion=None, discriminator_weight=None, device, channel_name_to_index,
+            prediction_activation_function=None, verbose=True, target_scaler=None):
         if any(discriminator_arg is None for discriminator_arg
-               in (discriminator_criterion, discriminator_optimiser, discriminator_weight)):
+               in (discriminator_criterion, discriminator_weight)):
             return self._train_model(
                 train_loader=train_loader, val_loader=val_loader, metrics=metrics, main_metric=main_metric,
-                num_epochs=num_epochs, criterion=classifier_criterion, optimiser=classifier_optimiser, device=device,
+                num_epochs=num_epochs, criterion=classifier_criterion, optimiser=optimiser, device=device,
                 channel_name_to_index=channel_name_to_index, verbose=verbose, target_scaler=target_scaler,
                 prediction_activation_function=prediction_activation_function
             )
         else:
             return self._train_model_with_domain_adversarial_learning(
                 train_loader=train_loader, val_loader=val_loader, metrics=metrics, main_metric=main_metric,
-                num_epochs=num_epochs, classifier_criterion=classifier_criterion,
-                classifier_optimiser=classifier_optimiser, discriminator_criterion=discriminator_criterion,
-                discriminator_optimiser=discriminator_optimiser, discriminator_weight=discriminator_weight,
+                num_epochs=num_epochs, classifier_criterion=classifier_criterion, optimiser=optimiser,
+                discriminator_criterion=discriminator_criterion, discriminator_weight=discriminator_weight,
                 device=device, channel_name_to_index=channel_name_to_index,
                 prediction_activation_function=prediction_activation_function, verbose=verbose,
                 target_scaler=target_scaler
@@ -209,7 +208,7 @@ class MainRBPModel(nn.Module):
 
     def _train_model_with_domain_adversarial_learning(
             self, *, train_loader, val_loader, metrics, main_metric, num_epochs, classifier_criterion,
-            classifier_optimiser, discriminator_criterion, discriminator_optimiser, discriminator_weight, device,
+            optimiser, discriminator_criterion, discriminator_weight, device,
             channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
         """
         Method for training with domain adversarial learning
@@ -222,9 +221,8 @@ class MainRBPModel(nn.Module):
         main_metric
         num_epochs
         classifier_criterion
-        classifier_optimiser
+        optimiser
         discriminator_criterion
-        discriminator_optimiser
         discriminator_weight : float
         device
         channel_name_to_index
@@ -285,11 +283,9 @@ class MainRBPModel(nn.Module):
                         - discriminator_weight * discriminator_criterion(discriminator_output, discriminator_targets))
 
                 # Optimise
-                classifier_optimiser.zero_grad()
-                discriminator_optimiser.zero_grad()
+                optimiser.zero_grad()
                 loss.backward()
-                classifier_optimiser.step()  # Todo: is this correct???
-                discriminator_optimiser.step()
+                optimiser.step()  # Todo: is this correct???
 
                 # Update train history
                 # todo: see if you can optimise more here

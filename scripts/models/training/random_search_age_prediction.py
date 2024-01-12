@@ -154,27 +154,19 @@ def main():
 
         # (Maybe) create optimiser and loss for domain discriminator
         if config["DomainDiscriminator"] is not None:
-            discriminator_optimiser = optim.Adam(
-                model.parameters(), lr=config["DomainDiscriminator"]["training"]["learning_rate"],
-                betas=(config["DomainDiscriminator"]["training"]["beta_1"],
-                       config["DomainDiscriminator"]["training"]["beta_2"]),
-                eps=config["DomainDiscriminator"]["training"]["epsilon"]
-            )
             discriminator_criterion = get_loss_function(loss=config["DomainDiscriminator"]["training"]["loss"])
             discriminator_weight = config["DomainDiscriminator"]["training"]["lambda"]
         else:
-            discriminator_optimiser = None
             discriminator_criterion = None
             discriminator_weight = None
 
         # Train model
         train_history, val_history = model.train_model(
             train_loader=train_loader, val_loader=val_loader, metrics=train_config["metrics"],
-            main_metric=train_config["main_metric"], classifier_criterion=criterion, classifier_optimiser=optimiser,
-            discriminator_criterion=discriminator_criterion, discriminator_optimiser=discriminator_optimiser,
-            discriminator_weight=discriminator_weight, num_epochs=train_config["num_epochs"],
-            verbose=train_config["verbose"], channel_name_to_index=channel_name_to_index, device=device,
-            target_scaler=target_scaler
+            main_metric=train_config["main_metric"], classifier_criterion=criterion, optimiser=optimiser,
+            discriminator_criterion=discriminator_criterion, discriminator_weight=discriminator_weight,
+            num_epochs=train_config["num_epochs"], verbose=train_config["verbose"],
+            channel_name_to_index=channel_name_to_index, device=device, target_scaler=target_scaler
         )
 
         # -----------------
