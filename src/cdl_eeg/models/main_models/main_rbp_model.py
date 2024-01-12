@@ -285,7 +285,8 @@ class MainRBPModel(nn.Module):
                 # Optimise
                 optimiser.zero_grad()
                 loss.backward()
-                optimiser.step()  # Todo: is this correct???
+                optimiser.step()  # Todo: this is clearly incorrect, as there is nothing which actually makes the
+                #   discriminator want to classify correctly
 
                 # Update train history
                 # todo: see if you can optimise more here
