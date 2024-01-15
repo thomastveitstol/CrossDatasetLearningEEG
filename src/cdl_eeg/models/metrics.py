@@ -68,6 +68,7 @@ class Histories:
     >>> Histories.get_available_regression_metrics()
     ('mae', 'mape', 'mse', 'pearson_r', 'spearman_rho')
     >>> Histories.get_available_multiclass_classification_metrics()
+    ('acc', 'balanced_acc', 'ce_loss', 'kappa', 'mcc')
     """
 
     __slots__ = ("_history", "_prediction_history", "_splits_histories", "_epoch_y_pred", "_epoch_y_true",
