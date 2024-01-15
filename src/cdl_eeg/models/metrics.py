@@ -14,7 +14,7 @@ import pandas
 from matplotlib import pyplot
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, roc_auc_score, \
-    r2_score, accuracy_score, balanced_accuracy_score, matthews_corrcoef, cohen_kappa_score
+    r2_score, accuracy_score, balanced_accuracy_score, matthews_corrcoef, cohen_kappa_score, log_loss
 import torch
 
 from cdl_eeg.data.data_split import Subject
@@ -171,9 +171,21 @@ class Histories:
         # Store prediction in predictions history
         for prediction, subject in zip(y_pred, subjects):
             if subject in self._prediction_history:
-                self._prediction_history[subject].append(float(prediction.cpu()))
+                if prediction.size()[0] > 1:
+                    _prediction = (float(pred) for pred in prediction.cpu().tolist())
+                elif prediction.size()[0] == 1:
+                    _prediction = float(prediction)
+                else:
+                    raise ValueError("This should never happen")
+                self._prediction_history[subject].append(_prediction)
             else:
-                self._prediction_history[subject] = [float(prediction.cpu())]
+                if prediction.size()[0] > 1:
+                    _prediction = (float(pred) for pred in prediction.cpu().tolist())
+                elif prediction.size()[0] == 1:
+                    _prediction = float(prediction)
+                else:
+                    raise ValueError("This should never happen")
+                self._prediction_history[subject] = [_prediction]
 
         # Store the corresponding subjects, if provided
         if subjects is not None:
@@ -477,7 +489,7 @@ class Histories:
     @staticmethod
     @multiclass_classification_metric
     def kappa(y_pred: torch.Tensor, y_true: torch.Tensor):
-        return cohen_kappa_score(y_pred=y_pred.cpu().argmax(dim=-1), y_true=y_true.cpu())
+        return cohen_kappa_score(y1=y_pred.cpu().argmax(dim=-1), y2=y_true.cpu())
 
     @staticmethod
     @classification_metric
@@ -492,7 +504,7 @@ class Histories:
     @staticmethod
     @multiclass_classification_metric
     def ce_loss(y_pred: torch.Tensor, y_true: torch.Tensor):
-        return log_loss(y_pred=y_pred.cpu().argmax(dim=-1), y_true=y_true.cpu())
+        return log_loss(y_pred=y_pred.cpu(), y_true=y_true.cpu())
 
 
 # ----------------
@@ -632,14 +644,13 @@ def is_improved_model(old_metrics, new_metrics, main_metric):
 
 
 if __name__ == "__main__":
-    from sklearn.metrics import log_loss
 
     scores_ = torch.tensor([
         [0.1, 0.2, 0.7],
         [0.5, 0.2, 0.3],
         [0.3, 0.4, 0.3],
         [0.5, 0.4, 0.1]
-    ])
+    ]).argmax(dim=-1)
 
     targets_ = torch.tensor([
         [0, 0, 1],
@@ -648,4 +659,4 @@ if __name__ == "__main__":
         [0, 1, 0]
     ]).argmax(dim=-1)
     print(torch.sum(scores_, dim=-1))
-    print(f"Multiclass performance: {log_loss(targets_, scores_)}")
+    print(f"Multiclass performance: {cohen_kappa_score(targets_, scores_)}")
