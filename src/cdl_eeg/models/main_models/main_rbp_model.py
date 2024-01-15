@@ -172,7 +172,7 @@ class MainRBPModel(nn.Module):
         # ----------------
         # Adding a gradient reversal layer to the features passed to domain discriminator
         # todo: I think alpha can be set to 1 without loss of generality, as long as the weighing in the loss is varied
-        gradient_reversed_x = ReverseLayerF.apply(x, alpha=1.)
+        gradient_reversed_x = ReverseLayerF.apply(x, 1.)
 
         return self._mts_module.classify_latent_features(x), self._domain_discriminator(gradient_reversed_x)
 
