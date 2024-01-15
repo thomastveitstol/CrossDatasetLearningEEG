@@ -234,7 +234,6 @@ class MainRBPModel(nn.Module):
             # ----------------
             self.train()
             for x_train, train_pre_computed, y_train, subject_indices in train_loader:
-                # todo: Only works for train loaders with this specific __getitem__ return
                 # Strip the dictionaries for 'ghost tensors'
                 x_train = strip_tensors(x_train)
                 y_train = strip_tensors(y_train)
