@@ -7,7 +7,6 @@ https://github.com/thomastveitstol/RegionBasedPoolingEEG/blob/master/src/metrics
 Author: Thomas Tveitstøl (Oslo University Hospital)
 """
 import os
-import random
 import warnings
 from typing import Dict, List, Tuple, Optional, Any, NamedTuple
 
@@ -36,6 +35,7 @@ def regression_metric(func):
 def classification_metric(func):
     setattr(func, "_is_classification_metric", True)
     return func
+
 
 def multiclass_classification_metric(func):
     setattr(func, "_is_multiclass_classification_metric", True)
@@ -631,9 +631,7 @@ def is_improved_model(old_metrics, new_metrics, main_metric):
 
 
 if __name__ == "__main__":
-    import numpy
-
-    from sklearn.metrics import accuracy_score, log_loss
+    from sklearn.metrics import log_loss
 
     scores_ = torch.tensor([
         [0.1, 0.2, 0.7],
