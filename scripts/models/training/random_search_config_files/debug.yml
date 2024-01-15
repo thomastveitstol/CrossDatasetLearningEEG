@@ -55,7 +55,7 @@ Training:
   loss: MSELoss
   main_metric: mae
   metrics: regression
-  num_epochs: 7
+  num_epochs: 50
   target: age
   val_split: 0.2
   verbose: true
