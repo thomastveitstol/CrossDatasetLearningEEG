@@ -4,7 +4,19 @@ DL Architecture:
     depth: 15
     num_classes: 1
   model: InceptionNetwork
-DomainDiscriminator: null
+DomainDiscriminator:
+  name: FCModule
+  kwargs:
+    hidden_units: [ 64 ]
+    num_classes: 4
+  training:
+    learning_rate: 0.0001
+    beta_1: 0.9
+    beta_2: 0.999
+    epsilon: 1.0e-08
+    loss: CrossEntropyLoss
+    lambda: 0.1
+    metrics: multiclass_classification
 Training:
   Data Split:
     kwargs:
@@ -43,7 +55,7 @@ Training:
   loss: MSELoss
   main_metric: mae
   metrics: regression
-  num_epochs: 1000
+  num_epochs: 7
   target: age
   val_split: 0.2
   verbose: true
