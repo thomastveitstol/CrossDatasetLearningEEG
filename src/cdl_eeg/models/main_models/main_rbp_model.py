@@ -1,4 +1,5 @@
 import copy
+import warnings
 from typing import List, Dict
 
 import enlighten
@@ -212,12 +213,15 @@ class MainRBPModel(nn.Module):
 
     def _train_model_with_domain_adversarial_learning(
             self, *, train_loader, val_loader, metrics, main_metric, num_epochs, classifier_criterion,
-            optimiser, discriminator_criterion, discriminator_weight, device,
+            optimiser, discriminator_criterion, discriminator_weight, discriminator_metrics, device,
             channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
         """Method for training with domain adversarial learning"""
         # Defining histories objects
         train_history = Histories(metrics=metrics)
         val_history = Histories(metrics=metrics, name="val")
+
+        dd_train_history = Histories(metrics=discriminator_metrics, name="dd")
+        # dd_val_history = Histories(metrics=discriminator_metrics, name="val_dd")
 
         # ------------------------
         # Fit model
@@ -268,7 +272,7 @@ class MainRBPModel(nn.Module):
                 optimiser.step()  # Todo: this is clearly incorrect, as there is nothing which actually makes the
                 #   discriminator want to classify correctly
 
-                # Update train history
+                # Update train histories
                 # todo: see if you can optimise more here
                 with torch.no_grad():
                     y_pred = torch.clone(classifier_output)
@@ -281,11 +285,20 @@ class MainRBPModel(nn.Module):
                         y_train = target_scaler.inv_transform(scaled_data=y_train)
                     train_history.store_batch_evaluation(y_pred=y_pred, y_true=y_train, subjects=subjects)
 
+                    # Domain discriminator metrics
+                    if isinstance(discriminator_criterion, nn.CrossEntropyLoss):
+                        discriminator_output = torch.softmax(discriminator_output, dim=-1)
+                    else:
+                        warnings.warn(f"No activation function used with selected loss-function "
+                                      f"'{type(discriminator_criterion).__name__}'")
+                    dd_train_history.store_batch_evaluation(y_pred=discriminator_output, y_true=discriminator_targets)
+
                 # Update progress bar
                 pbar.update()
 
             # Finalise epoch for train history object
             train_history.on_epoch_end(verbose=verbose)
+            dd_train_history.on_epoch_end()
 
             # ----------------
             # Validation
