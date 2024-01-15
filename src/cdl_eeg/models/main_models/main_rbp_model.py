@@ -214,30 +214,7 @@ class MainRBPModel(nn.Module):
             self, *, train_loader, val_loader, metrics, main_metric, num_epochs, classifier_criterion,
             optimiser, discriminator_criterion, discriminator_weight, device,
             channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
-        """
-        Method for training with domain adversarial learning
-
-        Parameters
-        ----------
-        train_loader
-        val_loader
-        metrics
-        main_metric
-        num_epochs
-        classifier_criterion
-        optimiser
-        discriminator_criterion
-        discriminator_weight : float
-        device
-        channel_name_to_index
-        prediction_activation_function
-        verbose
-        target_scaler
-
-        Returns
-        -------
-
-        """
+        """Method for training with domain adversarial learning"""
         # Defining histories objects
         train_history = Histories(metrics=metrics)
         val_history = Histories(metrics=metrics, name="val")
