@@ -156,17 +156,20 @@ def main():
         if config["DomainDiscriminator"] is not None:
             discriminator_criterion = get_loss_function(loss=config["DomainDiscriminator"]["training"]["loss"])
             discriminator_weight = config["DomainDiscriminator"]["training"]["lambda"]
+            discriminator_metrics = config["DomainDiscriminator"]["training"]["metrics"]
         else:
             discriminator_criterion = None
             discriminator_weight = None
+            discriminator_metrics = None
 
         # Train model
         train_history, val_history = model.train_model(
             train_loader=train_loader, val_loader=val_loader, metrics=train_config["metrics"],
             main_metric=train_config["main_metric"], classifier_criterion=criterion, optimiser=optimiser,
             discriminator_criterion=discriminator_criterion, discriminator_weight=discriminator_weight,
-            num_epochs=train_config["num_epochs"], verbose=train_config["verbose"],
-            channel_name_to_index=channel_name_to_index, device=device, target_scaler=target_scaler
+            discriminator_metrics=discriminator_metrics, num_epochs=train_config["num_epochs"],
+            verbose=train_config["verbose"], channel_name_to_index=channel_name_to_index, device=device,
+            target_scaler=target_scaler
         )
 
         # -----------------
