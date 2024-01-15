@@ -19,7 +19,7 @@ from cdl_eeg.data.paths import get_results_dir
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
 from cdl_eeg.models.losses import get_loss_function
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
-from cdl_eeg.models.metrics import save_histories_plots
+from cdl_eeg.models.metrics import save_histories_plots, save_discriminator_histories_plots
 from cdl_eeg.models.utils import tensor_dict_to_device
 
 
@@ -186,6 +186,8 @@ def main():
             train_history.save_prediction_history(history_name="train_history", path=fold_path)
             val_history.save_prediction_history(history_name="val_history", path=fold_path)
             dd_train_history.save_prediction_history(history_name="dd_train_history", path=fold_path)
+
+            save_discriminator_histories_plots(path=fold_path, histories=dd_train_history)
 
         # -----------------
         # Test model on test fold

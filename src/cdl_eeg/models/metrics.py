@@ -314,6 +314,10 @@ class Histories:
     # Properties
     # -----------------
     @property
+    def name(self) -> str:
+        return "UNNAMED" if self._name is None else self._name
+
+    @property
     def history(self):
         # todo: consider returning values as tuples
         return self._history
@@ -510,6 +514,56 @@ class Histories:
 # ----------------
 # Functions
 # ----------------
+def save_discriminator_histories_plots(path, histories):
+    """
+    Function for saving domain discriminator histories plots
+
+    Parameters
+    ----------
+    path : str
+    histories : Histories | tuple[Histories, ...]
+
+    Returns
+    -------
+    None
+    """
+    # Maybe just convert to tuple  todo: check that it is Histories obejct
+    if not isinstance(histories, tuple):
+        histories = (histories,)
+
+    # ----------------
+    # Loop through all metrics
+    # ----------------
+    # Get all available metrics
+    all_metrics = []
+    for history in histories:
+        all_metrics.extend(list(history.history.keys()))
+    all_metrics = set(all_metrics)  # Keep unique ones only
+
+    for metric in all_metrics:
+        pyplot.figure(figsize=(12, 6))
+
+        for history in histories:
+            pyplot.plot(range(1, len(history.history[metric]) + 1), history.history[metric], label=history.name)
+
+        # ------------
+        # Plot cosmetics
+        # ------------
+        font_size = 15
+
+        pyplot.title(f"Performance ({metric.capitalize()})", fontsize=font_size + 5)
+        pyplot.xlabel("Epoch", fontsize=font_size)
+        pyplot.ylabel(metric.capitalize(), fontsize=font_size)
+        pyplot.tick_params(labelsize=font_size)
+        pyplot.legend(fontsize=font_size)
+        pyplot.grid()
+
+        # Save figure and close it
+        pyplot.savefig(os.path.join(path, f"{metric}.png"))
+
+        pyplot.close()
+
+
 def save_histories_plots(path, *, train_history=None, val_history=None, test_history=None):
     """
     Function for saving histories plots
