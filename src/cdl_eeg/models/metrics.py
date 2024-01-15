@@ -172,7 +172,7 @@ class Histories:
         for prediction, subject in zip(y_pred, subjects):
             if subject in self._prediction_history:
                 if prediction.size()[0] > 1:
-                    _prediction = (float(pred) for pred in prediction.cpu().tolist())
+                    _prediction = tuple(float(pred) for pred in prediction.cpu().tolist())
                 elif prediction.size()[0] == 1:
                     _prediction = float(prediction)
                 else:
