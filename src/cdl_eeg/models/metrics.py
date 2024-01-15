@@ -559,7 +559,7 @@ def save_discriminator_histories_plots(path, histories):
         pyplot.grid()
 
         # Save figure and close it
-        pyplot.savefig(os.path.join(path, f"{metric}.png"))
+        pyplot.savefig(os.path.join(path, f"discriminator_{metric}.png"))
 
         pyplot.close()
 
