@@ -191,8 +191,8 @@ class MainRBPModel(nn.Module):
     # ----------------
     def train_model(
             self, *, train_loader, val_loader, metrics, main_metric, num_epochs, classifier_criterion,
-            optimiser, discriminator_criterion=None, discriminator_weight=None, device, channel_name_to_index,
-            prediction_activation_function=None, verbose=True, target_scaler=None):
+            optimiser, discriminator_criterion=None, discriminator_weight=None, discriminator_metrics=None, device,
+            channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
         if any(discriminator_arg is None for discriminator_arg
                in (discriminator_criterion, discriminator_weight)):
             return self._train_model(
@@ -206,7 +206,7 @@ class MainRBPModel(nn.Module):
                 train_loader=train_loader, val_loader=val_loader, metrics=metrics, main_metric=main_metric,
                 num_epochs=num_epochs, classifier_criterion=classifier_criterion, optimiser=optimiser,
                 discriminator_criterion=discriminator_criterion, discriminator_weight=discriminator_weight,
-                device=device, channel_name_to_index=channel_name_to_index,
+                discriminator_metrics=discriminator_metrics, device=device, channel_name_to_index=channel_name_to_index,
                 prediction_activation_function=prediction_activation_function, verbose=verbose,
                 target_scaler=target_scaler
             )
@@ -263,6 +263,11 @@ class MainRBPModel(nn.Module):
                     subjects=subjects).to(device)
 
                 # Compute loss
+                # l1 = classifier_criterion(classifier_output, y_train)
+                # l2 = discriminator_criterion(discriminator_output, discriminator_targets)
+                # print(f"Classifier loss: {float(l1):.4f}")
+                # print(f"Discriminator loss: {float(l2):.4f}")
+
                 loss = (classifier_criterion(classifier_output, y_train)
                         + discriminator_weight * discriminator_criterion(discriminator_output, discriminator_targets))
 
@@ -291,14 +296,15 @@ class MainRBPModel(nn.Module):
                     else:
                         warnings.warn(f"No activation function used with selected loss-function "
                                       f"'{type(discriminator_criterion).__name__}'")
-                    dd_train_history.store_batch_evaluation(y_pred=discriminator_output, y_true=discriminator_targets)
+                    dd_train_history.store_batch_evaluation(y_pred=discriminator_output, y_true=discriminator_targets,
+                                                            subjects=subjects)
 
                 # Update progress bar
                 pbar.update()
 
             # Finalise epoch for train history object
             train_history.on_epoch_end(verbose=verbose)
-            dd_train_history.on_epoch_end()
+            dd_train_history.on_epoch_end(verbose=verbose)
 
             # ----------------
             # Validation
