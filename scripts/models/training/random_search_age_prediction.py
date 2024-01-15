@@ -163,7 +163,7 @@ def main():
             discriminator_metrics = None
 
         # Train model
-        train_history, val_history = model.train_model(
+        histories = model.train_model(
             train_loader=train_loader, val_loader=val_loader, metrics=train_config["metrics"],
             main_metric=train_config["main_metric"], classifier_criterion=criterion, optimiser=optimiser,
             discriminator_criterion=discriminator_criterion, discriminator_weight=discriminator_weight,
@@ -175,8 +175,17 @@ def main():
         # -----------------
         # Save train and validation prediction histories
         # -----------------
-        train_history.save_prediction_history(history_name="train_history", path=fold_path)
-        val_history.save_prediction_history(history_name="val_history", path=fold_path)
+        if config["DomainDiscriminator"] is None:
+            train_history, val_history = histories
+
+            train_history.save_prediction_history(history_name="train_history", path=fold_path)
+            val_history.save_prediction_history(history_name="val_history", path=fold_path)
+        else:
+            train_history, val_history, dd_train_history = histories
+
+            train_history.save_prediction_history(history_name="train_history", path=fold_path)
+            val_history.save_prediction_history(history_name="val_history", path=fold_path)
+            dd_train_history.save_prediction_history(history_name="dd_train_history", path=fold_path)
 
         # -----------------
         # Test model on test fold
