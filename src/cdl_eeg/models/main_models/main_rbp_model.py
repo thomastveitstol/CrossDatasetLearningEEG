@@ -12,7 +12,7 @@ from cdl_eeg.models.domain_discriminators.getter import get_domain_discriminator
 from cdl_eeg.models.metrics import Histories, is_improved_model
 from cdl_eeg.models.mts_modules.getter import get_mts_module
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RegionBasedPooling, RBPDesign, RBPPoolType
-from cdl_eeg.models.utils import tensor_dict_to_device, flatten_targets
+from cdl_eeg.models.utils import tensor_dict_to_device, flatten_targets, ReverseLayerF
 
 
 class MainRBPModel(nn.Module):
@@ -170,7 +170,11 @@ class MainRBPModel(nn.Module):
         # ----------------
         # Pass through both the classifier and domain discriminator
         # ----------------
-        return self._mts_module.classify_latent_features(x), self._domain_discriminator(x)  # type: ignore[misc]
+        # Adding a gradient reversal layer to the features passed to domain discriminator
+        # todo: I think alpha can be set to 1 without loss of generality, as long as the weighing in the loss is varied
+        gradient_reversed_x = ReverseLayerF.apply(x, alpha=1.)
+
+        return self._mts_module.classify_latent_features(x), self._domain_discriminator(gradient_reversed_x)
 
     # ----------------
     # Methods for fitting channel systems
@@ -280,7 +284,7 @@ class MainRBPModel(nn.Module):
 
                 # Compute loss
                 loss = (classifier_criterion(classifier_output, y_train)
-                        - discriminator_weight * discriminator_criterion(discriminator_output, discriminator_targets))
+                        + discriminator_weight * discriminator_criterion(discriminator_output, discriminator_targets))
 
                 # Optimise
                 optimiser.zero_grad()
