@@ -15,7 +15,7 @@ import pandas
 from matplotlib import pyplot
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, roc_auc_score, \
-    r2_score
+    r2_score, accuracy_score, balanced_accuracy_score, matthews_corrcoef, cohen_kappa_score
 import torch
 
 from cdl_eeg.data.data_split import Subject
@@ -35,6 +35,10 @@ def regression_metric(func):
 
 def classification_metric(func):
     setattr(func, "_is_classification_metric", True)
+    return func
+
+def multiclass_classification_metric(func):
+    setattr(func, "_is_multiclass_classification_metric", True)
     return func
 
 
@@ -63,6 +67,7 @@ class Histories:
     ('auc',)
     >>> Histories.get_available_regression_metrics()
     ('mae', 'mape', 'mse', 'pearson_r', 'spearman_rho')
+    >>> Histories.get_available_multiclass_classification_metrics()
     """
 
     __slots__ = ("_history", "_prediction_history", "_splits_histories", "_epoch_y_pred", "_epoch_y_true",
@@ -89,6 +94,8 @@ class Histories:
             metrics = self.get_available_regression_metrics()
         elif metrics == "classification":
             metrics = self.get_available_classification_metrics()
+        elif metrics == "multiclass_classification":
+            metrics = self.get_available_multiclass_classification_metrics()
 
         # ----------------
         # Input checks
@@ -378,6 +385,22 @@ class Histories:
         # Convert to tuple and return
         return tuple(metrics)
 
+    @classmethod
+    def get_available_multiclass_classification_metrics(cls):
+        """Get all multiclass classification metrics available for the class. The classification metric must be a method
+        decorated by @multiclass_classification_metric to be properly registered"""
+        # Get all classification metrics
+        metrics: List[str] = []
+        for method in dir(cls):
+            attribute = getattr(cls, method)
+
+            # Append (as type 'str') if it is a classification metric
+            if callable(attribute) and getattr(attribute, "_is_multiclass_classification_metric", False):
+                metrics.append(method)
+
+        # Convert to tuple and return
+        return tuple(metrics)
+
     # -----------------
     # Metrics
     # todo: make tests and add more metrics
@@ -433,6 +456,42 @@ class Histories:
     @classification_metric
     def auc(y_pred: torch.Tensor, y_true: torch.Tensor):
         return roc_auc_score(y_true=y_true.cpu(), y_score=y_pred.cpu())
+
+    # Multiclass classification metrics
+    @staticmethod
+    @multiclass_classification_metric
+    def acc(y_pred: torch.Tensor, y_true: torch.Tensor):
+        return accuracy_score(y_pred=y_pred.cpu().argmax(dim=-1), y_true=y_true.cpu())
+
+    @staticmethod
+    @multiclass_classification_metric
+    def balanced_acc(y_pred: torch.Tensor, y_true: torch.Tensor):
+        return balanced_accuracy_score(y_pred=y_pred.cpu().argmax(dim=-1), y_true=y_true.cpu())
+
+    @staticmethod
+    @multiclass_classification_metric
+    def mcc(y_pred: torch.Tensor, y_true: torch.Tensor):
+        return matthews_corrcoef(y_pred=y_pred.cpu().argmax(dim=-1), y_true=y_true.cpu())
+
+    @staticmethod
+    @multiclass_classification_metric
+    def kappa(y_pred: torch.Tensor, y_true: torch.Tensor):
+        return cohen_kappa_score(y_pred=y_pred.cpu().argmax(dim=-1), y_true=y_true.cpu())
+
+    @staticmethod
+    @classification_metric
+    def auc_ovo(y_pred: torch.Tensor, y_true: torch.Tensor):
+        return roc_auc_score(y_true=y_true.cpu(), y_score=y_pred.cpu(), multi_class="ovo")
+
+    @staticmethod
+    @classification_metric
+    def auc_ovr(y_pred: torch.Tensor, y_true: torch.Tensor):
+        return roc_auc_score(y_true=y_true.cpu(), y_score=y_pred.cpu(), multi_class="ovr")
+
+    @staticmethod
+    @multiclass_classification_metric
+    def ce_loss(y_pred: torch.Tensor, y_true: torch.Tensor):
+        return log_loss(y_pred=y_pred.cpu().argmax(dim=-1), y_true=y_true.cpu())
 
 
 # ----------------
@@ -572,42 +631,22 @@ def is_improved_model(old_metrics, new_metrics, main_metric):
 
 
 if __name__ == "__main__":
-    # Define splits
-    my_splits = (
-        ({"sex": ("female",), "cognition": ("hc", "mci")},  # Inclusion criteria  todo: NamedTuple
-         {"education": (Criterion((1, 2, 3)), Criterion((4, 5, 6))),
-          "age": (Criterion(("young",)), (Criterion("old",)), Criterion(("young", "old"))),
-          "cognition": (Criterion(("hc",)), Criterion(("mci",)))}),
-        ({"sex": ("male",), "cognition": ("mci", "ad")},  # Inclusion criteria
-         {"education": (Criterion((1, 2)), Criterion((3, 4)), Criterion((5, 6))),
-          "age": (Criterion(("young",)), Criterion(("old",))),
-          "cognition": (Criterion(("ad",)), Criterion(("mci",)))})
-    )
+    import numpy
 
-    # Define subjects
-    my_subjects = []
-    my_sexes = ("male", "female")
-    my_cognitions = ("mci", "hc", "ad")
-    my_ages = ("old", "young")
-    education = (1, 2, 3, 4, 5, 6)
+    from sklearn.metrics import accuracy_score, log_loss
 
-    for i_ in range(10):
-        for j_ in range(13):
-            my_details = {"sex": random.choice(my_sexes), "cognition": random.choice(my_cognitions),
-                          "age": random.choice(my_ages), "education": random.choice(education)}
-            my_subjects.append(Subject(f"P{j_}", f"D{i_}", details=my_details))
-    my_subjects = tuple(my_subjects)  # type: ignore[assignment]
+    scores_ = torch.tensor([
+        [0.1, 0.2, 0.7],
+        [0.5, 0.2, 0.3],
+        [0.3, 0.4, 0.3],
+        [0.5, 0.4, 0.1]
+    ])
 
-    # Create object for tracking metrics
-    my_history = Histories(metrics="regression", splits=my_splits)
-
-    # Pretend to do predictions
-    batch_size = len(my_subjects)
-    my_predictions = torch.rand(size=(batch_size, 1), dtype=torch.float)
-    my_targets = torch.randint(low=0, high=2, size=(batch_size, 1), dtype=torch.float)
-
-    # Pretend that the batch is done
-    my_history.store_batch_evaluation(y_pred=my_predictions, y_true=my_targets, subjects=my_subjects)
-
-    # Pretend that the epoch is done
-    my_history.on_epoch_end(verbose=True, verbose_sub_groups=True)
+    targets_ = torch.tensor([
+        [0, 0, 1],
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 1, 0]
+    ]).argmax(dim=-1)
+    print(torch.sum(scores_, dim=-1))
+    print(f"Multiclass performance: {log_loss(targets_, scores_)}")
