@@ -49,7 +49,8 @@ def main():
     k_fold_config["Training"]["Data Split"] = {"kwargs": {"seed": 42, "num_folds": len(config["Training"]["Datasets"])},
                                                "name": "KFoldDataSplit"}
     if k_fold_config["DomainDiscriminator"] is not None:
-        k_fold_config["DomainDiscriminator"]["kwargs"]["num_classes"] = len(k_fold_config["Training"]["Datasets"])
+        num_train_datasets = len(k_fold_config["Training"]["Datasets"])
+        k_fold_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
     run_experiment(k_fold_config, results_path=os.path.join(results_path, "k_fold_cv"))
 
 
