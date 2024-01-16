@@ -16,6 +16,7 @@ from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, roc_auc_score, \
     r2_score, accuracy_score, balanced_accuracy_score, matthews_corrcoef, cohen_kappa_score, log_loss
 import torch
+from torch import nn
 
 from cdl_eeg.data.data_split import Subject
 from cdl_eeg.data.subject_split import Criterion, filter_subjects, make_subject_splits
@@ -705,7 +706,6 @@ def is_improved_model(old_metrics, new_metrics, main_metric):
 
 
 if __name__ == "__main__":
-    import torch.nn as nn
 
     scores_ = torch.tensor([
         [0.1, 0.2, 0.7],
