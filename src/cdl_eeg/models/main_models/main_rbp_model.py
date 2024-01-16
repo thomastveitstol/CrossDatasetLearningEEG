@@ -290,11 +290,6 @@ class MainRBPModel(nn.Module):
                     train_history.store_batch_evaluation(y_pred=y_pred, y_true=y_train, subjects=subjects)
 
                     # Domain discriminator metrics
-                    if isinstance(discriminator_criterion, nn.CrossEntropyLoss):
-                        discriminator_output = torch.softmax(discriminator_output, dim=-1)
-                    else:
-                        warnings.warn(f"No activation function used with selected loss-function "
-                                      f"'{type(discriminator_criterion).__name__}'")
                     dd_train_history.store_batch_evaluation(y_pred=discriminator_output, y_true=discriminator_targets,
                                                             subjects=subjects)
 
@@ -348,11 +343,6 @@ class MainRBPModel(nn.Module):
                     val_history.store_batch_evaluation(y_pred=y_pred, y_true=y_val, subjects=val_subjects)
 
                     # Domain discriminator metrics
-                    if isinstance(discriminator_criterion, nn.CrossEntropyLoss):
-                        discriminator_output = torch.softmax(discriminator_output, dim=-1)
-                    else:
-                        warnings.warn(f"No activation function used with selected loss-function "
-                                      f"'{type(discriminator_criterion).__name__}'")
                     dd_val_history.store_batch_evaluation(y_pred=discriminator_output, y_true=discriminator_targets,
                                                           subjects=val_subjects)
 

@@ -419,11 +419,10 @@ class Histories:
         return tuple(metrics)
 
     # -----------------
-    # Metrics
+    # Regression metrics
     # todo: make tests and add more metrics
     # todo: add Concordance Correlation Coefficient
     # -----------------
-    # Regression metrics
     @staticmethod
     @regression_metric
     def mse(y_pred: torch.Tensor, y_true: torch.Tensor):
@@ -468,13 +467,19 @@ class Histories:
     def r2_score(y_pred: torch.Tensor, y_true: torch.Tensor):
         return r2_score(y_true=y_true.cpu(), y_pred=y_pred.cpu())
 
+    # -----------------
     # Classification metrics
+    # -----------------
     @staticmethod
     @classification_metric
     def auc(y_pred: torch.Tensor, y_true: torch.Tensor):
         return roc_auc_score(y_true=y_true.cpu(), y_score=y_pred.cpu())
 
+    # -----------------
     # Multiclass classification metrics
+    #
+    # Note that we assume the logits, not the actual probabilities from softmax
+    # -----------------
     @staticmethod
     @multiclass_classification_metric
     def acc(y_pred: torch.Tensor, y_true: torch.Tensor):
@@ -498,24 +503,19 @@ class Histories:
     @staticmethod
     @classification_metric
     def auc_ovo(y_pred: torch.Tensor, y_true: torch.Tensor):
-        return roc_auc_score(y_true=y_true.cpu(), y_score=y_pred.cpu(), multi_class="ovo")
+        return roc_auc_score(y_true=y_true.cpu(), y_score=torch.softmax(y_pred, dim=-1).cpu(), multi_class="ovo")
 
     @staticmethod
     @classification_metric
     def auc_ovr(y_pred: torch.Tensor, y_true: torch.Tensor):
-        return roc_auc_score(y_true=y_true.cpu(), y_score=y_pred.cpu(), multi_class="ovr")
+        return roc_auc_score(y_true=y_true.cpu(), y_score=torch.softmax(y_pred, dim=-1).cpu(), multi_class="ovr")
 
     @staticmethod
     @multiclass_classification_metric
     def ce_loss(y_pred: torch.Tensor, y_true: torch.Tensor):
-        with warnings.catch_warnings():
-            # A UserWarning is often raised because the y_pred values do not sum to one. It seems that they are a little
-            # too conservative
-            warnings.filterwarnings("ignore", category=UserWarning)
-
-            performance = log_loss(y_pred=y_pred.cpu(), y_true=y_true.cpu())
-
-        return performance
+        with torch.no_grad():
+            performance = nn.CrossEntropyLoss(reduction='mean')(y_pred, y_true).cpu()
+        return float(performance)
 
 
 # ----------------
@@ -705,19 +705,22 @@ def is_improved_model(old_metrics, new_metrics, main_metric):
 
 
 if __name__ == "__main__":
+    import torch.nn as nn
 
     scores_ = torch.tensor([
         [0.1, 0.2, 0.7],
         [0.5, 0.2, 0.3],
         [0.3, 0.4, 0.3],
         [0.5, 0.4, 0.1]
-    ])
+    ], dtype=torch.float)
 
     targets_ = torch.tensor([
-        [0, 0, 1],
+        [0, 1, 0],
         [1, 0, 0],
         [0, 1, 0],
         [0, 1, 0]
-    ]).argmax(dim=-1)
+    ], dtype=torch.float).argmax(dim=-1)
     print(torch.sum(scores_, dim=-1))
-    print(f"Multiclass performance: {log_loss(targets_, scores_)}")
+
+    print(f"Multiclass performance (sklearn): {log_loss(['b', 'a', 'b', 'b'], scores_)}")
+    print(f"Multiclass performance (pytorch): {nn.CrossEntropyLoss(reduction='mean')(scores_, targets_)}")
