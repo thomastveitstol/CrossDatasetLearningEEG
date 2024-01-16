@@ -508,7 +508,14 @@ class Histories:
     @staticmethod
     @multiclass_classification_metric
     def ce_loss(y_pred: torch.Tensor, y_true: torch.Tensor):
-        return log_loss(y_pred=y_pred.cpu(), y_true=y_true.cpu())
+        with warnings.catch_warnings():
+            # A UserWarning is often raised because the y_pred values do not sum to one. It seems that they are a little
+            # too conservative
+            warnings.filterwarnings("ignore", category=UserWarning)
+
+            performance = log_loss(y_pred=y_pred.cpu(), y_true=y_true.cpu())
+
+        return performance
 
 
 # ----------------
@@ -704,7 +711,7 @@ if __name__ == "__main__":
         [0.5, 0.2, 0.3],
         [0.3, 0.4, 0.3],
         [0.5, 0.4, 0.1]
-    ]).argmax(dim=-1)
+    ])
 
     targets_ = torch.tensor([
         [0, 0, 1],
@@ -713,4 +720,4 @@ if __name__ == "__main__":
         [0, 1, 0]
     ]).argmax(dim=-1)
     print(torch.sum(scores_, dim=-1))
-    print(f"Multiclass performance: {cohen_kappa_score(targets_, scores_)}")
+    print(f"Multiclass performance: {log_loss(targets_, scores_)}")
