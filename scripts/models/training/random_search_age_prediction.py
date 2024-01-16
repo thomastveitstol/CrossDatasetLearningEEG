@@ -181,13 +181,14 @@ def main():
             train_history.save_prediction_history(history_name="train_history", path=fold_path)
             val_history.save_prediction_history(history_name="val_history", path=fold_path)
         else:
-            train_history, val_history, dd_train_history = histories
+            train_history, val_history, dd_train_history, dd_val_history = histories
 
             train_history.save_prediction_history(history_name="train_history", path=fold_path)
             val_history.save_prediction_history(history_name="val_history", path=fold_path)
             dd_train_history.save_prediction_history(history_name="dd_train_history", path=fold_path)
+            dd_val_history.save_prediction_history(history_name="dd_val_history", path=fold_path)
 
-            save_discriminator_histories_plots(path=fold_path, histories=dd_train_history)
+            save_discriminator_histories_plots(path=fold_path, histories=(dd_train_history, dd_val_history))
 
         # -----------------
         # Test model on test fold

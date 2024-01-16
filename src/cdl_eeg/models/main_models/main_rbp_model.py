@@ -221,7 +221,7 @@ class MainRBPModel(nn.Module):
         val_history = Histories(metrics=metrics, name="val")
 
         dd_train_history = Histories(metrics=discriminator_metrics, name="dd")
-        # dd_val_history = Histories(metrics=discriminator_metrics, name="val_dd")
+        dd_val_history = Histories(metrics=discriminator_metrics, name="val_dd")
 
         # ------------------------
         # Fit model
@@ -302,7 +302,7 @@ class MainRBPModel(nn.Module):
                 # Update progress bar
                 pbar.update()
 
-            # Finalise epoch for train history object
+            # Finalise epoch for train history objects
             train_history.on_epoch_end(verbose=verbose)
             dd_train_history.on_epoch_end(verbose=verbose)
 
@@ -329,8 +329,14 @@ class MainRBPModel(nn.Module):
                     val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
                                              for pre_comp in val_pre_computed)
 
-                    # Forward pass
-                    y_pred = self(x_val, pre_computed=val_pre_computed, channel_name_to_index=channel_name_to_index)
+                    # Forward pass, getting both classifier and domain discriminator outputs
+                    y_pred, discriminator_output = self(x_val, pre_computed=val_pre_computed,
+                                                        channel_name_to_index=channel_name_to_index,
+                                                        use_domain_discriminator=True)
+
+                    # Compute dataset belonging (targets for discriminator)
+                    discriminator_targets = val_loader.dataset.get_dataset_indices_from_subjects(
+                        subjects=val_subjects).to(device)
 
                     # Update validation history
                     if prediction_activation_function is not None:
@@ -342,8 +348,18 @@ class MainRBPModel(nn.Module):
                         y_val = target_scaler.inv_transform(scaled_data=y_val)
                     val_history.store_batch_evaluation(y_pred=y_pred, y_true=y_val, subjects=val_subjects)
 
-                # Finalise epoch for validation history object
+                    # Domain discriminator metrics
+                    if isinstance(discriminator_criterion, nn.CrossEntropyLoss):
+                        discriminator_output = torch.softmax(discriminator_output, dim=-1)
+                    else:
+                        warnings.warn(f"No activation function used with selected loss-function "
+                                      f"'{type(discriminator_criterion).__name__}'")
+                    dd_val_history.store_batch_evaluation(y_pred=discriminator_output, y_true=discriminator_targets,
+                                                          subjects=val_subjects)
+
+                # Finalise epoch for validation history objects
                 val_history.on_epoch_end(verbose=verbose)
+                dd_val_history.on_epoch_end(verbose=verbose)
 
             # ----------------
             # If this is the highest performing model, store it
@@ -360,7 +376,7 @@ class MainRBPModel(nn.Module):
         self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})  # type: ignore[arg-type]
 
         # Return the histories
-        return train_history, val_history, dd_train_history
+        return train_history, val_history, dd_train_history, dd_val_history
 
     def _train_model(self, *, train_loader, val_loader, metrics, main_metric, num_epochs, criterion, optimiser, device,
                      channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,):
