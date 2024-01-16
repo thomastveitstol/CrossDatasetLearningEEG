@@ -8,7 +8,7 @@ Training:
   beta_2: [ 0.99, 0.999, 0.9999 ]
   eps: [ 1.0e-07, 1.0e-08, 1.0e-09 ]
   batch_size: 16
-  num_epochs: 50
+  num_epochs: 5
   verbose: true
   val_split: 0.2
   loss: [ MSELoss, L1Loss ]
@@ -33,7 +33,7 @@ Training:
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     hatlestad_hall:
-      num_subjects: 111
+      num_subjects: 11
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     yulin_wang:
@@ -41,9 +41,25 @@ Training:
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     cau_eeg:
-      num_subjects: 1379
+      num_subjects: 13
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
+
+# -----------------
+# Domain discriminator
+# -----------------
+FCModule: &FCModule
+  hidden_units: [ [], [32], [64], [32, 32], [64, 64], [64, 32] ]
+
+DomainDiscriminator:
+  discriminators:
+    NoDiscriminator: null
+    FCModule: *FCModule
+  training:
+    loss: CrossEntropyLoss
+    lambda: [ 1, 0.1, 0.01 ]
+    metrics: multiclass_classification
+
 
 # -----------------
 # Methods for handling a varied number of channels
@@ -104,7 +120,7 @@ SphericalSplineInterpolation: &SphericalSplineInterpolation [ HatlestadHall, Yul
 
 Varied Numbers of Channels:
   RegionBasedPooling: *RegionBasedPooling
-  SphericalSplineInterpolation: *SphericalSplineInterpolation
+  # SphericalSplineInterpolation: *SphericalSplineInterpolation
 
 
 # -----------------
@@ -114,7 +130,7 @@ Varied Numbers of Channels:
 InceptionNetwork: &InceptionNetwork
   num_classes: 1
   cnn_units: [ 16, 32, 64  ]
-  depth: [ 4, 6, 8, 10 ]
+  depth: [ 3, 6, 9, 12, 15, 18, 21, 24, 27 ]
 
 EEGNetv4MTS: &EEGNetv4MTS
   num_classes: 1
@@ -151,7 +167,7 @@ Deep4NetMTS: &Deep4NetMTS
 
 MTS Module:
   InceptionNetwork: *InceptionNetwork
-  EEGNetv4MTS: *EEGNetv4MTS
-  EEGResNetMTS: *EEGResNetMTS
+  # EEGNetv4MTS: *EEGNetv4MTS
+  # EEGResNetMTS: *EEGResNetMTS
   # ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
-  Deep4NetMTS: *Deep4NetMTS
+  # Deep4NetMTS: *Deep4NetMTS

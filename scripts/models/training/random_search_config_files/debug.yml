@@ -7,7 +7,7 @@ DL Architecture:
 DomainDiscriminator:
   name: FCModule
   kwargs:
-    hidden_units: [ 64 ]
+    # hidden_units: [ 64 ]
     num_classes: 4
   training:
     learning_rate: 0.0001
@@ -55,7 +55,7 @@ Training:
   loss: MSELoss
   main_metric: mae
   metrics: regression
-  num_epochs: 50
+  num_epochs: 3
   target: age
   val_split: 0.2
   verbose: true
