@@ -329,7 +329,7 @@ class MainRBPModel(nn.Module):
                     val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
                                              for pre_comp in val_pre_computed)
 
-                    # Forward pass  todo: why did I use .clone() in the PhD course tasks?
+                    # Forward pass
                     y_pred = self(x_val, pre_computed=val_pre_computed, channel_name_to_index=channel_name_to_index)
 
                     # Update validation history
