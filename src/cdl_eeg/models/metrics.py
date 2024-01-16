@@ -180,7 +180,7 @@ class Histories:
                 self._prediction_history[subject].append(_prediction)
             else:
                 if prediction.size()[0] > 1:
-                    _prediction = (float(pred) for pred in prediction.cpu().tolist())
+                    _prediction = tuple(float(pred) for pred in prediction.cpu().tolist())
                 elif prediction.size()[0] == 1:
                     _prediction = float(prediction)
                 else:
