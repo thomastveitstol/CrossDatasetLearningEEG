@@ -78,9 +78,12 @@ def run_experiment(config, results_path):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-            model = MainRBPModel.from_config(rbp_config=config["Varied Numbers of Channels"]["RegionBasedPooling"],
-                                             mts_config=config["DL Architecture"],
-                                             discriminator_config=config["DomainDiscriminator"]).to(device)
+            model = MainRBPModel.from_config(
+                rbp_config=config["Varied Numbers of Channels"]["RegionBasedPooling"],
+                mts_config=config["DL Architecture"],
+                discriminator_config=None if config["DomainDiscriminator"] is None
+                else config["DomainDiscriminator"]["discriminator"]
+            ).to(device)
 
         # -----------------
         # Train model

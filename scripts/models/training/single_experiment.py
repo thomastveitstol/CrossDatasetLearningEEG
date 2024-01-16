@@ -40,7 +40,8 @@ def main():
     lodo_config = copy.deepcopy(config)
     lodo_config["Training"]["Data Split"] = {"kwargs": {"seed": 42}, "name": "SplitOnDataset"}
     if lodo_config["DomainDiscriminator"] is not None:
-        lodo_config["DomainDiscriminator"]["kwargs"]["num_classes"] = len(lodo_config["Training"]["Datasets"]) - 1
+        num_train_datasets = len(lodo_config["Training"]["Datasets"]) - 1
+        lodo_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
     run_experiment(lodo_config, results_path=os.path.join(results_path, "leave_one_dataset_out"))
 
     # k-fold CV
