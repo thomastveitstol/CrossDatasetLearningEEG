@@ -190,35 +190,37 @@ class MainRBPModel(nn.Module):
     # Methods for training and testing
     # ----------------
     def train_model(
-            self, *, train_loader, val_loader, metrics, main_metric, num_epochs, classifier_criterion,
+            self, *, train_loader, val_loader, test_loader, metrics, main_metric, num_epochs, classifier_criterion,
             optimiser, discriminator_criterion=None, discriminator_weight=None, discriminator_metrics=None, device,
             channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
         if any(discriminator_arg is None for discriminator_arg
                in (discriminator_criterion, discriminator_weight)):
             return self._train_model(
-                train_loader=train_loader, val_loader=val_loader, metrics=metrics, main_metric=main_metric,
-                num_epochs=num_epochs, criterion=classifier_criterion, optimiser=optimiser, device=device,
-                channel_name_to_index=channel_name_to_index, verbose=verbose, target_scaler=target_scaler,
-                prediction_activation_function=prediction_activation_function
+                train_loader=train_loader, val_loader=val_loader, test_loader=test_loader, metrics=metrics,
+                main_metric=main_metric, num_epochs=num_epochs, criterion=classifier_criterion, optimiser=optimiser,
+                device=device, channel_name_to_index=channel_name_to_index, verbose=verbose,
+                target_scaler=target_scaler, prediction_activation_function=prediction_activation_function
             )
         else:
             return self._train_model_with_domain_adversarial_learning(
-                train_loader=train_loader, val_loader=val_loader, metrics=metrics, main_metric=main_metric,
-                num_epochs=num_epochs, classifier_criterion=classifier_criterion, optimiser=optimiser,
-                discriminator_criterion=discriminator_criterion, discriminator_weight=discriminator_weight,
-                discriminator_metrics=discriminator_metrics, device=device, channel_name_to_index=channel_name_to_index,
+                train_loader=train_loader, val_loader=val_loader, test_loader=test_loader, metrics=metrics,
+                main_metric=main_metric, num_epochs=num_epochs, classifier_criterion=classifier_criterion,
+                optimiser=optimiser, discriminator_criterion=discriminator_criterion,
+                discriminator_weight=discriminator_weight, discriminator_metrics=discriminator_metrics, device=device,
+                channel_name_to_index=channel_name_to_index,
                 prediction_activation_function=prediction_activation_function, verbose=verbose,
                 target_scaler=target_scaler
             )
 
     def _train_model_with_domain_adversarial_learning(
-            self, *, train_loader, val_loader, metrics, main_metric, num_epochs, classifier_criterion,
+            self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs, classifier_criterion,
             optimiser, discriminator_criterion, discriminator_weight, discriminator_metrics, device,
             channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
         """Method for training with domain adversarial learning"""
         # Defining histories objects
         train_history = Histories(metrics=metrics)
         val_history = Histories(metrics=metrics, name="val")
+        test_history = None if test_loader is None else Histories(metrics=metrics, name="test")
 
         dd_train_history = Histories(metrics=discriminator_metrics, name="dd")
         dd_val_history = Histories(metrics=discriminator_metrics, name="val_dd")
@@ -351,6 +353,46 @@ class MainRBPModel(nn.Module):
                 dd_val_history.on_epoch_end(verbose=verbose)
 
             # ----------------
+            # (Maybe) testing
+            # ----------------
+            if test_loader is not None:
+                with torch.no_grad():
+                    for x_test, test_pre_computed, y_test, test_subject_indices in test_loader:
+                        # Strip the dictionaries for 'ghost tensors'
+                        x_test = strip_tensors(x_test)
+                        y_test = strip_tensors(y_test)
+                        test_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in test_pre_computed)
+
+                        # Extract subjects and correct the ordering
+                        test_subjects = reorder_subjects(
+                            order=tuple(x_test.keys()),
+                            subjects=test_loader.dataset.get_subjects_from_indices(test_subject_indices)
+                        )
+
+                        # Send data to correct device
+                        x_test = tensor_dict_to_device(x_test, device=device)
+                        y_test = flatten_targets(y_test).to(device)
+                        test_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                                  for pre_comp in test_pre_computed)
+
+                        # Forward pass
+                        y_pred = self(x_test, pre_computed=test_pre_computed,
+                                      channel_name_to_index=channel_name_to_index)
+
+                        # Update validation history
+                        if prediction_activation_function is not None:
+                            y_pred = prediction_activation_function(y_pred)
+
+                        # (Maybe) re-scale targets and predictions before computing metrics
+                        if target_scaler is not None:
+                            y_pred = target_scaler.inv_transform(scaled_data=y_pred)
+                            y_test = target_scaler.inv_transform(scaled_data=y_test)
+                        test_history.store_batch_evaluation(y_pred=y_pred, y_true=y_test, subjects=test_subjects)
+
+                    # Finalise epoch for test history object
+                    test_history.on_epoch_end(verbose=verbose)
+
+            # ----------------
             # If this is the highest performing model, store it
             # ----------------
             if is_improved_model(old_metrics=best_metrics, new_metrics=val_history.newest_metrics,
@@ -367,8 +409,9 @@ class MainRBPModel(nn.Module):
         # Return the histories
         return train_history, val_history, dd_train_history, dd_val_history
 
-    def _train_model(self, *, train_loader, val_loader, metrics, main_metric, num_epochs, criterion, optimiser, device,
-                     channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,):
+    def _train_model(self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs, criterion,
+                     optimiser, device, channel_name_to_index, prediction_activation_function=None, verbose=True,
+                     target_scaler=None):
         """
         Method for training
 
@@ -376,6 +419,7 @@ class MainRBPModel(nn.Module):
         ----------
         train_loader : torch.utils.data.DataLoader
         val_loader : torch.utils.data.DataLoader
+        test_loader : torch.utils.data.DataLoader
         metrics : str | tuple[str, ...]
         main_metric : str
             Main metric for model selection
@@ -390,7 +434,7 @@ class MainRBPModel(nn.Module):
 
         Returns
         -------
-        tuple[Histories, Histories]
+        tuple[Histories, Histories, Histories | None]
             Training and validation histories
         """
         # todo: may want to think more on memory usage
@@ -398,6 +442,7 @@ class MainRBPModel(nn.Module):
         # Defining histories objects
         train_history = Histories(metrics=metrics)
         val_history = Histories(metrics=metrics, name="val")
+        test_history = None if test_loader is None else Histories(metrics=metrics, name="test")
 
         # ------------------------
         # Fit model
@@ -414,7 +459,6 @@ class MainRBPModel(nn.Module):
             # ----------------
             self.train()
             for x_train, train_pre_computed, y_train, subject_indices in train_loader:
-                # todo: Only works for train loaders with this specific __getitem__ return
                 # Strip the dictionaries for 'ghost tensors'
                 x_train = strip_tensors(x_train)
                 y_train = strip_tensors(y_train)
@@ -481,7 +525,7 @@ class MainRBPModel(nn.Module):
                     val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
                                              for pre_comp in val_pre_computed)
 
-                    # Forward pass  todo: why did I use .clone() in the PhD course tasks?
+                    # Forward pass
                     y_pred = self(x_val, pre_computed=val_pre_computed, channel_name_to_index=channel_name_to_index)
 
                     # Update validation history
@@ -498,7 +542,47 @@ class MainRBPModel(nn.Module):
                 val_history.on_epoch_end(verbose=verbose)
 
             # ----------------
-            # If this is the highest performing model, store it
+            # (Maybe) testing
+            # ----------------
+            if test_loader is not None:
+                with torch.no_grad():
+                    for x_test, test_pre_computed, y_test, test_subject_indices in test_loader:
+                        # Strip the dictionaries for 'ghost tensors'
+                        x_test = strip_tensors(x_test)
+                        y_test = strip_tensors(y_test)
+                        test_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in test_pre_computed)
+
+                        # Extract subjects and correct the ordering
+                        test_subjects = reorder_subjects(
+                            order=tuple(x_test.keys()),
+                            subjects=test_loader.dataset.get_subjects_from_indices(test_subject_indices)
+                        )
+
+                        # Send data to correct device
+                        x_test = tensor_dict_to_device(x_test, device=device)
+                        y_test = flatten_targets(y_test).to(device)
+                        test_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                                  for pre_comp in test_pre_computed)
+
+                        # Forward pass
+                        y_pred = self(x_test, pre_computed=test_pre_computed,
+                                      channel_name_to_index=channel_name_to_index)
+
+                        # Update validation history
+                        if prediction_activation_function is not None:
+                            y_pred = prediction_activation_function(y_pred)
+
+                        # (Maybe) re-scale targets and predictions before computing metrics
+                        if target_scaler is not None:
+                            y_pred = target_scaler.inv_transform(scaled_data=y_pred)
+                            y_test = target_scaler.inv_transform(scaled_data=y_test)
+                        test_history.store_batch_evaluation(y_pred=y_pred, y_true=y_test, subjects=test_subjects)
+
+                    # Finalise epoch for test history object
+                    test_history.on_epoch_end(verbose=verbose)
+
+            # ----------------
+            # If this is the highest performing model, as evaluated on the validation set, store it
             # ----------------
             if is_improved_model(old_metrics=best_metrics, new_metrics=val_history.newest_metrics,
                                  main_metric=main_metric):
@@ -512,7 +596,7 @@ class MainRBPModel(nn.Module):
         self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})  # type: ignore[arg-type]
 
         # Return the histories
-        return train_history, val_history
+        return train_history, val_history, test_history
 
     def test_model(self, *, data_loader, metrics, device, channel_name_to_index, prediction_activation_function=None,
                    verbose=True, target_scaler=None):
