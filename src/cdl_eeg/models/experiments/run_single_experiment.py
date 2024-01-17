@@ -151,6 +151,8 @@ def run_experiment(config, results_path):
             test_pre_computed = model.pre_compute(
                 input_tensors={dataset_name: torch.tensor(data, dtype=torch.float).to(device)
                                for dataset_name, data in test_data.items()})
+            test_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=torch.device("cpu"))
+                                      for pre_comp in test_pre_computed)
             test_gen = DownstreamDataGenerator(data=test_data, targets=test_targets, pre_computed=test_pre_computed,
                                                subjects=combined_dataset.get_subjects_dict(test_subjects))
             test_loader = DataLoader(dataset=test_gen, batch_size=train_config["batch_size"], shuffle=True)
