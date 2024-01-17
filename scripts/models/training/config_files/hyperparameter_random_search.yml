@@ -8,7 +8,7 @@ Training:
   beta_2: [ 0.99, 0.999, 0.9999 ]
   eps: [ 1.0e-07, 1.0e-08, 1.0e-09 ]
   batch_size: 16
-  num_epochs: 50
+  num_epochs: 5
   verbose: true
   val_split: 0.2
   loss: [ MSELoss, L1Loss ]
