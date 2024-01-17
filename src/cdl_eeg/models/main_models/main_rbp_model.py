@@ -232,7 +232,7 @@ class MainRBPModel(nn.Module):
         best_model_state = {k: v.cpu() for k, v in self.state_dict().items()}
         for epoch in range(num_epochs):
             # Start progress bar
-            pbar = enlighten.Counter(total=int(len(train_loader) / train_loader.batch_size + 1),
+            pbar = enlighten.Counter(total=int(len(train_loader.dataset) / train_loader.batch_size + 1),
                                      desc=f"Epoch {epoch + 1}/{num_epochs}", unit="batch")
 
             # ----------------
@@ -451,7 +451,7 @@ class MainRBPModel(nn.Module):
         best_model_state = {k: v.cpu() for k, v in self.state_dict().items()}
         for epoch in range(num_epochs):
             # Start progress bar
-            pbar = enlighten.Counter(total=int(len(train_loader) / train_loader.batch_size + 1),
+            pbar = enlighten.Counter(total=int(len(train_loader.dataset) / train_loader.batch_size + 1),
                                      desc=f"Epoch {epoch + 1}/{num_epochs}", unit="batch")
 
             # ----------------
