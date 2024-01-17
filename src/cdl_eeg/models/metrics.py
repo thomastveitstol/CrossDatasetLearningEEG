@@ -634,7 +634,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
 
             # Plot
             pyplot.plot((1, x_stop), (test_estimate.history[metric], test_estimate.history[metric]),
-                        label="Test estimate", color="green")
+                        label="Test estimate", color="red")
 
         # ------------
         # Plot cosmetics
