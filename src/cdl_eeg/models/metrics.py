@@ -572,7 +572,7 @@ def save_discriminator_histories_plots(path, histories):
         pyplot.close()
 
 
-def save_histories_plots(path, *, train_history=None, val_history=None, test_history=None):
+def save_histories_plots(path, *, train_history=None, val_history=None, test_history=None, test_estimate=None):
     """
     Function for saving histories plots
 
@@ -582,6 +582,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
     train_history : Histories
     val_history : Histories
     test_history : Histories
+    test_estimate : Histories
 
     Returns
     -------
@@ -613,20 +614,27 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
             pyplot.plot(range(1, len(val_history.history[metric]) + 1), val_history.history[metric], label="Validation",
                         color="orange")
 
-        # Maybe plot test history
+        # Maybe plot validation history
         if test_history is not None:
-            # The test metric will just be a line across the figure. Need to get stop x value
+            pyplot.plot(range(1, len(test_history.history[metric]) + 1), test_history.history[metric],
+                        label="Test", color="green")
+
+        # Maybe plot test history
+        if test_estimate is not None:
+            # The test estimate metric will just be a line across the figure. Need to get stop x value
             # Start value
             x_max = []
             if train_history is not None:
                 x_max.append(len(train_history.history[metric]))
             if val_history is not None:
                 x_max.append(len(val_history.history[metric]))
+            if test_history is not None:
+                x_max.append(len(test_history.history[metric]))
             x_stop = max(x_max) if x_max else 2
 
             # Plot
             pyplot.plot((1, x_stop), (test_history.history[metric], test_history.history[metric]),
-                        label="Test", color="green")
+                        label="Test estimate", color="green")
 
         # ------------
         # Plot cosmetics

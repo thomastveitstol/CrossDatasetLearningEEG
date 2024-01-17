@@ -15,6 +15,7 @@ Training:
   metrics: regression
   main_metric: [ mae, mse, pearson_r, spearman_rho, r2_score ]
   target: age
+  continuous_testing: true
   Scalers:
     target:
       name: ZNormalisation

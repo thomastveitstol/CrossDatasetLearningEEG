@@ -24,6 +24,7 @@ def run_experiment(config, results_path):
     ----------
     config : dict[str, typing.Any]
     results_path : str
+        Where to store the results
 
     Returns
     -------
@@ -86,7 +87,7 @@ def run_experiment(config, results_path):
             ).to(device)
 
         # -----------------
-        # Train model
+        # Prepare everything
         # -----------------
         # Fit channel systems
         model.fit_channel_systems(tuple(data.channel_system for data in datasets))
@@ -115,6 +116,7 @@ def run_experiment(config, results_path):
 
         train_targets = target_scaler.transform(train_targets)
         val_targets = target_scaler.transform(val_targets)
+        # todo: why are we scaling anything but training targets???
 
         # Perform pre-computing
         print("Pre-computing...")
@@ -125,7 +127,7 @@ def run_experiment(config, results_path):
             input_tensors={dataset_name: torch.tensor(data, dtype=torch.float).to(device)
                            for dataset_name, data in val_data.items()})
 
-        # Send to cpu
+        # Send pre-computed features to cpu
         train_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=torch.device("cpu"))
                                    for pre_comp in train_pre_computed)
         val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=torch.device("cpu"))
@@ -140,6 +142,20 @@ def run_experiment(config, results_path):
         # Create data loaders
         train_loader = DataLoader(dataset=train_gen, batch_size=train_config["batch_size"], shuffle=True)
         val_loader = DataLoader(dataset=val_gen, batch_size=train_config["batch_size"], shuffle=True)
+
+        # Maybe repeat the above steps for the test data as well
+        if train_config["continuous_testing"]:
+            test_data = combined_dataset.get_data(subjects=test_subjects)
+            test_targets = combined_dataset.get_targets(subjects=test_subjects)
+            test_targets = target_scaler.transform(test_targets)
+            test_pre_computed = model.pre_compute(
+                input_tensors={dataset_name: torch.tensor(data, dtype=torch.float).to(device)
+                               for dataset_name, data in test_data.items()})
+            test_gen = DownstreamDataGenerator(data=val_data, targets=test_targets, pre_computed=test_pre_computed,
+                                               subjects=combined_dataset.get_subjects_dict(test_subjects))
+            test_loader = DataLoader(dataset=test_gen, batch_size=train_config["batch_size"], shuffle=True)
+        else:
+            test_loader = None
 
         # Create optimiser and loss
         optimiser = optim.Adam(model.parameters(), lr=train_config["learning_rate"],
@@ -156,9 +172,11 @@ def run_experiment(config, results_path):
             discriminator_weight = None
             discriminator_metrics = None
 
+        # -----------------
         # Train model
+        # -----------------
         histories = model.train_model(
-            train_loader=train_loader, val_loader=val_loader, metrics=train_config["metrics"],
+            train_loader=train_loader, val_loader=val_loader, test_loader=test_loader, metrics=train_config["metrics"],
             main_metric=train_config["main_metric"], classifier_criterion=criterion, optimiser=optimiser,
             discriminator_criterion=discriminator_criterion, discriminator_weight=discriminator_weight,
             discriminator_metrics=discriminator_metrics, num_epochs=train_config["num_epochs"],
@@ -170,15 +188,20 @@ def run_experiment(config, results_path):
         # Save train and validation prediction histories
         # -----------------
         if config["DomainDiscriminator"] is None:
-            train_history, val_history = histories
+            train_history, val_history, test_history = histories
 
             train_history.save_prediction_history(history_name="train_history", path=fold_path)
             val_history.save_prediction_history(history_name="val_history", path=fold_path)
+            if test_history is not None:
+                test_history.save_prediction_history(history_name="test_history", path=fold_path)
         else:
-            train_history, val_history, dd_train_history, dd_val_history = histories
+            train_history, val_history, test_history, dd_train_history, dd_val_history = histories
 
             train_history.save_prediction_history(history_name="train_history", path=fold_path)
             val_history.save_prediction_history(history_name="val_history", path=fold_path)
+            if test_history is not None:
+                test_history.save_prediction_history(history_name="test_history", path=fold_path)
+
             dd_train_history.save_prediction_history(history_name="dd_train_history", path=fold_path)
             dd_val_history.save_prediction_history(history_name="dd_val_history", path=fold_path)
 
@@ -213,16 +236,16 @@ def run_experiment(config, results_path):
             test_loader = DataLoader(dataset=test_gen, batch_size=train_config["batch_size"], shuffle=True)
 
             # Test model on test data
-            test_history = model.test_model(
+            test_estimate = model.test_model(
                 data_loader=test_loader, metrics=train_config["metrics"], verbose=train_config["verbose"],
                 channel_name_to_index=channel_name_to_index, device=device, target_scaler=target_scaler
             )
 
             # Save predictions
-            test_history.save_prediction_history(history_name="test_history", path=fold_path)
+            test_estimate.save_prediction_history(history_name="test_estimate", path=fold_path)
 
         # -----------------
         # Save plots
         # -----------------
         save_histories_plots(path=fold_path, train_history=train_history, val_history=val_history,
-                             test_history=test_history)
+                             test_estimate=test_estimate, test_history=test_history)
