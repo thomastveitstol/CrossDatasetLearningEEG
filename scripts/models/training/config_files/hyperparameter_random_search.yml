@@ -58,7 +58,7 @@ DomainDiscriminator:
     FCModule: *FCModule
   training:
     loss: CrossEntropyLoss
-    lambda: [ 1, 0.1, 0.01 ]
+    lambda: [ 0.1, 0.01, 0.001 ]
     metrics: multiclass_classification
 
 
