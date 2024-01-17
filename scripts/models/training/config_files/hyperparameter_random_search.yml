@@ -38,7 +38,7 @@ Training:
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     yulin_wang:
-      num_subjects: 30
+      num_subjects: 60
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     cau_eeg:
