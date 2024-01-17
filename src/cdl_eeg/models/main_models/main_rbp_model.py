@@ -407,7 +407,7 @@ class MainRBPModel(nn.Module):
         self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})  # type: ignore[arg-type]
 
         # Return the histories
-        return train_history, val_history, dd_train_history, dd_val_history
+        return train_history, val_history, test_history, dd_train_history, dd_val_history
 
     def _train_model(self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs, criterion,
                      optimiser, device, channel_name_to_index, prediction_activation_function=None, verbose=True,

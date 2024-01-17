@@ -590,7 +590,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
     """
     # If no history object is passed, a warning is raised and None is returned (better to do nothing than potentially
     # ruin an experiment with an unnecessary error)
-    if all(history is None for history in (train_history, val_history, test_history)):
+    if all(history is None for history in (train_history, val_history, test_history, test_estimate)):
         warnings.warn("No history object was passed, skip saving histories plots...")
         return None
 
@@ -599,7 +599,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
     # ----------------
     # Get all available metrics
     all_metrics = set(tuple(train_history.history.keys()) + tuple(val_history.history.keys())
-                      + tuple(test_history.history.keys()))
+                      + tuple(test_estimate.history.keys()) + tuple(test_history.history.keys()))
 
     for metric in all_metrics:
         pyplot.figure(figsize=(12, 6))
@@ -633,7 +633,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
             x_stop = max(x_max) if x_max else 2
 
             # Plot
-            pyplot.plot((1, x_stop), (test_history.history[metric], test_history.history[metric]),
+            pyplot.plot((1, x_stop), (test_estimate.history[metric], test_estimate.history[metric]),
                         label="Test estimate", color="green")
 
         # ------------
