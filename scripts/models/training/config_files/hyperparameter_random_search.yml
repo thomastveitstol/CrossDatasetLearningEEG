@@ -30,19 +30,19 @@ Training:
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     miltiadous:
-      num_subjects: 88
+      num_subjects: 30
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     hatlestad_hall:
-      num_subjects: 111
+      num_subjects: 11
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     yulin_wang:
-      num_subjects: 60
+      num_subjects: 30
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
     cau_eeg:
-      num_subjects: 1379
+      num_subjects: 13
       num_time_steps: *num_time_steps
       time_series_start: *time_series_start
 
