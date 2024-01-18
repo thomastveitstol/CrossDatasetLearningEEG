@@ -20,7 +20,8 @@ def main():
     # ----------------
     Rockhill().save_eeg_as_numpy_arrays(subject_ids=None, filtering=filtering, resample=sampling_freq,
                                         notch_filter=notch_filter, avg_reference=avg_reference, derivatives=False,
-                                        num_time_steps=num_time_steps, time_series_start=time_series_start, on=True)
+                                        num_time_steps=num_time_steps, time_series_start=time_series_start,
+                                        on=True)  # TODO!: remove the 'on' argument
 
 
 if __name__ == "__main__":
