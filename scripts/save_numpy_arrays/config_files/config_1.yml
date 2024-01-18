@@ -1,0 +1,24 @@
+SharedPreprocessingSteps: &SharedPreprocessingSteps
+  l_freq: 1
+  h_freq: 45
+  sampling_freq_high_freq_multiple: 2  # Sampling freq will be this variable * h_freq
+  num_seconds: 30
+  time_series_start: 30  # This variable should have unit [seconds]
+  avg_reference: true
+  derivatives: false
+  # todo: notch_filter?
+YulinWang:
+  visit: 1
+  recording: EC
+  <<: *SharedPreprocessingSteps
+HatlestadHall:
+  session: "t1"
+  <<: *SharedPreprocessingSteps
+Miltiadous:
+  <<: *SharedPreprocessingSteps
+Rockhill:
+  on: True
+  <<: *SharedPreprocessingSteps
+CAUEEG:
+  non_eeg_channels: [ Photic, EEG ]
+  <<: *SharedPreprocessingSteps
