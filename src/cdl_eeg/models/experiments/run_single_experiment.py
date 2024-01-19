@@ -187,7 +187,7 @@ def run_experiment(config, results_path):
         )
 
         # -----------------
-        # Save train and validation prediction histories
+        # Save prediction histories
         # -----------------
         if config["DomainDiscriminator"] is None:
             train_history, val_history, test_history = histories
