@@ -153,6 +153,10 @@ class MainRBPModel(nn.Module):
         # Merge by concatenation
         x = torch.cat(x, dim=1)
 
+        # Maybe normalise region representations
+        if self._normalise_region_representations:
+            x = (x - torch.mean(x, dim=-1, keepdim=True)) / (torch.std(x, dim=-1, keepdim=True) + 1e-8)
+
         # Pass through MTS module and return
         return self._mts_module.extract_latent_features(x)
 
