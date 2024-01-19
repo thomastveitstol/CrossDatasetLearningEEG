@@ -378,7 +378,7 @@ class MainRBPModel(nn.Module):
                         y_pred = self(x_test, pre_computed=test_pre_computed,
                                       channel_name_to_index=channel_name_to_index)
 
-                        # Update validation history
+                        # Update test history
                         if prediction_activation_function is not None:
                             y_pred = prediction_activation_function(y_pred)
 
