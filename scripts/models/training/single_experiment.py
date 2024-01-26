@@ -14,7 +14,7 @@ from cdl_eeg.models.experiments.run_single_experiment import run_experiment
 
 def main():
     # ---------------
-    # # Load domains of design choices/hyperparameters (.yml file)
+    # Load domains of design choices/hyperparameters (.yml file)
     # ---------------
     config_path = "hyperparameter_random_search.yml"
     path = os.path.join(os.path.dirname(__file__), "config_files", config_path)
