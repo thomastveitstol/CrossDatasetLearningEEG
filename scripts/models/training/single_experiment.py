@@ -3,7 +3,7 @@ Script for running both leave-one-dataset-out cross validation and k-fold cross 
 """
 import copy
 import os
-from datetime import datetime
+from datetime import datetime, date
 
 import yaml
 
@@ -22,7 +22,8 @@ def main():
         config = yaml.safe_load(f)
 
     # Create path and folder
-    results_path = os.path.join(get_results_dir(), f"debug_experiments_{datetime.now().strftime('%H%M%S')}")
+    results_path = os.path.join(get_results_dir(),
+                                f"debug_experiments_{date.today()}_{datetime.now().strftime('%H%M%S')}")
     os.mkdir(results_path)
 
     # ---------------
