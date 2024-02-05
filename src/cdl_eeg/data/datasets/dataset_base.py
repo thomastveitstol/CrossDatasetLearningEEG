@@ -222,7 +222,7 @@ class EEGDatasetBase(abc.ABC):
         # Concatenate to a single numpy ndarray
         return numpy.concatenate(data, axis=0)
 
-    def save_eeg_as_numpy_arrays(self, subject_ids=None, *, filtering=None, resample=None, notch_filter=None,
+    def save_eeg_as_numpy_arrays(self, path=None, subject_ids=None, *, filtering=None, resample=None, notch_filter=None,
                                  avg_reference=False, num_time_steps=None, time_series_start=None, derivatives=False,
                                  excluded_channels=None, **kwargs):
         """
@@ -232,6 +232,7 @@ class EEGDatasetBase(abc.ABC):
 
         Parameters
         ----------
+        path : str, optional
         subject_ids : tuple[str, ...]
             Subject IDs to convert and save as numpy arrays
         filtering : tuple[float, float], optional
@@ -276,7 +277,7 @@ class EEGDatasetBase(abc.ABC):
         # Prepare directory and logging
         # ------------------
         # Make directory
-        path = self.get_numpy_arrays_path()
+        path = self.get_numpy_arrays_path() if path is None else path
         os.mkdir(path)
 
         # Log the process
