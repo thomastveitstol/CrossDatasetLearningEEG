@@ -37,12 +37,11 @@ def generate_preprocessing_config_file(config):
     avg_reference = random.choice(config["avg_reference"])
 
     # Using already pre-processed version
-    derivatives = random.choice(config["derivatives"])
+    # derivatives = random.choice(config["derivatives"])
 
     # ---------------
     # Construct config dictionary (the dataset specifics are currently fixed)
     # ---------------
     general_config = {"filtering": (l_freq, h_freq), "resample": sampling_freq, "avg_reference": avg_reference,
-                      "derivatives": derivatives, "num_time_steps": num_time_steps,
-                      "time_series_start": time_series_start}
+                      "num_time_steps": num_time_steps, "time_series_start": time_series_start}
     return {"general": general_config, "datasets": config["Datasets"]}

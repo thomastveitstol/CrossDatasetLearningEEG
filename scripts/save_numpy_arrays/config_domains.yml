@@ -67,19 +67,21 @@ sampling_freq_high_freq_multiple:  # Sampling freq will be this variable * h_fre
 num_seconds: [ 30 ]
 time_series_start: [ 30, 45, 60 ]  # This variable should have unit [seconds]
 avg_reference: [ true ]
-derivatives: [ true ]
+derivatives: [ false ]
 
 # --------------
 # Dataset specific hyperparameters  todo: notch filter?
 # --------------
 Datasets:
+  Rockhill:
+    'on': true
   YulinWang:
     visit: 1
     recording: EC
+    derivatives: true
   HatlestadHall:
     session: "t1"
+    derivatives: true
   Miltiadous: {}
-  Rockhill:
-    on: True
   CAUEEG:
     non_eeg_channels: [ Photic, EEG ]
