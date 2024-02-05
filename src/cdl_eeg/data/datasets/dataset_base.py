@@ -228,6 +228,8 @@ class EEGDatasetBase(abc.ABC):
         """
         Method for saving data as numpy arrays
 
+        todo: consider not using so many default arguments
+
         Parameters
         ----------
         subject_ids : tuple[str, ...]
