@@ -1,0 +1,84 @@
+# --------------
+# Band pass filtering
+# --------------
+Delta: &Delta
+  low:
+    mean: 0.5
+    std: 0.05
+  high:
+    mean: 4
+    std: 0.25
+Theta: &Theta
+  low:
+    mean : 4
+    std: 0.25
+  high:
+    mean: 8
+    std: 0.25
+Alpha: &Alpha
+  low:
+    mean: 8
+    std: 0.5
+  high:
+    mean: 12
+    std: 0.5
+Beta: &Beta
+  low:
+    mean: 12
+    std: 0.5
+  high:
+    mean: 30
+    std: 1
+Gamma: &Gamma
+  low:
+    mean: 30
+    std: 1
+  high:
+    mean: 45
+    std: 2
+RandomUniform: &RandomUniform
+  low:
+    min: 0.5
+    max: 30
+  high:
+    min: 7  # This may be changed to l_freq in the code
+    max: 90
+
+BandPass:
+  - name: delta
+    <<: *Delta
+  - name: theta
+    <<: *Theta
+  - name: alpha
+    <<: *Alpha
+  - name: beta
+    <<: *Beta
+  - name: gamma
+    <<: *Gamma
+  # - name: uniform
+  #   <<: *RandomUniform
+
+# --------------
+# Other general hyperparameters
+# --------------
+sampling_freq_high_freq_multiple:  # Sampling freq will be this variable * h_freq
+  low: 2
+  high: 5
+num_seconds: [ 30 ]
+time_series_start: [ 30, 45, 60 ]  # This variable should have unit [seconds]
+avg_reference: [ true ]
+derivatives: [ false ]
+
+# --------------
+# Dataset specific hyperparameters  todo: notch filter?
+# --------------
+YulinWang:
+  visit: 1
+  recording: EC
+HatlestadHall:
+  session: "t1"
+Miltiadous: {}
+Rockhill:
+  on: True
+CAUEEG:
+  non_eeg_channels: [ Photic, EEG ]
