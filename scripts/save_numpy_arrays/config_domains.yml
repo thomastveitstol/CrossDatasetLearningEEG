@@ -72,13 +72,14 @@ derivatives: [ false ]
 # --------------
 # Dataset specific hyperparameters  todo: notch filter?
 # --------------
-YulinWang:
-  visit: 1
-  recording: EC
-HatlestadHall:
-  session: "t1"
-Miltiadous: {}
-Rockhill:
-  on: True
-CAUEEG:
-  non_eeg_channels: [ Photic, EEG ]
+Datasets:
+  YulinWang:
+    visit: 1
+    recording: EC
+  HatlestadHall:
+    session: "t1"
+  Miltiadous: {}
+  Rockhill:
+    on: True
+  CAUEEG:
+    non_eeg_channels: [ Photic, EEG ]

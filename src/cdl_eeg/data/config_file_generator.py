@@ -24,7 +24,8 @@ def generate_preprocessing_config_file(config):
     # Other pre-processing hyperparameters
     # ---------------
     # Sampling frequency
-    sampling_freq = h_freq * config["sampling_freq_high_freq_multiple"]
+    sampling_freq = h_freq * numpy.random.uniform(low=config["sampling_freq_high_freq_multiple"]["low"],
+                                                  high=config["sampling_freq_high_freq_multiple"]["high"])
 
     # Number of time steps
     num_time_steps = int(sampling_freq * random.choice(config["num_seconds"]))
