@@ -37,7 +37,7 @@ def main():
     # Perform pre-processing
     # --------------
     for dataset_name, preprocessing_kwargs in config["datasets"].items():
-        get_dataset(dataset_name).save_eeg_as_numpy_arrays(**preprocessing_kwargs)
+        get_dataset(dataset_name).save_eeg_as_numpy_arrays(path=path, **preprocessing_kwargs)
 
 
 if __name__ == "__main__":
