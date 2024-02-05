@@ -274,7 +274,7 @@ class EEGDatasetBase(abc.ABC):
             raise ValueError(f"Unexpected subject IDs (N={len(_unexpected_subjects)}): {_unexpected_subjects}")
 
         # ------------------
-        # Prepare directory and logging
+        # Prepare directory and logging  todo: remove logging
         # ------------------
         # Make directory
         path = self.get_numpy_arrays_path() if path is None else os.path.join(path, self.name)
