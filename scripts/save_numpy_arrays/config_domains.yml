@@ -75,7 +75,7 @@ derivatives: [ false ]
 Datasets:
   YulinWang:
     visit: 1
-    recording: EC
+    recording: eyesclosed
   HatlestadHall:
     session: "t1"
   Miltiadous: {}
