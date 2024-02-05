@@ -17,6 +17,8 @@ class YulinWang(EEGDatasetBase):
     'yulin_wang'
     >>> len(YulinWang().get_subject_ids())
     60
+    >>> YulinWang().get_subject_ids()[:5]
+    ('sub-01', 'sub-02', 'sub-03', 'sub-04', 'sub-05')
     """
 
     __slots__ = ()
@@ -30,8 +32,8 @@ class YulinWang(EEGDatasetBase):
         recording = kwargs["recording"]
 
         # Create path
-        subject_path = pathlib.Path(f"sub-{str(subject_id).zfill(2)}/ses-session{visit}/eeg/"
-                                    f"sub-{str(subject_id).zfill(2)}_ses-session{visit}_task-{recording}_eeg")
+        subject_path = pathlib.Path(f"{subject_id}/ses-session{visit}/eeg/"
+                                    f"{subject_id}_ses-session{visit}_task-{recording}_eeg")
         subject_path = subject_path.with_suffix(".eeg")
         path = os.path.join(self.get_mne_path(), subject_path)
 
