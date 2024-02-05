@@ -277,7 +277,7 @@ class EEGDatasetBase(abc.ABC):
         # Prepare directory and logging
         # ------------------
         # Make directory
-        path = self.get_numpy_arrays_path() if path is None else path
+        path = self.get_numpy_arrays_path() if path is None else os.path.join(path, self.name)
         os.mkdir(path)
 
         # Log the process
