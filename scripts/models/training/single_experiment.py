@@ -3,11 +3,13 @@ Script for running both leave-one-dataset-out cross validation and k-fold cross 
 """
 import copy
 import os
+import random
+import shutil
 from datetime import datetime, date
 
 import yaml
 
-from cdl_eeg.data.paths import get_results_dir
+from cdl_eeg.data.paths import get_results_dir, get_numpy_data_storage_path
 from cdl_eeg.models.experiments.generate_config_file import generate_config_file
 from cdl_eeg.models.experiments.run_single_experiment import run_experiment
 
@@ -37,7 +39,19 @@ def main():
     # ---------------
     # Select data pre-processing version
     # ---------------
-    # todo
+    # Make selection. We will use the same for all datasets
+    available_versions = os.listdir(get_numpy_data_storage_path())
+    available_versions = tuple(version for version in available_versions if version[:5] == "debug")  # todo
+    pre_processed_version = random.choice(available_versions)
+
+    # Add selection to the datasets
+    datasets = tuple(config["Training"]["Datasets"])  # Maybe this is not needed, but it feels safe
+    for dataset in datasets:
+        config["Training"]["Datasets"][dataset]["pre_processed_version"] = pre_processed_version
+
+    # Add the preprocessing config file to results folder
+    shutil.copy(src=os.path.join(get_numpy_data_storage_path(), pre_processed_version, "preprocessing_config.yml"),
+                dst=results_path)
 
     # ---------------
     # Run experiments
