@@ -159,13 +159,17 @@ class EEGDatasetBase(abc.ABC):
         """
         raise NotImplementedError("A cleaned version is not available for this class.")
 
-    def load_numpy_arrays(self, subject_ids=None, *, time_series_start=None, num_time_steps=None, channels=None):
+    def load_numpy_arrays(self, subject_ids=None, pre_processed_version=None, *, time_series_start=None,
+                          num_time_steps=None, channels=None):
         """
         Method for loading numpy arrays
 
         Parameters
         ----------
-        subject_ids : tuple[str, ...]
+        subject_ids : tuple[str, ...], optional
+        pre_processed_version : str, optional
+            The pre-processed version. That is, the numpy arrays should be stored inside
+            os.path.join(self.get_numpy_arrays_path(), pre_processed_version)
         time_series_start : int, optional
         num_time_steps : int, optional
         channels: tuple[str, ...], optional
@@ -174,6 +178,8 @@ class EEGDatasetBase(abc.ABC):
         -------
         numpy.ndarray
         """
+        path = self.get_numpy_arrays_path() if pre_processed_version is None \
+            else os.path.join(self.get_numpy_arrays_path(), pre_processed_version)
         subject_ids = self.get_subject_ids() if subject_ids is None else subject_ids
 
         # ------------------
@@ -201,7 +207,7 @@ class EEGDatasetBase(abc.ABC):
         data = []
         for sub_id in subject_ids:
             # Load the numpy array
-            eeg_data = numpy.load(os.path.join(self.get_numpy_arrays_path(), f"{sub_id}.npy"))
+            eeg_data = numpy.load(os.path.join(path, f"{sub_id}.npy"))
 
             # (Maybe) crop the signal
             if time_series_start is not None:
