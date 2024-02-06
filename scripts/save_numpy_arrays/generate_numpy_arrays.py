@@ -39,7 +39,7 @@ def main():
     # Perform pre-processing
     # --------------
     num_datasets = len(config["datasets"])
-    for i, (dataset_name, preprocessing_kwargs) in config["datasets"].items():
+    for i, (dataset_name, preprocessing_kwargs) in enumerate(config["datasets"].items()):
         # Maybe print the dataset we will preprocess and save
         if verbose:
             print(f"Preprocessing and saving dataset {i + 1}/{num_datasets}: '{dataset_name}'...")
