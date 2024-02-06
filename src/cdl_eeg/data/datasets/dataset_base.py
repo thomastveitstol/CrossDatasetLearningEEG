@@ -178,6 +178,7 @@ class EEGDatasetBase(abc.ABC):
         -------
         numpy.ndarray
         """
+        # Maybe set defaults
         path = self.get_numpy_arrays_path() if pre_processed_version is None \
             else os.path.join(self.get_numpy_arrays_path(), pre_processed_version)
         subject_ids = self.get_subject_ids() if subject_ids is None else subject_ids
