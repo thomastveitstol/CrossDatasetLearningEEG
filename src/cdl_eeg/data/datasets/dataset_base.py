@@ -417,8 +417,11 @@ class EEGDatasetBase(abc.ABC):
         return os.path.join(get_raw_data_storage_path(), self.name)
 
     @path_method
-    def get_numpy_arrays_path(self):
-        return os.path.join(get_numpy_data_storage_path(), self.name)
+    def get_numpy_arrays_path(self, pre_processed_version=None):
+        if pre_processed_version is None:
+            return os.path.join(get_numpy_data_storage_path(), self.name)
+        else:
+            return os.path.join(get_numpy_data_storage_path(), pre_processed_version, self.name)
 
     @path_method
     def get_participants_tsv_path(self):
