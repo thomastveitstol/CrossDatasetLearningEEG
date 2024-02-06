@@ -31,7 +31,7 @@ def main():
     # ---------------
     # Generate config file
     # ---------------
-    config = generate_config_file(config)  # This config file will be save after selecting pre-processing version
+    config = generate_config_file(config)  # This config file will be saved after selecting pre-processing version
 
     # ---------------
     # Select data pre-processing version
