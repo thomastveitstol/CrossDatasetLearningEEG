@@ -30,7 +30,7 @@ def main():
     config = generate_preprocessing_config_file(domains_config)
 
     # Save config file
-    with open(os.path.join(path, "config.yml"), "w") as file:
+    with open(os.path.join(path, "preprocessing_config.yml"), "w") as file:
         yaml.safe_dump(config, file)
 
     # --------------
