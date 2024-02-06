@@ -1,6 +1,5 @@
 import abc
 import dataclasses
-import logging
 import os
 from typing import Dict, Tuple, List
 
@@ -280,45 +279,11 @@ class EEGDatasetBase(abc.ABC):
             raise ValueError(f"Unexpected subject IDs (N={len(_unexpected_subjects)}): {_unexpected_subjects}")
 
         # ------------------
-        # Prepare directory and logging  todo: remove logging
+        # Prepare directory
         # ------------------
         # Make directory
         path = self.get_numpy_arrays_path() if path is None else os.path.join(path, self.name)
         os.mkdir(path)
-
-        # Log the process
-        logging.basicConfig(filename=os.path.join(path, f"{self.name}.log"), level=logging.INFO,
-                            format='%(asctime)s :: %(levelname)s -> %(message)s')
-
-        logging.getLogger().addHandler(logging.StreamHandler())
-        logger = logging.getLogger(__name__)
-
-        msg = f"Saving data from the '{self.name}' dataset as numpy arrays"
-        logger.info(f"{'=' * (len(msg) + 12)}")
-        logger.info(f"===== {msg} =====")
-        logger.info("...")
-
-        logger.info("----- Pre-processing details -----")
-        logger.info(f"Derivatives: {derivatives}")
-        logger.info(f"Re-sampling: {'Skipped' if resample is None else resample}")
-        logger.info(f"Filtering: {'Skipped' if filtering is None else filtering}")
-        logger.info(f"Notch-filter: {'Skipped' if notch_filter is None else notch_filter}")
-        logger.info(f"Average referencing: {avg_reference}")
-        logger.info(f"Excluding channels: {'Skipped' if excluded_channels is None else excluded_channels}")
-        logger.info("...")
-
-        logger.info("----- Signal cropping details -----")
-        logger.info(f"Time series start [time steps]: {'Skipped' if time_series_start is None else time_series_start}")
-        logger.info(f"Time series length [time steps]: {'Skipped' if num_time_steps is None else num_time_steps}")
-        logger.info("...")
-
-        logger.info("----- Additional keyword arguments -----")
-        if kwargs:
-            for key, value in kwargs.items():
-                logger.info(f"Argument '{key}': {value}")
-        else:
-            logger.info("No additional keyword arguments were passed")
-        logger.info("...")
 
         # ------------------
         # Loop through all subjects
@@ -329,7 +294,7 @@ class EEGDatasetBase(abc.ABC):
 
             # Pre-process
             raw = self.pre_process(raw, filtering=filtering, resample=resample, notch_filter=notch_filter,
-                                   excluded_channels=excluded_channels)
+                                   excluded_channels=excluded_channels, avg_reference=avg_reference)
 
             # Convert to numpy arrays
             eeg_data = raw.get_data()
@@ -344,9 +309,6 @@ class EEGDatasetBase(abc.ABC):
 
             # Save the EEG data as numpy arrays
             numpy.save(os.path.join(path, sub_id), arr=eeg_data)
-
-        logger.info("===== Saving complete =====")
-        logger.info("===========================")
 
     def get_subject_ids(self) -> Tuple[str, ...]:
         """Get the subject IDs available. Unless this method is overridden, it will collect the IDs from the
