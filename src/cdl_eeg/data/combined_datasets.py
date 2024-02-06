@@ -16,6 +16,7 @@ class LoadDetails:
     time_series_start: Optional[int] = None
     num_time_steps: Optional[int] = None
     channels: Optional[Tuple[str, ...]] = None
+    pre_processed_version: Optional[str] = None
 
 
 # -----------------
@@ -65,6 +66,7 @@ class CombinedDatasets:
 
         # Load and store data  todo: can this be made faster be asyncio?
         self._data = {dataset.name: dataset.load_numpy_arrays(subject_ids=details.subject_ids,
+                                                              pre_processed_version=details.pre_processed_version,
                                                               time_series_start=details.time_series_start,
                                                               num_time_steps=details.num_time_steps,
                                                               channels=details.channels)
@@ -108,7 +110,8 @@ class CombinedDatasets:
             # Construct loading details
             load_details.append(
                 LoadDetails(subject_ids=dataset_subjects, time_series_start=dataset_details["time_series_start"],
-                            num_time_steps=dataset_details["num_time_steps"])
+                            num_time_steps=dataset_details["num_time_steps"],
+                            pre_processed_version=dataset_details["pre_processed_version"])
             )
 
         # Load all data and return object
