@@ -31,10 +31,7 @@ def main():
     # ---------------
     # Generate config file
     # ---------------
-    config = generate_config_file(config)
-
-    with open(os.path.join(results_path, "config.yml"), "w") as file:
-        yaml.safe_dump(config, file)
+    config = generate_config_file(config)  # This config file will be save after selecting pre-processing version
 
     # ---------------
     # Select data pre-processing version
@@ -56,6 +53,10 @@ def main():
     # ---------------
     # Run experiments
     # ---------------
+    # First, store the config file
+    with open(os.path.join(results_path, "config.yml"), "w") as file:
+        yaml.safe_dump(config, file)
+
     # Leave-one-dataset-out
     lodo_config = copy.deepcopy(config)
     lodo_config["Training"]["Data Split"] = {"kwargs": {"seed": 42}, "name": "SplitOnDataset"}
