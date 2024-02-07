@@ -59,18 +59,18 @@ def main():
 
     # Leave-one-dataset-out
     lodo_config = copy.deepcopy(config)
-    lodo_config["Training"]["Data Split"] = {"kwargs": {"seed": 42}, "name": "SplitOnDataset"}
+    lodo_config["SubjectSplit"] = {"kwargs": {"seed": 42}, "name": "SplitOnDataset"}  # todo
     if lodo_config["DomainDiscriminator"] is not None:
-        num_train_datasets = len(lodo_config["Training"]["Datasets"]) - 1
+        num_train_datasets = len(lodo_config["Datasets"]) - 1
         lodo_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
     run_experiment(lodo_config, results_path=os.path.join(results_path, "leave_one_dataset_out"))
 
     # k-fold CV
     k_fold_config = copy.deepcopy(config)
-    k_fold_config["Training"]["Data Split"] = {"kwargs": {"seed": 42, "num_folds": len(config["Training"]["Datasets"])},
-                                               "name": "KFoldDataSplit"}
+    k_fold_config["SubjectSplit"] = {"kwargs": {"seed": 42, "num_folds": len(config["Training"]["Datasets"])},
+                                     "name": "KFoldDataSplit"}  # todo
     if k_fold_config["DomainDiscriminator"] is not None:
-        num_train_datasets = len(k_fold_config["Training"]["Datasets"])
+        num_train_datasets = len(k_fold_config["Datasets"])
         k_fold_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
     run_experiment(k_fold_config, results_path=os.path.join(results_path, "k_fold_cv"))
 

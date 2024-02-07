@@ -39,7 +39,7 @@ def run_experiment(config, results_path):
     train_config = config["Training"]
 
     print("Loading data...")
-    combined_dataset = CombinedDatasets.from_config(config=train_config["Datasets"], target=train_config["target"])
+    combined_dataset = CombinedDatasets.from_config(config=config["Datasets"], target=train_config["target"])
 
     # -----------------
     # Create folder for storing results, config file etc.
@@ -55,8 +55,8 @@ def run_experiment(config, results_path):
     channel_name_to_index = {dataset.name: dataset.channel_name_to_index() for dataset in datasets}
 
     # Split data into training and validation
-    data_split = get_data_split(split=train_config["Data Split"]["name"], dataset_subjects=subjects,
-                                **train_config["Data Split"]["kwargs"])
+    data_split = get_data_split(split=config["SubjectSplit"]["name"], dataset_subjects=subjects,
+                                **config["SubjectSplit"]["kwargs"])
     folds = data_split.folds
 
     # -----------------
@@ -110,8 +110,7 @@ def run_experiment(config, results_path):
         val_targets = combined_dataset.get_targets(subjects=val_subjects)
 
         # Fit scaler and scale
-        target_scaler = get_target_scaler(train_config["Scalers"]["target"]["name"],
-                                          **train_config["Scalers"]["target"]["kwargs"])
+        target_scaler = get_target_scaler(config["Scalers"]["target"]["name"], **config["Scalers"]["target"]["kwargs"])
         target_scaler.fit(train_targets)
 
         train_targets = target_scaler.transform(train_targets)
