@@ -73,8 +73,8 @@ def _sample_single_rbp_design(config, num_montage_splits):
     design["pooling_methods"] = pooling_method
     design["pooling_methods_kwargs"] = dict()
     for pooling_kwarg, domain in config["pooling_module"][pooling_method].items():
-        if isinstance(domain, list):
-            design["pooling_methods_kwargs"][pooling_kwarg] = random.choice(domain)
+        if isinstance(domain, dict) and "dist" in domain:
+            design["pooling_methods_kwargs"][pooling_kwarg] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
         else:
             design["pooling_methods_kwargs"][pooling_kwarg] = domain
 
@@ -89,8 +89,8 @@ def _sample_single_rbp_design(config, num_montage_splits):
     for montage_split in montage_splits:
         montage_split_kwargs = dict()
         for split_kwarg, domain in config["montage_split"][montage_split].items():
-            if isinstance(domain, list):
-                montage_split_kwargs[split_kwarg] = random.choice(copy.deepcopy(domain))
+            if isinstance(domain, dict) and "dist" in domain:
+                montage_split_kwargs[split_kwarg] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
             else:
                 montage_split_kwargs[split_kwarg] = domain
         montage_splits_kwargs.append(montage_split_kwargs)
