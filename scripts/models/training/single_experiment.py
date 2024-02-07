@@ -10,8 +10,8 @@ from datetime import datetime, date
 import yaml
 
 from cdl_eeg.data.paths import get_results_dir, get_numpy_data_storage_path
-from cdl_eeg.models.experiments.generate_config_file import generate_config_file
-from cdl_eeg.models.experiments.run_single_experiment import run_experiment
+from cdl_eeg.models.random_search.generate_config_file import generate_config_file
+from cdl_eeg.models.random_search.run_single_experiment import run_experiment
 
 
 def main():
