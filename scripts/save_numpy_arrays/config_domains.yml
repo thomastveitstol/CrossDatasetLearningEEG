@@ -55,8 +55,8 @@ BandPass:
     <<: *Beta
   - name: gamma
     <<: *Gamma
-  # - name: uniform
-  #   <<: *RandomUniform
+  - name: uniform
+    <<: *RandomUniform
 
 # --------------
 # Other general hyperparameters
