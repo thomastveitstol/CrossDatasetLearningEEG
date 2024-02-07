@@ -18,8 +18,8 @@ def sample_rbp_designs(config):
     dict[str, typing.Any]
     """
     # Sample the number of montage splits
-    num_montage_splits = sample_hyperparameter(config["num_montage_splits"]["dist"],
-                                               **config["num_montage_splits"]["kwargs"])
+    num_montage_splits = round(sample_hyperparameter(config["num_montage_splits"]["dist"],
+                                                     **config["num_montage_splits"]["kwargs"]))
 
     # Sample the number of pooling modules. It cannot exceed the number of montage splits
     num_pooling_modules = 1 if sample_hyperparameter(config["share_all_pooling_modules"]["dist"],
