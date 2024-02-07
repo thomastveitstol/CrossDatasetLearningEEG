@@ -141,8 +141,8 @@ MultiMSSharedRocketHeadRegion: &MultiMSSharedRocketHeadRegion
     dist: log_uniform_int
     kwargs:
       base: 2
-      a: 3
-      b: 1024
+      a: 3  # 2^3 = 8
+      b: 10  # 2^10 = 1024
   share_search_receiver_modules: [ true, false]
   bias: false
 
@@ -158,9 +158,19 @@ VoronoiSplit: &VoronoiSplit
   <<: *box
 
 CentroidPolygons: &CentroidPolygons
-  channel_positions: [ [ cau_eeg ] ]
-  min_nodes: [1, 2, 3, 4, 5]
-  k: [[2, 2, 2, 2, 2, 2, 2], [3, 3, 3, 3, 3, 3, 3, 3], [2, 3, 2, 3, 2, 3, 2, 3, 2], [4, 3, 2, 3, 4, 3, 2, 3, 4]]
+  channel_positions:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ [ cau_eeg ] ]
+  min_nodes:
+    dist: uniform_int
+    kwargs:
+      a: 1
+      b: 6  # not including 6
+  k:
+    dist: uniform_discrete
+    kwargs:
+      domain: [[2, 2, 2, 2, 2, 2, 2], [3, 3, 3, 3, 3, 3, 3, 3], [2, 3, 2, 3, 2, 3, 2, 3, 2], [4, 3, 2, 3, 4, 3, 2, 3, 4]]
 
 MontageSplits: &MontageSplits
   VoronoiSplit: *VoronoiSplit
