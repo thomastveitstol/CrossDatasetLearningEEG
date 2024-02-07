@@ -116,15 +116,17 @@ box: &box
 # Pooling methods
 
 num_kernels: &num_kernels
-  dist: log_uniform
+  dist: log_uniform_int
   kwargs:
+    base: 10
     a: 2
     b: 4
 
 # todo: consider computing this from the sampling frequency instead
 max_receptive_field: &max_receptive_field
-  dist: log_uniform
+  dist: log_uniform_int
   kwargs:
+    base: 10
     a: 2
     b: 3
 
@@ -136,7 +138,7 @@ MultiMSSharedRocketHeadRegion: &MultiMSSharedRocketHeadRegion
   num_kernels: *num_kernels
   max_receptive_field: *max_receptive_field
   latent_search_features:
-    dist: log_uniform
+    dist: log_uniform_int
     kwargs:
       base: 2
       a: 3
@@ -166,7 +168,7 @@ MontageSplits: &MontageSplits
 
 RegionBasedPooling: &RegionBasedPooling
   num_montage_splits:
-    dist: log_uniform
+    dist: log_uniform_int
     kwargs:
       base: 2
       a: 0  # 2^0 = 1
@@ -201,7 +203,7 @@ Varied Numbers of Channels:
 InceptionNetwork: &InceptionNetwork
   num_classes: 1
   cnn_units:
-    dist: log_uniform
+    dist: log_uniform_int
     kwargs:
       base: 2
       a: 3  # 2^3 = 8

@@ -66,11 +66,30 @@ class _SampleDistribution:
 
     @staticmethod
     @sampling_distribution
+    def log_uniform_int(*, base, a, b):
+        """Samples a value x uniformly from [a, b], and outputs round(base^x)"""
+        # Input checks
+        assert a < b, f"Expected the value 'a' to be greater than 'b', but found {a} and {b}"
+        assert base > 0, f"Expected a positive base, but found {base}"
+
+        return round(base ** numpy.random.uniform(a, b))
+
+    @staticmethod
+    @sampling_distribution
     def uniform(a, b):
         # Input checks
         assert a < b, f"Expected the value 'a' to be greater than 'b', but found {a} and {b}"
 
         return numpy.random.uniform(a, b)
+
+    @staticmethod
+    @sampling_distribution
+    def uniform_int(a, b):
+        """Random integer, including 'a', excluding 'b'"""
+        # Input checks
+        assert a < b, f"Expected the value 'a' to be greater than 'b', but found {a} and {b}"
+
+        return numpy.random.randint(a, b)
 
     @staticmethod
     @sampling_distribution
