@@ -73,10 +73,12 @@ def _sample_single_rbp_design(config, num_montage_splits):
     design["pooling_methods"] = pooling_method
     design["pooling_methods_kwargs"] = dict()
     for pooling_kwarg, domain in config["pooling_module"][pooling_method].items():
+        _domain = copy.deepcopy(domain)  # Trying to not share IDs, because it makes .yml files less readable
         if isinstance(domain, dict) and "dist" in domain:
-            design["pooling_methods_kwargs"][pooling_kwarg] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
+            design["pooling_methods_kwargs"][pooling_kwarg] = sample_hyperparameter(_domain["dist"],
+                                                                                    **_domain["kwargs"])
         else:
-            design["pooling_methods_kwargs"][pooling_kwarg] = domain
+            design["pooling_methods_kwargs"][pooling_kwarg] = _domain
 
     # ------------------
     # Montage splits

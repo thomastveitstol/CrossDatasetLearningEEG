@@ -142,7 +142,7 @@ MultiMSSharedRocketHeadRegion: &MultiMSSharedRocketHeadRegion
     kwargs:
       base: 2
       a: 3  # 2^3 = 8
-      b: 10  # 2^10 = 1024
+      b: 7  # 2^8 = 256
   share_search_receiver_modules: [ true, false]
   bias: false
 
