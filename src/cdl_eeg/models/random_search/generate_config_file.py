@@ -31,7 +31,7 @@ def generate_config_file(config):
     # Sample input and target scalers
     # -----------------
     scaler_hyperparameters = dict()
-    for scaler, domain in config["Scalers"]:
+    for scaler, domain in config["Scalers"].items():
         if isinstance(domain, dict) and "dist" in domain:
             scaler_hyperparameters[scaler] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
         else:
