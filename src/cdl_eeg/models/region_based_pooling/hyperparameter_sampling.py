@@ -1,6 +1,8 @@
 import copy
 import random
 
+from cdl_eeg.models.random_search.sampling_distributions import sample_hyperparameter
+
 
 def sample_rbp_designs(config):
     """
@@ -15,8 +17,9 @@ def sample_rbp_designs(config):
     -------
     dict[str, typing.Any]
     """
-    # Sample the number of montage splits  todo: sample from a range or just use a list?
-    num_montage_splits = random.randint(config["num_montage_splits"]["min"], config["num_montage_splits"]["max"])
+    # Sample the number of montage splits
+    num_montage_splits = sample_hyperparameter(config["num_montage_splits"]["dist"],
+                                               **config["num_montage_splits"]["kwargs"])
 
     # Sample the number of pooling modules. It cannot exceed the number of montage splits
     num_pooling_modules = 1 if random.choice(config["share_all_pooling_modules"]) \
@@ -33,7 +36,8 @@ def sample_rbp_designs(config):
         designs[f"RBPDesign{i}"] = _sample_single_rbp_design(config=config["RBPDesign"], num_montage_splits=k)
 
     # Sample if the region representations should be normalised or not
-    normalise = random.choice(config["normalise_region_representations"])
+    normalise = sample_hyperparameter(config["normalise_region_representations"]["dist"],
+                                      **config["normalise_region_representations"]["kwargs"])
 
     return {"RBPDesigns": designs, "normalise_region_representations": normalise}
 

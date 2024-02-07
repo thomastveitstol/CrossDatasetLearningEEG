@@ -2,55 +2,92 @@ Shared Dataset Details:
   num_time_steps: &num_time_steps null
   time_series_start: &time_series_start null
 
+SubjectSplit:
+  name: SplitOnDataset
+  kwargs:
+    seed: 42  # todo: should we fix the seed?
+
+Datasets:
+  rockhill:
+    num_subjects: 31
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+  miltiadous:
+    num_subjects: 88
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+  hatlestad_hall:
+    num_subjects: 111
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+  yulin_wang:
+    num_subjects: 60
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+  cau_eeg:
+    num_subjects: 1379
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+
+Scalers:
+  target:
+    dist: uniform_discrete
+    kwargs:
+      domain:
+        - name: ZNormalisation
+          kwargs: { }
+        - name: NoScaler
+          kwargs: { }
+
 Training:
-  learning_rate: [ 0.005, 0.001, 0.0005, 0.0001, 0.00005, 0.00001 ]
-  beta_1: [ 0.95, 0.9, 0.85 ]
-  beta_2: [ 0.99, 0.999, 0.9999 ]
-  eps: [ 1.0e-07, 1.0e-08, 1.0e-09 ]
+  # Fixed hyperparameters
   batch_size: 16
   num_epochs: 50
   verbose: true
   val_split: 0.2
-  loss: [ MSELoss, L1Loss ]
-  metrics: regression
-  main_metric: [ mae, mse, pearson_r, spearman_rho, r2_score ]
   target: age
   continuous_testing: true
-  Scalers:
-    target:
-      name: ZNormalisation
-      kwargs: { }
-  Data Split:
-    name: SplitOnDataset
+  metrics: regression
+  # Varied hyperparameters
+  learning_rate:
+    dist: loguniform
     kwargs:
-      seed: 42
-  Datasets:
-    rockhill:
-      num_subjects: 31
-      num_time_steps: *num_time_steps
-      time_series_start: *time_series_start
-    miltiadous:
-      num_subjects: 88
-      num_time_steps: *num_time_steps
-      time_series_start: *time_series_start
-    hatlestad_hall:
-      num_subjects: 111
-      num_time_steps: *num_time_steps
-      time_series_start: *time_series_start
-    yulin_wang:
-      num_subjects: 60
-      num_time_steps: *num_time_steps
-      time_series_start: *time_series_start
-    cau_eeg:
-      num_subjects: 1379
-      num_time_steps: *num_time_steps
-      time_series_start: *time_series_start
+      base: 10
+      a: -5
+      b: -2
+  beta_1:
+    dist: uniform
+    kwargs:
+      a: 0.8
+      b: 1.0
+  beta_2:
+    dist: uniform
+    kwargs:
+      a: 0.8
+      b: 1.0
+  eps:
+    dist: loguniform
+    kwargs:
+      base: 10
+      a: -10
+      b: -6
+  loss:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ MSELoss, L1Loss ]
+  main_metric:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ mae, mse, pearson_r, spearman_rho, r2_score ]
 
 # -----------------
 # Domain discriminator
 # -----------------
 FCModule: &FCModule
-  hidden_units: [ [], [32], [64], [32, 32], [64, 64], [64, 32] ]
+  hidden_units:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ [], [32], [64], [32, 32], [64, 64], [64, 32] ]  # todo
 
 DomainDiscriminator:
   discriminators:
@@ -58,8 +95,13 @@ DomainDiscriminator:
     FCModule: *FCModule
   training:
     loss: CrossEntropyLoss
-    lambda: [ 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001 ]
     metrics: multiclass_classification
+    lambda:
+      dist: loguniform
+      kwargs:
+        base: 10
+        a: -6
+        b: -1
 
 
 # -----------------
@@ -72,14 +114,33 @@ box: &box
   y_max: 0.17
 
 # Pooling methods
+
+num_kernels: &num_kernels
+  dist: loguniform
+  kwargs:
+    a: 2
+    b: 4
+
+# todo: consider computing this from the sampling frequency instead
+max_receptive_field: &max_receptive_field
+  dist: loguniform
+  kwargs:
+    a: 2
+    b: 3
+
 MultiCSSharedRocket: &MultiCSSharedRocket
-  num_kernels: [250, 500, 1000, 5000]
-  max_receptive_field: [75, 100, 250]
+  num_kernels: *num_kernels
+  max_receptive_field: *max_receptive_field
 
 MultiMSSharedRocketHeadRegion: &MultiMSSharedRocketHeadRegion
-  num_kernels: [ 250, 500, 1000, 5000 ]
-  max_receptive_field: [ 75, 100, 250 ]
-  latent_search_features: [ 16, 32, 64 ]
+  num_kernels: *num_kernels
+  max_receptive_field: *max_receptive_field
+  latent_search_features:
+    dist: loguniform
+    kwargs:
+      base: 2
+      a: 3
+      b: 1024
   share_search_receiver_modules: [ true, false]
   bias: false
 
@@ -104,12 +165,19 @@ MontageSplits: &MontageSplits
   CentroidPolygons: *CentroidPolygons
 
 RegionBasedPooling: &RegionBasedPooling
-  normalise_region_representations: [ true, false ]
   num_montage_splits:
-    min: 3
-    max: 30
-  share_all_pooling_modules: [ true, false ]
-  num_pooling_modules: [ 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+    dist: loguniform
+    kwargs:
+      base: 2
+      a: 0  # 2^0 = 1
+      b: 6  # 2^6 = 64
+  normalise_region_representations:
+    dist: uniform_discrete
+    domain: [ true, false ]
+  share_all_pooling_modules:
+    dist: uniform_discrete
+    domain: [ true, false ]
+  num_pooling_modules: [ 2, 3, 4, 5, 6, 7, 8, 9, 10 ]  # todo
   RBPDesign:
     num_designs: 1
     pooling_type: multi_cs
@@ -130,8 +198,16 @@ Varied Numbers of Channels:
 # -----------------
 InceptionNetwork: &InceptionNetwork
   num_classes: 1
-  cnn_units: [ 16, 32, 64  ]
-  depth: [ 3, 6, 9, 12, 15, 18, 21, 24, 27 ]
+  cnn_units:
+    dist: loguniform
+    kwargs:
+      base: 2
+      a: 3  # 2^3 = 8
+      b: 10  # 2^10 = 1024
+  depth:  # todo
+    dist: uniform_discrete
+    kwargs:
+      domain: [ 3, 6, 9, 12, 15, 18, 21, 24, 27 ]
 
 EEGNetv4MTS: &EEGNetv4MTS
   num_classes: 1

@@ -1,6 +1,7 @@
 import random
 
-from cdl_eeg.models.hyperparameter_sampling import sample_rbp_designs
+from cdl_eeg.models.region_based_pooling.hyperparameter_sampling import sample_rbp_designs
+from cdl_eeg.models.random_search.sampling_distributions import sample_hyperparameter
 
 
 def generate_config_file(config):
@@ -17,12 +18,32 @@ def generate_config_file(config):
     dict[str, typing.Any]
     """
     # -----------------
+    # Add details for splitting in folds
+    # -----------------
+    subjects_split_hyperparameters = config["SubjectSplit"]
+
+    # -----------------
+    # Add dataset details
+    # -----------------
+    dataset_hyperparameters = config["Datasets"]
+
+    # -----------------
+    # Sample input and target scalers
+    # -----------------
+    scaler_hyperparameters = dict()
+    for scaler, domain in config["Scalers"]:
+        if isinstance(domain, dict) and "dist" in domain:
+            scaler_hyperparameters[scaler] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
+        else:
+            scaler_hyperparameters[scaler] = domain
+
+    # -----------------
     # Sample training hyperparameters
     # -----------------
     train_hyperparameters = dict()
     for param, domain in config["Training"].items():
-        if isinstance(domain, list):
-            train_hyperparameters[param] = random.choice(domain)
+        if isinstance(domain, dict) and "dist" in domain:
+            train_hyperparameters[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
         else:
             train_hyperparameters[param] = domain
 
@@ -33,7 +54,6 @@ def generate_config_file(config):
     varied_numbers_of_channels = dict()
     method = random.choice(tuple(config["Varied Numbers of Channels"].keys()))
     if method == "RegionBasedPooling":
-        # Todo: Implement how RBP should be sampled
         varied_numbers_of_channels[method] = sample_rbp_designs(
             config["Varied Numbers of Channels"][method]
         )
@@ -53,11 +73,11 @@ def generate_config_file(config):
 
     # Set hyperparameters
     mts_module_hyperparameters = dict()
-    for hyperparameter_name, hyperparameter_domain in config["MTS Module"][mts_module_name].items():
-        if isinstance(hyperparameter_domain, list):
-            mts_module_hyperparameters[hyperparameter_name] = random.choice(hyperparameter_domain)
+    for param, domain in config["MTS Module"][mts_module_name].items():
+        if isinstance(domain, dict) and "dist" in domain:
+            mts_module_hyperparameters[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
         else:
-            mts_module_hyperparameters[hyperparameter_name] = hyperparameter_domain
+            mts_module_hyperparameters[param] = domain
 
     # Combine architecture name and hyperparameters in a dict
     dl_model = {"model": mts_module_name, "kwargs": mts_module_hyperparameters}
@@ -69,26 +89,31 @@ def generate_config_file(config):
     discriminator_name = random.choice(tuple(config["DomainDiscriminator"]["discriminators"].keys()))
 
     if discriminator_name != "NoDiscriminator":
+        # Architecture hyperparameters
         discriminator_architecture = {"name": discriminator_name, "kwargs": dict()}
-        for hyperparameter_name, hyperparameter_domain \
-                in config["DomainDiscriminator"]["discriminators"][discriminator_name].items():
-            if isinstance(hyperparameter_domain, list):
-                discriminator_architecture["kwargs"][hyperparameter_name] = random.choice(hyperparameter_domain)
+        for param, domain in config["DomainDiscriminator"]["discriminators"][discriminator_name].items():
+            if isinstance(domain, dict) and "dist" in domain:
+                discriminator_architecture["kwargs"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
             else:
-                discriminator_architecture["kwargs"][hyperparameter_name] = hyperparameter_domain
+                discriminator_architecture["kwargs"][param] = domain
 
-        # Training hyperparams
+        # Training hyperparameters
         discriminator = {"discriminator": discriminator_architecture, "training": dict()}
-        for hyperparameter_name, hyperparameter_domain in config["DomainDiscriminator"]["training"].items():
-            if isinstance(hyperparameter_domain, list):
-                discriminator["training"][hyperparameter_name] = random.choice(hyperparameter_domain)
+        for param, domain in config["DomainDiscriminator"]["training"].items():
+            if isinstance(domain, dict) and "dist" in domain:
+                discriminator["training"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
             else:
-                discriminator["training"][hyperparameter_name] = hyperparameter_domain
+                discriminator["training"][param] = domain
     else:
         discriminator = None
 
     # -----------------
-    # Save as .yml file
+    # Create final dictionary
     # -----------------
-    return {"Training": train_hyperparameters, "Varied Numbers of Channels": varied_numbers_of_channels,
-            "DL Architecture": dl_model, "DomainDiscriminator": discriminator}
+    return {"SubjectSplit": subjects_split_hyperparameters,
+            "Datasets": dataset_hyperparameters,
+            "Scalers": scaler_hyperparameters,
+            "Training": train_hyperparameters,
+            "Varied Numbers of Channels": varied_numbers_of_channels,
+            "DL Architecture": dl_model,
+            "DomainDiscriminator": discriminator}
