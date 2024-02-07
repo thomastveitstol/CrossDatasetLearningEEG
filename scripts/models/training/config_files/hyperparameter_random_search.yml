@@ -152,9 +152,17 @@ PoolingModules: &PoolingModules
 
 # Montage splits  todo: update the kwargs
 VoronoiSplit: &VoronoiSplit
-  channel_systems: [ [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg ] ]
+  channel_systems:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg ] ]
   min_nodes: 1  # todo: other values must be implemented
-  num_initial_centroids: [ 100, 250, 500 ]
+  num_initial_centroids:
+    dist: log_uniform_int
+    kwargs:
+      base: 10
+      a: 2
+      b: 3
   <<: *box
 
 CentroidPolygons: &CentroidPolygons
