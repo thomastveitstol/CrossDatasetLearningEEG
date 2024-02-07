@@ -22,7 +22,8 @@ def sample_rbp_designs(config):
                                                **config["num_montage_splits"]["kwargs"])
 
     # Sample the number of pooling modules. It cannot exceed the number of montage splits
-    num_pooling_modules = 1 if random.choice(config["share_all_pooling_modules"]) \
+    num_pooling_modules = 1 if sample_hyperparameter(config["share_all_pooling_modules"]["dist"],
+                                                     **config["share_all_pooling_modules"]["kwargs"]) \
         else random.choice([candidate_number for candidate_number in config["num_pooling_modules"]
                             if candidate_number <= num_montage_splits])
 

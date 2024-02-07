@@ -176,7 +176,8 @@ RegionBasedPooling: &RegionBasedPooling
     domain: [ true, false ]
   share_all_pooling_modules:
     dist: uniform_discrete
-    domain: [ true, false ]
+    kwargs:
+      domain: [ true, false ]
   num_pooling_modules: [ 2, 3, 4, 5, 6, 7, 8, 9, 10 ]  # todo
   RBPDesign:
     num_designs: 1
