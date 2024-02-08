@@ -237,6 +237,12 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
         return tuple(self._data.keys())
 
     @property
+    def dataset_sizes(self):
+        """Get the sizes of the datasets. The keys are the dataset names, the values are the number of subjects in the
+        dataset"""
+        return {dataset_name: x.shape[0] for dataset_name, x in self._data.items()}
+
+    @property
     def dataset_indices(self):
         """Get a dictionary mapping the dataset name to the dataset index"""
         return {dataset_name: i for i, dataset_name in enumerate(self._data)}
