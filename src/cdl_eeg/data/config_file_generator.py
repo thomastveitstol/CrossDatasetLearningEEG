@@ -15,8 +15,8 @@ def generate_preprocessing_config_file(config):
         l_freq = numpy.random.normal(loc=band["low"]["mean"], scale=band["low"]["std"])
         h_freq = numpy.random.normal(loc=band["high"]["mean"], scale=band["high"]["std"])
     elif band["name"] == "uniform":
-        l_freq = numpy.random.uniform(low=band["name"]["low"]["min"], high=band["name"]["low"]["max"])
-        h_freq = numpy.random.uniform(low=max(band["name"]["high"]["min"], l_freq), high=band["name"]["high"]["max"])
+        l_freq = numpy.random.uniform(low=band["low"]["min"], high=band["name"]["low"]["max"])
+        h_freq = numpy.random.uniform(low=max(band["high"]["min"], l_freq), high=band["high"]["max"])
     else:
         raise ValueError(f"The band-pass name {band['name']} was not recognised")
 
