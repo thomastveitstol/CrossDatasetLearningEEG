@@ -5,54 +5,6 @@ from torch.utils.data import Dataset
 from cdl_eeg.data.data_split import Subject
 
 
-class SelfSupervisedFixedChannelsDataGenerator(Dataset):  # type: ignore[type-arg]
-    """
-    Data generator for self-supervised learning when the number of input channels is fixed
-    """
-
-    def __init__(self, input_data, *, transformation, pretext_task):
-        super().__init__()
-
-        # Input check
-        self._input_data_check(input_data)
-
-        # ------------
-        # Set attributes
-        # ------------
-        self._data = numpy.concatenate(tuple(arr for arr in input_data.values()), axis=0) \
-            if isinstance(input_data, dict) else input_data
-        self._transformation = transformation
-        self._pretext_task = pretext_task
-
-    def __len__(self):
-        return self._data.shape[0]
-
-    def __getitem__(self, item):
-        # Perform permutation and get details
-        transformed, details = self._transformation.transform(self._pretext_task)(self._data[item])
-
-        # Convert to torch tensors and return
-        return torch.tensor(transformed, dtype=torch.float), torch.tensor(details, dtype=torch.float)
-
-    @staticmethod
-    def _input_data_check(input_data):
-        # Type checking
-        if not isinstance(input_data, (dict, numpy.ndarray)):
-            raise TypeError(f"Expected input data to be a numpy array or a dict of numpy arrays, but found "
-                            f"{type(input_data)}")
-
-        if isinstance(input_data, dict):
-            # Type check of the keys
-            if not all(isinstance(dataset_name, str) for dataset_name in input_data):
-                raise TypeError(f"Expected all keys of the dictionary to be strings (dataset names), but found "
-                                f"{set(type(dataset_name) for dataset_name in input_data)}")
-
-            # Type check of the values
-            if not all(isinstance(dataset_name, numpy.ndarray) for dataset_name in input_data.values()):
-                raise TypeError(f"Expected all values of the dictionary to be numpy ndarrays, but found "
-                                f"{set(type(arr) for arr in input_data.values())}")
-
-
 class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
     """
     (In the very early stage of development)
