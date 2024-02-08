@@ -67,7 +67,7 @@ def main():
 
     # k-fold CV
     k_fold_config = copy.deepcopy(config)
-    k_fold_config["SubjectSplit"] = {"kwargs": {"seed": 42, "num_folds": len(config["Training"]["Datasets"])},
+    k_fold_config["SubjectSplit"] = {"kwargs": {"seed": 42, "num_folds": len(config["Datasets"])},
                                      "name": "KFoldDataSplit"}  # todo
     if k_fold_config["DomainDiscriminator"] is not None:
         num_train_datasets = len(k_fold_config["Datasets"])
