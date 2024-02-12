@@ -229,7 +229,7 @@ InceptionNetwork: &InceptionNetwork
     kwargs:
       base: 2
       a: 3  # 2^3 = 8
-      b: 10  # 2^10 = 1024
+      b: 8  # 2^8 = 256
   depth:  # todo
     dist: uniform_discrete
     kwargs:
