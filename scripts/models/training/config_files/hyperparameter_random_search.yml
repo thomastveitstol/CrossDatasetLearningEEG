@@ -24,6 +24,10 @@ Datasets:
     num_subjects: 60
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
+  # ous:
+  #   num_subjects: 1000
+  #   num_time_steps: *num_time_steps
+  #   time_series_start: *time_series_start
   cau_eeg:
     num_subjects: 1379
     num_time_steps: *num_time_steps
