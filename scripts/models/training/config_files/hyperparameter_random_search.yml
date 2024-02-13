@@ -109,7 +109,12 @@ DomainDiscriminator:
     NoDiscriminator: null
     FCModule: *FCModule
   training:
-    loss: CrossEntropyLoss
+    Loss:
+      loss: CrossEntropyLoss
+      loss_kwargs:
+        reduction: mean
+      weighter: null  # todo: add sample-wise weighting of loss function
+      weighter_kwargs: { }
     metrics: multiclass_classification
     lambda:
       dist: log_uniform
