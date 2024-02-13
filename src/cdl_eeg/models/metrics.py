@@ -544,10 +544,10 @@ def save_discriminator_histories_plots(path, histories):
     # Loop through all metrics
     # ----------------
     # Get all available metrics
-    all_metrics = []
+    _all_metrics = []
     for history in histories:
-        all_metrics.extend(list(history.history.keys()))
-    all_metrics = set(all_metrics)  # Keep unique ones only
+        _all_metrics.extend(list(history.history.keys()))
+    all_metrics = set(_all_metrics)  # Keep unique ones only
 
     for metric in all_metrics:
         pyplot.figure(figsize=(12, 6))
