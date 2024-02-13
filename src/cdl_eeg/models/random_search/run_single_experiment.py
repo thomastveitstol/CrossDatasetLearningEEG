@@ -170,6 +170,7 @@ def run_experiment(config, results_path):
         criterion = CustomWeightedLoss(**train_config["Loss"])
 
         # (Maybe) create optimiser and loss for domain discriminator
+        discriminator_criterion: Optional[CustomWeightedLoss]
         if config["DomainDiscriminator"] is not None:
             if config["DomainDiscriminator"]["training"]["Loss"]["weighter"] is not None:
                 config["DomainDiscriminator"]["training"]["Loss"]["weighter_kwargs"]["dataset_sizes"] = (

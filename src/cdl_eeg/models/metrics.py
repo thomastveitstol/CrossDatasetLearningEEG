@@ -183,7 +183,7 @@ class Histories:
                 if prediction.size()[0] > 1:
                     _prediction = tuple(float(pred) for pred in prediction.cpu().tolist())
                 elif prediction.size()[0] == 1:
-                    _prediction = float(prediction)
+                    _prediction = float(prediction)  # type: ignore[assignment]
                 else:
                     raise ValueError("This should never happen")
                 self._prediction_history[subject] = [_prediction]

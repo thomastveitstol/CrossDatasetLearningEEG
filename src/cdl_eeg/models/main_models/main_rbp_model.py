@@ -178,7 +178,8 @@ class MainRBPModel(nn.Module):
         # todo: I think alpha can be set to 1 without loss of generality, as long as the weighing in the loss is varied
         gradient_reversed_x = ReverseLayerF.apply(x, 1.)
 
-        return self._mts_module.classify_latent_features(x), self._domain_discriminator(gradient_reversed_x)
+        return (self._mts_module.classify_latent_features(x),
+                self._domain_discriminator(gradient_reversed_x))  # type: ignore[misc]
 
     # ----------------
     # Methods for fitting channel systems
@@ -386,8 +387,8 @@ class MainRBPModel(nn.Module):
                         if target_scaler is not None:
                             y_pred = target_scaler.inv_transform(scaled_data=y_pred)
                             y_test = target_scaler.inv_transform(scaled_data=y_test)
-                        test_history.store_batch_evaluation(y_pred=y_pred, y_true=y_test,
-                                                            subjects=test_subjects)  # type: ignore[union-attr]
+                        test_history.store_batch_evaluation(y_pred=y_pred, y_true=y_test,  # type: ignore[union-attr]
+                                                            subjects=test_subjects)
 
                     # Finalise epoch for test history object
                     test_history.on_epoch_end(verbose=verbose)  # type: ignore[union-attr]
@@ -576,8 +577,8 @@ class MainRBPModel(nn.Module):
                         if target_scaler is not None:
                             y_pred = target_scaler.inv_transform(scaled_data=y_pred)
                             y_test = target_scaler.inv_transform(scaled_data=y_test)
-                        test_history.store_batch_evaluation(y_pred=y_pred, y_true=y_test,
-                                                            subjects=test_subjects)  # type: ignore[union-attr]
+                        test_history.store_batch_evaluation(y_pred=y_pred, y_true=y_test,  # type: ignore[union-attr]
+                                                            subjects=test_subjects)
 
                     # Finalise epoch for test history object
                     test_history.on_epoch_end(verbose=verbose)  # type: ignore[union-attr]
