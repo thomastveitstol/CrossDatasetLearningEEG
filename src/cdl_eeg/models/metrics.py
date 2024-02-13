@@ -8,7 +8,7 @@ Author: Thomas Tveitstøl (Oslo University Hospital)
 """
 import os
 import warnings
-from typing import Dict, List, Tuple, Optional, Any, NamedTuple
+from typing import Dict, List, Tuple, Optional, Any, NamedTuple, Union
 
 import pandas
 from matplotlib import pyplot
@@ -116,7 +116,7 @@ class Histories:
         self._history: Dict[str, List[float]] = {f"{metric}": [] for metric in metrics}
 
         # For storing all predictions .
-        self._prediction_history: Dict[Subject, List[float]] = dict()
+        self._prediction_history: Dict[Subject, List[Union[float, Tuple[float, ...]]]] = dict()
 
         # Histories per subgroup
         splits_histories: Optional[List[Tuple[Dict[str, Tuple[Any, ...]],
@@ -316,7 +316,8 @@ class Histories:
     # -----------------
     @property
     def name(self) -> str:
-        return "UNNAMED" if self._name is None else self._name
+        # todo: I don't like this, looks like a quick fix...
+        return "UNNAMED" if self._name is None else self._name  # type: ignore[no-any-return]
 
     @property
     def history(self):
