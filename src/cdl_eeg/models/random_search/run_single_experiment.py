@@ -10,7 +10,7 @@ from cdl_eeg.data.combined_datasets import CombinedDatasets
 from cdl_eeg.data.data_generators.data_generator import DownstreamDataGenerator
 from cdl_eeg.data.data_split import get_data_split, leave_1_fold_out
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
-from cdl_eeg.models.losses import get_loss_function
+from cdl_eeg.models.losses import CustomWeightedLoss
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
 from cdl_eeg.models.metrics import save_discriminator_histories_plots, save_histories_plots
 from cdl_eeg.models.utils import tensor_dict_to_device
@@ -158,14 +158,21 @@ def run_experiment(config, results_path):
         else:
             test_loader = None
 
-        # Create optimiser and loss
+        # Create optimiser
         optimiser = optim.Adam(model.parameters(), lr=train_config["learning_rate"],
                                betas=(train_config["beta_1"], train_config["beta_2"]), eps=train_config["eps"])
-        criterion = get_loss_function(loss=train_config["loss"])
+
+        # Create loss
+        if train_config["Loss"]["weighter"] is not None:
+            train_config["Loss"]["weighter"]["weighter_kwargs"]["dataset_sizes"] = train_gen.dataset_sizes
+        criterion = CustomWeightedLoss(**train_config["Loss"])
 
         # (Maybe) create optimiser and loss for domain discriminator
         if config["DomainDiscriminator"] is not None:
-            discriminator_criterion = get_loss_function(loss=config["DomainDiscriminator"]["training"]["loss"])
+            if config["DomainDiscriminator"]["training"]["Loss"]["weighter"] is not None:
+                config["DomainDiscriminator"]["training"]["Loss"]["weighter_kwargs"]["dataset_sizes"] = (
+                    train_gen.dataset_sizes)
+            discriminator_criterion = CustomWeightedLoss(**config["DomainDiscriminator"]["training"]["Loss"])
             discriminator_weight = config["DomainDiscriminator"]["training"]["lambda"]
             discriminator_metrics = config["DomainDiscriminator"]["training"]["metrics"]
         else:
