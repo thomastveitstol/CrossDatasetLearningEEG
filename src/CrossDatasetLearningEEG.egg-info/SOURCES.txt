@@ -12,6 +12,7 @@ src/cdl_eeg/__init__.py
 src/cdl_eeg/py.typed
 src/cdl_eeg/data/__init__.py
 src/cdl_eeg/data/combined_datasets.py
+src/cdl_eeg/data/config_file_generator.py
 src/cdl_eeg/data/data_split.py
 src/cdl_eeg/data/paths.py
 src/cdl_eeg/data/subject_split.py
@@ -33,7 +34,6 @@ src/cdl_eeg/data/scalers/__init__.py
 src/cdl_eeg/data/scalers/scaler_base.py
 src/cdl_eeg/data/scalers/target_scalers.py
 src/cdl_eeg/models/__init__.py
-src/cdl_eeg/models/hyperparameter_sampling.py
 src/cdl_eeg/models/losses.py
 src/cdl_eeg/models/metrics.py
 src/cdl_eeg/models/py.typed
@@ -45,13 +45,17 @@ src/cdl_eeg/models/domain_discriminators/getter.py
 src/cdl_eeg/models/main_models/__init__.py
 src/cdl_eeg/models/main_models/main_fixed_channels_model.py
 src/cdl_eeg/models/main_models/main_rbp_model.py
-src/cdl_eeg/models/main_models/ml_models.py
 src/cdl_eeg/models/mts_modules/__init__.py
 src/cdl_eeg/models/mts_modules/braindecode_models.py
 src/cdl_eeg/models/mts_modules/getter.py
 src/cdl_eeg/models/mts_modules/inception_network.py
 src/cdl_eeg/models/mts_modules/mts_module_base.py
+src/cdl_eeg/models/random_search/__init__.py
+src/cdl_eeg/models/random_search/generate_config_file.py
+src/cdl_eeg/models/random_search/run_single_experiment.py
+src/cdl_eeg/models/random_search/sampling_distributions.py
 src/cdl_eeg/models/region_based_pooling/__init__.py
+src/cdl_eeg/models/region_based_pooling/hyperparameter_sampling.py
 src/cdl_eeg/models/region_based_pooling/region_based_pooling.py
 src/cdl_eeg/models/region_based_pooling/utils.py
 src/cdl_eeg/models/region_based_pooling/montage_splits/__init__.py
