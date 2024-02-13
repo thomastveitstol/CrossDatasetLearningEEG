@@ -150,7 +150,7 @@ class Histories:
         # ----------------
         self._epoch_y_pred: List[torch.Tensor] = []
         self._epoch_y_true: List[torch.Tensor] = []
-        self._epoch_subjects: List[Subject] = []  # todo: do we really need this?
+        self._epoch_subjects: List[Subject] = []
 
     def store_batch_evaluation(self, y_pred, y_true, subjects=None):
         """
