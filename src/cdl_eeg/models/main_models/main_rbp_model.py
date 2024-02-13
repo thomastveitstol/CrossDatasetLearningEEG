@@ -267,13 +267,8 @@ class MainRBPModel(nn.Module):
                 discriminator_targets = train_loader.dataset.get_dataset_indices_from_subjects(
                     subjects=subjects).to(device)
 
-                # Compute loss
-                # l1 = classifier_criterion(classifier_output, y_train)
-                # l2 = discriminator_criterion(discriminator_output, discriminator_targets)
-                # print(f"Classifier loss: {float(l1):.4f}")
-                # print(f"Discriminator loss: {float(l2):.4f}")
-
-                loss = (classifier_criterion(classifier_output, y_train)
+                # Compute loss  todo: discriminator loss is unweighted
+                loss = (classifier_criterion(classifier_output, y_train, subjects=subjects)
                         + discriminator_weight * discriminator_criterion(discriminator_output, discriminator_targets))
 
                 # Optimise
@@ -427,7 +422,7 @@ class MainRBPModel(nn.Module):
         main_metric : str
             Main metric for model selection
         num_epochs : int
-        criterion : nn.modules.loss._Loss
+        criterion : cdl_eeg.models.losses.CustomWeightedLoss
         optimiser : torch.optim.Optimizer
         device : torch.device
         channel_name_to_index : dict[str, dict[str, int]]
@@ -482,7 +477,7 @@ class MainRBPModel(nn.Module):
 
                 # Compute loss
                 optimiser.zero_grad()
-                loss = criterion(output, y_train)
+                loss = criterion(output, y_train, subjects=subjects)
                 loss.backward()
                 optimiser.step()
 
