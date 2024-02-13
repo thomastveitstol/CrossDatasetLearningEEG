@@ -60,7 +60,7 @@ def generate_config_file(config):
     loss_hyperparameters["loss_kwargs"] = "mean" if loss_hyperparameters["weighter"] is None else "none"
 
     weighter_kwargs = dict()  # todo: hard-coded :(
-    for param, domain in weighter_kwargs.items():
+    for param, domain in loss_hyperparameters["weighter_kwargs"].items():
         if isinstance(domain, dict) and "dist" in domain:
             weighter_kwargs[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
         else:
@@ -141,4 +141,5 @@ def generate_config_file(config):
             "Training": train_hyperparameters,
             "Varied Numbers of Channels": varied_numbers_of_channels,
             "DL Architecture": dl_model,
-            "DomainDiscriminator": discriminator}
+            "DomainDiscriminator": discriminator,
+            "run_baseline": config["run_baseline"]}
