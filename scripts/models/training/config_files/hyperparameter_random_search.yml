@@ -56,7 +56,11 @@ Loss:
     kwargs:
       domain: [ null, SamplePowerWeighter ]
   weighter_kwargs:   # Dataset sizes will be added during runtime
-    weight_power: 0.5  # todo: distribution, allowing for all values between 0 and 1
+    weight_power:
+      dist: uniform
+      kwargs:
+        a: 0
+        b: 1
 
 Training:
   # Fixed hyperparameters
