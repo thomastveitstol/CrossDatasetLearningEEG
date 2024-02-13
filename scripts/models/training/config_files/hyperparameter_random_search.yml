@@ -48,7 +48,7 @@ Scalers:
 # todo: for the current implementation of hyperparameter sampling, it was easier to place 'Loss' outside 'Training', but
 #  I think it should be changed in the future
 Loss:
-  loss_name:
+  loss:
     dist: uniform_discrete
     kwargs:
       domain: [ MSELoss, L1Loss ]

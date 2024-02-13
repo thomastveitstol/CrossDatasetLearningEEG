@@ -54,11 +54,11 @@ def generate_config_file(config):
     loss_config = config["Loss"]
     loss_hyperparameters = dict()
 
-    loss_hyperparameters["loss_name"] = sample_hyperparameter(loss_config["loss_name"]["dist"],
-                                                              **loss_config["loss_name"]["kwargs"])
+    loss_hyperparameters["loss"] = sample_hyperparameter(loss_config["loss"]["dist"], **loss_config["loss"]["kwargs"])
     loss_hyperparameters["weighter"] = sample_hyperparameter(loss_config["weighter"]["dist"],
                                                              **loss_config["weighter"]["kwargs"])
-    loss_hyperparameters["loss_kwargs"] = "mean" if loss_hyperparameters["weighter"] is None else "none"
+    loss_hyperparameters["loss_kwargs"] = loss_config["loss_kwargs"]
+    loss_hyperparameters["loss_kwargs"]["reduction"] = "mean" if loss_hyperparameters["weighter"] is None else "none"
 
     weighter_kwargs = dict()  # todo: hard-coded :(
     for param, domain in loss_config["weighter_kwargs"].items():
@@ -68,7 +68,7 @@ def generate_config_file(config):
             weighter_kwargs[param] = domain
 
     # Add weighter kwargs to loss
-    loss_hyperparameters["Loss"]["weighter_kwargs"] = weighter_kwargs
+    loss_hyperparameters["weighter_kwargs"] = weighter_kwargs
 
     # Add loss to training section in config file
     train_hyperparameters["Loss"] = loss_hyperparameters

@@ -166,7 +166,7 @@ def run_experiment(config, results_path):
 
         # Create loss
         if train_config["Loss"]["weighter"] is not None:
-            train_config["Loss"]["weighter"]["weighter_kwargs"]["dataset_sizes"] = train_gen.dataset_sizes
+            train_config["Loss"]["weighter_kwargs"]["dataset_sizes"] = train_gen.dataset_sizes
         criterion = CustomWeightedLoss(**train_config["Loss"])
 
         # (Maybe) create optimiser and loss for domain discriminator
