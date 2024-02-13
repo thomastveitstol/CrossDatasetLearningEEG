@@ -1,4 +1,5 @@
 import random
+from typing import Any, Dict, Optional
 
 from cdl_eeg.models.region_based_pooling.hyperparameter_sampling import sample_rbp_designs
 from cdl_eeg.models.random_search.sampling_distributions import sample_hyperparameter
@@ -113,6 +114,7 @@ def generate_config_file(config):
     # Choose architecture
     discriminator_name = random.choice(tuple(config["DomainDiscriminator"]["discriminators"].keys()))
 
+    discriminator: Optional[Dict[str, Any]]
     if discriminator_name != "NoDiscriminator":
         # Architecture hyperparameters
         discriminator_architecture = {"name": discriminator_name, "kwargs": dict()}
