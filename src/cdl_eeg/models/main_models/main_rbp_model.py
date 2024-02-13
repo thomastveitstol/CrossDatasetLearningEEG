@@ -267,9 +267,10 @@ class MainRBPModel(nn.Module):
                 discriminator_targets = train_loader.dataset.get_dataset_indices_from_subjects(
                     subjects=subjects).to(device)
 
-                # Compute loss  todo: discriminator loss is unweighted
+                # Compute loss
                 loss = (classifier_criterion(classifier_output, y_train, subjects=subjects)
-                        + discriminator_weight * discriminator_criterion(discriminator_output, discriminator_targets))
+                        + discriminator_weight * discriminator_criterion(discriminator_output, discriminator_targets,
+                                                                         subjects=subjects))
 
                 # Optimise
                 optimiser.zero_grad()
