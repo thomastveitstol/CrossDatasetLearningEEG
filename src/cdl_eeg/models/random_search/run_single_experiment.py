@@ -1,7 +1,7 @@
 import os
 import random
 import warnings
-from typing import Optional
+from typing import Any, Optional
 
 import torch
 from torch import optim
@@ -144,7 +144,7 @@ def run_experiment(config, results_path):
         val_loader = DataLoader(dataset=val_gen, batch_size=train_config["batch_size"], shuffle=True)
 
         # Maybe repeat the above steps for the test data as well
-        test_loader: Optional[DataLoader]
+        test_loader: Optional[DataLoader[Any]]
         if train_config["continuous_testing"]:
             test_data = combined_dataset.get_data(subjects=test_subjects)
             test_targets = combined_dataset.get_targets(subjects=test_subjects)
