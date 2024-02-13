@@ -131,9 +131,9 @@ class CustomWeightedLoss:
 
     __slots__ = ("_criterion", "_weighter")
 
-    def __init__(self, loss_name, loss_kwargs, weighter_name, weighter_kwargs):
-        self._criterion = get_pytorch_loss_function(name=loss_name, **loss_kwargs)
-        self._weighter = None if weighter_name is None else get_loss_weighter(weighter_name, **weighter_kwargs)
+    def __init__(self, loss, loss_kwargs, weighter, weighter_kwargs):
+        self._criterion = get_pytorch_loss_function(name=loss, **loss_kwargs)
+        self._weighter = None if weighter is None else get_loss_weighter(weighter, **weighter_kwargs)
 
     def __call__(self, input_tensor, target, *, subjects=None):
         # Compute loss
