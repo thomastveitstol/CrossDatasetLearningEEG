@@ -48,6 +48,19 @@ def generate_config_file(config):
             train_hyperparameters[param] = domain
 
     # -----------------
+    # Sample loss
+    # -----------------
+    loss_hyperparameters = dict()
+    for param, domain in config["Loss"].items():
+        if isinstance(domain, dict) and "dist" in domain:
+            loss_hyperparameters[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
+        else:
+            loss_hyperparameters[param] = domain
+
+    # Add to training section in config file
+    train_hyperparameters["Loss"] = loss_hyperparameters
+
+    # -----------------
     # Sample method for handling a varied
     # number of channels
     # -----------------

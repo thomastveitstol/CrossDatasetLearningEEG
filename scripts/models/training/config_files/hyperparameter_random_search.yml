@@ -40,13 +40,28 @@ Scalers:
       domain:
         - name: ZNormalisation
           kwargs: { }
-        - name: NoScaler
-          kwargs: { }
+        # - name: NoScaler
+        #   kwargs: { }
+
+# todo: for the current implementation of hyperparameter sampling, it was easier to place 'Loss' outside 'Training', but
+#  I think it should be changed in the future
+Loss:
+  loss_name:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ MSELoss, L1Loss ]
+  loss_kwargs: { }  # reduction parameter will be set to 'none' or 'mean', depending on the sampled loss weighter
+  weighter: # todo: weighter and the kwargs must be sampled together
+    dist: uniform_discrete
+    kwargs:
+      domain: [ null, SamplePowerWeighter ]
+  weighter_kwargs:   # Dataset sizes will be added during runtime
+    weight_power: 0.5  # todo: distribution, allowing for all values between 0 and 1
 
 Training:
   # Fixed hyperparameters
   batch_size: 16
-  num_epochs: 50
+  num_epochs: 10
   verbose: true
   val_split: 0.2
   target: age
@@ -75,10 +90,6 @@ Training:
       base: 10
       a: -10
       b: -6
-  loss:
-    dist: uniform_discrete
-    kwargs:
-      domain: [ MSELoss, L1Loss ]
   main_metric:
     dist: uniform_discrete
     kwargs:
@@ -233,7 +244,7 @@ InceptionNetwork: &InceptionNetwork
   depth:  # todo
     dist: uniform_discrete
     kwargs:
-      domain: [ 3, 6, 9, 12, 15, 18, 21, 24, 27 ]
+      domain: [ 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36 ]
 
 EEGNetv4MTS: &EEGNetv4MTS
   num_classes: 1
