@@ -16,7 +16,7 @@ from scipy import signal
 
 class ConvMMN:
     """
-    Implementation of CNNM
+    Implementation of CMMN
     """
 
     __slots__ = "_sampling_freq", "_kernel_size", "_psd_barycenter", "_monge_filter"
