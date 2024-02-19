@@ -18,6 +18,18 @@ from scipy import signal
 class ConvMMN:
     """
     Implementation of CMMN
+
+    Examples
+    --------
+    >>> my_source_data = {"d1": numpy.random.normal(0, 1, size=(10, 32, 2000)),
+    ...                   "d2": numpy.random.normal(0, 1, size=(8, 32, 2000)),
+    ...                   "d3": numpy.random.normal(0, 1, size=(17, 32, 2000))}
+    >>> my_cmmn = ConvMMN(kernel_size=128)
+    >>> my_cmmn.fit_psd_barycenter(my_source_data, sampling_freq=100)
+    >>> my_cmmn.fit_monge_filters(data=my_source_data)
+    >>> my_convoluted_source_data = my_cmmn(my_source_data)
+    >>> {name: data_.shape for name, data_ in my_convoluted_source_data.items()}  # type: ignore[attr-defined]
+    {'d1': (10, 32, 2000), 'd2': (8, 32, 2000), 'd3': (17, 32, 2000)}
     """
 
     __slots__ = "_sampling_freq", "_kernel_size", "_psd_barycenter", "_monge_filters"
@@ -75,13 +87,39 @@ class ConvMMN:
                 raise ValueError(f"Expected the number of channels to be the same as number of monge filters, but "
                                  f"received {x.shape[1]} and {monge_filter.shape[0]}")
 
-            # Apply monge filter channel-wise and store it. The original implementation uses mode='valid'
+            # Apply monge filter channel-wise and store it
+            # todo: so many for-loops, should be possible to improve this
             convoluted[dataset_name] = numpy.concatenate(
-                [numpy.expand_dims(numpy.convolve(signal_, filter_, mode="valid"), axis=1)
-                 for signal_, filter_ in zip(x.transpose((1, 0, 2)), monge_filter)], axis=1
+                [numpy.expand_dims(self._compute_single_eeg_convolution(mts, monge_filter), axis=0) for mts in x],
+                axis=0
             )
 
         return convoluted
+
+    @staticmethod
+    def _compute_single_eeg_convolution(x, monge_filter):
+        """
+        Compute the convolution
+
+        Examples
+        --------
+        >>> my_x = numpy.random.normal(0, 1, size=(32, 2000))
+        >>> my_monge_filter = numpy.random.normal(0, 1, size=(32, 128))
+        >>> ConvMMN._compute_single_eeg_convolution(my_x, my_monge_filter).shape
+        (32, 2000)
+        """
+        # Input checks
+        assert x.ndim == 2, (f"Expected the single EEG to only have 2 dimensions (channel and temporal dimensions), "
+                             f"but found {x.ndim}")
+        assert monge_filter.ndim == 2, (f"Expected the monge filter to have 2 dimensions (channel and frequency "
+                                        f"dimensions), but found {monge_filter.ndim}")
+
+        # Perform convolution channel-wise. The original implementation uses mode='same'
+        return numpy.concatenate(
+            [numpy.expand_dims(numpy.convolve(signal_, filter_, mode="same"), axis=0)
+             for signal_, filter_ in zip(x, monge_filter)],
+            axis=0
+        )
 
     def __call__(self, data):
         """
