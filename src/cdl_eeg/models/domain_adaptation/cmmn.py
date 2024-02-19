@@ -11,6 +11,7 @@ Paper:
 from typing import Dict, Optional
 
 import numpy
+from scipy import fft
 from scipy import signal
 
 
@@ -79,8 +80,8 @@ class ConvMMN:
             dataset_psd = self._compute_representative_psd(x, sampling_freq=self._sampling_freq,
                                                            kernel_size=self._kernel_size)
 
-            # Compute the monge filter as in Eq. 5
-            monge_filter = numpy.sqrt(self._psd_barycenter) / numpy.sqrt(dataset_psd)
+            # Compute the monge filter as in Eq. 5  todo: verify that the axes is correct
+            monge_filter = fft.irfftn(numpy.sqrt(self._psd_barycenter) / numpy.sqrt(dataset_psd), axes=(-1,))
 
             # Store the monge filter
             self._monge_filter[dataset_name] = monge_filter
