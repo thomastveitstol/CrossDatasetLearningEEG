@@ -20,7 +20,7 @@ class ConvMMN:
     Implementation of CMMN
     """
 
-    __slots__ = "_sampling_freq", "_kernel_size", "_psd_barycenter", "_monge_filter"
+    __slots__ = "_sampling_freq", "_kernel_size", "_psd_barycenter", "_monge_filters"
 
     def __init__(self, *, kernel_size, sampling_freq=None):
         """Initialise object"""
@@ -30,12 +30,77 @@ class ConvMMN:
 
         # Initialise attributes to be fitted
         self._psd_barycenter: Optional[numpy.ndarray] = None
-        self._monge_filter: Dict[str, numpy.ndarray] = dict()
+        self._monge_filters: Dict[str, numpy.ndarray] = dict()
+
+    # ---------------
+    # Methods for applying CMMN
+    # ---------------
+    def _apply_monge_filters(self, data):
+        """
+        Method for applying CMMN, after it is fit
+
+        Parameters
+        ----------
+        data : dict[str, numpy.ndarray]
+
+        Returns
+        -------
+        dict[str, numpy.ndarray]
+            The datasets convolved with their respective monge filters
+        """
+        # --------------
+        # Input checks
+        # --------------
+        # Check that the PSD barycenter is fit
+        if self._psd_barycenter is None:
+            raise RuntimeError("The barycenter must be fit before mapping applying the monge filters")
+
+        # Check that monge filter has been fit on all provided datasets
+        _unfit_datasets = tuple(dataset for dataset in data if dataset not in self._monge_filters)
+        if _unfit_datasets:
+            raise RuntimeError(f"The monge filters must be computed prior to applying them, but this was not the case "
+                               f"for the following datasets: {_unfit_datasets}")
+
+        # --------------
+        # Apply filters
+        # --------------
+        # Loop through all datasets
+        convoluted = dict()
+        for dataset_name, x in data.items():
+            # Extract monge filter (one per channel)
+            monge_filter = self._monge_filters[dataset_name]
+
+            # Channel dimension check  todo: this must likely be more flexible in the future
+            if x.shape[1] != monge_filter.shape[0]:
+                raise ValueError(f"Expected the number of channels to be the same as number of monge filters, but "
+                                 f"received {x.shape[1]} and {monge_filter.shape[0]}")
+
+            # Apply monge filter channel-wise and store it. The original implementation uses mode='valid'
+            convoluted[dataset_name] = numpy.concatenate(
+                [numpy.expand_dims(numpy.convolve(signal_, filter_, mode="valid"), axis=1)
+                 for signal_, filter_ in zip(x.transpose((1, 0, 2)), monge_filter)], axis=1
+            )
+
+        return convoluted
+
+    def __call__(self, data):
+        """
+        Method which applies monge filters (see _apply_monge_filters)
+
+        Parameters
+        ----------
+        data : dict[str, numpy.ndarray]
+
+        Returns
+        -------
+        data : dict[str, numpy.ndarray]
+        """
+        return self._apply_monge_filters(data=data)
 
     # ---------------
     # Methods for fitting CMMN
     # ---------------
-    def fit_barycenter(self, data, *, sampling_freq=None):
+    def fit_psd_barycenter(self, data, *, sampling_freq=None):
         # If a sampling frequency is passed, set it (currently overriding, may want to do a similarity check and raise
         # error)
         self._sampling_freq = self._sampling_freq if sampling_freq is None else sampling_freq
@@ -72,7 +137,7 @@ class ConvMMN:
         """
         # Checks
         if self._psd_barycenter is None:
-            raise RuntimeError("The barycenter must be fit before fitting the monge filters")
+            raise RuntimeError("The PSD barycenter must be fit before fitting the monge filters")
 
         # Loop through all provided datasets
         for dataset_name, x in data.items():
@@ -83,8 +148,11 @@ class ConvMMN:
             # Compute the monge filter as in Eq. 5  todo: verify that the axes is correct
             monge_filter = fft.irfftn(numpy.sqrt(self._psd_barycenter) / numpy.sqrt(dataset_psd), axes=(-1,))
 
+            # The original implementation does this, therefore I am doing it as well
+            monge_filter = numpy.fft.fftshift(monge_filter, axes=-1)
+
             # Store the monge filter
-            self._monge_filter[dataset_name] = monge_filter
+            self._monge_filters[dataset_name] = monge_filter
 
     # ---------------
     # Methods for computing PSDs
