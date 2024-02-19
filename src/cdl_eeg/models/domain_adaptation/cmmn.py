@@ -248,6 +248,7 @@ class ConvMMN:
         """
         # todo: Would be cool to support different aggregation methods, and in particular to support different weights
         #  for different sub-groups
+        # todo: I think it should be an l2 mean instead?
         return numpy.mean(x, axis=0)
 
     @classmethod
