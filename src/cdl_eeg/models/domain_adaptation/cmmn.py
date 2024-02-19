@@ -8,11 +8,14 @@ Paper:
     T. Gnassounou, R. Flamary, A. Gramfort, Convolutional Monge Mapping Normalization for learning on biosignals,
     Neural Information Processing Systems (NeurIPS), 2023.
 """
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import numpy
 from scipy import fft
 from scipy import signal
+
+from cdl_eeg.data.datasets.dataset_base import ChannelSystem
+from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit
 
 
 class ConvMMN:
@@ -305,7 +308,7 @@ class ConvMMN:
         return numpy.mean(numpy.concatenate([numpy.expand_dims(psd, axis=0) for psd in psds.values()], axis=0), axis=0)
 
 
-class RBPConvMMN(ConvMMN):
+class RBPConvMMN:
     """
     Implementation of CMMN operating on region representations of RBP
 
@@ -313,4 +316,51 @@ class RBPConvMMN(ConvMMN):
     The monge filters will have shape=(num_region_representations, frequencies)
     """
 
-    __slots__ = ()
+    __slots__ = ("_cmmn_layers", "_channel_splits")
+
+    def __init__(self, *, kernel_size, channel_splits: Dict[str, Tuple[ChannelsInRegionSplit, ...]],
+                 sampling_freq=None):
+        """
+        Initialise
+
+        Parameters
+        ----------
+        kernel_size: int
+        channel_splits: dict[str, tuple[ChannelsInRegionSplit, ...]]
+        sampling_freq : float
+        """
+        # ---------------
+        # Input checks
+        # ---------------
+        # All values in channel_splits should have equal number of montage splits
+        _num_montage_splits = set(len(split) for split in channel_splits.values())
+        if len(_num_montage_splits) != 1:
+            raise ValueError(f"Expected number of montage splits to be the same for all datasets, but received "
+                             f"{len(_num_montage_splits)}")
+        num_montage_splits = tuple(_num_montage_splits)[0]
+
+        # All region IDs should be the same (including order)
+        _region_ids = []
+        for splits in channel_splits.values():
+            _region_ids.append(tuple(tuple(split.ch_names.keys()) for split in splits))
+        assert set(_region_ids) == 1
+
+        # ---------------
+        # Set attributes
+        # ---------------
+        # todo: would it be interesting to try different kernel sizes for different montage splits?
+        self._cmmn_layers = tuple(ConvMMN(kernel_size=kernel_size, sampling_freq=sampling_freq)
+                                  for _ in range(num_montage_splits))
+        self._channel_splits = channel_splits  # todo: implement setter
+
+    # ---------------
+    # Methods for fitting
+    # ---------------
+    def fit_new_channel_system(self):
+        raise NotImplementedError
+
+    def fit_psd_barycenters(self, data, *, channel_systems: Tuple[ChannelSystem, ...], sampling_freq=None):
+        raise NotImplementedError
+
+    def fit_monge_filters(self, data):
+        raise NotImplementedError
