@@ -38,10 +38,12 @@ src/cdl_eeg/models/losses.py
 src/cdl_eeg/models/metrics.py
 src/cdl_eeg/models/py.typed
 src/cdl_eeg/models/utils.py
-src/cdl_eeg/models/domain_discriminators/__init__.py
-src/cdl_eeg/models/domain_discriminators/domain_discriminator_base.py
-src/cdl_eeg/models/domain_discriminators/fc_modules.py
-src/cdl_eeg/models/domain_discriminators/getter.py
+src/cdl_eeg/models/domain_adaptation/__init__.py
+src/cdl_eeg/models/domain_adaptation/cmmn.py
+src/cdl_eeg/models/domain_adaptation/domain_discriminators/__init__.py
+src/cdl_eeg/models/domain_adaptation/domain_discriminators/domain_discriminator_base.py
+src/cdl_eeg/models/domain_adaptation/domain_discriminators/fc_modules.py
+src/cdl_eeg/models/domain_adaptation/domain_discriminators/getter.py
 src/cdl_eeg/models/main_models/__init__.py
 src/cdl_eeg/models/main_models/main_fixed_channels_model.py
 src/cdl_eeg/models/main_models/main_rbp_model.py

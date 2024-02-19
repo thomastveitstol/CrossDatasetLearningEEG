@@ -39,13 +39,14 @@ class ConvMMN:
 
     def __init__(self, *, kernel_size, sampling_freq=None):
         """Initialise object"""
-        # Store attributes
+        # Store/initialise attributes
         self._sampling_freq = sampling_freq
         self._kernel_size = kernel_size
 
-        # Initialise attributes to be fitted
-        self._psd_barycenters: Optional[numpy.ndarray] = None  # Will shape=(num_channels, frequencies)
-        self._monge_filters: Dict[str, numpy.ndarray] = dict()  # Values will have shape=(num_channels, kernel_size)
+        # Will have shape=(num_channels, frequencies)
+        self._psd_barycenters: Optional[numpy.ndarray] = None  # type: ignore[type-arg]
+        # Values will have shape=(num_channels, kernel_size)
+        self._monge_filters: Dict[str, numpy.ndarray] = dict()  # type: ignore[type-arg]
 
     # ---------------
     # Methods for applying CMMN
@@ -343,7 +344,7 @@ class RBPConvMMN:
         _region_ids = []
         for splits in channel_splits.values():
             _region_ids.append(tuple(tuple(split.ch_names.keys()) for split in splits))
-        assert set(_region_ids) == 1
+        assert len(set(_region_ids)) == 1
 
         # ---------------
         # Set attributes
