@@ -41,8 +41,8 @@ class ConvMMN:
         self._kernel_size = kernel_size
 
         # Initialise attributes to be fitted
-        self._psd_barycenters: Optional[numpy.ndarray] = None
-        self._monge_filters: Dict[str, numpy.ndarray] = dict()
+        self._psd_barycenters: Optional[numpy.ndarray] = None  # Will shape=(num_channels, frequencies)
+        self._monge_filters: Dict[str, numpy.ndarray] = dict()  # Values will have shape=(num_channels, kernel_size)
 
     # ---------------
     # Methods for applying CMMN
