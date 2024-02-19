@@ -8,6 +8,8 @@ Paper:
     T. Gnassounou, R. Flamary, A. Gramfort, Convolutional Monge Mapping Normalization for learning on biosignals,
     Neural Information Processing Systems (NeurIPS), 2023.
 """
+from typing import Dict, Optional
+
 import numpy
 from scipy import signal
 
@@ -17,7 +19,7 @@ class ConvMMN:
     Implementation of CNNM
     """
 
-    __slots__ = "_sampling_freq", "_kernel_size", "_barycenter"
+    __slots__ = "_sampling_freq", "_kernel_size", "_psd_barycenter", "_monge_filter"
 
     def __init__(self, *, kernel_size, sampling_freq=None):
         """Initialise object"""
@@ -25,10 +27,14 @@ class ConvMMN:
         self._sampling_freq = sampling_freq
         self._kernel_size = kernel_size
 
-        # Initialise barycenter
-        self._barycenter = None
+        # Initialise attributes to be fitted
+        self._psd_barycenter: Optional[numpy.ndarray] = None
+        self._monge_filter: Dict[str, numpy.ndarray] = dict()
 
-    def fit(self, data, *, sampling_freq=None):
+    # ---------------
+    # Methods for fitting CMMN
+    # ---------------
+    def fit_barycenter(self, data, *, sampling_freq=None):
         # If a sampling frequency is passed, set it (currently overriding, may want to do a similarity check and raise
         # error)
         self._sampling_freq = self._sampling_freq if sampling_freq is None else sampling_freq
@@ -44,7 +50,40 @@ class ConvMMN:
                                                  kernel_size=self._kernel_size)
 
         # Compute PSD barycenter
-        self._barycenter = self._compute_psd_barycenter(psds)
+        self._psd_barycenter = self._compute_psd_barycenter(psds)
+
+    def fit_monge_filters(self, data):
+        """
+        Method for fitting the filter used for monge mapping (fitting h_k in the paper). With this implementation, a
+        monge filter is fit per dataset. This may change in the future.
+
+        Sampling frequency should be the same as was used during fitting, although no checks are made
+
+        Parameters
+        ----------
+        data : dict[str, numpy.ndarray]
+            The data for which monge filters will be fitted. Keys are dataset names, values are EEG numpy arrays with
+            shape=(subjects, channels, time_steps)
+
+        Returns
+        -------
+        None
+        """
+        # Checks
+        if self._psd_barycenter is None:
+            raise RuntimeError("The barycenter must be fit before fitting the monge filters")
+
+        # Loop through all provided datasets
+        for dataset_name, x in data.items():
+            # Compute representative PSD
+            dataset_psd = self._compute_representative_psd(x, sampling_freq=self._sampling_freq,
+                                                           kernel_size=self._kernel_size)
+
+            # Compute the monge filter as in Eq. 5
+            monge_filter = numpy.sqrt(self._psd_barycenter) / numpy.sqrt(dataset_psd)
+
+            # Store the monge filter
+            self._monge_filter[dataset_name] = monge_filter
 
     # ---------------
     # Methods for computing PSDs
@@ -105,6 +144,12 @@ class ConvMMN:
         return numpy.mean(x, axis=0)
 
     @classmethod
+    def _compute_representative_psd(cls, x, *, sampling_freq, kernel_size):
+        # Compute PSDs and aggregate them
+        return cls._aggregate_subject_psds(cls._compute_single_source_psd(x=x, sampling_freq=sampling_freq,
+                                                                          kernel_size=kernel_size))
+
+    @classmethod
     def _compute_representative_psds(cls, data, *, sampling_freq, kernel_size):
         """
         Method for computing representative PSDs of multiple datasets
@@ -130,10 +175,8 @@ class ConvMMN:
         >>> {name_: psds_.shape for name_, psds_ in my_estimated_psds.items()}  # type: ignore[attr-defined]
         {'d1': (32, 33), 'd2': (64, 33), 'd3': (19, 33)}
         """
-        return {dataset_name: cls._aggregate_subject_psds(
-            cls._compute_single_source_psd(x=x, sampling_freq=sampling_freq, kernel_size=kernel_size))
-            for dataset_name, x in data.items()
-        }
+        return {dataset_name: cls._compute_representative_psd(x=x, sampling_freq=sampling_freq, kernel_size=kernel_size)
+                for dataset_name, x in data.items()}
 
     @staticmethod
     def _compute_psd_barycenter(psds):
