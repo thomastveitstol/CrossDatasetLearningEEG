@@ -1,6 +1,6 @@
 from torch import nn
 
-from cdl_eeg.models.domain_discriminators.domain_discriminator_base import DomainDiscriminatorBase
+from cdl_eeg.models.domain_adaptation.domain_discriminators.domain_discriminator_base import DomainDiscriminatorBase
 
 
 class FCModule(DomainDiscriminatorBase):

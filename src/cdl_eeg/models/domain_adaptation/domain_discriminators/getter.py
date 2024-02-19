@@ -1,4 +1,4 @@
-from cdl_eeg.models.domain_discriminators.fc_modules import FCModule
+from cdl_eeg.models.domain_adaptation.domain_discriminators.fc_modules import FCModule
 
 
 def get_domain_discriminator(name, **kwargs):

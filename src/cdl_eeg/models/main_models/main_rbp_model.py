@@ -8,7 +8,7 @@ from sklearn.manifold import TSNE
 
 from cdl_eeg.data.data_generators.data_generator import strip_tensors
 from cdl_eeg.data.data_split import Subject
-from cdl_eeg.models.domain_discriminators.getter import get_domain_discriminator
+from cdl_eeg.models.domain_adaptation.domain_discriminators.getter import get_domain_discriminator
 from cdl_eeg.models.metrics import Histories, is_improved_model
 from cdl_eeg.models.mts_modules.getter import get_mts_module
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RegionBasedPooling, RBPDesign, RBPPoolType
