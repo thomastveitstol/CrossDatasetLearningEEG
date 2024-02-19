@@ -25,14 +25,14 @@ class ConvMMN:
     ...                   "d2": numpy.random.normal(0, 1, size=(8, 32, 2000)),
     ...                   "d3": numpy.random.normal(0, 1, size=(17, 32, 2000))}
     >>> my_cmmn = ConvMMN(kernel_size=128)
-    >>> my_cmmn.fit_psd_barycenter(my_source_data, sampling_freq=100)
+    >>> my_cmmn.fit_psd_barycenters(my_source_data, sampling_freq=100)
     >>> my_cmmn.fit_monge_filters(data=my_source_data)
     >>> my_convoluted_source_data = my_cmmn(my_source_data)
     >>> {name: data_.shape for name, data_ in my_convoluted_source_data.items()}  # type: ignore[attr-defined]
     {'d1': (10, 32, 2000), 'd2': (8, 32, 2000), 'd3': (17, 32, 2000)}
     """
 
-    __slots__ = "_sampling_freq", "_kernel_size", "_psd_barycenter", "_monge_filters"
+    __slots__ = "_sampling_freq", "_kernel_size", "_psd_barycenters", "_monge_filters"
 
     def __init__(self, *, kernel_size, sampling_freq=None):
         """Initialise object"""
@@ -41,7 +41,7 @@ class ConvMMN:
         self._kernel_size = kernel_size
 
         # Initialise attributes to be fitted
-        self._psd_barycenter: Optional[numpy.ndarray] = None
+        self._psd_barycenters: Optional[numpy.ndarray] = None
         self._monge_filters: Dict[str, numpy.ndarray] = dict()
 
     # ---------------
@@ -64,8 +64,8 @@ class ConvMMN:
         # Input checks
         # --------------
         # Check that the PSD barycenter is fit
-        if self._psd_barycenter is None:
-            raise RuntimeError("The barycenter must be fit before mapping applying the monge filters")
+        if self._psd_barycenters is None:
+            raise RuntimeError("The barycenters must be fit before mapping applying the monge filters")
 
         # Check that monge filter has been fit on all provided datasets
         _unfit_datasets = tuple(dataset for dataset in data if dataset not in self._monge_filters)
@@ -138,7 +138,7 @@ class ConvMMN:
     # ---------------
     # Methods for fitting CMMN
     # ---------------
-    def fit_psd_barycenter(self, data, *, sampling_freq=None):
+    def fit_psd_barycenters(self, data, *, sampling_freq=None):
         # If a sampling frequency is passed, set it (currently overriding, may want to do a similarity check and raise
         # error)
         self._sampling_freq = self._sampling_freq if sampling_freq is None else sampling_freq
@@ -147,14 +147,14 @@ class ConvMMN:
                              "found")
 
         # -------------
-        # Compute the PSD barycenter
+        # Compute the PSD barycenters
         # -------------
         # Compute representative PSDs of all datasets
         psds = self._compute_representative_psds(data=data, sampling_freq=self._sampling_freq,
                                                  kernel_size=self._kernel_size)
 
-        # Compute PSD barycenter
-        self._psd_barycenter = self._compute_psd_barycenter(psds)
+        # Compute PSD barycenters
+        self._psd_barycenters = self._compute_psd_barycenters(psds)
 
     def fit_monge_filters(self, data):
         """
@@ -174,8 +174,8 @@ class ConvMMN:
         None
         """
         # Checks
-        if self._psd_barycenter is None:
-            raise RuntimeError("The PSD barycenter must be fit before fitting the monge filters")
+        if self._psd_barycenters is None:
+            raise RuntimeError("The PSD barycenters must be fit before fitting the monge filters")
 
         # Loop through all provided datasets
         for dataset_name, x in data.items():
@@ -184,7 +184,7 @@ class ConvMMN:
                                                            kernel_size=self._kernel_size)
 
             # Compute the monge filter as in Eq. 5  todo: verify that the axes is correct
-            monge_filter = fft.irfftn(numpy.sqrt(self._psd_barycenter) / numpy.sqrt(dataset_psd), axes=(-1,))
+            monge_filter = fft.irfftn(numpy.sqrt(self._psd_barycenters) / numpy.sqrt(dataset_psd), axes=(-1,))
 
             # The original implementation does this, therefore I am doing it as well
             monge_filter = numpy.fft.fftshift(monge_filter, axes=-1)
@@ -287,9 +287,9 @@ class ConvMMN:
                 for dataset_name, x in data.items()}
 
     @staticmethod
-    def _compute_psd_barycenter(psds):
+    def _compute_psd_barycenters(psds):
         """
-        Compute the barycenter (eq. 6 in the paper), given the PSDs from the different datasets
+        Compute the barycenters (eq. 6 in the paper), given the PSDs from the different datasets
 
         Parameters
         ----------
@@ -303,3 +303,14 @@ class ConvMMN:
         """
         # todo: in the future, other aggregation methods and weighting may be implemented
         return numpy.mean(numpy.concatenate([numpy.expand_dims(psd, axis=0) for psd in psds.values()], axis=0), axis=0)
+
+
+class RBPConvMMN(ConvMMN):
+    """
+    Implementation of CMMN operating on region representations of RBP
+
+    The PSD barycenters will have shape=(num_region_representations, frequencies)
+    The monge filters will have shape=(num_region_representations, frequencies)
+    """
+
+    __slots__ = ()
