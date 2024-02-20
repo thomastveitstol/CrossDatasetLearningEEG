@@ -371,7 +371,6 @@ class RBPConvMMN:
         for cmmn_layer, ms_output in zip(self._cmmn_layers, region_representations):
             # Apply dataset specific filters
             for dataset_name, indices in dataset_indices.items():
-                cmmn_layer: ConvMMN
                 # Convolve only the subjects of the current indices (this changes region_representations in-place)
                 # todo: a little un-intuitive/sub-optimal code going on here..
                 ms_output[indices] = cmmn_layer({dataset_name: ms_output[indices]})[dataset_name]
@@ -403,7 +402,7 @@ class RBPConvMMN:
 
         """
         # The dict will look like this: {dataset_name: {montage split number: {RegionID: representative PSD}}}
-        representative_psds: Dict[str, Dict[int, Dict[RegionID, numpy.ndarray]]] = dict()
+        representative_psds: Dict[str, Dict[int, Dict[RegionID, numpy.ndarray]]] = dict()  # type: ignore[type-arg]
         for dataset_name, eeg_data in data.items():
             # Quick dimension check, the EEG data should be 3D
             if eeg_data.ndim != 3:
@@ -473,7 +472,7 @@ class RBPConvMMN:
         # ------------
         # Stack the region PSDs to a multivariate PSD of the montage split
         # ------------
-        montage_psds: List[numpy.ndarray] = []
+        montage_psds: List[numpy.ndarray] = []  # type: ignore[type-arg]
         for montage_split_psds in psds.values():
             # todo: consider more checks
             montage_psds.append(numpy.concatenate([numpy.expand_dims(region_psd, axis=0)
@@ -567,7 +566,6 @@ class RBPConvMMN:
                                   in zip(montage_psds_barycenters, montage_splits)}
 
             # Fit the monge filter of the CMMN layer of the current montage split
-            cmmn_layer: ConvMMN
             cmmn_layer.fit_monge_filters(montage_split_data)
 
 

@@ -477,6 +477,9 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
     # Methods for fitting CMMN layer
     # ----------------
     def fit_psd_barycenters(self, data, *, channel_systems: Dict[str, ChannelSystem], sampling_freq=None):
+        if self._cmmn_layer is None:
+            raise RuntimeError("Cannot fit PSD barycenters of the CMMN layers, when none is used")
+
         # Update the channel splits of the CMMN layer to what it is in this layer
         self._cmmn_layer.update_channel_splits(self._channel_splits)
 
@@ -484,6 +487,9 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         self._cmmn_layer.fit_psd_barycenters(data, channel_systems=channel_systems, sampling_freq=sampling_freq)
 
     def fit_monge_filters(self, data, *, channel_systems: Dict[str, ChannelSystem]):
+        if self._cmmn_layer is None:
+            raise RuntimeError("Cannot fit PSD barycenters of the CMMN layers, when none is used")
+
         # todo: update channel splits of CMMN?
         # Fit monge filters
         self._cmmn_layer.fit_monge_filters(data, channel_systems=channel_systems)
