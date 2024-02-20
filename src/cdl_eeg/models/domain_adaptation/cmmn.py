@@ -8,7 +8,7 @@ Paper:
     T. Gnassounou, R. Flamary, A. Gramfort, Convolutional Monge Mapping Normalization for learning on biosignals,
     Neural Information Processing Systems (NeurIPS), 2023.
 """
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List
 
 import numpy
 from scipy import fft
@@ -310,6 +310,48 @@ class RBPConvMMN:
 
         return representative_psds
 
+    @staticmethod
+    def _stack_representative_psd_region(psds):
+        """
+        Convenience method for stacking the PSDs computed per montage split and region for a single dataset. Makes it a
+        little easier to work with
+
+        Parameters
+        ----------
+        psds : dict[int, dict[RegionID, numpy.ndarray]]
+            Output of _compute_representative_psds_per_dataset_and_region()[dataset_name] for any dataset
+
+        Returns
+        -------
+        list[numpy.ndarray]
+            Each element is a concatenation of the representative PSDs of the regions in the montage split. The length
+            of this list should be equal to the number of montage splits. Each element should have
+            shape=(num_region_representations, frquencies), see Examples.
+
+        Examples
+        --------
+        >>> my_psds = {0: {RegionID(0): numpy.random.random(size=(65,)), RegionID(1): numpy.random.random(size=(65,))},
+        ...            1: {RegionID(0): numpy.random.random(size=(65,)), RegionID(1): numpy.random.random(size=(65,)),
+        ...                RegionID(2): numpy.random.random(size=(65,)), RegionID(3): numpy.random.random(size=(65,))},
+        ...            2: {RegionID("A"): numpy.random.random(size=(65,)),
+        ...                RegionID("B"): numpy.random.random(size=(65,)),
+        ...                RegionID("C"): numpy.random.random(size=(65,))},
+        ...            4: {RegionID("Q"): numpy.random.random(size=(65,))}}
+        >>> my_outputs = RBPConvMMN._stack_representative_psd_region(my_psds)
+        >>> tuple(out_.shape for out_ in my_outputs)  # type: ignore[attr-defined]
+        ((2, 65), (4, 65), (3, 65), (1, 65))
+        """
+        # ------------
+        # Stack the region PSDs to a multivariate PSD of the montage split
+        # ------------
+        montage_psds: List[numpy.ndarray] = []
+        for montage_split_psds in psds.values():
+            # todo: consider more checks
+            montage_psds.append(numpy.concatenate([numpy.expand_dims(region_psd, axis=0)
+                                                   for region_psd in montage_split_psds.values()]))
+
+        return montage_psds
+
     # ---------------
     # Methods for fitting
     # ---------------
@@ -317,7 +359,28 @@ class RBPConvMMN:
         raise NotImplementedError
 
     def fit_psd_barycenters(self, data, *, channel_systems: Dict[str, ChannelSystem], sampling_freq=None):
-        raise NotImplementedError
+        # --------------
+        # Compute the representative PSDs for all datasets and regions
+        # --------------
+        region_psds = self._compute_representative_psds_per_dataset_and_region(data, channel_systems=channel_systems,
+                                                                               sampling_freq=sampling_freq)
+
+        # --------------
+        # Compute barycenters of all regions in all montage splits by aggregation
+        # --------------
+        # Get the data to a more convenient format
+        montage_psds_barycenters = {dataset_name: self._stack_representative_psd_region(psds)
+                                    for dataset_name, psds in region_psds.items()}
+
+        # Loop through all montage splits
+        for cmmn_layer, montage_splits in zip(self._cmmn_layers, zip(*montage_psds_barycenters.values())):
+            # Get the data for the current montage split, for all datasets
+            montage_split_data = {dataset_name: dataset_montage_split
+                                  for dataset_name, dataset_montage_split
+                                  in zip(montage_psds_barycenters, montage_splits)}
+
+            # Fit the CMMN layer of the current montage split
+            cmmn_layer.fit_psd_barycenters(data=montage_split_data, sampling_freq=sampling_freq)
 
     def fit_monge_filters(self, data):
         raise NotImplementedError
