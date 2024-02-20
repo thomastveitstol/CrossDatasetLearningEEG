@@ -350,8 +350,6 @@ class RBPConvMMN:
 
         Note that the convolution with the monge filters will change the input tensor in-place
 
-        todo: RBP needs to provide the dataset belonging of the input subjects
-
         Parameters
         ----------
         region_representations: tuple[torch.Tensor, ...]
