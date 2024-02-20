@@ -705,6 +705,17 @@ class RegionBasedPooling(nn.Module):
                 f"or a tuple of channel systems, but this was not the case")
 
     # ----------------
+    # Methods for fitting CMMN layer
+    # ----------------
+    def fit_psd_barycenters(self, data, *, channel_systems: Dict[str, ChannelSystem], sampling_freq=None):
+        for rbp_module in self._rbp_modules:
+            rbp_module.fit_psd_barycenters(data=data, channel_systems=channel_systems, sampling_freq=sampling_freq)
+
+    def fit_monge_filters(self, data, *, channel_systems: Dict[str, ChannelSystem]):
+        for rbp_module in self._rbp_modules:
+            rbp_module.fit_monge_filters(data=data, channel_systems=channel_systems)
+
+    # ----------------
     # Properties
     # ----------------
     @property
