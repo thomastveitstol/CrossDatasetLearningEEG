@@ -214,7 +214,7 @@ class ConvMMN:
 
 class RBPConvMMN:
     """
-    Implementation of CMMN operating on region representations of RBP
+    Implementation of CMMN operating on region representations of Multi-Montage RBP
 
     The PSD barycenters will have shape=(num_region_representations, frequencies)
     The monge filters will have shape=(num_region_representations, frequencies)
