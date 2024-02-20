@@ -199,6 +199,11 @@ class ConvMMN:
     # Properties
     # ---------------
     @property
+    def has_fit_barycenter(self) -> bool:
+        """Checks if the barycenter has been fit by checking if it is not None"""
+        return self._psd_barycenters is not None
+
+    @property
     def sampling_freq(self):
         return self._sampling_freq
 
@@ -379,11 +384,40 @@ class RBPConvMMN:
                                   for dataset_name, dataset_montage_split
                                   in zip(montage_psds_barycenters, montage_splits)}
 
-            # Fit the CMMN layer of the current montage split
+            # Fit the PSD barycenters of the CMMN layer of the current montage split
             cmmn_layer.fit_psd_barycenters(data=montage_split_data, sampling_freq=sampling_freq)
 
-    def fit_monge_filters(self, data):
-        raise NotImplementedError
+    def fit_monge_filters(self, data, *, channel_systems: Dict[str, ChannelSystem]):
+        """Fit the CMMN monge filters for all"""
+        # --------------
+        # Checks
+        # --------------
+        # Check if PSD barycenters has been fit for all CMMN layers (all montage splits)
+        if not all(cmmn_layer.has_fit_barycenter for cmmn_layer in self._cmmn_layers):
+            raise RuntimeError("Expected all CMMN layers to be fit prior to fitting the monge filter of the montage "
+                               "splits, but that was not case")
+
+        # --------------
+        # Fit the monge filters
+        # --------------
+        # Compute representative PSDs per dataset and region. Using the sampling frequency as registered in the CMMN
+        # layers
+        region_psds = self._compute_representative_psds_per_dataset_and_region(data, channel_systems=channel_systems)
+
+        # Get the data to a more convenient format
+        montage_psds_barycenters = {dataset_name: self._stack_representative_psd_region(psds)
+                                    for dataset_name, psds in region_psds.items()}
+
+        # Loop through all montage splits
+        for cmmn_layer, montage_splits in zip(self._cmmn_layers, zip(*montage_psds_barycenters.values())):
+            # Get the data for the current montage split, for all datasets
+            montage_split_data = {dataset_name: dataset_montage_split
+                                  for dataset_name, dataset_montage_split
+                                  in zip(montage_psds_barycenters, montage_splits)}
+
+            # Fit the monge filter of the CMMN layer of the current montage split
+            cmmn_layer: ConvMMN
+            cmmn_layer.fit_monge_filters(montage_split_data)
 
 
 # ---------------
