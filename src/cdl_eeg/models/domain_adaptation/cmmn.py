@@ -11,6 +11,8 @@ Paper:
 from typing import Dict, Optional, Tuple, List
 
 import numpy
+import torch
+import torch.nn as nn
 from scipy import fft
 from scipy import signal
 
@@ -51,7 +53,69 @@ class ConvMMN:
     # ---------------
     # Methods for applying CMMN
     # ---------------
-    def _apply_monge_filters(self, data):
+    def _apply_monge_filters_torch(self, data):
+        # --------------
+        # Apply filters
+        # --------------
+        # Loop through all datasets
+        convoluted = dict()
+        for dataset_name, x in data.items():
+            # Extract monge filter (one per channel) and convert to torch tenors
+            monge_filter = torch.tensor(self._monge_filters[dataset_name], dtype=x.dtype,
+                                        requires_grad=False).to(x.device())
+
+            # Channel dimension check
+            if x.size()[1] != monge_filter.size()[0]:
+                raise ValueError(f"Expected channel dimension to be the same as number of monge filters, but received "
+                                 f"{x.size()[1]} and {monge_filter.size()[0]}")
+
+            # Apply monge filter channel-wise and store it
+            convoluted[dataset_name] = self._compute_single_eeg_convolution_torch(x=x, monge_filter=monge_filter)
+
+    @staticmethod
+    def _compute_single_eeg_convolution_torch(*, x, monge_filter):
+        """
+        Method for computing convolution when using torch tensors
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Should have shape=(batch, channels, time_steps)
+        monge_filter : torch.Tensor
+            Should have shape=(channels, frequencies)
+
+        Returns
+        -------
+        torch.Tensor
+            Should have same shape as x
+
+        Examples
+        --------
+        >>> my_x = torch.rand(size=(10, 8, 2000))
+        >>> my_monge_filter = torch.rand(size=(8, 65))
+        >>> my_output = ConvMMN._compute_single_eeg_convolution_torch(x=my_x, monge_filter=my_monge_filter)
+        >>> my_output.size()
+        torch.Size([10, 8, 2000])
+
+        Permuting a channel does not change the output of the others
+
+        >>> my_permuted_x = torch.clone(my_x)
+        >>> my_permuted_x[:, 3] = torch.rand(size=(10, 2000))
+        >>> my_permuted_output = ConvMMN._compute_single_eeg_convolution_torch(x=my_permuted_x,
+        ...                                                                    monge_filter=my_monge_filter)
+        >>> torch.equal(my_output[:, 3], my_permuted_output[:, 3])
+        False
+        >>> torch.equal(my_output[:, :3], my_permuted_output[:, :3])
+        True
+        >>> torch.equal(my_output[:, 4:], my_permuted_output[:, 4:])
+        True
+        """
+        return nn.functional.conv1d(
+            input=x, weight=torch.unsqueeze(monge_filter, dim=1), bias=None, stride=1,
+            padding="same", dilation=1, groups=monge_filter.size()[0]
+        )
+
+    def _apply_monge_filters_numpy(self, data):
         """
         Method for applying CMMN, after it is fit
 
@@ -64,19 +128,6 @@ class ConvMMN:
         dict[str, numpy.ndarray]
             The datasets convolved with their respective monge filters
         """
-        # --------------
-        # Input checks
-        # --------------
-        # Check that the PSD barycenter is fit
-        if self._psd_barycenters is None:
-            raise RuntimeError("The barycenters must be fit before mapping applying the monge filters")
-
-        # Check that monge filter has been fit on all provided datasets
-        _unfit_datasets = tuple(dataset for dataset in data if dataset not in self._monge_filters)
-        if _unfit_datasets:
-            raise RuntimeError(f"The monge filters must be computed prior to applying them, but this was not the case "
-                               f"for the following datasets: {_unfit_datasets}")
-
         # --------------
         # Apply filters
         # --------------
@@ -129,15 +180,47 @@ class ConvMMN:
         """
         Method which applies monge filters (see _apply_monge_filters)
 
+        todo: add unittest which checks if numpy and pytorch gets the same results, at least on CPU
+
         Parameters
         ----------
-        data : dict[str, numpy.ndarray]
+        data : dict[str, numpy.ndarray | torch.Tensor]
 
         Returns
         -------
-        data : dict[str, numpy.ndarray]
+        data : dict[str, numpy.ndarray | torch.Tensor]
         """
-        return self._apply_monge_filters(data=data)
+        # --------------
+        # Input checks
+        # --------------
+        # Check that the PSD barycenter is fit
+        if self._psd_barycenters is None:
+            raise RuntimeError("The barycenters must be fit before mapping applying the monge filters")
+
+        # Check that monge filter has been fit on all provided datasets
+        _unfit_datasets = tuple(dataset for dataset in data if dataset not in self._monge_filters)
+        if _unfit_datasets:
+            raise RuntimeError(f"The monge filters must be computed prior to applying them, but this was not the case "
+                               f"for the following datasets: {_unfit_datasets}")
+
+        # Check that the type of the values is consistent
+        if all(isinstance(arr, numpy.ndarray) for arr in data.values()):
+            data_type = "numpy"
+        elif all(isinstance(arr, torch.Tensor) for arr in data.values()):
+            data_type = "torch"
+        else:
+            raise TypeError(f"Expected all data values to be either all numpy arrays or all torch tesnors, but found "
+                            f"{set(type(arr) for arr in data.values())}")
+
+        # --------------
+        # Apply filters
+        # --------------
+        if data_type == "numpy":
+            return self._apply_monge_filters_numpy(data=data)
+        elif data_type == "torch":
+            return self._apply_monge_filters_torch(data=data)
+        else:
+            raise ValueError("This should never happen")
 
     # ---------------
     # Methods for fitting CMMN
@@ -256,6 +339,66 @@ class RBPConvMMN:
         self._cmmn_layers = tuple(ConvMMN(kernel_size=kernel_size, sampling_freq=sampling_freq)
                                   for _ in range(num_montage_splits))
         self._channel_splits = channel_splits  # todo: implement setter
+
+    # ---------------
+    # Methods for applying CMMN
+    # ---------------
+    def _apply_monge_filters(self, region_representations, dataset_indices):
+        """
+        Method for applying the monge filter to the region representations, where the region representations are as
+        expected from the output of the RBP layer
+
+        Note that the convolution with the monge filters will change the input tensor in-place
+
+        todo: RBP needs to provide the dataset belonging of the input subjects
+
+        Parameters
+        ----------
+        region_representations: tuple[torch.Tensor, ...]
+        dataset_indices: dict[str, tuple[int, ...]]
+
+        Returns
+        -------
+
+        """
+        # ---------------
+        # Input checks
+        # ---------------
+        # Batch dimension of all montage splits must be the same
+        _batch_sizes = set(x.size()[0] for x in region_representations)
+        if len(_batch_sizes) != 1:
+            raise ValueError(f"Expected all input montage splits to have the same batch size, but received the "
+                             f"following batch sizes (N={len(_batch_sizes)}) {_batch_sizes}")
+
+        # The dataset indices must not be overlapping
+        all_dataset_indices = set(itertools.chain(*dataset_indices.values()))
+        if len(all_dataset_indices) != sum(tuple(len(indices) for indices in dataset_indices.values())):
+            _num_non_unique_indices = (sum(tuple(len(indices) for indices in dataset_indices.values())) -
+                                       len(all_dataset_indices))
+            raise ValueError(f"Expected non-overlapping dataset indices, but {_num_non_unique_indices} had more than "
+                             f"one occurrence")
+
+        # The dataset indices have same dimensions as batch size
+        if len(all_dataset_indices) == tuple(_batch_sizes)[0]:
+            raise ValueError(f"Number of dataset indices to be the same as the batch size, but found "
+                             f"{len(all_dataset_indices)} and {tuple(_batch_sizes)[0]}")
+
+        # ---------------
+        # Apply filters
+        # ---------------
+        # Loop through all montage splits outputs
+        for cmmn_layer, ms_output in zip(self._cmmn_layers, region_representations):
+            # Apply dataset specific filters
+            for dataset_name, indices in dataset_indices.items():
+                cmmn_layer: ConvMMN
+                # Convolve only the subjects of the current indices (this changes region_representations in-place)
+                # todo: a little un-intuitive/sub-optimal code going on here..
+                ms_output[indices] = cmmn_layer({dataset_name: ms_output[indices]})[dataset_name]
+
+        return region_representations
+
+    def __call__(self, region_representations, dataset_indices):
+        return self._apply_monge_filters(region_representations, dataset_indices)
 
     # ---------------
     # Methods for computing PSD, specific to RBP
@@ -584,3 +727,9 @@ def _compute_psd_barycenters(psds):
     """
     # todo: in the future, other aggregation methods and weighting may be implemented
     return numpy.mean(numpy.concatenate([numpy.expand_dims(psd, axis=0) for psd in psds.values()], axis=0), axis=0)
+
+
+if __name__ == "__main__":
+    a = {"a": (1, 2, 4), "b": (5, 2, 6, 7, 5)}
+    import itertools
+    print(set(itertools.chain(*a.values())))
