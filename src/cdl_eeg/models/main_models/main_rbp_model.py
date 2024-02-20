@@ -8,6 +8,7 @@ from sklearn.manifold import TSNE
 
 from cdl_eeg.data.data_generators.data_generator import strip_tensors
 from cdl_eeg.data.data_split import Subject
+from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.models.domain_adaptation.domain_discriminators.getter import get_domain_discriminator
 from cdl_eeg.models.metrics import Histories, is_improved_model
 from cdl_eeg.models.mts_modules.getter import get_mts_module
@@ -189,6 +190,16 @@ class MainRBPModel(nn.Module):
 
     def fit_channel_systems(self, channel_systems):
         self._region_based_pooling.fit_channel_systems(channel_systems)
+
+    # ----------------
+    # Methods for fitting CMMN layer
+    # ----------------
+    def fit_psd_barycenters(self, data, *, channel_systems: Dict[str, ChannelSystem], sampling_freq=None):
+        self._region_based_pooling.fit_psd_barycenters(data, channel_systems=channel_systems,
+                                                       sampling_freq=sampling_freq)
+
+    def fit_monge_filters(self, data, *, channel_systems: Dict[str, ChannelSystem]):
+        self._region_based_pooling.fit_monge_filters(data, channel_systems=channel_systems)
 
     # ----------------
     # Methods for training and testing
