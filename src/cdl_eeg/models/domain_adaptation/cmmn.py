@@ -270,7 +270,7 @@ class RBPConvMMN:
         -------
         dict[str, dict[int, dict[RegionID, numpy.ndarray]]]
             The dict will look like this: {dataset_name: {montage split number: {RegionID: representative PSD}}}, where
-            the representative
+            the representative PSD will have shape=(frequencies,)
 
         """
         # The dict will look like this: {dataset_name: {montage split number: {RegionID: representative PSD}}}
