@@ -305,40 +305,23 @@ class RBPConvMMN:
 
     __slots__ = ("_cmmn_layers", "_channel_splits")
 
-    def __init__(self, *, kernel_size, channel_splits: Optional[Dict[str, Tuple[ChannelsInRegionSplit, ...]]] = None,
-                 sampling_freq=None):
+    def __init__(self, *, num_montage_splits, kernel_size, sampling_freq=None):
         """
         Initialise
 
         Parameters
         ----------
+        num_montage_splits : int
         kernel_size: int
-        channel_splits: dict[str, tuple[ChannelsInRegionSplit, ...]] | None
         sampling_freq : float
         """
-        # ---------------
-        # Input checks
-        # ---------------
-        # All values in channel_splits should have equal number of montage splits
-        _num_montage_splits = set(len(split) for split in channel_splits.values())
-        if len(_num_montage_splits) != 1:
-            raise ValueError(f"Expected number of montage splits to be the same for all datasets, but received "
-                             f"{len(_num_montage_splits)}")
-        num_montage_splits = tuple(_num_montage_splits)[0]
-
-        # All region IDs should be the same (including order)
-        _region_ids = []
-        for splits in channel_splits.values():
-            _region_ids.append(tuple(tuple(split.ch_names.keys()) for split in splits))
-        assert len(set(_region_ids)) == 1
-
         # ---------------
         # Set attributes
         # ---------------
         # todo: would it be interesting to try different kernel sizes for different montage splits?
         self._cmmn_layers = tuple(ConvMMN(kernel_size=kernel_size, sampling_freq=sampling_freq)
                                   for _ in range(num_montage_splits))
-        self._channel_splits = channel_splits  # todo: implement setter
+        self._channel_splits: Dict[str, Tuple[ChannelsInRegionSplit, ...]] = dict()
 
     # ---------------
     # Methods for applying CMMN
@@ -441,8 +424,8 @@ class RBPConvMMN:
 
                     # Get the sampling frequency from CMMN layer if None is provided
                     sampling_freq = cmmn_layer.sampling_freq if sampling_freq is None else sampling_freq
-                    assert sampling_freq is not None, (f"No sampling frequency was found, neither as input, nor in the "
-                                                       f"CMMN layer")
+                    assert sampling_freq is not None, ("No sampling frequency was found, neither as input, nor in the "
+                                                       "CMMN layer")
 
                     # Compute a representative PSD for the region
                     region_psd = _compute_representative_region_psd(
@@ -515,6 +498,21 @@ class RBPConvMMN:
         """
         for dataset_name, ch_splits in channel_splits.items():
             self._channel_splits[dataset_name] = ch_splits
+
+        # ---------------
+        # Channel splits checks
+        # ---------------
+        # All values in channel_splits should have equal number of montage splits
+        _num_montage_splits = set(len(split) for split in self._channel_splits.values())
+        if len(_num_montage_splits) != 1:
+            raise ValueError(f"Expected number of montage splits to be the same for all datasets, but received "
+                             f"{len(_num_montage_splits)}")
+
+        # All region IDs should be the same (including order)
+        _region_ids = []
+        for splits in self._channel_splits.values():
+            _region_ids.append(tuple(tuple(split.ch_names.keys()) for split in splits))
+        assert len(set(_region_ids)) == 1, f"Inconsistency in Region IDs: {set(_region_ids)}"
 
     def fit_psd_barycenters(self, data, *, channel_systems: Dict[str, ChannelSystem], sampling_freq=None):
         # --------------

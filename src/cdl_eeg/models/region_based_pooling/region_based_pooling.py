@@ -346,7 +346,8 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         # -------------------
         # (Maybe) use RBP compatible CMMN layer
         # -------------------
-        self._cmmn_layer = None if not use_cmmn_layer else RBPConvMMN(**cmmn_kwargs)
+        self._cmmn_layer = None if not use_cmmn_layer \
+            else RBPConvMMN(**{"num_montage_splits": len(self._region_splits), **cmmn_kwargs})
 
         # -------------------
         # Generate pooling modules
