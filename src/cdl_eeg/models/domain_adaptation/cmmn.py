@@ -305,7 +305,7 @@ class RBPConvMMN:
 
     __slots__ = ("_cmmn_layers", "_channel_splits")
 
-    def __init__(self, *, kernel_size, channel_splits: Dict[str, Tuple[ChannelsInRegionSplit, ...]],
+    def __init__(self, *, kernel_size, channel_splits: Optional[Dict[str, Tuple[ChannelsInRegionSplit, ...]]] = None,
                  sampling_freq=None):
         """
         Initialise
@@ -313,7 +313,7 @@ class RBPConvMMN:
         Parameters
         ----------
         kernel_size: int
-        channel_splits: dict[str, tuple[ChannelsInRegionSplit, ...]]
+        channel_splits: dict[str, tuple[ChannelsInRegionSplit, ...]] | None
         sampling_freq : float
         """
         # ---------------
@@ -501,8 +501,20 @@ class RBPConvMMN:
     # ---------------
     # Methods for fitting
     # ---------------
-    def fit_new_channel_system(self):
-        raise NotImplementedError
+    def update_channel_splits(self, channel_splits):
+        """
+        Method for updating the channel splits. If existing keys, this method will override the previous channel splits
+
+        Parameters
+        ----------
+        channel_splits : dict[str, tuple[ChannelsInRegionSplit, ...]]
+
+        Returns
+        -------
+        None
+        """
+        for dataset_name, ch_splits in channel_splits.items():
+            self._channel_splits[dataset_name] = ch_splits
 
     def fit_psd_barycenters(self, data, *, channel_systems: Dict[str, ChannelSystem], sampling_freq=None):
         # --------------

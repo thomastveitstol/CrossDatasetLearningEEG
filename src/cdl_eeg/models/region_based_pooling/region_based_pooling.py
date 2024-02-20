@@ -17,6 +17,7 @@ import torch
 import torch.nn as nn
 
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
+from cdl_eeg.models.domain_adaptation.cmmn import RBPConvMMN
 from cdl_eeg.models.region_based_pooling.pooling_modules.getter import get_pooling_module
 from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import SingleChannelSplitPoolingBase, \
     MultiMontageSplitsPoolingBase
@@ -46,6 +47,8 @@ class RBPDesign:
     pooling_methods_kwargs: Union[Dict[str, Any], Tuple[Dict[str, Any], ...]]
     split_methods: Union[str, Tuple[str, ...]]
     split_methods_kwargs: Union[Dict[str, Any], Tuple[Dict[str, Any], ...]]
+    use_cmmn_layer: bool = False
+    cmmn_kwargs: Optional[Dict[str, Any]] = None
     num_designs: int = 1
 
 
@@ -306,7 +309,8 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
     True
     """
 
-    def __init__(self, pooling_method, pooling_method_kwargs, split_methods, split_methods_kwargs):
+    def __init__(self, pooling_method, pooling_method_kwargs, split_methods, split_methods_kwargs, use_cmmn_layer,
+                 cmmn_kwargs):
         """
         Initialise
 
@@ -338,6 +342,11 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         # Initialise the mapping from regions to channel names, for all datasets (must be fit later)
         # Should be {dataset_name: tuple[ChannelsInRegionSplit, ...]}
         self._channel_splits: Dict[str, Tuple[ChannelsInRegionSplit, ...]] = dict()
+
+        # -------------------
+        # (Maybe) use RBP compatible CMMN layer
+        # -------------------
+        self._cmmn_layer = None if not use_cmmn_layer else RBPConvMMN(**cmmn_kwargs)
 
         # -------------------
         # Generate pooling modules
@@ -464,6 +473,21 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
                 f"or a tuple of channel systems, but this was not the case")
 
     # ----------------
+    # Methods for fitting CMMN layer
+    # ----------------
+    def fit_psd_barycenters(self, data, *, channel_systems: Dict[str, ChannelSystem], sampling_freq=None):
+        # Update the channel splits of the CMMN layer to what it is in this layer
+        self._cmmn_layer.update_channel_splits(self._channel_splits)
+
+        # Fit PSD barycenters
+        self._cmmn_layer.fit_psd_barycenters(data, channel_systems=channel_systems, sampling_freq=sampling_freq)
+
+    def fit_monge_filters(self, data, *, channel_systems: Dict[str, ChannelSystem]):
+        # todo: update channel splits of CMMN?
+        # Fit monge filters
+        self._cmmn_layer.fit_monge_filters(data, channel_systems=channel_systems)
+
+    # ----------------
     # Properties
     # ----------------
     @property
@@ -539,10 +563,14 @@ class RegionBasedPooling(nn.Module):
                                                                split_method=design.split_methods,
                                                                split_method_kwargs=design.split_methods_kwargs)
                 elif design.pooling_type == RBPPoolType.MULTI_CS:
-                    rbp = MultiChannelSplitsRegionBasedPooling(pooling_method=design.pooling_methods,
-                                                               pooling_method_kwargs=design.pooling_methods_kwargs,
-                                                               split_methods=design.split_methods,
-                                                               split_methods_kwargs=design.split_methods_kwargs)
+                    rbp = MultiChannelSplitsRegionBasedPooling(
+                        pooling_method=design.pooling_methods,
+                        pooling_method_kwargs=design.pooling_methods_kwargs,
+                        split_methods=design.split_methods,
+                        split_methods_kwargs=design.split_methods_kwargs,
+                        use_cmmn_layer=design.use_cmmn_layer,
+                        cmmn_kwargs={} if design.cmmn_kwargs is None else design.cmmn_kwargs
+                    )
                 else:
                     raise ValueError(f"Expected pooling type to be in {tuple(type_ for type_ in RBPPoolType)}, but "
                                      f"found {design.pooling_type}")
