@@ -117,6 +117,8 @@ def _sample_single_rbp_design(config, num_montage_splits, use_cmmn_layer):
                 cmmn[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
             else:
                 cmmn[param] = domain
+    else:
+        cmmn = None
 
     design["use_cmmn_layer"] = use_cmmn_layer
     design["cmmn_kwargs"] = cmmn
