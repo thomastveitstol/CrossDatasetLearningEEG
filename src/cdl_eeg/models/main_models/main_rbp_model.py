@@ -76,12 +76,14 @@ class MainRBPModel(nn.Module):
         designs_config = copy.deepcopy(rbp_config["RBPDesigns"])
         rbp_designs = []
         for name, design in designs_config.items():
-            rbp_designs.append(
+            rbp_designs.append(  # todo: just use **design instead
                 RBPDesign(pooling_type=RBPPoolType(design["pooling_type"]),
                           pooling_methods=design["pooling_methods"],
                           pooling_methods_kwargs=design["pooling_methods_kwargs"],
                           split_methods=design["split_methods"],
                           split_methods_kwargs=design["split_methods_kwargs"],
+                          use_cmmn_layer=design["use_cmmn_layer"],
+                          cmmn_kwargs=design["cmmn_kwargs"],
                           num_designs=design["num_designs"])
             )
 
