@@ -399,15 +399,31 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         tuple[torch.Tensor, ...]
         """
         # ------------------
-        # Pass through all channel splits and return
+        # Pass through all channel splits
         # ------------------
         # Pass pre_computed or not, depending on compatibility and if when pre-computing is not desired (value is None)
         if not self.supports_precomputing or pre_computed is None:
-            return self._pooling_module(input_tensors, channel_splits=self._channel_splits,
-                                        channel_name_to_index=channel_name_to_index)
+            region_representations = self._pooling_module(input_tensors, channel_splits=self._channel_splits,
+                                                          channel_name_to_index=channel_name_to_index)
         else:
-            return self._pooling_module(input_tensors, channel_splits=self._channel_splits,
-                                        channel_name_to_index=channel_name_to_index, pre_computed=pre_computed)
+            region_representations = self._pooling_module(input_tensors, channel_splits=self._channel_splits,
+                                                          channel_name_to_index=channel_name_to_index,
+                                                          pre_computed=pre_computed)
+
+        # ------------------
+        # Maybe apply CMMN
+        # ------------------
+        if self.has_cmmn_layer:
+            # todo: verify if the dataset indices are correct
+            _sizes = 0
+            dataset_indices = dict()
+            for name, tensor in input_tensors.items():
+                dataset_indices[name] = tuple(range(_sizes, _sizes+tensor.size()[0]))
+                _sizes += tensor.size()[0]
+
+            region_representations = self._cmmn_layer(region_representations, dataset_indices=dataset_indices)
+
+        return region_representations
 
     def pre_compute(self, input_tensors):
         """

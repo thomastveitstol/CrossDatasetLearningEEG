@@ -51,7 +51,8 @@ def main():
                 dst=results_path)
 
     # Extract it
-    with open(os.path.join(results_path, "preprocessing_config.yml"), "w") as file:
+    print(os.path.join(results_path, "preprocessing_config.yml"))
+    with open(os.path.join(results_path, "preprocessing_config.yml"), "r") as file:
         pre_processed_config = yaml.safe_load(file)
 
     # ---------------

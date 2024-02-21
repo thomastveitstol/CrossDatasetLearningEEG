@@ -603,6 +603,7 @@ def _compute_single_source_psd(x, *, sampling_freq, kernel_size):
     (10, 32, 65)
     """
     # todo: I don't really understand nperseg
+    print(f"Input shape to Welch (Expecting (subjects, channels, time_steps)): {x.shape}")
     return signal.welch(x=x, axis=-1, fs=sampling_freq, nperseg=kernel_size)[-1]
 
 
