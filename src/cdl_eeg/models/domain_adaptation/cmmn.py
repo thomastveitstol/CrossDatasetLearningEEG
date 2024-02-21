@@ -615,6 +615,7 @@ def _compute_single_source_psd(x, *, sampling_freq, kernel_size):
     # todo: I don't really understand nperseg
     if x.ndim != 3:
         raise ValueError(f"Expected input data to be 3D, but found {x.ndim} dimensions")
+    # todo: i think nperseq should be adapted to sampling frequency. Could also tune nfft
     return signal.welch(x=x, axis=-1, fs=sampling_freq, nperseg=kernel_size)[-1]
 
 
