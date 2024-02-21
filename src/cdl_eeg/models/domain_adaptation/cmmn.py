@@ -404,6 +404,8 @@ class RBPConvMMN:
         # The dict will look like this: {dataset_name: {montage split number: {RegionID: representative PSD}}}
         representative_psds: Dict[str, Dict[int, Dict[RegionID, numpy.ndarray]]] = dict()  # type: ignore[type-arg]
         for dataset_name, eeg_data in data.items():
+            representative_psds[dataset_name] = dict()
+
             # Quick dimension check, the EEG data should be 3D
             if eeg_data.ndim != 3:
                 raise ValueError(f"Expected the provided EEG data to be 3D, but found {eeg_data.ndim} dimensions in "
@@ -413,6 +415,8 @@ class RBPConvMMN:
             # within the region of the given dataset, to be precise)
             montage_splits = self._channel_splits[dataset_name]
             for i, (montage_split, cmmn_layer) in enumerate(zip(montage_splits, self._cmmn_layers)):
+                representative_psds[dataset_name][i] = dict()
+
                 # Loop through all regions
                 for region_id, channels in montage_split.ch_names.items():
                     # Extract the indices of the channels within the region
