@@ -696,6 +696,18 @@ class MainRBPModel(nn.Module):
         tsne = TSNE(n_components=n_components)
         return tsne.fit_transform(x)
 
+    # ----------------
+    # Properties
+    # ----------------
+    @property
+    def has_domain_discriminator(self) -> bool:
+        """Indicates if the model has a domain discriminator for domain adversarial learning (True) or not (False)"""
+        return self._domain_discriminator is not None
+
+    @property
+    def any_rbp_cmmn_layers(self) -> bool:
+        return self._region_based_pooling.any_cmmn_layers
+
 
 # ----------------
 # Functions

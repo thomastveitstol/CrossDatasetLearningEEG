@@ -721,7 +721,7 @@ class RegionBasedPooling(nn.Module):
     # ----------------
     def fit_psd_barycenters(self, data, *, channel_systems: Dict[str, ChannelSystem], sampling_freq=None):
         # If there are no CMMN layers, raise a warning
-        if not any(rbp_module.has_cmmn_layer for rbp_module in self._rbp_modules):
+        if not self.any_cmmn_layers:
             warnings.warn("Trying to fit PSD barycenters of CMMN layers, but none of the RBP modules has one",
                           RuntimeWarning)
 
@@ -733,7 +733,7 @@ class RegionBasedPooling(nn.Module):
 
     def fit_monge_filters(self, data, *, channel_systems: Dict[str, ChannelSystem]):
         # If there are no CMMN layers, raise a warning
-        if not any(rbp_module.has_cmmn_layer for rbp_module in self._rbp_modules):
+        if not self.any_cmmn_layers:
             warnings.warn("Trying to fit monge filters of CMMN layers, but none of the RBP modules has one",
                           RuntimeWarning)
 
@@ -754,3 +754,8 @@ class RegionBasedPooling(nn.Module):
     @property
     def supports_precomputing(self):
         return any(rbp_module.supports_precomputing for rbp_module in self._rbp_modules)
+
+    @property
+    def any_cmmn_layers(self) -> bool:
+        """Boolean which indicates if any of the RBP modules has a CMMN layer (True) or not (False)"""
+        return any(rbp_module.has_cmmn_layer for rbp_module in self._rbp_modules)
