@@ -1,4 +1,4 @@
-run_baseline: true
+run_baseline: false
 
 Shared Dataset Details:
   num_time_steps: &num_time_steps null
