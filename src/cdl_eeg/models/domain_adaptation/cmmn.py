@@ -63,7 +63,7 @@ class ConvMMN:
         for dataset_name, x in data.items():
             # Extract monge filter (one per channel) and convert to torch tenors
             monge_filter = torch.tensor(self._monge_filters[dataset_name], dtype=x.dtype,
-                                        requires_grad=False).to(x.device())
+                                        requires_grad=False).to(x.device)
 
             # Channel dimension check
             if x.size()[1] != monge_filter.size()[0]:
@@ -72,6 +72,8 @@ class ConvMMN:
 
             # Apply monge filter channel-wise and store it
             convoluted[dataset_name] = self._compute_single_eeg_convolution_torch(x=x, monge_filter=monge_filter)
+
+        return convoluted
 
     @staticmethod
     def _compute_single_eeg_convolution_torch(*, x, monge_filter):
@@ -381,7 +383,7 @@ class RBPConvMMN:
             for dataset_name, indices in dataset_indices.items():
                 # Convolve only the subjects of the current indices (this changes region_representations in-place)
                 # todo: a little un-intuitive/sub-optimal code going on here..
-                ms_output[indices] = cmmn_layer({dataset_name: ms_output[indices]})[dataset_name]
+                ms_output[list(indices)] = cmmn_layer({dataset_name: ms_output[list(indices)]})[dataset_name]
 
         return region_representations
 
