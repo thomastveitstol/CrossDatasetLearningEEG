@@ -17,13 +17,15 @@ from cdl_eeg.models.metrics import save_discriminator_histories_plots, save_hist
 from cdl_eeg.models.utils import tensor_dict_to_device
 
 
-def run_experiment(config, results_path):
+def run_experiment(config, pre_processing_config, results_path):
     """
     Function for running an experiment
 
     Parameters
     ----------
     config : dict[str, typing.Any]
+    pre_processing_config : dict[str, typing.Any]
+        The config file used for pre-processing
     results_path : str
         Where to store the results
 
@@ -143,6 +145,13 @@ def run_experiment(config, results_path):
         train_loader = DataLoader(dataset=train_gen, batch_size=train_config["batch_size"], shuffle=True)
         val_loader = DataLoader(dataset=val_gen, batch_size=train_config["batch_size"], shuffle=True)
 
+        # (Maybe) fit the CMMN layers of RBP
+        channel_systems = {dataset.name: dataset.channel_system for dataset in datasets}
+        if model.any_rbp_cmmn_layers:
+            model.fit_psd_barycenters(data=train_data, channel_systems=channel_systems,
+                                      sampling_freq=pre_processing_config["general"]["resample"])
+            model.fit_monge_filters(data=train_data, channel_systems=channel_systems)
+
         # Maybe repeat the above steps for the test data as well
         test_loader: Optional[DataLoader[Any]]
         if train_config["continuous_testing"]:
@@ -157,6 +166,12 @@ def run_experiment(config, results_path):
             test_gen = DownstreamDataGenerator(data=test_data, targets=test_targets, pre_computed=test_pre_computed,
                                                subjects=combined_dataset.get_subjects_dict(test_subjects))
             test_loader = DataLoader(dataset=test_gen, batch_size=train_config["batch_size"], shuffle=True)
+
+            # If there are unseen datasets by the CMMN layer, add them as well
+            if model.any_rbp_cmmn_layers:
+                for name, eeg_data in test_data.items():
+                    if name not in train_data:
+                        model.fit_monge_filters(data=test_data, channel_systems=channel_systems)
         else:
             test_loader = None
 
