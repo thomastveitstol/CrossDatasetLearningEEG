@@ -244,7 +244,7 @@ class ConvMMN:
         # Compute PSD barycenters
         self._psd_barycenters = _compute_psd_barycenters(psds)
 
-    def fit_monge_filters(self, data):
+    def fit_monge_filters(self, data, is_psds=False):
         """
         Method for fitting the filter used for monge mapping (fitting h_k in the paper). With this implementation, a
         monge filter is fit per dataset. This may change in the future.
@@ -256,6 +256,8 @@ class ConvMMN:
         data : dict[str, numpy.ndarray]
             The data for which monge filters will be fitted. Keys are dataset names, values are EEG numpy arrays with
             shape=(subjects, channels, time_steps)
+        is_psds : bool
+            Set this to True if the input data are PSDs
 
         Returns
         -------
@@ -267,9 +269,12 @@ class ConvMMN:
 
         # Loop through all provided datasets
         for dataset_name, x in data.items():
-            # Compute representative PSD
-            dataset_psd = _compute_representative_psd(x, sampling_freq=self._sampling_freq,
-                                                      kernel_size=self._kernel_size)
+            if is_psds:
+                dataset_psd = x
+            else:
+                # Compute representative PSD
+                dataset_psd = _compute_representative_psd(x, sampling_freq=self._sampling_freq,
+                                                          kernel_size=self._kernel_size)
 
             # Compute the monge filter as in Eq. 5  todo: verify that the axes is correct
             monge_filter = fft.irfftn(numpy.sqrt(self._psd_barycenters) / numpy.sqrt(dataset_psd), axes=(-1,))
@@ -567,12 +572,12 @@ class RBPConvMMN:
         # Loop through all montage splits
         for cmmn_layer, montage_splits in zip(self._cmmn_layers, zip(*montage_psds_barycenters.values())):
             # Get the data for the current montage split, for all datasets
-            montage_split_data = {dataset_name: dataset_montage_split
+            montage_split_psds = {dataset_name: dataset_montage_split
                                   for dataset_name, dataset_montage_split
                                   in zip(montage_psds_barycenters, montage_splits)}
 
             # Fit the monge filter of the CMMN layer of the current montage split
-            cmmn_layer.fit_monge_filters(montage_split_data)
+            cmmn_layer.fit_monge_filters(psds=montage_split_psds, is_psds=True)
 
 
 # ---------------
@@ -605,7 +610,8 @@ def _compute_single_source_psd(x, *, sampling_freq, kernel_size):
     (10, 32, 65)
     """
     # todo: I don't really understand nperseg
-    assert x.ndim == 3
+    if x.ndim != 3:
+        raise ValueError(f"Expected input data to be 3D, but found {x.ndim} dimensions")
     return signal.welch(x=x, axis=-1, fs=sampling_freq, nperseg=kernel_size)[-1]
 
 
