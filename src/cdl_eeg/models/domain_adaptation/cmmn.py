@@ -8,6 +8,7 @@ Paper:
     T. Gnassounou, R. Flamary, A. Gramfort, Convolutional Monge Mapping Normalization for learning on biosignals,
     Neural Information Processing Systems (NeurIPS), 2023.
 """
+import itertools
 from typing import Dict, Optional, Tuple, List
 
 import numpy
@@ -748,9 +749,3 @@ def _compute_psd_barycenters(psds):
     """
     # todo: in the future, other aggregation methods and weighting may be implemented
     return numpy.mean(numpy.concatenate([numpy.expand_dims(psd, axis=0) for psd in psds.values()], axis=0), axis=0)
-
-
-if __name__ == "__main__":
-    a = {"a": (1, 2, 4), "b": (5, 2, 6, 7, 5)}
-    import itertools
-    print(set(itertools.chain(*a.values())))
