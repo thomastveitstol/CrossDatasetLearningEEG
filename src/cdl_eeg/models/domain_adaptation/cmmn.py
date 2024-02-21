@@ -225,7 +225,7 @@ class ConvMMN:
     # ---------------
     # Methods for fitting CMMN
     # ---------------
-    def fit_psd_barycenters(self, data, *, sampling_freq=None):
+    def fit_psd_barycenters(self, *, data=None, psds=None, sampling_freq=None):
         # If a sampling frequency is passed, set it (currently overriding, may want to do a similarity check and raise
         # error)
         self._sampling_freq = self._sampling_freq if sampling_freq is None else sampling_freq
@@ -234,10 +234,12 @@ class ConvMMN:
                              "found")
 
         # -------------
-        # Compute the PSD barycenters
+        # Compute or get the PSD barycenters
         # -------------
-        # Compute representative PSDs of all datasets
-        psds = _compute_representative_psds(data=data, sampling_freq=self._sampling_freq, kernel_size=self._kernel_size)
+        # Compute representative PSDs of all datasets, if not provided
+        if psds is None:
+            psds = _compute_representative_psds(data=data, sampling_freq=self._sampling_freq,
+                                                kernel_size=self._kernel_size)
 
         # Compute PSD barycenters
         self._psd_barycenters = _compute_psd_barycenters(psds)
@@ -534,12 +536,12 @@ class RBPConvMMN:
         # Loop through all montage splits
         for cmmn_layer, montage_splits in zip(self._cmmn_layers, zip(*montage_psds_barycenters.values())):
             # Get the data for the current montage split, for all datasets
-            montage_split_data = {dataset_name: dataset_montage_split
+            montage_split_psds = {dataset_name: dataset_montage_split
                                   for dataset_name, dataset_montage_split
                                   in zip(montage_psds_barycenters, montage_splits)}
 
             # Fit the PSD barycenters of the CMMN layer of the current montage split
-            cmmn_layer.fit_psd_barycenters(data=montage_split_data, sampling_freq=sampling_freq)
+            cmmn_layer.fit_psd_barycenters(psds=montage_split_psds, sampling_freq=sampling_freq)
 
     def fit_monge_filters(self, data, *, channel_systems: Dict[str, ChannelSystem]):
         """Fit the CMMN monge filters for all"""
@@ -603,7 +605,7 @@ def _compute_single_source_psd(x, *, sampling_freq, kernel_size):
     (10, 32, 65)
     """
     # todo: I don't really understand nperseg
-    print(f"Input shape to Welch (Expecting (subjects, channels, time_steps)): {x.shape}")
+    assert x.ndim == 3
     return signal.welch(x=x, axis=-1, fs=sampling_freq, nperseg=kernel_size)[-1]
 
 
@@ -717,6 +719,8 @@ def _compute_representative_psds(data, *, sampling_freq, kernel_size):
     >>> my_estimated_psds = _compute_representative_psds(my_data, sampling_freq=100, kernel_size=64)
     >>> {name_: psds_.shape for name_, psds_ in my_estimated_psds.items()}  # type: ignore[attr-defined]
     {'d1': (32, 33), 'd2': (64, 33), 'd3': (19, 33)}
+    >>> {name_: eeg_.shape for name_, eeg_ in my_data.items()}  # type: ignore[attr-defined]
+    {'d1': (10, 32, 2000), 'd2': (8, 64, 1500), 'd3': (17, 19, 3000)}
     """
     return {dataset_name: _compute_representative_psd(x=x, sampling_freq=sampling_freq, kernel_size=kernel_size)
             for dataset_name, x in data.items()}

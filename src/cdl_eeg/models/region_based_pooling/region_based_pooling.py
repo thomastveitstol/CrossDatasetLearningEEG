@@ -497,10 +497,20 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         if self._cmmn_layer is None:
             raise RuntimeError("Cannot fit PSD barycenters of the CMMN layers, when none is used")
 
+        # -----------------
         # Update the channel splits of the CMMN layer to what it is in this layer
+        # -----------------
         self._cmmn_layer.update_channel_splits(self._channel_splits)
 
+        # -----------------
         # Fit PSD barycenters
+        # -----------------
+        # Check dimensions
+        _sizes = set(d.shape for d in data.values())
+        assert all(len(_size) == 3 for _size in _sizes), (f"Expected all input data values to be 3D with "
+                                                          f"shape=(subejcts, channels, time_steps), but found: "
+                                                          f"{_sizes}")
+
         self._cmmn_layer.fit_psd_barycenters(data, channel_systems=channel_systems, sampling_freq=sampling_freq)
 
     def fit_monge_filters(self, data, *, channel_systems: Dict[str, ChannelSystem]):
