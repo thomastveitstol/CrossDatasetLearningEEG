@@ -421,7 +421,8 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
                 dataset_indices[name] = tuple(range(_sizes, _sizes+tensor.size()[0]))
                 _sizes += tensor.size()[0]
 
-            region_representations = self._cmmn_layer(region_representations, dataset_indices=dataset_indices)
+            region_representations = self._cmmn_layer(region_representations,  # type: ignore[misc]
+                                                      dataset_indices=dataset_indices)
 
         return region_representations
 

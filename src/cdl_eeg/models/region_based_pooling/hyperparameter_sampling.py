@@ -1,5 +1,6 @@
 import copy
 import random
+from typing import Any, Dict, Optional
 
 from cdl_eeg.models.random_search.sampling_distributions import sample_hyperparameter
 
@@ -110,6 +111,7 @@ def _sample_single_rbp_design(config, num_montage_splits, use_cmmn_layer):
     # ------------------
     # Currently, either all or none of the RBP layers uses CMMN
     use_cmmn_layer = use_cmmn_layer
+    cmmn: Optional[Dict[str, Any]]
     if use_cmmn_layer:
         cmmn = dict()
         for param, domain in config["cmmn_kwargs"].items():
