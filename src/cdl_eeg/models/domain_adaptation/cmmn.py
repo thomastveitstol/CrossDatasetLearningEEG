@@ -368,8 +368,8 @@ class RBPConvMMN:
                              f"one occurrence")
 
         # The dataset indices have same dimensions as batch size
-        if len(all_dataset_indices) == tuple(_batch_sizes)[0]:
-            raise ValueError(f"Number of dataset indices to be the same as the batch size, but found "
+        if len(all_dataset_indices) != tuple(_batch_sizes)[0]:
+            raise ValueError(f"Expected the number of dataset indices to be the same as the batch size, but found "
                              f"{len(all_dataset_indices)} and {tuple(_batch_sizes)[0]}")
 
         # ---------------
