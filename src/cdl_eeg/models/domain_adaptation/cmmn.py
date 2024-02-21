@@ -30,7 +30,7 @@ class ConvMMN:
     ...                   "d2": numpy.random.normal(0, 1, size=(8, 32, 2000)),
     ...                   "d3": numpy.random.normal(0, 1, size=(17, 32, 2000))}
     >>> my_cmmn = ConvMMN(kernel_size=128)
-    >>> my_cmmn.fit_psd_barycenters(my_source_data, sampling_freq=100)
+    >>> my_cmmn.fit_psd_barycenters(data=my_source_data, sampling_freq=100)
     >>> my_cmmn.fit_monge_filters(data=my_source_data)
     >>> my_convoluted_source_data = my_cmmn(my_source_data)
     >>> {name: data_.shape for name, data_ in my_convoluted_source_data.items()}  # type: ignore[attr-defined]
