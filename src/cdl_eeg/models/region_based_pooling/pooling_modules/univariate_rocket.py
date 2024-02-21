@@ -255,7 +255,7 @@ class MultiCSSharedRocket(MultiMontageSplitsPoolingBase):
             batch, _, time_steps = x.size()
             region_representations = torch.empty(size=(batch, num_regions, time_steps)).to(x.device)
 
-            # Loop through all regions
+            # Loop through all regions  todo: this assumes that the channel split keys are always the same order
             for i, (fc_module, channels) in enumerate(zip(fc_modules, channel_split.ch_names.values())):
                 # Extract the indices of the legal channels for this region
                 allowed_node_indices = channel_names_to_indices(ch_names=channels.ch_names,
