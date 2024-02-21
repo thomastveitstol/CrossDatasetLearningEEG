@@ -10,6 +10,7 @@ Authored by:
 import abc
 import dataclasses
 import itertools
+import warnings
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -509,6 +510,10 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
     def num_regions(self) -> int:
         return sum(split.num_regions for split in self._region_splits)
 
+    @property
+    def has_cmmn_layer(self) -> bool:
+        return self._cmmn_layer is not None
+
 
 # ------------------
 # 'The' RBP implementation
@@ -715,12 +720,28 @@ class RegionBasedPooling(nn.Module):
     # Methods for fitting CMMN layer
     # ----------------
     def fit_psd_barycenters(self, data, *, channel_systems: Dict[str, ChannelSystem], sampling_freq=None):
+        # If there are no CMMN layers, raise a warning
+        if not any(rbp_module.has_cmmn_layer for rbp_module in self._rbp_modules):
+            warnings.warn("Trying to fit PSD barycenters of CMMN layers, but none of the RBP modules has one",
+                          RuntimeWarning)
+
+        # Loop through all RBP models
         for rbp_module in self._rbp_modules:
-            rbp_module.fit_psd_barycenters(data=data, channel_systems=channel_systems, sampling_freq=sampling_freq)
+            # Only fit the ones which uses CMMN layer
+            if rbp_module.has_cmmn_layer:
+                rbp_module.fit_psd_barycenters(data=data, channel_systems=channel_systems, sampling_freq=sampling_freq)
 
     def fit_monge_filters(self, data, *, channel_systems: Dict[str, ChannelSystem]):
+        # If there are no CMMN layers, raise a warning
+        if not any(rbp_module.has_cmmn_layer for rbp_module in self._rbp_modules):
+            warnings.warn("Trying to fit monge filters of CMMN layers, but none of the RBP modules has one",
+                          RuntimeWarning)
+
+        # Loop through all RBP models
         for rbp_module in self._rbp_modules:
-            rbp_module.fit_monge_filters(data=data, channel_systems=channel_systems)
+            # Only fit the ones which uses CMMN layer
+            if rbp_module.has_cmmn_layer:
+                rbp_module.fit_monge_filters(data=data, channel_systems=channel_systems)
 
     # ----------------
     # Properties
