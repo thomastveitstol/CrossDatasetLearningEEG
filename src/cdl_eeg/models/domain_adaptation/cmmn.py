@@ -577,7 +577,7 @@ class RBPConvMMN:
                                   in zip(montage_psds_barycenters, montage_splits)}
 
             # Fit the monge filter of the CMMN layer of the current montage split
-            cmmn_layer.fit_monge_filters(psds=montage_split_psds, is_psds=True)
+            cmmn_layer.fit_monge_filters(data=montage_split_psds, is_psds=True)
 
 
 # ---------------
