@@ -50,6 +50,10 @@ def main():
     shutil.copy(src=os.path.join(get_numpy_data_storage_path(), pre_processed_version, "preprocessing_config.yml"),
                 dst=results_path)
 
+    # Extract it
+    with open(os.path.join(results_path, "preprocessing_config.yml"), "w") as file:
+        pre_processed_config = yaml.safe_load(file)
+
     # ---------------
     # Run experiments
     # ---------------
@@ -63,7 +67,8 @@ def main():
     if lodo_config["DomainDiscriminator"] is not None:
         num_train_datasets = len(lodo_config["Datasets"]) - 1
         lodo_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
-    run_experiment(lodo_config, results_path=os.path.join(results_path, "leave_one_dataset_out"))
+    run_experiment(lodo_config, pre_processing_config=pre_processed_config,
+                   results_path=os.path.join(results_path, "leave_one_dataset_out"))
 
     if config["run_baseline"]:
         # k-fold CV
@@ -73,7 +78,8 @@ def main():
         if k_fold_config["DomainDiscriminator"] is not None:
             num_train_datasets = len(k_fold_config["Datasets"])
             k_fold_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
-        run_experiment(k_fold_config, results_path=os.path.join(results_path, "k_fold_cv"))
+        run_experiment(k_fold_config, pre_processing_config=pre_processed_config,
+                       results_path=os.path.join(results_path, "k_fold_cv"))
 
 
 if __name__ == "__main__":
