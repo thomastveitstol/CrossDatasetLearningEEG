@@ -30,11 +30,15 @@ def sample_rbp_designs(config):
     # Randomly generate the number of montage splits per pooling module (they are partitioned, in a way)
     partitions = _generate_partition_sizes(n=num_montage_splits, k=num_pooling_modules)
 
+    # Decide if CMMN layers should be used
+    use_cmmn_layer = random.choice(config["use_cmmn_layer"])
+
     # Create all RBP designs
     designs = dict()
     for i, k in enumerate(partitions):
         # Generate a single RBP design
-        designs[f"RBPDesign{i}"] = _sample_single_rbp_design(config=config["RBPDesign"], num_montage_splits=k)
+        designs[f"RBPDesign{i}"] = _sample_single_rbp_design(config=config["RBPDesign"], num_montage_splits=k,
+                                                             use_cmmn_layer=use_cmmn_layer)
 
     # Sample if the region representations should be normalised or not
     normalise = sample_hyperparameter(config["normalise_region_representations"]["dist"],
@@ -43,7 +47,7 @@ def sample_rbp_designs(config):
     return {"RBPDesigns": designs, "normalise_region_representations": normalise}
 
 
-def _sample_single_rbp_design(config, num_montage_splits):
+def _sample_single_rbp_design(config, num_montage_splits, use_cmmn_layer):
     """
     Function for sampling a single RBP design
 
@@ -100,6 +104,22 @@ def _sample_single_rbp_design(config, num_montage_splits):
     # Add montage splits (both names and kwargs) to design
     design["split_methods"] = list(montage_splits)
     design["split_methods_kwargs"] = montage_splits_kwargs
+
+    # ------------------
+    # CMMN layer  todo: sample equally or differently?
+    # ------------------
+    # Currently, either all or none of the RBP layers uses CMMN
+    use_cmmn_layer = use_cmmn_layer
+    if use_cmmn_layer:
+        cmmn = dict()
+        for param, domain in config["cmmn_kwargs"].items():
+            if isinstance(domain, dict) and "dist" in domain:
+                cmmn[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
+            else:
+                cmmn[param] = domain
+
+    design["use_cmmn_layer"] = use_cmmn_layer
+    design["cmmn_kwargs"] = cmmn
 
     return design
 

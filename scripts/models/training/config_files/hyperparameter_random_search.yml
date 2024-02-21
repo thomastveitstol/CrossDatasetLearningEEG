@@ -226,11 +226,17 @@ RegionBasedPooling: &RegionBasedPooling
     kwargs:
       domain: [ true, false ]
   num_pooling_modules: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]  # todo
+  use_cmmn_layer : [ true, false ]
   RBPDesign:
     num_designs: 1
     pooling_type: multi_cs
     pooling_module: *PoolingModules
     montage_split: *MontageSplits
+    cmmn_kwargs:
+      kernel_size:  # todo: what to use here?
+        dist: uniform_discrete
+        kwargs:
+          domain: [ 64, 128, 256 ]
 
 # Interpolation
 SphericalSplineInterpolation: &SphericalSplineInterpolation [ HatlestadHall, YulinWang ]
