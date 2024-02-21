@@ -236,7 +236,7 @@ RegionBasedPooling: &RegionBasedPooling
       kernel_size:  # todo: what to use here?
         dist: uniform_discrete
         kwargs:
-          domain: [ 64, 128, 256 ]
+          domain: [ 64, 128, 256, 512, 1024, 2048 ]
 
 # Interpolation
 SphericalSplineInterpolation: &SphericalSplineInterpolation [ HatlestadHall, YulinWang ]
