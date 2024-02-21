@@ -696,10 +696,10 @@ def _compute_representative_region_psd(x, *, sampling_freq, kernel_size):
     psds = _compute_single_source_psd(x, sampling_freq=sampling_freq, kernel_size=kernel_size)
 
     # Aggregate the PSDs and return
-    return _aggregatte_to_region_psd(psds)
+    return _aggregate_to_region_psd(psds)
 
 
-def _aggregatte_to_region_psd(psds):
+def _aggregate_to_region_psd(psds):
     # todo: Aggregate on subject or channel level first?
     return numpy.mean(psds, axis=(0, 1))  # todo: this is likely wrong aggregation method
 
