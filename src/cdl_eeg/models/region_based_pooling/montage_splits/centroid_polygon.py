@@ -15,6 +15,30 @@ from cdl_eeg.models.region_based_pooling.utils import RegionID, ChannelsInRegion
 # -----------------
 # Small convenient classes
 # -----------------
+class CPRegionID(RegionID):
+
+    id: str
+
+    def __lt__(self, other):
+        # Type check
+        if not isinstance(other, type(self)):
+            raise TypeError(f"Cannot compute '<' for other types than {type(self)}, but found {type(other)}")
+
+        # If they are equal, return False
+        if self == other:
+            return False
+
+        # Loop through all polygon IDs
+        for self_polygon_id, other_polygon_id in zip(self.id.split(sep="|"), other.id.split(sep="|")):
+            if int(self_polygon_id) < int(other_polygon_id):
+                return True
+            elif int(self_polygon_id) > int(other_polygon_id):
+                return False
+
+        # Since we have already checked if the two objects are equal, this code should not be reachable
+        raise ValueError(f"Something wrong happened. LHS: {self}, RHS: {other}")
+
+
 class Point2D(NamedTuple):
     x: float
     y: float
@@ -489,7 +513,7 @@ class CentroidPolygons(MontageSplitBase):
 
         Returns
         -------
-        RegionID
+        CPRegionID
         """
         # Place the point and add it to the sequence (here, we imagine that the node is 'coloured' with an integer)
         node_color = _place_single_node_in_polygon(node=node, polygons=self._child_polygons)
@@ -502,11 +526,11 @@ class CentroidPolygons(MontageSplitBase):
                 region = child_split._place_single_node(node=node, _color_sequence=color_sequence)
                 break
 
-        # Return RegionID if and only if the node split is the final one
+        # Return CPRegionID if and only if the node split is the final one
         if all(child_split is None for child_split in self._children_split.values()):
             # While the original implementation of RBP used a clever trick with prime numbers to map the color sequence
             # to a unique integer, here we just convert it to a string
-            return RegionID("|".join(str(color) for color in color_sequence))
+            return CPRegionID("|".join(str(color) for color in color_sequence))
 
         return region
 
@@ -526,7 +550,7 @@ class CentroidPolygons(MontageSplitBase):
         electrodes_2d = project_to_2d(electrode_positions=electrodes_3d)
 
         # Place all electrode using their 2D projections
-        channels_in_regions: Dict[RegionID, List[str]] = dict()
+        channels_in_regions: Dict[CPRegionID, List[str]] = dict()
         for electrode_name, position in electrodes_2d.positions.items():
             # Place in region and store in dict
             region = self._place_single_node(node=Point2D(*position))
@@ -535,6 +559,10 @@ class CentroidPolygons(MontageSplitBase):
                 channels_in_regions[region] = []
 
             channels_in_regions[region].append(electrode_name)
+
+        # Order the dict correctly
+        ordered_regions = _order_region_ids(tuple(channels_in_regions.keys()))
+        channels_in_regions = {reg: channels_in_regions[reg] for reg in ordered_regions}
 
         # Return with correct type
         return ChannelsInRegionSplit({id_: ChannelsInRegion(tuple(ch_names))
@@ -613,6 +641,29 @@ class CentroidPolygons(MontageSplitBase):
 # -----------------
 # Functions
 # -----------------
+def _order_region_ids(region_ids):
+    """
+    Function for ordering region IDs
+
+    Parameters
+    ----------
+    region_ids : tuple[CPRegionID, ...]
+
+    Returns
+    -------
+    tuple[RegionID, ...]
+
+    Examples
+    --------
+    >>> _order_region_ids((CPRegionID(id='0|1'), CPRegionID(id='1|0'), CPRegionID(id='0|0'), CPRegionID(id='1|1')))
+    (CPRegionID(id='0|0'), CPRegionID(id='0|1'), CPRegionID(id='1|0'), CPRegionID(id='1|1'))
+    >>> _order_region_ids((CPRegionID(id='10|0|20'), CPRegionID(id='0|10'), CPRegionID(id='0|11|0'),
+    ...                    CPRegionID(id='11|1|11')))
+    (CPRegionID(id='0|10'), CPRegionID(id='0|11|0'), CPRegionID(id='10|0|20'), CPRegionID(id='11|1|11'))
+    """
+    return tuple(sorted(region_ids))
+
+
 def _electrode_2d_to_point_tuple(electrodes_2d):
     """
     Convert from Electrodes2D to a tuple of Point2D (channel names are omitted)
