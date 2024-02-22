@@ -103,7 +103,8 @@ class EEGDatasetBase(abc.ABC):
             # Interpolate
             if interpolation is None:
                 raise ValueError("Expected an interpolation method, but none was received")
-            eeg_data.interpolate_bads(method={"eeg": interpolation})
+            if bad_channels:
+                eeg_data.interpolate_bads(method={"eeg": interpolation})
 
         # Resampling
         if resample is not None:
