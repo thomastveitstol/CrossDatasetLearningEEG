@@ -4,6 +4,33 @@ import torch
 import torch.nn as nn
 
 
+def get_activation_function(name):
+    """
+    Get activation function
+
+    Parameters
+    ----------
+    name : str, optional
+
+    Returns
+    -------
+    typing.Callable
+    """
+    if name is None:
+        return None
+
+    available_functions = (torch.sigmoid,)
+
+    # Loop through and select the correct one
+    for func in available_functions:
+        if name == func.__name__:
+            return func
+
+    # If no match, an error is raised
+    raise ValueError(f"The activation function '{name}' was not recognised. Please select among the following: "
+                     f"{tuple(func.__name__ for func in available_functions)}")
+
+
 # -------------
 # Classes for re-weighting the loss function
 # -------------

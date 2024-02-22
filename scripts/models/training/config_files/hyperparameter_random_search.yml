@@ -43,6 +43,23 @@ Datasets:
 
 Targets:
   age:
+    prediction_activation_function: null
+    Loss:
+      loss:
+        dist: uniform_discrete
+        kwargs:
+          domain: [ MSELoss, L1Loss ]
+      loss_kwargs: { }  # reduction parameter will be set to 'none' or 'mean', depending on the sampled loss weighter
+      weighter: # todo: weighter and the kwargs must be sampled together
+        dist: uniform_discrete
+        kwargs:
+          domain: [ null, SamplePowerWeighter ]
+      weighter_kwargs: # Dataset sizes will be added during runtime
+        weight_power:
+          dist: uniform
+          kwargs:
+            a: 0
+            b: 1
     metrics: regression
     scaler:
       target:
@@ -52,6 +69,23 @@ Targets:
             - name: ZNormalisation
               kwargs: { }
   sex:
+    prediction_activation_function: sigmoid
+    Loss:
+      loss:
+        dist: uniform_discrete
+        kwargs:
+          domain: [ BCEWithLogitsLoss ]
+      loss_kwargs: { }  # reduction parameter will be set to 'none' or 'mean', depending on the sampled loss weighter
+      weighter: # todo: weighter and the kwargs must be sampled together
+        dist: uniform_discrete
+        kwargs:
+          domain: [ null, SamplePowerWeighter ]
+      weighter_kwargs: # Dataset sizes will be added during runtime
+        weight_power:
+          dist: uniform
+          kwargs:
+            a: 0
+            b: 1
     metrics: classification
     scaler:
       target:
@@ -60,35 +94,6 @@ Targets:
           domain:
             - name: NoScaler
               kwargs: { }
-
-Scalerser:
-  target:
-    dist: uniform_discrete
-    kwargs:
-      domain:
-        - name: ZNormalisation
-          kwargs: { }
-        # - name: NoScaler
-        #   kwargs: { }
-
-# todo: for the current implementation of hyperparameter sampling, it was easier to place 'Loss' outside 'Training', but
-#  I think it should be changed in the future
-Loss:
-  loss:
-    dist: uniform_discrete
-    kwargs:
-      domain: [ MSELoss, L1Loss ]
-  loss_kwargs: { }  # reduction parameter will be set to 'none' or 'mean', depending on the sampled loss weighter
-  weighter: # todo: weighter and the kwargs must be sampled together
-    dist: uniform_discrete
-    kwargs:
-      domain: [ null, SamplePowerWeighter ]
-  weighter_kwargs:   # Dataset sizes will be added during runtime
-    weight_power:
-      dist: uniform
-      kwargs:
-        a: 0
-        b: 1
 
 Training:
   # Fixed hyperparameters
