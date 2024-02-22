@@ -44,7 +44,7 @@ def generate_preprocessing_config_file(config):
     remove_above_std = random.choice(config["remove_above_std"])
     interpolation: Optional[str]
     if remove_above_std is not None:
-        interpolation = config["interpolation"]
+        interpolation = random.choice(config["interpolation"])
     else:
         interpolation = None
 

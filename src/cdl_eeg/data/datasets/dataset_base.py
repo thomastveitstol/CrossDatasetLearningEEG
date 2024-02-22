@@ -96,7 +96,8 @@ class EEGDatasetBase(abc.ABC):
 
             # Loop through all channels and store the ones which are bad
             for channel in eeg_data.info["ch_names"]:
-                if numpy.std(eeg_data.pick(channel).get_data()) > remove_above_std:
+                channel_data = copy.deepcopy(eeg_data).pick(channel).get_data()[0]
+                if numpy.std(channel_data) > remove_above_std:
                     bad_channels.add(channel)
 
             # Interpolate
