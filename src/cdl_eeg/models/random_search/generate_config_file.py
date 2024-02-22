@@ -59,11 +59,13 @@ def generate_config_file(config):
         else:
             train_hyperparameters[param] = domain
     train_hyperparameters["metrics"] = config["Targets"][config["selected_target"]]["metrics"]
+    _activation_function = config["Targets"][config["selected_target"]]["prediction_activation_function"]
+    train_hyperparameters["prediction_activation_function"] = _activation_function
 
     # -----------------
     # Sample loss
     # -----------------
-    loss_config = config["Loss"]
+    loss_config = config["Targets"][config["selected_target"]]["Loss"]
     loss_hyperparameters = dict()
 
     loss_hyperparameters["loss"] = sample_hyperparameter(loss_config["loss"]["dist"], **loss_config["loss"]["kwargs"])

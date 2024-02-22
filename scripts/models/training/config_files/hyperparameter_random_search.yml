@@ -39,7 +39,7 @@ Datasets:
     num_subjects: 1379
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
-    target_availability: [ age, sex ]
+    target_availability: [ age ]
 
 Targets:
   age:
