@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 
 import numpy
 
@@ -39,9 +40,18 @@ def generate_preprocessing_config_file(config):
     # Using already pre-processed version
     # derivatives = random.choice(config["derivatives"])
 
+    # Bad channels handling
+    remove_above_std = random.choice(config["remove_above_std"])
+    interpolation: Optional[str]
+    if remove_above_std is not None:
+        interpolation = config["interpolation"]
+    else:
+        interpolation = None
+
     # ---------------
     # Construct config dictionary (the dataset specifics are currently fixed)
     # ---------------
     general_config = {"filtering": (l_freq, h_freq), "resample": sampling_freq, "avg_reference": avg_reference,
-                      "num_time_steps": num_time_steps, "time_series_start": time_series_start}
+                      "num_time_steps": num_time_steps, "time_series_start": time_series_start,
+                      "remove_above_std": remove_above_std, "interpolation": interpolation}
     return {"general": general_config, "datasets": config["Datasets"]}

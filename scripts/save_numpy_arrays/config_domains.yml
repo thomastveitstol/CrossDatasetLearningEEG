@@ -68,6 +68,8 @@ num_seconds: [ 30 ]
 time_series_start: [ 30, 45, 60 ]  # This variable should have unit [seconds]
 avg_reference: [ true ]
 derivatives: [ false ]
+remove_above_std: [40e-6, 80e-6, 120e-6, 160e-6]
+interpolation:
 
 # --------------
 # Dataset specific hyperparameters  todo: notch filter?
