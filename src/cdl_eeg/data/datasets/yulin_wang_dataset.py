@@ -34,11 +34,7 @@ class YulinWang(EEGDatasetBase):
     # ----------------
     # Methods for loading
     # ----------------
-    def _load_single_raw_mne_object(self, subject_id, **kwargs):
-        # Extract visit number of recording type
-        visit = kwargs["visit"]
-        recording = kwargs["recording"]
-
+    def _load_single_raw_mne_object(self, subject_id, *, visit, recording):
         # Create path
         subject_path = pathlib.Path(f"{subject_id}/ses-session{visit}/eeg/"
                                     f"{subject_id}_ses-session{visit}_task-{recording}_eeg")
@@ -56,11 +52,7 @@ class YulinWang(EEGDatasetBase):
 
         return raw
 
-    def _load_single_cleaned_mne_object(self, subject_id, **kwargs):
-        # Extract visit number of recording type
-        visit = kwargs["visit"]
-        recording = kwargs["recording"]
-
+    def _load_single_cleaned_mne_object(self, subject_id, *, visit, recording):
         # Create path
         path_to_cleaned = "derivatives/preprocessed data/preprocessed_data"
         subject_path = pathlib.Path(f"{str(subject_id).zfill(2).replace('-', '')}_{str(visit).zfill(2)}_{recording}")

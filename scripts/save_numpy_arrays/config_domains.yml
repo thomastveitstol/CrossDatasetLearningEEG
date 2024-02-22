@@ -76,6 +76,8 @@ interpolation: [ spline ]
 # --------------
 Datasets:
   # OUS: {}
+  CAUEEG:
+    excluded_channels: [ Photic, EKG ]
   Rockhill:
     'on': true
     excluded_channels: EXG
@@ -87,5 +89,3 @@ Datasets:
     session: "t1"
     derivatives: true
   Miltiadous: {}
-  CAUEEG:
-    non_eeg_channels: [ Photic, EEG ]

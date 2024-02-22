@@ -161,7 +161,7 @@ class EEGDatasetBase(abc.ABC):
             else self._load_single_raw_mne_object(subject_id, **kwargs)
 
     @abc.abstractmethod
-    def _load_single_raw_mne_object(self, subject_id, **kwargs):
+    def _load_single_raw_mne_object(self, *args, **kwargs):
         """
         Method for loading raw data
 
@@ -175,7 +175,7 @@ class EEGDatasetBase(abc.ABC):
             MNE object of the subject
         """
 
-    def _load_single_cleaned_mne_object(self, subject_id, **kwargs):
+    def _load_single_cleaned_mne_object(self, *args, **kwargs):
         """
         Method for loading existing pre-processed data (only relevant for some datasets)
 
