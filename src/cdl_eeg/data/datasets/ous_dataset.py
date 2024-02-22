@@ -5,6 +5,7 @@ import numpy
 import pandas
 
 from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, target_method
+from cdl_eeg.data.datasets.utils import sex_to_int
 
 
 class OUS(EEGDatasetBase):
@@ -18,7 +19,7 @@ class OUS(EEGDatasetBase):
     >>> OUS().name
     'ous'
     >>> OUS.get_available_targets()
-    ('age',)
+    ('age', 'sex')
     >>> len(OUS().get_subject_ids())
     4811
     """
@@ -40,6 +41,17 @@ class OUS(EEGDatasetBase):
     # ----------------
     # Targets
     # ----------------
+    @target_method
+    def sex(self, subject_ids):
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
+
+        # Convert to dict
+        sub_id_to_age = {name: sex_to_int(sex) for name, sex in zip(df["participant_id"], df["sex"])}
+
+        # Extract the sexes of the subjects, in the same order as the input argument
+        return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
+
     @target_method
     def age(self, subject_ids):
         # Read the .tsv file
