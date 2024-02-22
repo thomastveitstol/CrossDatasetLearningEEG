@@ -1,4 +1,5 @@
 import abc
+import copy
 import dataclasses
 import os
 from typing import Dict, Tuple, List
@@ -59,14 +60,18 @@ class EEGDatasetBase(abc.ABC):
         self._name: str = inflection.underscore(self.__class__.__name__) if name is None else name
 
     @staticmethod
-    def pre_process(eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False,
-                    excluded_channels=None):
+    def pre_process(eeg_data, *, remove_above_std, interpolation=None, filtering=None, resample=None, notch_filter=None,
+                    avg_reference=False, excluded_channels=None):
         """
         Method for pre-processing EEG data
 
         Parameters
         ----------
         eeg_data : mne.io.base.BaseRaw
+        remove_above_std : float, optional
+            Remove channels with standard deviation above this number, and interpolate with the interpolation method
+        interpolation : str, optional
+            interpolation method to use, if channels are removed
         filtering : tuple[float, float], optional
         resample : float, optional
         notch_filter : float, optional
@@ -84,6 +89,20 @@ class EEGDatasetBase(abc.ABC):
         # Excluding channels
         if excluded_channels is not None:
             eeg_data = eeg_data.pick(picks="eeg", exclude=excluded_channels)
+
+        if remove_above_std is not None:
+            # If there are any currently labelled bad channels, keep them
+            bad_channels = set(copy.deepcopy(eeg_data.info["bads"]))
+
+            # Loop through all channels and store the ones which are bad
+            for channel in eeg_data.info["ch_names"]:
+                if numpy.std(eeg_data.pick(channel).get_data()) > remove_above_std:
+                    bad_channels.add(channel)
+
+            # Interpolate
+            if interpolation is None:
+                raise ValueError("Expected an interpolation method, but none was received")
+            eeg_data.interpolate_bads(method={"eeg": interpolation})
 
         # Resampling
         if resample is not None:
@@ -227,9 +246,9 @@ class EEGDatasetBase(abc.ABC):
         # Concatenate to a single numpy ndarray
         return numpy.concatenate(data, axis=0)
 
-    def save_eeg_as_numpy_arrays(self, path=None, subject_ids=None, *, filtering=None, resample=None, notch_filter=None,
-                                 avg_reference=False, num_time_steps=None, time_series_start=None, derivatives=False,
-                                 excluded_channels=None, **kwargs):
+    def save_eeg_as_numpy_arrays(self, path=None, subject_ids=None, *, remove_above_std, filtering=None, resample=None,
+                                 notch_filter=None, avg_reference=False, num_time_steps=None, time_series_start=None,
+                                 derivatives=False, excluded_channels=None, interpolation=None, **kwargs):
         """
         Method for saving data as numpy arrays
 
@@ -255,6 +274,9 @@ class EEGDatasetBase(abc.ABC):
             otherwise the non-cleaned data is loaded
         excluded_channels : tuple[str, ...], optional
             Channels to exclude. If None is passed, no channels will be excluded
+        remove_above_std : float, optional
+            See preprocessing
+        interpolation : str, optional
         kwargs
             Keyword arguments, which will be passed to load_single_mne_object
 
@@ -294,7 +316,8 @@ class EEGDatasetBase(abc.ABC):
 
             # Pre-process
             raw = self.pre_process(raw, filtering=filtering, resample=resample, notch_filter=notch_filter,
-                                   excluded_channels=excluded_channels, avg_reference=avg_reference)
+                                   excluded_channels=excluded_channels, avg_reference=avg_reference,
+                                   remove_above_std=remove_above_std, interpolation=interpolation)
 
             # Convert to numpy arrays
             eeg_data = raw.get_data()
