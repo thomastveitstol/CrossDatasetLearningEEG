@@ -152,7 +152,8 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
 
         # Add the data which should be used
         data[dataset_name] = torch.tensor(self._data[dataset_name][idx], dtype=torch.float)
-        targets[dataset_name] = torch.unsqueeze(torch.tensor(self._targets[dataset_name][idx], dtype=torch.float),
+        targets[dataset_name] = torch.unsqueeze(torch.tensor(self._targets[dataset_name][idx], dtype=torch.float,
+                                                             requires_grad=False),
                                                 dim=-1)
 
         # TODO: quite hard coded?

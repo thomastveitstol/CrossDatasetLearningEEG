@@ -43,6 +43,7 @@ Datasets:
 
 Targets:
   age:
+    main_metric: [ mae, mse, pearson_r, spearman_rho, r2_score ]
     prediction_activation_function: null
     Loss:
       loss:
@@ -69,6 +70,7 @@ Targets:
             - name: ZNormalisation
               kwargs: { }
   sex:
+    main_metric: [ auc ]
     prediction_activation_function: sigmoid
     Loss:
       loss:
@@ -127,10 +129,6 @@ Training:
       base: 10
       a: -10
       b: -6
-  main_metric:
-    dist: uniform_discrete
-    kwargs:
-      domain: [ mae, mse, pearson_r, spearman_rho, r2_score ]
 
 # -----------------
 # Domain discriminator

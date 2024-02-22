@@ -25,7 +25,8 @@ def main():
 
     # Create path and folder
     results_path = os.path.join(get_results_dir(),
-                                f"debug_experiments_{date.today()}_{datetime.now().strftime('%H%M%S')}")
+                                f"debug_{config['selected_target']}_experiments_{date.today()}_"
+                                f"{datetime.now().strftime('%H%M%S')}")
     os.mkdir(results_path)
 
     # ---------------

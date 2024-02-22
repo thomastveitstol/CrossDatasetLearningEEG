@@ -61,6 +61,7 @@ def generate_config_file(config):
     train_hyperparameters["metrics"] = config["Targets"][config["selected_target"]]["metrics"]
     _activation_function = config["Targets"][config["selected_target"]]["prediction_activation_function"]
     train_hyperparameters["prediction_activation_function"] = _activation_function
+    train_hyperparameters["main_metric"] = random.choice(config["Targets"][config["selected_target"]]["main_metric"])
 
     # -----------------
     # Sample loss
