@@ -6,6 +6,7 @@ from typing import Dict, Tuple, List
 
 import enlighten
 import inflection
+import mne
 import numpy
 import pandas
 from matplotlib import pyplot
@@ -59,9 +60,8 @@ class EEGDatasetBase(abc.ABC):
         """
         self._name: str = inflection.underscore(self.__class__.__name__) if name is None else name
 
-    @staticmethod
-    def pre_process(eeg_data, *, remove_above_std, interpolation=None, filtering=None, resample=None, notch_filter=None,
-                    avg_reference=False, excluded_channels=None):
+    def pre_process(self, eeg_data, *, remove_above_std, interpolation=None, filtering=None, resample=None,
+                    notch_filter=None, avg_reference=False, excluded_channels):
         """
         Method for pre-processing EEG data
 
@@ -100,11 +100,19 @@ class EEGDatasetBase(abc.ABC):
                 if numpy.std(channel_data) > remove_above_std:
                     bad_channels.add(channel)
 
+            # Add the bad channels to the MNE object
+            eeg_data.info["bads"] = list(bad_channels)
+
             # Interpolate
             if interpolation is None:
                 raise ValueError("Expected an interpolation method, but none was received")
             if bad_channels:
-                eeg_data.interpolate_bads(method={"eeg": interpolation})
+                # Need the channel positions
+                eeg_data.set_montage(
+                    mne.channels.make_dig_montage(ch_pos=self.channel_system.electrode_positions.positions)
+                )
+
+                eeg_data.interpolate_bads(method={"eeg": interpolation}, verbose=False)
 
         # Resampling
         if resample is not None:
