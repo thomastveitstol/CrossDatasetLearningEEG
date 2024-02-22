@@ -26,7 +26,7 @@ class Rockhill(EEGDatasetBase):
                       'Fz', 'Cz')  # Removed EXG channels, as these channel names are supposed to match numpy arrays
 
     def pre_process(self, eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False,
-                    excluded_channels="EXG"):
+                    interpolation=None, remove_above_std, excluded_channels="EXG"):
         """See the parent class implementation for details. This overriding method excludes non-EEG channels prior to
         pre-processing by default"""
         if excluded_channels == "EXG":
@@ -35,7 +35,8 @@ class Rockhill(EEGDatasetBase):
 
         # Run the super method and return
         return super().pre_process(eeg_data, filtering=filtering, resample=resample, notch_filter=notch_filter,
-                                   avg_reference=avg_reference, excluded_channels=excluded_channels)
+                                   avg_reference=avg_reference, excluded_channels=excluded_channels,
+                                   remove_above_std=remove_above_std, interpolation=interpolation)
 
     # ----------------
     # Methods for different paths
