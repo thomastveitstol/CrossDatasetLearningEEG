@@ -40,10 +40,10 @@ def generate_config_file(config):
         del dataset_hyperparameters[compatible_dataset]["target_availability"]
 
     # -----------------
-    # Sample input and target scalers
+    # Sample target scaler
     # -----------------
     scaler_hyperparameters = dict()
-    for scaler, domain in config["Scalers"].items():
+    for scaler, domain in config["Targets"][config["selected_target"]]["scaler"].items():
         if isinstance(domain, dict) and "dist" in domain:
             scaler_hyperparameters[scaler] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
         else:
@@ -58,6 +58,7 @@ def generate_config_file(config):
             train_hyperparameters[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
         else:
             train_hyperparameters[param] = domain
+    train_hyperparameters["metrics"] = config["Targets"][config["selected_target"]]["metrics"]
 
     # -----------------
     # Sample loss

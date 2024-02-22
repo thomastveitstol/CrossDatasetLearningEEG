@@ -1,4 +1,5 @@
 run_baseline: false
+selected_target: &selected_target sex
 
 Shared Dataset Details:
   num_time_steps: &num_time_steps null
@@ -40,7 +41,27 @@ Datasets:
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
 
-Scalers:
+Targets:
+  age:
+    metrics: regression
+    scaler:
+      target:
+        dist: uniform_discrete
+        kwargs:
+          domain:
+            - name: ZNormalisation
+              kwargs: { }
+  sex:
+    metrics: classification
+    scaler:
+      target:
+        dist: uniform_discrete
+        kwargs:
+          domain:
+            - name: NoScaler
+              kwargs: { }
+
+Scalerser:
   target:
     dist: uniform_discrete
     kwargs:
@@ -75,9 +96,9 @@ Training:
   num_epochs: 75
   verbose: true
   val_split: 0.2
-  target: age
+  target: *selected_target
   continuous_testing: true
-  metrics: regression
+  # metrics: regression
   # Varied hyperparameters
   learning_rate:
     dist: log_uniform
