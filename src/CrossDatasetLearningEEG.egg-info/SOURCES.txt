@@ -28,6 +28,7 @@ src/cdl_eeg/data/datasets/miltiadous_dataset.py
 src/cdl_eeg/data/datasets/mpi_lemon.py
 src/cdl_eeg/data/datasets/ous_dataset.py
 src/cdl_eeg/data/datasets/rockhill_dataset.py
+src/cdl_eeg/data/datasets/utils.py
 src/cdl_eeg/data/datasets/van_hees.py
 src/cdl_eeg/data/datasets/yulin_wang_dataset.py
 src/cdl_eeg/data/scalers/__init__.py
