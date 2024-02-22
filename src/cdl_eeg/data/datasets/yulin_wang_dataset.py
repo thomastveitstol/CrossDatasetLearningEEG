@@ -19,6 +19,14 @@ class YulinWang(EEGDatasetBase):
     60
     >>> YulinWang().get_subject_ids()[:5]
     ('sub-01', 'sub-02', 'sub-03', 'sub-04', 'sub-05')
+    >>> my_channels = tuple(YulinWang()._get_template_electrode_positions().keys())
+    >>> len(my_channels)
+    62
+    >>> my_channels  # doctest: +NORMALIZE_WHITESPACE
+    ('Fp1', 'AF3', 'AF7', 'Fz', 'F1', 'F3', 'F5', 'F7', 'FC1', 'FC3', 'FC5', 'FT7', 'Cz', 'C1', 'C3', 'C5', 'T7', 'CP1',
+     'CP3', 'CP5', 'TP7', 'TP9', 'Pz', 'P1', 'P3', 'P5', 'P7', 'PO3', 'PO7', 'Oz', 'O1', 'Fpz', 'Fp2', 'AF4', 'AF8',
+     'F2', 'F4', 'F6', 'F8', 'FC2', 'FC4', 'FC6', 'FT8', 'C2', 'C4', 'C6', 'T8', 'CPz', 'CP2', 'CP4', 'CP6', 'TP8',
+     'TP10', 'P2', 'P4', 'P6', 'P8', 'POz', 'PO4', 'PO8', 'O2', 'FCz')
     """
 
     __slots__ = ()
@@ -125,8 +133,12 @@ class YulinWang(EEGDatasetBase):
         # Extract channel names
         channel_names = mat_file["chanlocs"]["labels"]
 
+        # Correct a channel name (does not match the MNE object without the next line)
+        cpz_idx = channel_names.index("Cpz")
+        channel_names[cpz_idx] = "CPz"
+
         # Return dict with channel positions, keeping only the ones in the data
-        return {ch_name: tuple(pos) for ch_name, pos in channel_positions.items() if ch_name in channel_names}
+        return {ch_name: channel_positions[ch_name] for ch_name in channel_names}
 
     def channel_name_to_index(self):
         # todo: make tests
