@@ -14,18 +14,22 @@ Datasets:
     num_subjects: 31
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
+    target_availability: [ age, sex ]
   miltiadous:
     num_subjects: 88
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
+    target_availability: [ age, sex ]
   hatlestad_hall:
     num_subjects: 111
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
+    target_availability: [ age, sex ]
   yulin_wang:
     num_subjects: 60
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
+    target_availability: [ age, sex ]
   # ous:
   #   num_subjects: 1000
   #   num_time_steps: *num_time_steps
@@ -34,6 +38,7 @@ Datasets:
     num_subjects: 1379
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
+    target_availability: [ age, sex ]
 
 Scalers:
   target:

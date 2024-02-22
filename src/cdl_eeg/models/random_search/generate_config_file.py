@@ -28,6 +28,17 @@ def generate_config_file(config):
     # -----------------
     dataset_hyperparameters = config["Datasets"]
 
+    # Delete datasets which are incompatible with the desired target  todo: could check the class instead
+    datasets_to_delete = tuple(dataset_name for dataset_name, hyperparams in dataset_hyperparameters.items()
+                               if config["Training"]["target"] not in hyperparams["target_availability"])
+    for incompatible_dataset in datasets_to_delete:
+        del dataset_hyperparameters[incompatible_dataset]
+
+    # Delete the 'target_availability' key
+    compatible_datasets = tuple(dataset_hyperparameters.keys())
+    for compatible_dataset in compatible_datasets:
+        del dataset_hyperparameters[compatible_dataset]["target_availability"]
+
     # -----------------
     # Sample input and target scalers
     # -----------------
