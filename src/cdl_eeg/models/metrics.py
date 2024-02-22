@@ -67,9 +67,9 @@ class Histories:
     >>> Histories.get_available_classification_metrics()
     ('auc',)
     >>> Histories.get_available_regression_metrics()
-    ('mae', 'mape', 'mse', 'pearson_r', 'spearman_rho')
+    ('mae', 'mape', 'mse', 'pearson_r', 'r2_score', 'spearman_rho')
     >>> Histories.get_available_multiclass_classification_metrics()
-    ('acc', 'balanced_acc', 'ce_loss', 'kappa', 'mcc')
+    ('acc', 'auc_ovo', 'auc_ovr', 'balanced_acc', 'ce_loss', 'kappa', 'mcc')
     """
 
     __slots__ = ("_history", "_prediction_history", "_splits_histories", "_epoch_y_pred", "_epoch_y_true",
@@ -503,12 +503,12 @@ class Histories:
         return cohen_kappa_score(y1=y_pred.cpu().argmax(dim=-1), y2=y_true.cpu())
 
     @staticmethod
-    @classification_metric
+    @multiclass_classification_metric
     def auc_ovo(y_pred: torch.Tensor, y_true: torch.Tensor):
         return roc_auc_score(y_true=y_true.cpu(), y_score=torch.softmax(y_pred, dim=-1).cpu(), multi_class="ovo")
 
     @staticmethod
-    @classification_metric
+    @multiclass_classification_metric
     def auc_ovr(y_pred: torch.Tensor, y_true: torch.Tensor):
         return roc_auc_score(y_true=y_true.cpu(), y_score=torch.softmax(y_pred, dim=-1).cpu(), multi_class="ovr")
 
