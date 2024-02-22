@@ -2,6 +2,7 @@ import abc
 import copy
 import dataclasses
 import os
+import warnings
 from typing import Dict, Tuple, List
 
 import enlighten
@@ -90,13 +91,25 @@ class EEGDatasetBase(abc.ABC):
         if excluded_channels is not None:
             eeg_data = eeg_data.pick(picks="eeg", exclude=excluded_channels)
 
+        # Filtering
+        if filtering is not None:
+            eeg_data.filter(*filtering, verbose=False)
+
+        # Notch filter
+        if notch_filter is not None:
+            eeg_data.notch_filter(notch_filter, verbose=False)
+
+        # Resampling
+        if resample is not None:
+            eeg_data.resample(resample, verbose=False)
+
         if remove_above_std is not None:
             # If there are any currently labelled bad channels, keep them
             bad_channels = set(copy.deepcopy(eeg_data.info["bads"]))
 
             # Loop through all channels and store the ones which are bad
             for channel in eeg_data.info["ch_names"]:
-                channel_data = copy.deepcopy(eeg_data).pick(channel).get_data()[0]
+                channel_data = eeg_data.get_data()[eeg_data.info["ch_names"].index(channel)]  # TODO!
                 if numpy.std(channel_data) > remove_above_std:
                     bad_channels.add(channel)
 
@@ -108,23 +121,14 @@ class EEGDatasetBase(abc.ABC):
                 raise ValueError("Expected an interpolation method, but none was received")
             if bad_channels:
                 # Need the channel positions
-                eeg_data.set_montage(
-                    mne.channels.make_dig_montage(ch_pos=self.channel_system.electrode_positions.positions)
-                )
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category=RuntimeWarning)  # todo
+
+                    eeg_data.set_montage(
+                        mne.channels.make_dig_montage(ch_pos=self.channel_system.electrode_positions.positions)
+                    )
 
                 eeg_data.interpolate_bads(method={"eeg": interpolation}, verbose=False)
-
-        # Resampling
-        if resample is not None:
-            eeg_data.resample(resample, verbose=False)
-
-        # Filtering
-        if filtering is not None:
-            eeg_data.filter(*filtering, verbose=False)
-
-        # Notch filter
-        if notch_filter is not None:
-            eeg_data.notch_filter(notch_filter, verbose=False)
 
         # Re-referencing
         if avg_reference:

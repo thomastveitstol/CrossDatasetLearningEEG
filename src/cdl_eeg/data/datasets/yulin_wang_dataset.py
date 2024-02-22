@@ -46,7 +46,15 @@ class YulinWang(EEGDatasetBase):
         path = os.path.join(self.get_mne_path(), subject_path)
 
         # Make MNE raw object
-        return mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)
+        raw = mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)
+
+        # Maybe rename channels
+        if "Cpz" in raw.info["ch_names"]:
+            mne.rename_channels(raw.info, mapping={"Cpz": "CPz"})
+        if "FPz" in raw.info["ch_names"]:
+            mne.rename_channels(raw.info, mapping={"FPz": "Fpz"})
+
+        return raw
 
     def _load_single_cleaned_mne_object(self, subject_id, **kwargs):
         # Extract visit number of recording type
@@ -60,7 +68,15 @@ class YulinWang(EEGDatasetBase):
         path = os.path.join(self.get_mne_path(), path_to_cleaned, subject_path)
 
         # Make MNE raw object
-        return mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)
+        raw = mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)
+
+        # Maybe rename channels
+        if "Cpz" in raw.info["ch_names"]:
+            mne.rename_channels(raw.info, mapping={"Cpz": "CPz"})
+        if "FPz" in raw.info["ch_names"]:
+            mne.rename_channels(raw.info, mapping={"FPz": "Fpz"})
+
+        return raw
 
     # ----------------
     # Targets
@@ -133,7 +149,7 @@ class YulinWang(EEGDatasetBase):
         # Extract channel names
         channel_names = mat_file["chanlocs"]["labels"]
 
-        # Correct a channel name (does not match the MNE object without the next line)
+        # Correct CPz channel name (does not currently match the MNE object)
         cpz_idx = channel_names.index("Cpz")
         channel_names[cpz_idx] = "CPz"
 
