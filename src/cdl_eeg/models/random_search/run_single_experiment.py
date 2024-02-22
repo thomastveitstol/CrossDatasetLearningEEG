@@ -108,6 +108,8 @@ def run_experiment(config, pre_processing_config, results_path):
         train_data = combined_dataset.get_data(subjects=train_subjects)
         val_data = combined_dataset.get_data(subjects=val_subjects)
 
+        print({d_name: d.shape for d_name, d in train_data.items()})
+
         # Extract target data
         train_targets = combined_dataset.get_targets(subjects=train_subjects)
         val_targets = combined_dataset.get_targets(subjects=val_subjects)

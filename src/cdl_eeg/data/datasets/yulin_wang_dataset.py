@@ -27,6 +27,9 @@ class YulinWang(EEGDatasetBase):
      'CP3', 'CP5', 'TP7', 'TP9', 'Pz', 'P1', 'P3', 'P5', 'P7', 'PO3', 'PO7', 'Oz', 'O1', 'Fpz', 'Fp2', 'AF4', 'AF8',
      'F2', 'F4', 'F6', 'F8', 'FC2', 'FC4', 'FC6', 'FT8', 'C2', 'C4', 'C6', 'T8', 'CPz', 'CP2', 'CP4', 'CP6', 'TP8',
      'TP10', 'P2', 'P4', 'P6', 'P8', 'POz', 'PO4', 'PO8', 'O2', 'FCz')
+     >>> my_raw = YulinWang()._load_single_cleaned_mne_object(visit=1, recording="EC", subject_id="sub-01")
+     >>> tuple(my_raw.info["ch_names"] ) == my_channels
+     True
     """
 
     __slots__ = ()
@@ -42,13 +45,16 @@ class YulinWang(EEGDatasetBase):
         path = os.path.join(self.get_mne_path(), subject_path)
 
         # Make MNE raw object
-        raw = mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)
+        raw: mne.io.Raw = mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)
 
         # Maybe rename channels
         if "Cpz" in raw.info["ch_names"]:
             mne.rename_channels(raw.info, mapping={"Cpz": "CPz"})
         if "FPz" in raw.info["ch_names"]:
             mne.rename_channels(raw.info, mapping={"FPz": "Fpz"})
+
+        # Add FCz as reference
+        raw.add_reference_channels("FCz")
 
         return raw
 
@@ -67,6 +73,9 @@ class YulinWang(EEGDatasetBase):
             mne.rename_channels(raw.info, mapping={"Cpz": "CPz"})
         if "FPz" in raw.info["ch_names"]:
             mne.rename_channels(raw.info, mapping={"FPz": "Fpz"})
+
+        # Add FCz as reference
+        raw.add_reference_channels("FCz")
 
         return raw
 
