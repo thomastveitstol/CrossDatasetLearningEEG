@@ -475,7 +475,7 @@ class Histories:
     @staticmethod
     @classification_metric
     def auc(y_pred: torch.Tensor, y_true: torch.Tensor):
-        return roc_auc_score(y_true=y_true.cpu(), y_score=y_pred.cpu())
+        return roc_auc_score(y_true=torch.squeeze(y_true, dim=-1).cpu(), y_score=torch.squeeze(y_pred, dim=-1).cpu())
 
     # -----------------
     # Multiclass classification metrics
@@ -505,12 +505,14 @@ class Histories:
     @staticmethod
     @multiclass_classification_metric
     def auc_ovo(y_pred: torch.Tensor, y_true: torch.Tensor):
-        return roc_auc_score(y_true=y_true.cpu(), y_score=torch.softmax(y_pred, dim=-1).cpu(), multi_class="ovo")
+        with torch.no_grad():
+            return roc_auc_score(y_true=y_true.cpu(), y_score=torch.softmax(y_pred, dim=-1).cpu(), multi_class="ovo")
 
     @staticmethod
     @multiclass_classification_metric
     def auc_ovr(y_pred: torch.Tensor, y_true: torch.Tensor):
-        return roc_auc_score(y_true=y_true.cpu(), y_score=torch.softmax(y_pred, dim=-1).cpu(), multi_class="ovr")
+        with torch.no_grad():
+            return roc_auc_score(y_true=y_true.cpu(), y_score=torch.softmax(y_pred, dim=-1).cpu(), multi_class="ovr")
 
     @staticmethod
     @multiclass_classification_metric
