@@ -24,7 +24,7 @@ def main():
     for dataset in datasets:
         dataset_name = type(dataset).__name__
 
-        # Use a fixed number of subjects  todo: in the finalised version, should run with all
+        # Use a fixed number of subjects
         subjects = dataset.get_subject_ids()[:num_subjects_per_dataset]
 
         # Store the excluded channels
