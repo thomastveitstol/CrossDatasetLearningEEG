@@ -24,7 +24,7 @@ def main():
 
     # Hyperparameters
     average_reference = True
-    num_subjects_per_dataset = 20
+    num_subjects_per_dataset = 50
     aggregation_method = "median"
     z_normalise_all_channels = False
 
@@ -45,7 +45,8 @@ def main():
         print(f"Computing power of dataset band: {dataset_name}")
 
         # Use a fixed number of subjects
-        subjects = random.sample(dataset.get_subject_ids(), k=num_subjects_per_dataset)
+        _all_subjects_available = dataset.get_subject_ids()
+        subjects = random.sample(_all_subjects_available, k=min(num_subjects_per_dataset, len(_all_subjects_available)))
 
         # Store the excluded channels
         excluded_channels = kwargs[dataset_name].pop("excluded_channels", None)
