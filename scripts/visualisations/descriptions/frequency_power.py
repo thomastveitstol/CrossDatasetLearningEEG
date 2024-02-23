@@ -24,7 +24,7 @@ def main():
 
     # Hyperparameters
     average_reference = True
-    num_subjects_per_dataset = 50
+    num_subjects_per_dataset = 200
     aggregation_method = "median"
     z_normalise_all_channels = False
 
