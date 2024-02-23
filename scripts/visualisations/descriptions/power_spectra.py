@@ -1,5 +1,5 @@
 """
-Script for plotting the power of different frequency bands, for all datasets
+Script for plotting the PSDs for all datasets
 """
 from matplotlib import pyplot
 
