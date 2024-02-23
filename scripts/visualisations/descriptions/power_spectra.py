@@ -52,11 +52,12 @@ def main():
                 raw.set_eeg_reference(ref_channels="average", verbose=False)
 
             # --------------
-            # Compute power
+            # Plot PSD
             # --------------
             # Compute the PSD
             raw.compute_psd(fmin=0, fmax=45, verbose=False).plot()
 
+            # Plot PSD
             pyplot.show()
 
 
