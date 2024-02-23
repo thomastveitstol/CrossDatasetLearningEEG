@@ -327,7 +327,7 @@ Deep4NetMTS: &Deep4NetMTS
 
 MTS Module:
   InceptionNetwork: *InceptionNetwork
-  # EEGNetv4MTS: *EEGNetv4MTS
-  # EEGResNetMTS: *EEGResNetMTS
+  EEGNetv4MTS: *EEGNetv4MTS
+  EEGResNetMTS: *EEGResNetMTS
   # ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
-  # Deep4NetMTS: *Deep4NetMTS
+  Deep4NetMTS: *Deep4NetMTS
