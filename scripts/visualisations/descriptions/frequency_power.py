@@ -25,7 +25,7 @@ def main():
     # Hyperparameters
     average_reference = True
     num_subjects_per_dataset = 200
-    aggregation_method = "median"
+    aggregation_method = "mean"
     z_normalise_all_channels = False
 
     power_bands = {"Delta": (0.5, 4), "Theta": (4, 8), "Alpha": (8, 12), "Beta": (12, 30), "Gamma": (30, 45)}
