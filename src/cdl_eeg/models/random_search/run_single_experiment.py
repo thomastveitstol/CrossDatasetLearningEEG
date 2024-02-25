@@ -195,7 +195,7 @@ class Experiment:
         # Test model (but only if continuous testing was not used)
         # -----------------
         test_estimate: Optional[Histories]
-        if self.train_config["continuous_testing"]:
+        if not self.train_config["continuous_testing"]:
             print(f"\n{' Testing ':-^20}")
 
             # Get test loader
