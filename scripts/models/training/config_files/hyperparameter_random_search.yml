@@ -100,7 +100,7 @@ Targets:
 Training:
   # Fixed hyperparameters
   batch_size: 16
-  num_epochs: 10
+  num_epochs: 100
   verbose: true
   val_split: 0.2
   target: *selected_target
