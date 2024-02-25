@@ -371,9 +371,15 @@ class Experiment:
     # -------------
     def _make_model(self):
         """Method for defining a model with RBP as the first layer"""
+        # Maybe add number of time steps
+        mts_config = copy.deepcopy(self.dl_architecture_config)
+        if "num_time_steps" in mts_config and mts_config["num_time_steps"] is None:
+            mts_config["num_time_steps"] = self.shared_pre_processing_config["num_time_steps"]
+
+        # Define model
         return MainRBPModel.from_config(
             rbp_config=self.rbp_config,
-            mts_config=self.dl_architecture_config,
+            mts_config=mts_config,
             discriminator_config=None if self.domain_discriminator_config is None
             else self.domain_discriminator_config["discriminator"]
         ).to(self._device)
