@@ -19,6 +19,9 @@ from cdl_eeg.models.utils import tensor_dict_to_device
 
 
 class Experiment:
+    """
+    Class for running a single cross validation experiment
+    """
 
     __slots__ = "_config", "_pre_processing_config", "_results_path", "_device"
 
