@@ -70,7 +70,7 @@ def main():
         num_train_datasets = len(lodo_config["Datasets"]) - 1
         lodo_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
 
-    print(f"\n{'Leave-one-dataset-out cross validation':=^50}\n")
+    print(f"\n{' Leave-one-dataset-out cross validation ':=^50}\n")
     leave_one_dataset_out_experiment = Experiment(config=lodo_config, pre_processing_config=pre_processed_config,
                                                   results_path=os.path.join(results_path, "leave_one_dataset_out"))
     leave_one_dataset_out_experiment.run_experiment()
@@ -84,7 +84,7 @@ def main():
             num_train_datasets = len(k_fold_config["Datasets"])
             k_fold_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
 
-        print(f"\n{'Baseline experiment':=^50}\n")
+        print(f"\n{' Baseline experiment ':=^50}\n")
         k_fold_experiment = Experiment(config=k_fold_config, pre_processing_config=pre_processed_config,
                                        results_path=os.path.join(results_path, "k_fold_cv"))
         k_fold_experiment.run_experiment()
