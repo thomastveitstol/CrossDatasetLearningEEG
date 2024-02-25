@@ -179,6 +179,8 @@ class Experiment:
         # -----------------
         # Train model
         # -----------------
+        print(f"{' Training ':-^20}")
+
         histories = model.train_model(
             train_loader=train_loader, val_loader=val_loader, test_loader=test_loader,
             metrics=self.train_config["metrics"], main_metric=self.train_config["main_metric"],
