@@ -393,7 +393,7 @@ class Experiment:
             if name not in model.cmmn_fitted_channel_systems:
                 # As long as the channel systems for the test data are present in 'channel_systems', this works
                 # fine. Redundant channel systems is not a problem
-                model.fit_monge_filters(data=test_data, channel_systems=channel_systems)
+                model.fit_monge_filters(data={name: eeg_data}, channel_systems=channel_systems)
 
     # -------------
     # Main method for running the cross validation experiment
