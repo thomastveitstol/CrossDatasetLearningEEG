@@ -601,8 +601,16 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
     # Loop through all metrics
     # ----------------
     # Get all available metrics
-    all_metrics = set(tuple(train_history.history.keys()) + tuple(val_history.history.keys())
-                      + tuple(test_estimate.history.keys()) + tuple(test_history.history.keys()))
+    _all_metrics = ()
+    if train_history is not None:
+        _all_metrics += tuple(train_history.history.keys())
+    if val_history is not None:
+        _all_metrics += tuple(val_history.history.keys())
+    if test_history is not None:
+        _all_metrics += tuple(test_history.history.keys())
+    if test_estimate is not None:
+        _all_metrics += tuple(test_estimate.history.keys())
+    all_metrics = set(_all_metrics)
 
     for metric in all_metrics:
         pyplot.figure(figsize=(12, 6))
