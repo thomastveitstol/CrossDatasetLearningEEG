@@ -589,6 +589,7 @@ class RBPConvMMN:
     def fitted_channel_systems(self):
         return tuple(self._channel_splits.keys())
 
+
 # ---------------
 # Functions for computing PSDs
 # ---------------
