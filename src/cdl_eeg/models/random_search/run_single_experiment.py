@@ -61,8 +61,8 @@ class Experiment:
 
     def _make_subject_split(self, subjects):
         """Method for splitting subjects into multiple folds"""
-        data_split = get_data_split(split=self.subject_split_config["SubjectSplit"]["name"], dataset_subjects=subjects,
-                                    **self.subject_split_config["SubjectSplit"]["kwargs"])
+        data_split = get_data_split(split=self.subject_split_config["name"], dataset_subjects=subjects,
+                                    **self.subject_split_config["kwargs"])
         return data_split.folds
 
     # -------------
