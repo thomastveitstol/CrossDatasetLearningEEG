@@ -360,6 +360,13 @@ class Deep4NetMTS(MTSModuleBase):
         )
       )
     )
+
+    Does not work with 'split_last_layer' set to False
+
+    >>> Deep4NetMTS(19, 3, 1000, split_last_layer=False)
+    Traceback (most recent call last):
+    ...
+    AttributeError: 'Deep4Net' object has no attribute 'conv_time_spat'
     """
 
     def __init__(self, in_channels, num_classes, num_time_steps, final_conv_length="auto", **kwargs):

@@ -346,10 +346,7 @@ Deep4NetMTS: &Deep4NetMTS
     kwargs:
       a: 20
       b: 60
-  split_first_layer:
-    dist: uniform_discrete
-    kwargs:
-      domain: [ true, false ]
+  split_first_layer: true  # AttributeError of set to False
   batch_norm: [ true, false ]
   drop_prob:
     dist: uniform
