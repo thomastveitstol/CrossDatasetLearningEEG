@@ -49,6 +49,8 @@ class EEGNetv4MTS(MTSModuleBase):
     )
     """
 
+    requires_input_time_steps = True
+
     def __init__(self, in_channels, num_classes, num_time_steps, **kwargs):
         super().__init__()
 
@@ -194,6 +196,8 @@ class EEGResNetMTS(MTSModuleBase):
     )
     """
 
+    requires_input_time_steps = True
+
     def __init__(self, in_channels, num_classes, num_time_steps, final_pool_length="auto", n_first_filters=6,
                  **kwargs):
         super().__init__()
@@ -266,6 +270,8 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
       )
     )
     """
+
+    requires_input_time_steps = True
 
     def __init__(self, in_channels, num_classes, num_time_steps, **kwargs):
         super().__init__()
@@ -361,6 +367,8 @@ class Deep4NetMTS(MTSModuleBase):
       )
     )
     """
+
+    requires_input_time_steps = True
 
     def __init__(self, in_channels, num_classes, num_time_steps, final_conv_length="auto", **kwargs):
         super().__init__()
