@@ -749,7 +749,7 @@ class RegionBasedPooling(nn.Module):
         else:
             raise TypeError(
                 f"Expected channel systems to be either a channel system (type={ChannelSystem.__name__}) "
-                f"or a tuple of channel systems, but this was not the case")
+                f"or a tuple of channel systems, but found type {type(channel_systems)}")
 
     # ----------------
     # Methods for fitting CMMN layer
