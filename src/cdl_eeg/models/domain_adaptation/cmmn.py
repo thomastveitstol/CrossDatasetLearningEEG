@@ -582,6 +582,12 @@ class RBPConvMMN:
             # Fit the monge filter of the CMMN layer of the current montage split
             cmmn_layer.fit_monge_filters(data=montage_split_psds, is_psds=True)
 
+    # ---------------
+    # Properties
+    # ---------------
+    @property
+    def fitted_channel_systems(self):
+        return tuple(self._channel_splits.keys())
 
 # ---------------
 # Functions for computing PSDs

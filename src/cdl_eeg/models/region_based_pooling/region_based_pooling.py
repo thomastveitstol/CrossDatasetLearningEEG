@@ -541,6 +541,11 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
     def has_cmmn_layer(self) -> bool:
         return self._cmmn_layer is not None
 
+    @property
+    def cmmn_fitted_channel_systems(self):
+        """Get the channel systems which has already been fit"""
+        return self._cmmn_layer.fitted_channel_systems
+
 
 # ------------------
 # 'The' RBP implementation
@@ -786,3 +791,20 @@ class RegionBasedPooling(nn.Module):
     def any_cmmn_layers(self) -> bool:
         """Boolean which indicates if any of the RBP modules has a CMMN layer (True) or not (False)"""
         return any(rbp_module.has_cmmn_layer for rbp_module in self._rbp_modules)
+
+    @property
+    def cmmn_fitted_channel_systems(self):
+        """Get the channel systems which has already been fit"""
+        # Loop through all RBP models
+        fitted_channel_systems = tuple()
+        for rbp_module in self._rbp_modules:
+            # Check only the ones which has CMMN layer
+            if rbp_module.has_cmmn_layer:
+                # All RBP modules should have the same channel systems fitted
+                if fitted_channel_systems:
+                    if fitted_channel_systems != rbp_module.cmmn_fitted_channel_systems:
+                        raise RuntimeError("Expected all RBP modules with CMMN layer to be fit on the same channel "
+                                           "systems, but this was not the case")
+                else:
+                    fitted_channel_systems = rbp_module.cmmn_fitted_channel_systems
+        return fitted_channel_systems
