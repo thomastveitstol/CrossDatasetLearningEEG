@@ -380,7 +380,7 @@ class Experiment:
 
     @staticmethod
     def _fit_channel_systems(model, channel_systems):
-        model.fit_channel_systems(channel_systems)
+        model.fit_channel_systems(tuple(channel_systems.values()))
 
     def _fit_cmmn_layers(self, *, model, train_data, channel_systems):
         model.fit_psd_barycenters(data=train_data, channel_systems=channel_systems,
