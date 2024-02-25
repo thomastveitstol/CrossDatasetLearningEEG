@@ -601,7 +601,7 @@ def save_histories_plots(path, *, train_history=None, val_history=None, test_his
     # Loop through all metrics
     # ----------------
     # Get all available metrics
-    _all_metrics = ()
+    _all_metrics: Tuple[str, ...] = ()
     if train_history is not None:
         _all_metrics += tuple(train_history.history.keys())
     if val_history is not None:
