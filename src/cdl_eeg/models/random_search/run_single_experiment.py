@@ -233,6 +233,9 @@ class Experiment:
             if test_history is not None:
                 test_history.save_prediction_history(history_name="test_history", path=results_path)
         else:
+            domain_discriminator_path = os.path.join(results_path, "domain_discriminator")
+            os.mkdir(domain_discriminator_path)
+
             train_history, val_history, test_history, dd_train_history, dd_val_history = histories
 
             train_history.save_prediction_history(history_name="train_history", path=results_path)
@@ -240,11 +243,14 @@ class Experiment:
             if test_history is not None:
                 test_history.save_prediction_history(history_name="test_history", path=results_path)
 
-            dd_train_history.save_prediction_history(history_name="dd_train_history", path=results_path)
-            dd_val_history.save_prediction_history(history_name="dd_val_history", path=results_path)
+            dd_train_history.save_prediction_history(history_name="dd_train_history",
+                                                     path=domain_discriminator_path)
+            dd_val_history.save_prediction_history(history_name="dd_val_history",
+                                                   path=domain_discriminator_path)
 
             # Save domain discriminator metrics plots
-            save_discriminator_histories_plots(path=results_path, histories=(dd_train_history, dd_val_history))
+            save_discriminator_histories_plots(path=domain_discriminator_path,
+                                               histories=(dd_train_history, dd_val_history))
 
         # Save plots
         save_histories_plots(path=results_path, train_history=train_history, val_history=val_history,
