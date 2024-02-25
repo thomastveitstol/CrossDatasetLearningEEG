@@ -23,6 +23,18 @@ class Experiment:
     __slots__ = "_config", "_pre_processing_config", "_results_path", "_device"
 
     def __init__(self, config, pre_processing_config, results_path):
+        """
+        Initialise
+
+        Parameters
+        ----------
+        config : dict[str, Any]
+            The main config file for the experiment
+        pre_processing_config : dict[str, Any]
+            The pre-processing config file
+        results_path : str
+            The path of where to store the results
+        """
         self._config = config
         self._pre_processing_config = pre_processing_config
         self._results_path = results_path
