@@ -373,8 +373,8 @@ class Experiment:
         """Method for defining a model with RBP as the first layer"""
         # Maybe add number of time steps
         mts_config = copy.deepcopy(self.dl_architecture_config)
-        if "num_time_steps" in mts_config and mts_config["num_time_steps"] is None:
-            mts_config["num_time_steps"] = self.shared_pre_processing_config["num_time_steps"]
+        if "num_time_steps" in mts_config["kwargs"] and mts_config["kwargs"]["num_time_steps"] is None:
+            mts_config["kwargs"]["num_time_steps"] = self.shared_pre_processing_config["num_time_steps"]
 
         # Define model
         return MainRBPModel.from_config(
