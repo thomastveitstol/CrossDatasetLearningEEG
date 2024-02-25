@@ -295,35 +295,97 @@ InceptionNetwork: &InceptionNetwork
 EEGNetv4MTS: &EEGNetv4MTS
   num_classes: 1
   num_time_steps: *num_time_steps
-  kernel_length: [ 16, 32, 64 ]
+  kernel_length:
+    dist: log_uniform_int
+    kwargs:
+      base: 2
+      a: 3
+      b: 6
 
 EEGResNetMTS: &EEGResNetMTS
   num_classes: 1
   num_time_steps: *num_time_steps
-  n_layers_per_block: [ 2, 3, 4 ]
-  first_filter_length: [ 3, 5, 7 ]
+  n_layers_per_block:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ 2, 3, 4 ]
+  first_filter_length:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ 3, 5, 7 ]
 
 ShallowFBCSPNetMTS: &ShallowFBCSPNetMTS  # todo: output dimension have ndim=3
   num_classes: 1
   num_time_steps: *num_time_steps
-  n_filters_time: [ 15, 25, 35 ]
-  n_filters_spat: [ 15, 25, 35 ]
+  n_filters_time:
+    dist: uniform_int
+    kwargs:
+      a: 15
+      b: 36  # not including 36
+  n_filters_spat:
+    dist: uniform_int
+    kwargs:
+      a: 15
+      b: 36  # not including 36
 
 Deep4NetMTS: &Deep4NetMTS
   num_classes: 1
   num_time_steps: *num_time_steps
-  n_filters_time: [ 20, 40, 60 ]
-  filter_time_length: [ 15, 25, 35 ]
-  n_filters_spat: [ 20, 40, 60 ]
-  split_first_layer: [ true, false ]
+  n_filters_time:
+    dist: uniform_int
+    kwargs:
+      a: 20
+      b: 60
+  filter_time_length:
+    dist: uniform_int
+    kwargs:
+      a: 15
+      b: 36
+  n_filters_spat:
+    dist: uniform_int
+    kwargs:
+      a: 20
+      b: 60
+  split_first_layer:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ true, false ]
   batch_norm: [ true, false ]
-  drop_prob: [ 0.1, 0.25, 0.5 ]
-  n_filters_2: [ 50, 100, 200 ]
-  n_filters_3: [ 50, 100, 200 ]
-  n_filters_4: [ 50, 100, 200 ]
-  filter_length_2: [ 5, 10, 20 ]
-  filter_length_3: [ 5, 10, 20 ]
-  filter_length_4: [ 5, 10, 20 ]
+  drop_prob:
+    dist: uniform
+    kwargs:
+      a: 0
+      b: 0.8
+  n_filters_2:
+    dist: uniform_int
+    kwargs:
+      a: 50
+      b: 150
+  n_filters_3:
+    dist: uniform_int
+    kwargs:
+      a: 50
+      b: 150
+  n_filters_4:
+    dist: uniform_int
+    kwargs:
+      a: 50
+      b: 150
+  filter_length_2:
+    dist: uniform_int
+    kwargs:
+      a: 5
+      b: 15
+  filter_length_3:
+    dist: uniform_int
+    kwargs:
+      a: 5
+      b: 15
+  filter_length_4:
+    dist: uniform_int
+    kwargs:
+      a: 5
+      b: 15
 
 MTS Module:
   InceptionNetwork: *InceptionNetwork
