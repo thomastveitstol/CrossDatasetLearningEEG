@@ -304,6 +304,11 @@ class ConvMMN:
     def kernel_size(self):
         return self._kernel_size
 
+    @property
+    def fitted_monge_filters(self):
+        """Get the dataset names which has been monge filters"""
+        return tuple(self._monge_filters.keys())
+
 
 class RBPConvMMN:
     """
@@ -587,7 +592,17 @@ class RBPConvMMN:
     # ---------------
     @property
     def fitted_channel_systems(self):
-        return tuple(self._channel_splits.keys())
+        """Get the channel systems which has fitted monge filters"""
+        # Loop through all montage splits
+        fitted_channel_systems: Tuple[str, ...] = tuple()
+        for cmmn_layer in self._cmmn_layers:
+            if fitted_channel_systems:
+                if fitted_channel_systems != cmmn_layer.fitted_monge_filters:
+                    raise RuntimeError("Expected all monge fitlers to be fit on the same channel systems, but this was "
+                                       "not the case")
+            else:
+                fitted_channel_systems = cmmn_layer.fitted_monge_filters
+        return fitted_channel_systems
 
 
 # ---------------
