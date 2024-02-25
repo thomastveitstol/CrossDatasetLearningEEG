@@ -544,7 +544,10 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
     @property
     def cmmn_fitted_channel_systems(self):
         """Get the channel systems which has already been fit"""
-        return self._cmmn_layer.fitted_channel_systems
+        if self.has_cmmn_layer:
+            return self._cmmn_layer.fitted_channel_systems  # type: ignore[union-attr]
+        else:
+            return ()
 
 
 # ------------------
@@ -796,7 +799,7 @@ class RegionBasedPooling(nn.Module):
     def cmmn_fitted_channel_systems(self):
         """Get the channel systems which has already been fit"""
         # Loop through all RBP models
-        fitted_channel_systems = tuple()
+        fitted_channel_systems: Tuple[str, ...] = tuple()
         for rbp_module in self._rbp_modules:
             # Check only the ones which has CMMN layer
             if rbp_module.has_cmmn_layer:

@@ -708,6 +708,10 @@ class MainRBPModel(nn.Module):
     def any_rbp_cmmn_layers(self) -> bool:
         return self._region_based_pooling.any_cmmn_layers
 
+    @property
+    def cmmn_fitted_channel_systems(self):
+        return self._region_based_pooling.cmmn_fitted_channel_systems
+
 
 # ----------------
 # Functions
