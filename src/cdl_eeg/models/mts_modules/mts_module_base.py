@@ -6,8 +6,6 @@ import torch.nn as nn
 
 class MTSModuleBase(nn.Module, abc.ABC):
 
-    requires_input_time_steps = False  # Set this to true if the class requires knowing number of input time steps
-
     @classmethod
     def supports_latent_feature_extraction(cls):
         """
