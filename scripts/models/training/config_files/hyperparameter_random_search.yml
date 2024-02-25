@@ -175,7 +175,7 @@ num_kernels: &num_kernels
   kwargs:
     base: 10
     a: 2
-    b: 4
+    b: 3
 
 # todo: consider computing this from the sampling frequency instead
 max_receptive_field: &max_receptive_field
@@ -183,7 +183,7 @@ max_receptive_field: &max_receptive_field
   kwargs:
     base: 10
     a: 2
-    b: 3
+    b: 2.5
 
 MultiCSSharedRocket: &MultiCSSharedRocket
   num_kernels: *num_kernels
@@ -245,7 +245,7 @@ RegionBasedPooling: &RegionBasedPooling
     kwargs:
       base: 2
       a: 0  # 2^0 = 1
-      b: 6  # 2^6 = 64
+      b: 5  # 2^5 = 32
   normalise_region_representations:
     dist: uniform_discrete
     kwargs:
