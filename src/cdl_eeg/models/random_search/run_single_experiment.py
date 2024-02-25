@@ -374,7 +374,7 @@ class Experiment:
         return MainRBPModel.from_config(
             rbp_config=self.rbp_config,
             mts_config=self.dl_architecture_config,
-            discriminator_config=None if self.domain_discriminator_config["DomainDiscriminator"] is None
+            discriminator_config=None if self.domain_discriminator_config is None
             else self.domain_discriminator_config["discriminator"]
         ).to(self._device)
 
