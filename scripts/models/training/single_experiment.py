@@ -11,7 +11,7 @@ import yaml
 
 from cdl_eeg.data.paths import get_results_dir, get_numpy_data_storage_path
 from cdl_eeg.models.random_search.generate_config_file import generate_config_file
-from cdl_eeg.models.random_search.run_single_experiment import run_experiment
+from cdl_eeg.models.random_search.run_single_experiment import Experiment
 
 
 def main():
@@ -69,8 +69,11 @@ def main():
     if lodo_config["DomainDiscriminator"] is not None:
         num_train_datasets = len(lodo_config["Datasets"]) - 1
         lodo_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
-    run_experiment(lodo_config, pre_processing_config=pre_processed_config,
-                   results_path=os.path.join(results_path, "leave_one_dataset_out"))
+
+    print(f"\n{'Leave-one-dataset-out cross validation':=^50}\n")
+    leave_one_dataset_out_experiment = Experiment(config=lodo_config, pre_processing_config=pre_processed_config,
+                                                  results_path=os.path.join(results_path, "leave_one_dataset_out"))
+    leave_one_dataset_out_experiment.run_experiment()
 
     if config["run_baseline"]:
         # k-fold CV
@@ -80,8 +83,11 @@ def main():
         if k_fold_config["DomainDiscriminator"] is not None:
             num_train_datasets = len(k_fold_config["Datasets"])
             k_fold_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
-        run_experiment(k_fold_config, pre_processing_config=pre_processed_config,
-                       results_path=os.path.join(results_path, "k_fold_cv"))
+
+        print(f"\n{'Baseline experiment':=^50}\n")
+        k_fold_experiment = Experiment(config=k_fold_config, pre_processing_config=pre_processed_config,
+                                       results_path=os.path.join(results_path, "k_fold_cv"))
+        k_fold_experiment.run_experiment()
 
 
 if __name__ == "__main__":
