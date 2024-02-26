@@ -203,6 +203,12 @@ class Histories:
                 # A value in subgroups could e.g. be {"red_bull": {"mse": [val1, val2], "mae": [val3, val4]}}
                 for sub_group_name, sub_group_metrics in subgroups.items():
                     for i, (metric_name, metric_values) in enumerate(sub_group_metrics.items()):
+                        # With the current implementation, not all subgroups levels passed to __init__ must have been
+                        # seen
+                        if not metric_values:
+                            continue
+
+                        # Print metrics
                         if i == len(self.history) - 1:
                             if self._name is None:
                                 print(f"{sub_group_name}_{metric_name}: {metric_values[-1]:.3f}")
@@ -240,8 +246,8 @@ class Histories:
                     # A value of 'sub_group_metrics' could e.g. be {"mse": [val1, val2], "mae": [val3, val4]}
 
                     # Extract the subgroup
-                    sub_group_subjects = (subject for subject in self._epoch_subjects
-                                          if subject[split_level] == sub_group_name)
+                    sub_group_subjects = tuple(subject for subject in self._epoch_subjects
+                                               if subject[split_level] == sub_group_name)
 
                     # Exit if there are no subject in the subgroup
                     if not sub_group_subjects:
