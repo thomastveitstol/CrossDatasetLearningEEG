@@ -10,6 +10,7 @@ import os
 import warnings
 from typing import Dict, List, Tuple, Optional, Any, NamedTuple, Union
 
+import numpy
 import pandas
 from matplotlib import pyplot
 from scipy.stats import pearsonr, spearmanr
@@ -499,7 +500,11 @@ class Histories:
     @classification_metric
     def auc(y_pred: torch.Tensor, y_true: torch.Tensor):
         # todo: a value error is raised if only one class is present in y_true
-        return roc_auc_score(y_true=torch.squeeze(y_true, dim=-1).cpu(), y_score=torch.squeeze(y_pred, dim=-1).cpu())
+        try:
+            return roc_auc_score(y_true=torch.squeeze(y_true, dim=-1).cpu(),
+                                 y_score=torch.squeeze(y_pred, dim=-1).cpu())
+        except ValueError:
+            return numpy.nan
 
     # -----------------
     # Multiclass classification metrics
