@@ -210,7 +210,7 @@ class MainRBPModel(nn.Module):
             self, *, train_loader, val_loader, test_loader, metrics, main_metric, num_epochs, classifier_criterion,
             optimiser, discriminator_criterion=None, discriminator_weight=None, discriminator_metrics=None, device,
             channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,
-            sub_group_splits
+            sub_group_splits, sub_groups_verbose
     ):
         if any(discriminator_arg is None for discriminator_arg
                in (discriminator_criterion, discriminator_weight)):
@@ -219,7 +219,7 @@ class MainRBPModel(nn.Module):
                 main_metric=main_metric, num_epochs=num_epochs, criterion=classifier_criterion, optimiser=optimiser,
                 device=device, channel_name_to_index=channel_name_to_index, verbose=verbose,
                 target_scaler=target_scaler, prediction_activation_function=prediction_activation_function,
-                sub_group_splits=sub_group_splits
+                sub_group_splits=sub_group_splits, sub_groups_verbose=sub_groups_verbose
             )
         else:
             return self._train_model_with_domain_adversarial_learning(
@@ -229,14 +229,14 @@ class MainRBPModel(nn.Module):
                 discriminator_weight=discriminator_weight, discriminator_metrics=discriminator_metrics, device=device,
                 channel_name_to_index=channel_name_to_index,
                 prediction_activation_function=prediction_activation_function, verbose=verbose,
-                target_scaler=target_scaler, sub_group_splits=sub_group_splits
+                target_scaler=target_scaler, sub_group_splits=sub_group_splits, sub_groups_verbose=sub_groups_verbose
             )
 
     def _train_model_with_domain_adversarial_learning(
             self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs, classifier_criterion,
             optimiser, discriminator_criterion, discriminator_weight, discriminator_metrics, device,
             channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,
-            sub_group_splits):
+            sub_group_splits, sub_groups_verbose):
         """Method for training with domain adversarial learning"""
         # Defining histories objects
         train_history = Histories(metrics=metrics, splits=sub_group_splits)
@@ -316,7 +316,7 @@ class MainRBPModel(nn.Module):
                 pbar.update()
 
             # Finalise epoch for train history objects
-            train_history.on_epoch_end(verbose=verbose)
+            train_history.on_epoch_end(verbose=verbose, verbose_sub_groups=sub_groups_verbose)
             dd_train_history.on_epoch_end(verbose=verbose)
 
             # ----------------
@@ -366,7 +366,7 @@ class MainRBPModel(nn.Module):
                                                           subjects=val_subjects)
 
                 # Finalise epoch for validation history objects
-                val_history.on_epoch_end(verbose=verbose)
+                val_history.on_epoch_end(verbose=verbose, verbose_sub_groups=sub_groups_verbose)
                 dd_val_history.on_epoch_end(verbose=verbose)
 
             # ----------------
@@ -408,7 +408,9 @@ class MainRBPModel(nn.Module):
                                                             subjects=test_subjects)
 
                     # Finalise epoch for test history object
-                    test_history.on_epoch_end(verbose=verbose)  # type: ignore[union-attr]
+                    test_history.on_epoch_end(  # type: ignore[union-attr]
+                        verbose=verbose, verbose_sub_groups=sub_groups_verbose
+                    )
 
             # ----------------
             # If this is the highest performing model, store it
@@ -429,7 +431,7 @@ class MainRBPModel(nn.Module):
 
     def _train_model(self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs, criterion,
                      optimiser, device, channel_name_to_index, prediction_activation_function=None, verbose=True,
-                     target_scaler=None, sub_group_splits):
+                     target_scaler=None, sub_group_splits, sub_groups_verbose):
         """
         Method for training
 
@@ -518,7 +520,7 @@ class MainRBPModel(nn.Module):
                 pbar.update()
 
             # Finalise epoch for train history object
-            train_history.on_epoch_end(verbose=verbose)
+            train_history.on_epoch_end(verbose=verbose, verbose_sub_groups=sub_groups_verbose)
 
             # ----------------
             # Validation
@@ -557,7 +559,7 @@ class MainRBPModel(nn.Module):
                     val_history.store_batch_evaluation(y_pred=y_pred, y_true=y_val, subjects=val_subjects)
 
                 # Finalise epoch for validation history object
-                val_history.on_epoch_end(verbose=verbose)
+                val_history.on_epoch_end(verbose=verbose, verbose_sub_groups=sub_groups_verbose)
 
             # ----------------
             # (Maybe) testing
@@ -598,7 +600,9 @@ class MainRBPModel(nn.Module):
                                                             subjects=test_subjects)
 
                     # Finalise epoch for test history object
-                    test_history.on_epoch_end(verbose=verbose)  # type: ignore[union-attr]
+                    test_history.on_epoch_end(  # type: ignore[union-attr]
+                        verbose=verbose, verbose_sub_groups=sub_groups_verbose
+                    )
 
             # ----------------
             # If this is the highest performing model, as evaluated on the validation set, store it
@@ -618,7 +622,7 @@ class MainRBPModel(nn.Module):
         return train_history, val_history, test_history
 
     def test_model(self, *, data_loader, metrics, device, channel_name_to_index, prediction_activation_function=None,
-                   verbose=True, target_scaler=None, sub_group_splits):
+                   verbose=True, target_scaler=None, sub_group_splits, sub_groups_verbose):
         # Defining histories objects
         history = Histories(metrics=metrics, name="test", splits=sub_group_splits)
 
@@ -653,7 +657,7 @@ class MainRBPModel(nn.Module):
                 )
 
             # Finalise epoch for validation history object
-            history.on_epoch_end(verbose=verbose)
+            history.on_epoch_end(verbose=verbose, verbose_sub_groups=sub_groups_verbose)
 
         return history
 
