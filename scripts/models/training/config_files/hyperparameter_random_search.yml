@@ -1,5 +1,5 @@
 run_baseline: true
-selected_target: &selected_target age
+selected_target: &selected_target sex
 
 Shared Dataset Details:
   num_time_steps: &num_time_steps null
@@ -143,7 +143,8 @@ FCModule: &FCModule
   hidden_units:
     dist: uniform_discrete
     kwargs:
-      domain: [ [], [32], [64], [32, 32], [64, 64], [64, 32] ]  # todo
+      # domain: [ [], [32], [64], [32, 32], [64, 64], [64, 32] ]  # todo
+      domain: [ [], [4, 8], [4, 4], [8, 8] ]
 
 DomainDiscriminator:
   discriminators:
@@ -251,7 +252,7 @@ RegionBasedPooling: &RegionBasedPooling
     kwargs:
       base: 2
       a: 0  # 2^0 = 1
-      b: 5  # 2^5 = 32
+      b: 4  # 2^5 = 32
   normalise_region_representations:
     dist: uniform_discrete
     kwargs:
@@ -296,7 +297,7 @@ InceptionNetwork: &InceptionNetwork
   depth:  # todo
     dist: uniform_discrete
     kwargs:
-      domain: [ 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36 ]
+      domain: [ 3, 6, 9, 12, 15, 18 ]
 
 EEGNetv4MTS: &EEGNetv4MTS
   num_classes: 1
