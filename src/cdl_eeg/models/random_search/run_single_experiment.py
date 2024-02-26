@@ -2,7 +2,7 @@ import copy
 import os
 import random
 import warnings
-from typing import Any, Optional, List, Dict
+from typing import Any, Dict, Optional
 
 import torch
 from torch import optim
