@@ -1,5 +1,5 @@
 run_baseline: true
-selected_target: &selected_target sex
+selected_target: &selected_target age
 
 Shared Dataset Details:
   num_time_steps: &num_time_steps null
@@ -106,7 +106,7 @@ Targets:
 Training:
   # Fixed hyperparameters
   batch_size: 16
-  num_epochs: 100
+  num_epochs: 25
   verbose: true
   val_split: 0.2
   target: *selected_target
