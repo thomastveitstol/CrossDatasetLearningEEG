@@ -235,13 +235,13 @@ class Histories:
                                       in zip(self._epoch_subjects, y_pred, y_true)}
 
             # Loop through all splits
-            for split_domain, sub_groups in self._subgroup_histories.items():
+            for split_level, sub_groups in self._subgroup_histories.items():
                 for sub_group_name, sub_group_metrics in sub_groups.items():
                     # A value of 'sub_group_metrics' could e.g. be {"mse": [val1, val2], "mae": [val3, val4]}
 
                     # Extract the subgroup
                     sub_group_subjects = (subject for subject in self._epoch_subjects
-                                          if subject[split_domain] == sub_group_name)
+                                          if subject[split_level] == sub_group_name)
 
                     # Extract their predictions and targets
                     sub_group_y_pred = torch.cat([subjects_pred_and_true[subject].y_pred
