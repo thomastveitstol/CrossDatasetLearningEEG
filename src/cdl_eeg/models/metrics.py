@@ -243,6 +243,10 @@ class Histories:
                     sub_group_subjects = (subject for subject in self._epoch_subjects
                                           if subject[split_level] == sub_group_name)
 
+                    # Exit if there are no subject in the subgroup
+                    if not sub_group_subjects:
+                        continue
+
                     # Extract their predictions and targets
                     sub_group_y_pred = torch.cat([subjects_pred_and_true[subject].y_pred
                                                   for subject in sub_group_subjects], dim=0)
