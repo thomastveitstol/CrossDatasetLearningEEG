@@ -355,9 +355,17 @@ class Histories:
                         raise RuntimeError("Expected all metrics to be the same for all sub-groups, but that was not "
                                            "the case")
 
+            # Create folder
+            level_path = os.path.join(path, level)
+            os.mkdir(level_path)
+
             # Loop through and create a plot per metrics (and level)
             for metric_to_plot in metrics:
                 pyplot.figure(figsize=(12, 6))  # todo: don't hardcode
+
+                # Make folder
+                metric_path = os.path.join(level_path, metric_to_plot)
+                os.mkdir(metric_path)
 
                 # Loop through all subgroups
                 for subgroup_name, subgroup_metrics in subgroups.items():
@@ -379,7 +387,7 @@ class Histories:
                 pyplot.grid()
 
                 # Save figure and close it
-                pyplot.savefig(os.path.join(path, f"{history_name}_{level}_{metric_to_plot}.png"))
+                pyplot.savefig(os.path.join(path, f"{history_name}_{metric_to_plot}.png"))
                 pyplot.close()
 
     # -----------------
