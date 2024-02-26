@@ -389,7 +389,7 @@ class Histories:
                 pyplot.grid()
 
                 # Save figure and close it
-                pyplot.savefig(os.path.join(path, f"{history_name}_{metric_to_plot}.png"))
+                pyplot.savefig(os.path.join(metric_path, f"{history_name}_{metric_to_plot}.png"))
                 pyplot.close()
 
     # -----------------
