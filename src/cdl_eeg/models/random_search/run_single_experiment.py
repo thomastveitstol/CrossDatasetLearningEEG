@@ -188,7 +188,8 @@ class Experiment:
             discriminator_weight=discriminator_weight, discriminator_metrics=discriminator_metrics,
             num_epochs=self.train_config["num_epochs"], verbose=self.train_config["verbose"],
             channel_name_to_index=channel_name_to_index, device=self._device, target_scaler=target_scaler,
-            prediction_activation_function=get_activation_function(self.train_config["prediction_activation_function"])
+            prediction_activation_function=get_activation_function(self.train_config["prediction_activation_function"]),
+            sub_group_splits=self.sub_groups_config["sub_groups"], sub_groups_verbose=self.sub_groups_config["verbose"]
         )
 
         # -----------------
@@ -210,7 +211,9 @@ class Experiment:
             # Test model on test data
             test_estimate = model.test_model(
                 data_loader=test_loader, metrics=self.train_config["metrics"], verbose=self.train_config["verbose"],
-                channel_name_to_index=channel_name_to_index, device=self._device, target_scaler=target_scaler
+                channel_name_to_index=channel_name_to_index, device=self._device, target_scaler=target_scaler,
+                sub_group_splits=self.sub_groups_config["sub_groups"],
+                sub_groups_verbose=self.sub_groups_config["verbose"]
             )
         else:
             test_estimate = None
@@ -458,6 +461,10 @@ class Experiment:
     @property
     def subject_split_config(self):
         return self._config["SubjectSplit"]
+
+    @property
+    def sub_groups_config(self):
+        return self._config["SubGroups"]
 
     @property
     def rbp_config(self):

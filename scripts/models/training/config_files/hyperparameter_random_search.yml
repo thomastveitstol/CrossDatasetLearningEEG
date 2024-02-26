@@ -10,6 +10,12 @@ SubjectSplit:
   kwargs:
     seed: 42  # todo: should we fix the seed?
 
+SubGroups:
+  verbose: true
+  sub_groups:
+    dataset_name:  # todo: don't hardcode like this
+      [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg ]
+
 Datasets:
   rockhill:
     num_subjects: 31

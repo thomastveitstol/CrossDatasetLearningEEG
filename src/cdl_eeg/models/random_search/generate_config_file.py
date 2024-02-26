@@ -24,6 +24,11 @@ def generate_config_file(config):
     subjects_split_hyperparameters = config["SubjectSplit"]
 
     # -----------------
+    # Add details for computing metrics on sub-groups
+    # -----------------
+    sub_groups_hyperparameters = config["SubGroups"]
+
+    # -----------------
     # Add dataset details
     # -----------------
     dataset_hyperparameters = config["Datasets"]
@@ -153,6 +158,7 @@ def generate_config_file(config):
     # Create final dictionary
     # -----------------
     return {"SubjectSplit": subjects_split_hyperparameters,
+            "SubGroups": sub_groups_hyperparameters,
             "Datasets": dataset_hyperparameters,
             "Scalers": scaler_hyperparameters,
             "Training": train_hyperparameters,
