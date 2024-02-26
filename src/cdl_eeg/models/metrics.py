@@ -498,6 +498,7 @@ class Histories:
     @staticmethod
     @classification_metric
     def auc(y_pred: torch.Tensor, y_true: torch.Tensor):
+        # todo: a value error is raised if only one class is present in y_true
         return roc_auc_score(y_true=torch.squeeze(y_true, dim=-1).cpu(), y_score=torch.squeeze(y_pred, dim=-1).cpu())
 
     # -----------------
