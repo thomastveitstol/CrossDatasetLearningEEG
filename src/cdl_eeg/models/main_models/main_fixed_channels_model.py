@@ -89,9 +89,9 @@ class MainFixedChannelsModel(nn.Module):
         -------
 
         """
-        # Defining histories objects
-        train_history = Histories(metrics=metrics)
-        val_history = Histories(metrics=metrics, name="val")
+        # Defining histories objects  todo: must fix
+        train_history = Histories(metrics=metrics)  # type: ignore[call-arg]
+        val_history = Histories(metrics=metrics, name="val")  # type: ignore[call-arg]
 
         # ------------------------
         # Fit model
