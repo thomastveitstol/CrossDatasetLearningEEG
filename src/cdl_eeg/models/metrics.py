@@ -336,6 +336,13 @@ class Histories:
         df.to_csv(os.path.join(path, f"{history_name}.csv"), index=False)
 
     def save_subgroup_metrics_plots(self, history_name, path):
+        # If there are no subgroups registered, raise a warning and do nothing
+        if self._subgroup_histories is None:
+            warnings.warn(message="Tried to save plot of metrics computed per sub-group, but there were no subgroups",
+                          category=RuntimeWarning)
+            return None
+
+        # Loop through all levels
         for level, subgroups in self._subgroup_histories.items():
             # Get the metrics
             metrics: Tuple[str, ...] = ()
