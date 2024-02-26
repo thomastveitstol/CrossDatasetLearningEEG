@@ -1,5 +1,5 @@
 run_baseline: true
-selected_target: &selected_target sex
+selected_target: &selected_target age
 
 Shared Dataset Details:
   num_time_steps: &num_time_steps null
@@ -11,7 +11,7 @@ SubjectSplit:
     seed: 42  # todo: should we fix the seed?
 
 SubGroups:
-  verbose: true
+  verbose: false
   sub_groups:
     dataset_name:  # todo: don't hardcode like this
       [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg ]
