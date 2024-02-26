@@ -209,14 +209,17 @@ class MainRBPModel(nn.Module):
     def train_model(
             self, *, train_loader, val_loader, test_loader, metrics, main_metric, num_epochs, classifier_criterion,
             optimiser, discriminator_criterion=None, discriminator_weight=None, discriminator_metrics=None, device,
-            channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
+            channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,
+            sub_group_splits
+    ):
         if any(discriminator_arg is None for discriminator_arg
                in (discriminator_criterion, discriminator_weight)):
             return self._train_model(
                 train_loader=train_loader, val_loader=val_loader, test_loader=test_loader, metrics=metrics,
                 main_metric=main_metric, num_epochs=num_epochs, criterion=classifier_criterion, optimiser=optimiser,
                 device=device, channel_name_to_index=channel_name_to_index, verbose=verbose,
-                target_scaler=target_scaler, prediction_activation_function=prediction_activation_function
+                target_scaler=target_scaler, prediction_activation_function=prediction_activation_function,
+                sub_group_splits=sub_group_splits
             )
         else:
             return self._train_model_with_domain_adversarial_learning(
@@ -226,21 +229,22 @@ class MainRBPModel(nn.Module):
                 discriminator_weight=discriminator_weight, discriminator_metrics=discriminator_metrics, device=device,
                 channel_name_to_index=channel_name_to_index,
                 prediction_activation_function=prediction_activation_function, verbose=verbose,
-                target_scaler=target_scaler
+                target_scaler=target_scaler, sub_group_splits=sub_group_splits
             )
 
     def _train_model_with_domain_adversarial_learning(
             self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs, classifier_criterion,
             optimiser, discriminator_criterion, discriminator_weight, discriminator_metrics, device,
-            channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None):
+            channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,
+            sub_group_splits):
         """Method for training with domain adversarial learning"""
         # Defining histories objects
-        train_history = Histories(metrics=metrics)
-        val_history = Histories(metrics=metrics, name="val")
-        test_history = None if test_loader is None else Histories(metrics=metrics, name="test")
+        train_history = Histories(metrics=metrics, splits=sub_group_splits)
+        val_history = Histories(metrics=metrics, name="val", splits=sub_group_splits)
+        test_history = None if test_loader is None else Histories(metrics=metrics, name="test", splits=sub_group_splits)
 
-        dd_train_history = Histories(metrics=discriminator_metrics, name="dd")
-        dd_val_history = Histories(metrics=discriminator_metrics, name="val_dd")
+        dd_train_history = Histories(metrics=discriminator_metrics, name="dd", splits=None)
+        dd_val_history = Histories(metrics=discriminator_metrics, name="val_dd", splits=None)
 
         # ------------------------
         # Fit model
@@ -425,7 +429,7 @@ class MainRBPModel(nn.Module):
 
     def _train_model(self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs, criterion,
                      optimiser, device, channel_name_to_index, prediction_activation_function=None, verbose=True,
-                     target_scaler=None):
+                     target_scaler=None, sub_group_splits):
         """
         Method for training
 
@@ -454,9 +458,9 @@ class MainRBPModel(nn.Module):
         # todo: may want to think more on memory usage
 
         # Defining histories objects
-        train_history = Histories(metrics=metrics)
-        val_history = Histories(metrics=metrics, name="val")
-        test_history = None if test_loader is None else Histories(metrics=metrics, name="test")
+        train_history = Histories(metrics=metrics, splits=sub_group_splits)
+        val_history = Histories(metrics=metrics, name="val", splits=sub_group_splits)
+        test_history = None if test_loader is None else Histories(metrics=metrics, name="test", splits=sub_group_splits)
 
         # ------------------------
         # Fit model
@@ -614,9 +618,9 @@ class MainRBPModel(nn.Module):
         return train_history, val_history, test_history
 
     def test_model(self, *, data_loader, metrics, device, channel_name_to_index, prediction_activation_function=None,
-                   verbose=True, target_scaler=None):
+                   verbose=True, target_scaler=None, sub_group_splits):
         # Defining histories objects
-        history = Histories(metrics=metrics, name="test")
+        history = Histories(metrics=metrics, name="test", splits=sub_group_splits)
 
         # No gradients needed
         self.eval()
