@@ -1,5 +1,5 @@
 run_baseline: true
-selected_target: &selected_target age
+selected_target: &selected_target sex
 
 Shared Dataset Details:
   num_time_steps: &num_time_steps null
