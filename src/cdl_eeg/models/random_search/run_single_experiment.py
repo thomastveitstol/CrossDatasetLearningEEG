@@ -2,7 +2,7 @@ import copy
 import os
 import random
 import warnings
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict
 
 import torch
 from torch import optim
@@ -14,7 +14,8 @@ from cdl_eeg.data.data_split import get_data_split, leave_1_fold_out
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
 from cdl_eeg.models.losses import CustomWeightedLoss, get_activation_function
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
-from cdl_eeg.models.metrics import save_discriminator_histories_plots, save_histories_plots, Histories
+from cdl_eeg.models.metrics import save_discriminator_histories_plots, save_histories_plots, Histories, \
+    save_test_histories_plots
 from cdl_eeg.models.utils import tensor_dict_to_device
 
 
@@ -69,6 +70,8 @@ class Experiment:
     # Methods to be used inside cross validation
     # -------------
     def run_cross_validation(self, *, folds, channel_systems, channel_name_to_index, combined_dataset):
+        test_histories: Dict[str, Histories] = dict()
+
         # Loop through all folds
         for i, test_subjects in enumerate(folds):
             print(f"\nFold {i + 1}/{len(folds)}")
@@ -87,11 +90,34 @@ class Experiment:
             # -----------------
             # Run the current fold
             # -----------------
-            self._run_single_fold(
+            histories = self._run_single_fold(
                 train_subjects=train_subjects, val_subjects=val_subjects, test_subjects=test_subjects,
                 results_path=fold_path, channel_systems=channel_systems, channel_name_to_index=channel_name_to_index,
                 combined_dataset=combined_dataset
             )
+            # -----------------
+            # Save test history
+            # -----------------
+            # Extract the test history (should only be one)
+            _test_histories = tuple(history for history in histories if history.name[:4] == "test")
+
+            if not _test_histories:
+                continue
+            if len(_test_histories) != 1:
+                raise RuntimeError(f"Expected only one test history per fold, but found {len(_test_histories)}")
+
+            test_history = tuple(_test_histories)[0]
+
+            # If there is only one dataset in the test fold, name it as the dataset name, otherwise just use fold number
+            test_datasets = set(subject.dataset_name for subject in test_subjects)
+            test_name = tuple(test_datasets)[0] if len(test_datasets) == 1 else f"Fold {i}"
+
+            # Add histories object to dict
+            if test_name in test_histories:
+                raise RuntimeError  # todo: add message
+            test_histories[test_name] = test_history
+
+        save_test_histories_plots(path=self._results_path, histories=test_histories)
 
     def _train_val_split(self, folds, left_out_fold):
         # Exclude the test fold
@@ -222,6 +248,8 @@ class Experiment:
         # Save results
         # -----------------
         self._save_results(histories=histories, test_estimate=test_estimate, results_path=results_path)
+
+        return histories
 
     # -------------
     # Methods for saving results

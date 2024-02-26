@@ -598,6 +598,56 @@ def save_discriminator_histories_plots(path, histories):
         pyplot.close()
 
 
+def save_test_histories_plots(path, histories):
+    """
+    Save histories
+
+    todo: now we have two...
+    Parameters
+    ----------
+    path : str
+    histories : dict[str, Histories]
+
+    Returns
+    -------
+    None
+    """
+    # ----------------
+    # Loop through all metrics
+    # ----------------
+    # Get all available metrics
+    _all_metrics: Tuple[str, ...] = ()
+    for name, history in histories.items():
+        if not _all_metrics:
+            _all_metrics += tuple(history.history.keys())
+        else:
+            if set(_all_metrics) != set(history.history.keys()):
+                raise RuntimeError("Expected all metrics to be the same, but that was not the case")
+    all_metrics = tuple(_all_metrics)
+
+    for metric in all_metrics:
+        pyplot.figure(figsize=(12, 6))
+
+        for name, history in histories.items():
+            pyplot.plot(range(1, len(history.history[metric]) + 1), history.history[metric], label=name)
+
+        # ------------
+        # Plot cosmetics
+        # ------------
+        font_size = 15
+
+        pyplot.title(f"Test performance ({metric.capitalize()})", fontsize=font_size + 5)
+        pyplot.xlabel("Epoch", fontsize=font_size)
+        pyplot.ylabel(metric.capitalize(), fontsize=font_size)
+        pyplot.tick_params(labelsize=font_size)
+        pyplot.legend(fontsize=font_size)
+        pyplot.grid()
+
+        # Save figure and close it
+        pyplot.savefig(os.path.join(path, f"{metric}.png"))
+        pyplot.close()
+
+
 def save_histories_plots(path, *, train_history=None, val_history=None, test_history=None, test_estimate=None):
     """
     Function for saving histories plots
