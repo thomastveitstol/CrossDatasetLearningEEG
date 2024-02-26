@@ -2,7 +2,7 @@ import abc
 import dataclasses
 import itertools
 import random
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Tuple
 
 import numpy
 
@@ -10,19 +10,32 @@ import numpy
 # -----------------
 # Convenient dataclasses
 # -----------------
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Subject:
     """
-    >>> my_subject = {Subject("P1", "D1", details={"sex": "male", "cognition": "hc"}): "this_is_a_value"}
-    >>> my_subject[Subject("P1", "D1", details={"sex": "male", "cognition": "hc"})]
+    Class for defining a subject. Convenient particularly when different datasets use the same subject IDs
+
+    Examples
+    --------
+    >>> Subject("Person", "Dataset")
+    Subject(subject_id='Person', dataset_name='Dataset')
+
+    Can be used as keys in a dict
+
+    >>> my_subject = {Subject("P1", "D1"): "this_is_a_value"}
+    >>> my_subject[Subject("P1", "D1")]
     'this_is_a_value'
+
+    Attributes can also be obtained as if the class was a dict
+
+    >>> Subject("P1", "D1")["dataset_name"]
+    'D1'
     """
     subject_id: str
     dataset_name: str
-    details: Optional[Dict[str, Any]] = None
 
-    def __hash__(self):
-        return hash((self.subject_id, self.dataset_name))
+    def __getitem__(self, item):
+        return getattr(self, item)
 
 
 # -----------------
