@@ -740,11 +740,11 @@ def reorder_subjects(order, subjects):
     >>> my_subjects = (Subject("P3", "D2"), Subject("P1", "D2"), Subject("P1", "D1"), Subject("P4", "D1"),
     ...                Subject("P2", "D2"))
     >>> reorder_subjects(order=("D1", "D2"), subjects=my_subjects)  # doctest: +NORMALIZE_WHITESPACE
-    (Subject(subject_id='P1', dataset_name='D1', details=None),
-     Subject(subject_id='P4', dataset_name='D1', details=None),
-     Subject(subject_id='P3', dataset_name='D2', details=None),
-     Subject(subject_id='P1', dataset_name='D2', details=None),
-     Subject(subject_id='P2', dataset_name='D2', details=None))
+    (Subject(subject_id='P1', dataset_name='D1'),
+     Subject(subject_id='P4', dataset_name='D1'),
+     Subject(subject_id='P3', dataset_name='D2'),
+     Subject(subject_id='P1', dataset_name='D2'),
+     Subject(subject_id='P2', dataset_name='D2'))
     """
     subjects_dict: Dict[str, List[Subject]] = {dataset_name: [] for dataset_name in order}
     for subject in subjects:
