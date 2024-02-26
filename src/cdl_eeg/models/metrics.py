@@ -357,7 +357,8 @@ class Histories:
 
             # Create folder
             level_path = os.path.join(path, level)
-            os.mkdir(level_path)
+            if not os.path.isdir(level_path):
+                os.mkdir(level_path)
 
             # Loop through and create a plot per metrics (and level)
             for metric_to_plot in metrics:
@@ -365,7 +366,8 @@ class Histories:
 
                 # Make folder
                 metric_path = os.path.join(level_path, metric_to_plot)
-                os.mkdir(metric_path)
+                if not os.path.isdir(metric_path):
+                    os.mkdir(metric_path)
 
                 # Loop through all subgroups
                 for subgroup_name, subgroup_metrics in subgroups.items():
