@@ -335,6 +335,46 @@ class Histories:
         # Save csv file
         df.to_csv(os.path.join(path, f"{history_name}.csv"), index=False)
 
+    def save_subgroup_metrics_plots(self, history_name, path):
+        for level, subgroups in self._subgroup_histories.items():
+            # Get the metrics
+            metrics: Tuple[str, ...] = ()
+            for subgroup_metrics in subgroups.values():
+                if not metrics:
+                    metrics = tuple(subgroup_metrics.keys())
+                else:
+                    # All metrics used should be the same, but different order is ok
+                    if not set(metrics) == set(subgroup_metrics.keys()):
+                        raise RuntimeError("Expected all metrics to be the same for all sub-groups, but that was not "
+                                           "the case")
+
+            # Loop through and create a plot per metrics (and level)
+            for metric_to_plot in metrics:
+                pyplot.figure(figsize=(12, 6))  # todo: don't hardcode
+
+                # Loop through all subgroups
+                for subgroup_name, subgroup_metrics in subgroups.items():
+                    # Get the performance
+                    performance = subgroup_metrics[metric_to_plot]
+
+                    # Plot, if values are registered
+                    if performance:
+                        pyplot.plot(range(1, len(performance) + 1), performance, label=subgroup_name)
+
+                # Plot cosmetics
+                font_size = 15
+
+                pyplot.title(f"Performance (level={level})", fontsize=font_size+5)
+                pyplot.xlabel("Epoch", fontsize=font_size)
+                pyplot.ylabel(metric_to_plot.capitalize(), fontsize=font_size)
+                pyplot.tick_params(labelsize=font_size)
+                pyplot.legend(fontsize=font_size)
+                pyplot.grid()
+
+                # Save figure and close it
+                pyplot.savefig(os.path.join(path, f"{history_name}_{metric_to_plot}.png"))
+                pyplot.close()
+
     # -----------------
     # Methods for getting the available metrics
     # -----------------

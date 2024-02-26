@@ -255,6 +255,15 @@ class Experiment:
             save_discriminator_histories_plots(path=domain_discriminator_path,
                                                histories=(dd_train_history, dd_val_history))
 
+        # Save subgroup plots
+        sub_group_path = os.path.join(results_path, "sub_groups_plots")
+        os.mkdir(sub_group_path)
+
+        train_history.save_subgroup_metrics_plots(history_name="train", path=sub_group_path)
+        val_history.save_subgroup_metrics_plots(history_name="val", path=sub_group_path)
+        if test_history is not None:
+            test_history.save_subgroup_metrics_plots(history_name="test", path=sub_group_path)
+
         # Save plots
         save_histories_plots(path=results_path, train_history=train_history, val_history=val_history,
                              test_estimate=test_estimate, test_history=test_history)
