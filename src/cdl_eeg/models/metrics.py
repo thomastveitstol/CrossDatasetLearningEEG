@@ -71,7 +71,7 @@ class Histories:
     __slots__ = ("_history", "_prediction_history", "_subgroup_histories", "_epoch_y_pred", "_epoch_y_true",
                  "_epoch_subjects", "_name")
 
-    def __init__(self, metrics, name=None, splits=None):
+    def __init__(self, metrics, *, name=None, splits):
         """
         Initialise
 
