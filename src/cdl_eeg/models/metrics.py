@@ -19,10 +19,6 @@ import torch
 from torch import nn
 
 from cdl_eeg.data.data_split import Subject
-from cdl_eeg.data.subject_split import Criterion, filter_subjects, make_subject_splits
-
-# Type hints
-_SPLIT = Tuple[Dict[str, tuple], Dict[str, Tuple[Criterion, ...]]]  # type: ignore[type-arg]
 
 
 # ----------------
@@ -72,10 +68,10 @@ class Histories:
     ('acc', 'auc_ovo', 'auc_ovr', 'balanced_acc', 'ce_loss', 'kappa', 'mcc')
     """
 
-    __slots__ = ("_history", "_prediction_history", "_splits_histories", "_epoch_y_pred", "_epoch_y_true",
+    __slots__ = ("_history", "_prediction_history", "_subgroup_histories", "_epoch_y_pred", "_epoch_y_true",
                  "_epoch_subjects", "_name")
 
-    def __init__(self, metrics, name=None, splits: Optional[Tuple[_SPLIT, ...]] = None):
+    def __init__(self, metrics, name=None, splits=None):
         """
         Initialise
 
@@ -86,10 +82,10 @@ class Histories:
             available regression/classification metrics should be used
         name : str, optional
             May be used for the printing of the metrics
-        splits : Tuple[_SPLIT, ...], optional
-            Splits for computing metrics per subgroup (see the PDF file for visual example of a single _SPLIT). Each
-            split has inclusion criteria, coupled with split selections and their split criteria (condition in the
-            figure).
+        splits : dict[str, typing.Any] | None
+            Splits for computing metrics per subgroup. Each 'split' must be an attribute of the Subject objects passed
+            to 'store_batch_evaluation'. Note that this should also work for any class inheriting from Subject, allowing
+            for more customised subgroup splitting
         """
         # Maybe set metrics
         if metrics == "regression":
@@ -118,31 +114,16 @@ class Histories:
         # For storing all predictions .
         self._prediction_history: Dict[Subject, List[Union[float, Tuple[float, ...]]]] = dict()
 
-        # Histories per subgroup
-        splits_histories: Optional[List[Tuple[Dict[str, Tuple[Any, ...]],
-                                              Dict[str, Dict[Criterion, Dict[str, List[float]]]]]]]
+        # Histories per subgroup. Not doing any check for legal split names, as the subjects may inherit from Subject
+        # and thus have additional attributes
+        # Could e.g. be {dataset_name: {D1: {metric1: [val1, val2, val3]}}}
+        _sub_hist: Optional[Dict[str, Dict[Any, Dict[str, List[Union[float]]]]]]
         if splits is not None:
-            splits_histories = []
-            # Loop through all desired splits
-            for split in splits:
-                # Extract inclusion criteria for the current split
-                split_inclusion_criteria = split[0]  # todo: consider named tuple
-
-                # Extract what to split on
-                split_selections = split[1]
-
-                # Initialise history dictionary for all conditions and metrics
-                split_history: Dict[str, Dict[Criterion, Dict[str, List[float]]]] = dict()
-                for split_selection, criteria in split_selections.items():
-                    split_history[split_selection] = {criterion: {f"{metric}": [] for metric in metrics}
-                                                      for criterion in criteria}
-
-                # Append initialised history to main list
-                splits_histories.append((split_inclusion_criteria, split_history))  # todo: again, consider NamedTuple
+            _sub_hist = {split: {sub_group: {metric: [] for metric in metrics} for sub_group in sub_groups}
+                         for split, sub_groups in splits.items()}
         else:
-            splits_histories = None
-
-        self._splits_histories = splits_histories  # todo: consider renaming to e.g. something with subgroup histories
+            _sub_hist = None
+        self._subgroup_histories = _sub_hist
 
         # ----------------
         # Initialise epochs predictions and targets.
@@ -197,7 +178,7 @@ class Histories:
         self._update_metrics()
         if verbose:
             self._print_newest_metrics()
-        if verbose_sub_groups and self._splits_histories is not None:
+        if verbose_sub_groups and self._subgroup_histories is not None:
             self._print_newest_subgroups_metrics()
 
     def _print_newest_metrics(self) -> None:
@@ -217,39 +198,22 @@ class Histories:
                     print(f"{self._name}_{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
 
     def _print_newest_subgroups_metrics(self):
-        if self._splits_histories is not None:
-            for i, split in enumerate(self._splits_histories):
-                print(f"\n----- Details for split {i} -----")
-                print("Inclusion criteria:")
-                # todo: mypy complaining?
-                # Print who to include
-                for selection, condition in split[0].items():  # type: ignore
-                    # E.g. selection = "dataset", condition = ("cau_eeg",)
-                    print(f"\t{selection.capitalize()} must be in: {condition}")
-                    # todo: this is where you left...
-
-                # Loop through to get all metrics and print the newest ones
-                for split_selection, criteria_performance in split[1].items():
-                    print(f"\n\tDomain: {split_selection}")
-                    for criterion, performance in criteria_performance.items():
-                        print(f"\t\tSub-group: {criterion}")
-                        for j, (metric_name, metric_values) in enumerate(performance.items()):
-                            # todo: this looks bad...
-                            if j == len(performance) - 1:
-                                if self._name is None:
-                                    print(f"{metric_name}: {metric_values[-1]:.3f}")
-                                else:
-                                    print(f"{self._name}_{metric_name}: {metric_values[-1]:.3f}")
-                            elif j == 0:
-                                if self._name is None:
-                                    print(f"\t\t\t{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
-                                else:
-                                    print(f"\t\t\t{self._name}_{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
+        if self._subgroup_histories is not None:
+            for subgroups in self._subgroup_histories.values():
+                # A value in subgroups could e.g. be {"red_bull": {"mse": [val1, val2], "mae": [val3, val4]}}
+                for sub_group_name, sub_group_metrics in subgroups.items():
+                    for i, (metric_name, metric_values) in enumerate(sub_group_metrics.items()):
+                        if i == len(self.history) - 1:
+                            if self._name is None:
+                                print(f"{sub_group_name}_{metric_name}: {metric_values[-1]:.3f}")
                             else:
-                                if self._name is None:
-                                    print(f"{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
-                                else:
-                                    print(f"{self._name}_{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
+                                print(f"{self._name}_{sub_group_name}_{metric_name}: {metric_values[-1]:.3f}")
+                        else:
+                            if self._name is None:
+                                print(f"{sub_group_name}_{metric_name}: {metric_values[-1]:.3f}\t\t", end="")
+                            else:
+                                print(f"{self._name}_{sub_group_name}_{metric_name}: {metric_values[-1]:.3f}\t\t",
+                                      end="")
 
     def _update_metrics(self):
         # Concatenate torch tenors
@@ -265,39 +229,31 @@ class Histories:
         # -------------
         # (Maybe) update all metrics of all subgroups
         # -------------
-        if self._splits_histories is not None:
+        if self._subgroup_histories is not None:
             # Make dictionary containing subjects combined with the prediction and target
             subjects_pred_and_true = {subject: YYhat(y_true=y, y_pred=y_hat) for subject, y_hat, y
                                       in zip(self._epoch_subjects, y_pred, y_true)}
 
             # Loop through all splits
-            for split in self._splits_histories:
-                # Filter subjects
-                inclusion_criteria = split[0]
-                filtered_subjects = filter_subjects(subjects=tuple(self._epoch_subjects),
-                                                    inclusion_criteria=inclusion_criteria)
+            for split_domain, sub_groups in self._subgroup_histories.items():
+                for sub_group_name, sub_group_metrics in sub_groups.items():
+                    # A value of 'sub_group_metrics' could e.g. be {"mse": [val1, val2], "mae": [val3, val4]}
 
-                # Split subjects
-                split_selections = {selection: tuple(criteria_performance.keys())
-                                    for selection, criteria_performance in split[1].items()}
-                subjects_splits = make_subject_splits(subjects=filtered_subjects, splits=split_selections)
+                    # Extract the subgroup
+                    sub_group_subjects = (subject for subject in self._epoch_subjects
+                                          if subject[split_domain] == sub_group_name)
 
-                # Loop through all subgroups
-                for selection, criteria_performance in split[1].items():
-                    for criterion, performance in criteria_performance.items():
-                        for metric, metric_value in performance.items():
-                            # Extract the subgroup
-                            sub_group_subjects = subjects_splits[selection][criterion]
+                    # Extract their predictions and targets
+                    sub_group_y_pred = torch.cat([subjects_pred_and_true[subject].y_pred
+                                                  for subject in sub_group_subjects], dim=0)
+                    sub_group_y_true = torch.cat([subjects_pred_and_true[subject].y_true
+                                                  for subject in sub_group_subjects], dim=0)
 
-                            # Extract their predictions and targets
-                            sub_group_y_pred = torch.cat([subjects_pred_and_true[subject].y_pred
-                                                          for subject in sub_group_subjects], dim=0)
-                            sub_group_y_true = torch.cat([subjects_pred_and_true[subject].y_true
-                                                          for subject in sub_group_subjects], dim=0)
-
-                            # Compute metrics for the subgroup and store it
-                            metric_value.append(self._compute_metric(metric=metric, y_pred=sub_group_y_pred,
-                                                                     y_true=sub_group_y_true))
+                    # Loop through and calculate the metrics
+                    for metric_name, metric_values in sub_group_metrics.items():
+                        # Compute metrics for the subgroup and store it
+                        metric_values.append(self._compute_metric(metric=metric_name, y_pred=sub_group_y_pred,
+                                                                  y_true=sub_group_y_true))
 
         # -------------
         # Remove the epoch histories

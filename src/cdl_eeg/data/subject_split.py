@@ -33,15 +33,15 @@ def filter_subjects(subjects, inclusion_criteria):
     Examples
     --------
     >>> my_subjects = (
-    ...     Subject("P1", "D1", details={"sex": "male", "age": "old"}),
-    ...     Subject("P2", "D1", details={"sex": "male", "age": "old"}),
-    ...     Subject("P3", "D1", details={"sex": "female", "age": "young"}),
-    ...     Subject("P1", "D2", details={"sex": "female", "age": "old"}),
-    ...     Subject("P2", "D2", details={"sex": "male", "age": "young"}),
-    ...     Subject("P1", "D3", details={"sex": "male", "age": "old"}),
-    ...     Subject("P2", "D3", details={"sex": "female", "age": "old"}),
-    ...     Subject("P3", "D3", details={"sex": "female", "age": "young"}))
-    >>> my_criteria = {"sex": ("female",), "age": ("young",)}
+    ...     Subject("P1", "D1"),
+    ...     Subject("P2", "D1"),
+    ...     Subject("P3", "D1"),
+    ...     Subject("P1", "D2"),
+    ...     Subject("P2", "D2"),
+    ...     Subject("P1", "D3"),
+    ...     Subject("P2", "D3"),
+    ...     Subject("P3", "D3")
+    >>> my_criteria = {"dataset_name": ("D1", "D2")}
     >>> filter_subjects(my_subjects, inclusion_criteria=my_criteria)  # doctest: +NORMALIZE_WHITESPACE
     (Subject(subject_id='P3', dataset_name='D1', details={'sex': 'female', 'age': 'young'}),
      Subject(subject_id='P3', dataset_name='D3', details={'sex': 'female', 'age': 'young'}))
