@@ -4,6 +4,7 @@ from typing import Any, Tuple, Dict
 from cdl_eeg.data.data_split import Subject
 
 
+# todo: I think this .py file should be removed
 # -----------------
 # Convenient dataclasses
 # -----------------
