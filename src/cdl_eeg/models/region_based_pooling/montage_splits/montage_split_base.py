@@ -19,7 +19,7 @@ class MontageSplitBase(abc.ABC):
 
         Returns
         -------
-        cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit
+        cdl_eeg.models.region_based_pooling.utils.CHANNELS_IN_MONTAGE_SPLIT
         """
 
     @abc.abstractmethod
