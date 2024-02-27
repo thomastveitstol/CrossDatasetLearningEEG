@@ -24,24 +24,6 @@ ELECTRODES_3D = Dict[str, Tuple[float, float, float]]
 CHANNELS_IN_MONTAGE_SPLIT = Dict[RegionID, CHANNELS_NAMES]
 
 
-# todo: somewhat annoying to work with these. e.g. 'ch_name' in ChannelsInRegion should run 'ch_name' in
-#  ChannelsInRegion.ch_names
-@dataclasses.dataclass(frozen=True)
-class ChannelsInRegionSplit:
-    """
-    Use this class to store the channel names inside the regions of a channel split. Following the notation from the
-    Region Based Pooling paper (Tveitstøl et al., 2023, submitted), it is in mathematical terms
-    {(R^(i)_1 cap C, R^(i)_2 cap C, ..., R^(i)_n cap C)}
-
-    # todo: update to 'montage split'
-    """
-    ch_names: Dict[RegionID, CHANNELS_NAMES]  # As of Python version >= 3.7, dicts are ordered
-
-    def __len__(self) -> int:
-        """The length of a ChannelsInRegionSplit() object should correspond to the number of regions"""
-        return len(self.ch_names)
-
-
 # --------------------
 # Functions
 # --------------------
