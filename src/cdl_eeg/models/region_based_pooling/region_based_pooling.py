@@ -301,11 +301,15 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
     >>> my_pooling_kwargs = {"num_regions": (3, 7, 4), "num_kernels": 43, "max_receptive_field": 37}
     >>> my_split_methods = ("VoronoiSplit", "VoronoiSplit", "VoronoiSplit")
     >>> my_box = {"x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1}
-    >>> my_split_kwargs = ({"num_points": 3, **my_box}, {"num_points": 7, **my_box}, {"num_points": 4, **my_box})
+    >>> my_split_kwargs = ({"min_nodes": 1, "channel_systems": ("HatlestadHall",), **my_box},
+    ...                    {"min_nodes": 1, "channel_systems": ("HatlestadHall",), **my_box},
+    ...                    {"min_nodes": 1, "channel_systems": ("HatlestadHall",), **my_box})
     >>> my_model = MultiChannelSplitsRegionBasedPooling(pooling_method=my_pooling_method,
     ...                                                 pooling_method_kwargs=my_pooling_kwargs,
     ...                                                 split_methods=my_split_methods,
-    ...                                                 split_methods_kwargs=my_split_kwargs)
+    ...                                                 split_methods_kwargs=my_split_kwargs,
+    ...                                                 use_cmmn_layer=True,
+    ...                                                 cmmn_kwargs={"kernel_size": 32})
     >>> my_model.supports_precomputing
     True
     """
@@ -560,28 +564,25 @@ class RegionBasedPooling(nn.Module):
     Examples
     --------
     >>> p_method_0 = "MultiCSSharedRocket"
-    >>> p_kwargs_0 = {"num_regions": (3, 7, 4), "num_kernels": 43, "max_receptive_field": 37}
+    >>> p_kwargs_0 = {"num_regions": (1, 1, 1), "num_kernels": 43, "max_receptive_field": 37}
     >>> s_methods_0 = ("VoronoiSplit", "VoronoiSplit", "VoronoiSplit")
     >>> my_box = {"x_min": 0, "x_max": 1, "y_min": 0, "y_max": 1}
-    >>> s_kwargs_0 = ({"num_points": 3, **my_box}, {"num_points": 7, **my_box}, {"num_points": 4, **my_box})
+    >>> s_kwargs_0 = ({"min_nodes": 1, "channel_systems": ("HatlestadHall",),  **my_box},
+    ...               {"min_nodes": 1, "channel_systems": ("HatlestadHall",), **my_box},
+    ...               {"min_nodes": 1, "channel_systems": ("HatlestadHall",), **my_box})
     >>> design_0 = RBPDesign(pooling_type=RBPPoolType.MULTI_CS, pooling_methods=p_method_0,
     ...                      pooling_methods_kwargs=p_kwargs_0, split_methods=s_methods_0,
     ...                      split_methods_kwargs=s_kwargs_0, num_designs=2)
-    >>> p_methods_1 = "SingleCSSharedRocket"
-    >>> p_kwargs_1 = {"num_regions": 8, "num_kernels": 100, "max_receptive_field": 200}
-    >>> s_methods_1 = "VoronoiSplit"
-    >>> s_kwargs_1 = {"num_points": 8, **my_box}
-    >>> design_1 = RBPDesign(pooling_type=RBPPoolType.SINGLE_CS, pooling_methods=p_methods_1,
+    >>> p_method_1 = "MultiCSSharedRocket"
+    >>> p_kwargs_1 = {"num_regions": (1, 1, 1), "num_kernels": 32, "max_receptive_field": 11}
+    >>> s_methods_1 = ("VoronoiSplit", "VoronoiSplit", "VoronoiSplit")
+    >>> s_kwargs_1 = ({"min_nodes": 1, "channel_systems": ("HatlestadHall",),  **my_box},
+    ...               {"min_nodes": 1, "channel_systems": ("HatlestadHall",), **my_box},
+    ...               {"min_nodes": 1, "channel_systems": ("HatlestadHall",), **my_box})
+    >>> design_1 = RBPDesign(pooling_type=RBPPoolType.MULTI_CS, pooling_methods=p_method_1,
     ...                      pooling_methods_kwargs=p_kwargs_1, split_methods=s_methods_1,
     ...                      split_methods_kwargs=s_kwargs_1, num_designs=3)
-    >>> p_methods_2 = "SingleCSMean"
-    >>> p_kwargs_2 = {}
-    >>> s_methods_2 = "VoronoiSplit"
-    >>> s_kwargs_2 = {"num_points": 11, **my_box}
-    >>> design_2 = RBPDesign(pooling_type=RBPPoolType.SINGLE_CS, pooling_methods=p_methods_2,
-    ...                      pooling_methods_kwargs=p_kwargs_2, split_methods=s_methods_2,
-    ...                      split_methods_kwargs=s_kwargs_2)
-    >>> _ = RegionBasedPooling((design_0, design_1, design_2))
+    >>> _ = RegionBasedPooling((design_0, design_1))
     """
 
     def __init__(self, rbp_designs):
