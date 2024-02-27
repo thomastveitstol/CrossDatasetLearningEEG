@@ -9,7 +9,7 @@ from shapely import Polygon, LineString, Point
 
 from cdl_eeg.data.datasets.getter import get_channel_system
 from cdl_eeg.models.region_based_pooling.montage_splits.montage_split_base import MontageSplitBase
-from cdl_eeg.models.region_based_pooling.utils import RegionID, ChannelsInRegionSplit, project_to_2d
+from cdl_eeg.models.region_based_pooling.utils import RegionID, project_to_2d
 
 
 # -----------------
@@ -544,7 +544,7 @@ class CentroidPolygons(MontageSplitBase):
 
         Returns
         -------
-        ChannelsInRegionSplit
+        cdl_eeg.models.region_based_pooling.utils.CHANNELS_IN_MONTAGE_SPLIT
         """
         # Make a 2D-projection
         electrodes_2d = project_to_2d(electrode_positions=electrodes_3d)
@@ -565,7 +565,7 @@ class CentroidPolygons(MontageSplitBase):
         channels_in_regions = {reg: channels_in_regions[reg] for reg in ordered_regions}
 
         # Return with correct type
-        return ChannelsInRegionSplit({id_: tuple(ch_names) for id_, ch_names in channels_in_regions.items()})
+        return {id_: tuple(ch_names) for id_, ch_names in channels_in_regions.items()}
 
     # ---------------
     # Methods for plotting
