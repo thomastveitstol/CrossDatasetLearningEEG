@@ -24,7 +24,9 @@ from cdl_eeg.models.region_based_pooling.pooling_modules.pooling_base import pre
 # ---------------------
 class MultiCSSharedRocket(MultiMontageSplitsPoolingBase):
     """
-    Same as SingleCSSharedRocket, but the ROCKET-based features are shared across multiple channel/region splits
+    Pooling by linear combination of the channels, where the importance score is computed from ROCKET-based features and
+    the ROCKET kernels are sharedacross all regions in the channel/region split. The ROCKET-based features are shared
+    across multiple montage splits
 
     This class is compatible with having different datasets in the same batch
 
