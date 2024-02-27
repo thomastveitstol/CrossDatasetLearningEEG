@@ -2,70 +2,8 @@ from typing import Dict, Tuple
 
 import torch
 
-from cdl_eeg.models.region_based_pooling.pooling_modules.univariate_rocket import MultiCSSharedRocket, \
-    SingleCSSharedRocket
+from cdl_eeg.models.region_based_pooling.pooling_modules.univariate_rocket import MultiCSSharedRocket
 from cdl_eeg.models.region_based_pooling.utils import RegionID, CHANNELS_IN_MONTAGE_SPLIT
-
-
-def test_single_cs_shared_rocket_forward():
-    """Test forward method of SingleCSSharedRocket. Tests output type and shape"""
-    # ---------------
-    # Define model
-    # ---------------
-    # Hyperparameters
-    num_regions = 7
-    num_kernels = 100
-    max_receptive_field = 48
-
-    # Define model
-    model = SingleCSSharedRocket(num_regions, num_kernels=num_kernels, max_receptive_field=max_receptive_field)
-
-    # ---------------
-    # Prepare inputs to forward method
-    # ---------------
-    # Create dummy data  todo: improve dummy data usage
-    channel_split_0 = {RegionID(0): ("A", "C", "E"),
-                       RegionID(1): ("C", "E", "B", "A"),
-                       RegionID(2): ("F",),
-                       RegionID(3): ("C", "B"),
-                       RegionID(4): ("F", "E", "B", "A", "C"),
-                       RegionID(5): ("D", "C", "B", "A"),
-                       RegionID(6): ("C", "E", "B", "A", "F", "D")}
-    channel_name_to_index_0 = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5}
-
-    channel_split_1 = {RegionID(0): ("c", "t", "q", "b"),
-                       RegionID(1): ("q", "c"),
-                       RegionID(2): ("s",),
-                       RegionID(3): ("h",),
-                       RegionID(4): ("j", "e", "r", "k", "j", "w", "q"),
-                       RegionID(5): ("e", "r", "b", "a"),
-                       RegionID(6): ("s", "q", "w")}
-    channel_name_to_index_1 = {"q": 0, "w": 1, "e": 2, "r": 3, "t": 4, "b": 5, "h": 6, "j": 7, "c": 8, "s": 9, "k": 10,
-                               "l": 11, "a": 12}
-
-    batch_size_0, batch_size_1 = 17, 8
-    time_steps = 2_000
-    data = {"d0": torch.rand(batch_size_0, len(channel_name_to_index_0), time_steps),
-            "d1": torch.rand(batch_size_1, len(channel_name_to_index_1), time_steps)}
-
-    # ---------------
-    # Pre-compute and run forward method
-    # ---------------
-    pre_computed = model.pre_compute(data)
-    outputs = model(data, pre_computed=pre_computed, channel_splits={"d0": channel_split_0, "d1": channel_split_1},
-                    channel_name_to_index={"d0": channel_name_to_index_0, "d1": channel_name_to_index_1})
-
-    # ---------------
-    # Tests
-    # todo: test that the matrix multiplication is safe and as expected
-    # ---------------
-    # Type check
-    assert isinstance(outputs, torch.Tensor), f"Expected output to be a torch.Tensor, but found {type(outputs)}"
-
-    # Shape check
-    expected_batch_size = batch_size_0 + batch_size_1
-    assert outputs.size() == torch.Size([expected_batch_size, num_regions, time_steps]), \
-        f"Expected size={torch.Size([expected_batch_size, num_regions, time_steps])}, but found size={outputs.size()}"
 
 
 def test_multi_cs_shared_rocket_forward():
