@@ -250,7 +250,6 @@ if __name__ == "__main__":
     from matplotlib import pyplot
 
     from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
-    from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
 
     # Create regions
     vor = VoronoiSplit(channel_systems=("YulinWang", "HatlestadHall", "Miltiadous"), min_nodes=1, x_min=-.17, x_max=.17,
@@ -271,8 +270,8 @@ if __name__ == "__main__":
             # Do not scatter plot empty regions
             continue
 
-        positions_3d = Electrodes3D({ch_name: position for ch_name, position in my_positions.positions.items()
-                                     if ch_name in channel_names.ch_names})
+        positions_3d = {ch_name: position for ch_name, position in my_positions.items()
+                        if ch_name in channel_names.ch_names}
         pyplot.scatter(*zip(*project_to_2d(positions_3d).positions.values()))
 
     pyplot.show()
