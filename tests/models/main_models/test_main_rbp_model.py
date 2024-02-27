@@ -32,14 +32,14 @@ def test_forward():
     # ----------------
     # Channel system 1
     montage_1 = mne.channels.make_standard_montage("GSN-HydroCel-129")
-    electrode_positions_1 = Electrodes3D(montage_1.get_positions()["ch_pos"])
+    electrode_positions_1 = montage_1.get_positions()["ch_pos"]
     ch_name_to_idx_1 = {name: i for i, name in enumerate(electrode_positions_1.positions)}
     channel_system_1 = ChannelSystem(name="TestName1", channel_name_to_index=ch_name_to_idx_1,
                                      electrode_positions=electrode_positions_1)
 
     # Channel system 2
     montage_2 = mne.channels.make_standard_montage("biosemi64")
-    electrode_positions_2 = Electrodes3D(montage_2.get_positions()["ch_pos"])
+    electrode_positions_2 = montage_2.get_positions()["ch_pos"]
     ch_name_to_idx_2 = {name: i for i, name in enumerate(electrode_positions_2.positions)}
     channel_system_2 = ChannelSystem(name="TestName2", channel_name_to_index=ch_name_to_idx_2,
                                      electrode_positions=electrode_positions_2)
