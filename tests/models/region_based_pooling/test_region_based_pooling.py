@@ -5,7 +5,7 @@ import torch
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.models.region_based_pooling.region_based_pooling import SingleChannelSplitRegionBasedPooling, \
     MultiChannelSplitsRegionBasedPooling, RBPDesign, RBPPoolType, RegionBasedPooling
-from cdl_eeg.models.region_based_pooling.utils import Electrodes3D, ChannelsInRegionSplit
+from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit
 
 
 # ------------------------
@@ -23,14 +23,14 @@ def test_single_cs_fit_channel_system():
 
     # Channel system 1
     montage_1 = mne.channels.make_standard_montage("GSN-HydroCel-129")
-    electrode_positions_1 = Electrodes3D(montage_1.get_positions()["ch_pos"])
+    electrode_positions_1 = montage_1.get_positions()["ch_pos"]
     ch_name_to_idx_1 = {name: i for i, name in enumerate(electrode_positions_1.positions)}
     channel_system_1 = ChannelSystem(name="TestName1", channel_name_to_index=ch_name_to_idx_1,
                                      electrode_positions=electrode_positions_1)
 
     # Channel system 2
     montage_2 = mne.channels.make_standard_montage("biosemi64")
-    electrode_positions_2 = Electrodes3D(montage_2.get_positions()["ch_pos"])
+    electrode_positions_2 = montage_2.get_positions()["ch_pos"]
     ch_name_to_idx_2 = {name: i for i, name in enumerate(electrode_positions_2.positions)}
     channel_system_2 = ChannelSystem(name="TestName2", channel_name_to_index=ch_name_to_idx_2,
                                      electrode_positions=electrode_positions_2)
@@ -100,14 +100,14 @@ def test_single_cs_forward():
 
     # Channel system 1
     montage_1 = mne.channels.make_standard_montage("GSN-HydroCel-129")
-    electrode_positions_1 = Electrodes3D(montage_1.get_positions()["ch_pos"])
+    electrode_positions_1 = montage_1.get_positions()["ch_pos"]
     ch_name_to_idx_1 = {name: i for i, name in enumerate(electrode_positions_1.positions)}
     channel_system_1 = ChannelSystem(name="TestName1", channel_name_to_index=ch_name_to_idx_1,
                                      electrode_positions=electrode_positions_1)
 
     # Channel system 2
     montage_2 = mne.channels.make_standard_montage("biosemi64")
-    electrode_positions_2 = Electrodes3D(montage_2.get_positions()["ch_pos"])
+    electrode_positions_2 = montage_2.get_positions()["ch_pos"]
     ch_name_to_idx_2 = {name: i for i, name in enumerate(electrode_positions_2.positions)}
     channel_system_2 = ChannelSystem(name="TestName2", channel_name_to_index=ch_name_to_idx_2,
                                      electrode_positions=electrode_positions_2)
@@ -178,14 +178,14 @@ def test_multi_cs_fit_channel_system():
 
     # Channel system 1
     montage_1 = mne.channels.make_standard_montage("GSN-HydroCel-129")
-    electrode_positions_1 = Electrodes3D(montage_1.get_positions()["ch_pos"])
+    electrode_positions_1 = montage_1.get_positions()["ch_pos"]
     ch_name_to_idx_1 = {name: i for i, name in enumerate(electrode_positions_1.positions)}
     channel_system_1 = ChannelSystem(name="TestName1", channel_name_to_index=ch_name_to_idx_1,
                                      electrode_positions=electrode_positions_1)
 
     # Channel system 2
     montage_2 = mne.channels.make_standard_montage("biosemi64")
-    electrode_positions_2 = Electrodes3D(montage_2.get_positions()["ch_pos"])
+    electrode_positions_2 = montage_2.get_positions()["ch_pos"]
     ch_name_to_idx_2 = {name: i for i, name in enumerate(electrode_positions_2.positions)}
     channel_system_2 = ChannelSystem(name="TestName2", channel_name_to_index=ch_name_to_idx_2,
                                      electrode_positions=electrode_positions_2)
@@ -282,14 +282,14 @@ def test_multi_cs_forward():
 
     # Channel system 1
     montage_1 = mne.channels.make_standard_montage("GSN-HydroCel-129")
-    electrode_positions_1 = Electrodes3D(montage_1.get_positions()["ch_pos"])
+    electrode_positions_1 = montage_1.get_positions()["ch_pos"]
     ch_name_to_idx_1 = {name: i for i, name in enumerate(electrode_positions_1.positions)}
     channel_system_1 = ChannelSystem(name="TestName1", channel_name_to_index=ch_name_to_idx_1,
                                      electrode_positions=electrode_positions_1)
 
     # Channel system 2
     montage_2 = mne.channels.make_standard_montage("biosemi64")
-    electrode_positions_2 = Electrodes3D(montage_2.get_positions()["ch_pos"])
+    electrode_positions_2 = montage_2.get_positions()["ch_pos"]
     ch_name_to_idx_2 = {name: i for i, name in enumerate(electrode_positions_2.positions)}
     channel_system_2 = ChannelSystem(name="TestName2", channel_name_to_index=ch_name_to_idx_2,
                                      electrode_positions=electrode_positions_2)
@@ -365,14 +365,14 @@ def test_main_forward():
 
     # Channel system 1
     montage_1 = mne.channels.make_standard_montage("GSN-HydroCel-129")
-    electrode_positions_1 = Electrodes3D(montage_1.get_positions()["ch_pos"])
+    electrode_positions_1 = montage_1.get_positions()["ch_pos"]
     ch_name_to_idx_1 = {name: i for i, name in enumerate(electrode_positions_1.positions)}
     channel_system_1 = ChannelSystem(name="TestName1", channel_name_to_index=ch_name_to_idx_1,
                                      electrode_positions=electrode_positions_1)
 
     # Channel system 2
     montage_2 = mne.channels.make_standard_montage("biosemi64")
-    electrode_positions_2 = Electrodes3D(montage_2.get_positions()["ch_pos"])
+    electrode_positions_2 = montage_2.get_positions()["ch_pos"]
     ch_name_to_idx_2 = {name: i for i, name in enumerate(electrode_positions_2.positions)}
     channel_system_2 = ChannelSystem(name="TestName2", channel_name_to_index=ch_name_to_idx_2,
                                      electrode_positions=electrode_positions_2)
