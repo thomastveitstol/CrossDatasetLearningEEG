@@ -433,11 +433,10 @@ class RBPConvMMN:
                 representative_psds[dataset_name][i] = dict()
 
                 # Loop through all regions
-                for region_id, channels in montage_split.ch_names.items():
+                for region_id, channels in montage_split.items():
                     # Extract the indices of the channels within the region
                     allowed_indices = channel_names_to_indices(
-                        ch_names=channels.ch_names,
-                        channel_name_to_index=channel_systems[dataset_name].channel_name_to_index
+                        ch_names=channels, channel_name_to_index=channel_systems[dataset_name].channel_name_to_index
                     )
 
                     # Get the sampling frequency from CMMN layer if None is provided
@@ -529,7 +528,7 @@ class RBPConvMMN:
         # All region IDs should be the same (including order)
         _region_ids = []
         for splits in self._channel_splits.values():
-            _region_ids.append(tuple(tuple(split.ch_names.keys()) for split in splits))
+            _region_ids.append(tuple(tuple(split.keys()) for split in splits))
         assert len(set(_region_ids)) == 1, f"Inconsistency in Region IDs: {set(_region_ids)}"
 
     def fit_psd_barycenters(self, data, *, channel_systems: Dict[str, ChannelSystem], sampling_freq=None):
