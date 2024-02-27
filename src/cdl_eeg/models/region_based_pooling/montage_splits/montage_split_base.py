@@ -15,7 +15,7 @@ class MontageSplitBase(abc.ABC):
 
         Parameters
         ----------
-        electrodes_3d : cdl_eeg.models.region_based_pooling.utils.Electrodes3D
+        electrodes_3d : cdl_eeg.models.region_based_pooling.utils.ELECTRODES_3D
 
         Returns
         -------
