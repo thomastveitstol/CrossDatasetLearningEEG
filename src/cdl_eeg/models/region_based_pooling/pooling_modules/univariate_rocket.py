@@ -95,7 +95,7 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
         region_representations = torch.empty(size=(batch, self.num_regions, time_steps)).to(x.device)
 
         # Loop through all regions
-        for i, (fc_module, channels) in enumerate(zip(self._fc_modules, channel_split.ch_names.values())):
+        for i, (fc_module, channels) in enumerate(zip(self._fc_modules, channel_split.values())):
             # Extract the indices of the legal channels for this region
             allowed_node_indices = channel_names_to_indices(ch_names=channels,
                                                             channel_name_to_index=channel_name_to_index)
@@ -130,7 +130,7 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
             channel_name_to_index maps correctly)
         pre_computed : dict[str, torch.Tensor]
             Pre-computed features of all channels (as in the input 'x') todo: can this be improved memory-wise?
-        channel_splits : dict[str, cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit]
+        channel_splits : dict[str, cdl_eeg.models.region_based_pooling.utils.CHANNELS_IN_MONTAGE_SPLIT]
         channel_name_to_index : dict[str, dict[str, int]]
 
         Returns
@@ -256,7 +256,7 @@ class MultiCSSharedRocket(MultiMontageSplitsPoolingBase):
             region_representations = torch.empty(size=(batch, num_regions, time_steps)).to(x.device)
 
             # Loop through all regions  todo: this assumes that the channel split keys are always the same order
-            for i, (fc_module, channels) in enumerate(zip(fc_modules, channel_split.ch_names.values())):
+            for i, (fc_module, channels) in enumerate(zip(fc_modules, channel_split.values())):
                 # Extract the indices of the legal channels for this region
                 allowed_node_indices = channel_names_to_indices(ch_names=channels,
                                                                 channel_name_to_index=channel_name_to_index)
@@ -296,7 +296,7 @@ class MultiCSSharedRocket(MultiMontageSplitsPoolingBase):
             channel_name_to_index maps correctly)
         pre_computed : dict[str, torch.Tensor]
             Pre-computed features of all channels (as in the input 'x') todo: can this be improved memory-wise?
-        channel_splits : dict[str, tuple[cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit, ...]]
+        channel_splits : dict[str, tuple[cdl_eeg.models.region_based_pooling.utils.CHANNELS_IN_MONTAGE_SPLIT, ...]]
         channel_name_to_index : dict[str, dict[str, int]]
 
         Returns
