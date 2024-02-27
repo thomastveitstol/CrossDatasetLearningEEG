@@ -9,7 +9,7 @@ from shapely import Polygon, LineString, Point
 
 from cdl_eeg.data.datasets.getter import get_channel_system
 from cdl_eeg.models.region_based_pooling.montage_splits.montage_split_base import MontageSplitBase
-from cdl_eeg.models.region_based_pooling.utils import RegionID, ChannelsInRegionSplit, ChannelsInRegion, project_to_2d
+from cdl_eeg.models.region_based_pooling.utils import RegionID, ChannelsInRegionSplit, project_to_2d
 
 
 # -----------------
@@ -565,8 +565,7 @@ class CentroidPolygons(MontageSplitBase):
         channels_in_regions = {reg: channels_in_regions[reg] for reg in ordered_regions}
 
         # Return with correct type
-        return ChannelsInRegionSplit({id_: ChannelsInRegion(tuple(ch_names))
-                                      for id_, ch_names in channels_in_regions.items()})
+        return ChannelsInRegionSplit({id_: tuple(ch_names) for id_, ch_names in channels_in_regions.items()})
 
     # ---------------
     # Methods for plotting
@@ -896,7 +895,7 @@ if __name__ == "__main__":
     # Loop through to plot all regions separately
     for region_, electrodes in my_placed_electrodes.ch_names.items():
         # Get all channels and their positions
-        positions_ = tuple(my_nodes_2d[ch_name] for ch_name in electrodes.ch_names)
+        positions_ = tuple(my_nodes_2d[ch_name] for ch_name in electrodes)
         x_, y_ = zip(*positions_)
         pyplot.scatter(x_, y_)
 

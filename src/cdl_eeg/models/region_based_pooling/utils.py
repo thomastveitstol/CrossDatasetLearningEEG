@@ -8,6 +8,8 @@ from mne.transforms import _cart_to_sph, _pol_to_cart
 # --------------------
 # Types for type hinting
 # --------------------
+CHANNELS_NAMES = Tuple[str, ...]
+
 ELECTRODES_2D = Dict[str, Tuple[float, float]]
 ELECTRODES_3D = Dict[str, Tuple[float, float, float]]
 
@@ -46,7 +48,7 @@ class ChannelsInRegionSplit:
 
     # todo: update to 'montage split'
     """
-    ch_names: Dict[RegionID, ChannelsInRegion]  # As of Python version >= 3.7, dicts are ordered
+    ch_names: Dict[RegionID, CHANNELS_NAMES]  # As of Python version >= 3.7, dicts are ordered
 
     def __len__(self) -> int:
         """The length of a ChannelsInRegionSplit() object should correspond to the number of regions"""

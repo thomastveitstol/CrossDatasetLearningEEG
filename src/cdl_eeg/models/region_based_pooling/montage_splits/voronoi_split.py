@@ -7,7 +7,7 @@ from shapely.geometry import Polygon, Point
 
 from cdl_eeg.data.datasets.getter import get_channel_system
 from cdl_eeg.models.region_based_pooling.montage_splits.montage_split_base import MontageSplitBase
-from cdl_eeg.models.region_based_pooling.utils import RegionID, project_to_2d, ChannelsInRegionSplit, ChannelsInRegion
+from cdl_eeg.models.region_based_pooling.utils import RegionID, project_to_2d, ChannelsInRegionSplit
 from cdl_eeg.models.transformations.utils import UnivariateUniform
 
 
@@ -56,7 +56,7 @@ class VoronoiSplit(MontageSplitBase):
                 print(f"Electrode {electrode_name} not contained in any polygon")
 
         # Return with correct type
-        return ChannelsInRegionSplit({id_: ChannelsInRegion(tuple(ch_names)) for id_, ch_names in chs_in_regs.items()})
+        return ChannelsInRegionSplit({id_: tuple(ch_names) for id_, ch_names in chs_in_regs.items()})
 
     def plot(self, face_color="random", edge_color="black", line_width=2):
         _, ax = pyplot.subplots()
@@ -270,7 +270,7 @@ if __name__ == "__main__":
             continue
 
         positions_3d = {ch_name: position for ch_name, position in my_positions.items()
-                        if ch_name in channel_names.ch_names}
+                        if ch_name in channel_names}
         pyplot.scatter(*zip(*project_to_2d(positions_3d).values()))
 
     pyplot.show()

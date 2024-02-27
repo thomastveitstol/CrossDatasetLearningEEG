@@ -97,7 +97,7 @@ class SingleCSSharedRocket(SingleChannelSplitPoolingBase):
         # Loop through all regions
         for i, (fc_module, channels) in enumerate(zip(self._fc_modules, channel_split.ch_names.values())):
             # Extract the indices of the legal channels for this region
-            allowed_node_indices = channel_names_to_indices(ch_names=channels.ch_names,
+            allowed_node_indices = channel_names_to_indices(ch_names=channels,
                                                             channel_name_to_index=channel_name_to_index)
 
             # ---------------------
@@ -258,7 +258,7 @@ class MultiCSSharedRocket(MultiMontageSplitsPoolingBase):
             # Loop through all regions  todo: this assumes that the channel split keys are always the same order
             for i, (fc_module, channels) in enumerate(zip(fc_modules, channel_split.ch_names.values())):
                 # Extract the indices of the legal channels for this region
-                allowed_node_indices = channel_names_to_indices(ch_names=channels.ch_names,
+                allowed_node_indices = channel_names_to_indices(ch_names=channels,
                                                                 channel_name_to_index=channel_name_to_index)
 
                 # ---------------------
