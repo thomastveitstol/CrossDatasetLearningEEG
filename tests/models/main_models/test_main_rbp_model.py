@@ -19,7 +19,6 @@ from cdl_eeg.data.datasets.van_hees import VanHees
 from cdl_eeg.data.paths import get_raw_data_storage_path
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel, tensor_dict_to_device
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RBPDesign, RBPPoolType
-from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
 from cdl_eeg.models.transformations.frequency_slowing import FrequencySlowing
 from cdl_eeg.models.transformations.utils import UnivariateUniform
 
