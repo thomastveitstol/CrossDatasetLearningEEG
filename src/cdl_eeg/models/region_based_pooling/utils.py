@@ -6,6 +6,14 @@ from mne.transforms import _cart_to_sph, _pol_to_cart
 
 
 # --------------------
+# Convenient classes for regions and channels
+# --------------------
+@dataclasses.dataclass(frozen=True)
+class RegionID:
+    id: Union[int, str]
+
+
+# --------------------
 # Types for type hinting
 # --------------------
 CHANNELS_NAMES = Tuple[str, ...]
@@ -13,32 +21,11 @@ CHANNELS_NAMES = Tuple[str, ...]
 ELECTRODES_2D = Dict[str, Tuple[float, float]]
 ELECTRODES_3D = Dict[str, Tuple[float, float, float]]
 
-
-# --------------------
-# Convenient classes for regions and channels
-# todo: in general, I don't think these classes are good...
-# --------------------
-@dataclasses.dataclass(frozen=True)
-class RegionID:
-    id: Union[int, str]
+CHANNELS_IN_MONTAGE_SPLIT = Dict[RegionID, CHANNELS_NAMES]
 
 
 # todo: somewhat annoying to work with these. e.g. 'ch_name' in ChannelsInRegion should run 'ch_name' in
 #  ChannelsInRegion.ch_names
-class ChannelsInRegion(NamedTuple):
-    """
-    Use this class to store the channel names inside a region. The object created should contain all channel in
-    R^(i)_j cap C, following the notation from the Region Based Pooling paper (Tveitstøl et al., 2023, submitted)
-    """
-    ch_names: Tuple[str, ...]
-
-    def __len__(self) -> int:
-        """The length of a ChannelsInRegion() object should correspond to the number of channels in that region (given
-        the channel system). Following the notation from the Region Based Pooling paper (Tveitstøl et al., 2023,
-        submitted) this is |R^(i)_j cap C|"""
-        return len(self.ch_names)
-
-
 @dataclasses.dataclass(frozen=True)
 class ChannelsInRegionSplit:
     """

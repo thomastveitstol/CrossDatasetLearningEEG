@@ -18,7 +18,7 @@ from scipy import fft
 from scipy import signal
 
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem, channel_names_to_indices
-from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit, RegionID
+from cdl_eeg.models.region_based_pooling.utils import RegionID, CHANNELS_IN_MONTAGE_SPLIT
 
 
 class ConvMMN:
@@ -336,7 +336,7 @@ class RBPConvMMN:
         # todo: would it be interesting to try different kernel sizes for different montage splits?
         self._cmmn_layers = tuple(ConvMMN(kernel_size=kernel_size, sampling_freq=sampling_freq)
                                   for _ in range(num_montage_splits))
-        self._channel_splits: Dict[str, Tuple[ChannelsInRegionSplit, ...]] = dict()
+        self._channel_splits: Dict[str, Tuple[CHANNELS_IN_MONTAGE_SPLIT, ...]] = dict()
 
     # ---------------
     # Methods for applying CMMN
@@ -508,7 +508,7 @@ class RBPConvMMN:
 
         Parameters
         ----------
-        channel_splits : dict[str, tuple[ChannelsInRegionSplit, ...]]
+        channel_splits : dict[str, tuple[CHANNELS_IN_MONTAGE_SPLIT, ...]]
 
         Returns
         -------
