@@ -26,7 +26,7 @@ class SingleCSMean(SingleChannelSplitPoolingBase):
             A dict with keys being dataset names and values are tensors containing EEG data with
             shape=(batch, channels, time_steps). Note that the channels are correctly selected within this method, and
             the EEG data should be the full data matrix (such that channel_name_to_index maps correctly)
-        channel_splits : dict[str, cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit]
+        channel_splits : dict[str, cdl_eeg.models.region_based_pooling.utils.CHANNELS_IN_MONTAGE_SPLIT]
         channel_name_to_index : dict[str, dict[str, int]]
 
         Returns
@@ -35,11 +35,9 @@ class SingleCSMean(SingleChannelSplitPoolingBase):
 
         Examples
         --------
-        >>> from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit, RegionID
-        >>> my_channels_a = ChannelsInRegionSplit({RegionID(0): ("A", "C", "E"),
-        ...                                        RegionID(1): ("C", "E", "B", "A")})
-        >>> my_channels_b = ChannelsInRegionSplit({RegionID(0): ("E1", "E3", "E2"),
-        ...                                        RegionID(1): ("E2",)})
+        >>> from cdl_eeg.models.region_based_pooling.utils import RegionID
+        >>> my_channels_a = {RegionID(0): ("A", "C", "E"), RegionID(1): ("C", "E", "B", "A")}
+        >>> my_channels_b = {RegionID(0): ("E1", "E3", "E2"), RegionID(1): ("E2",)}
         >>> name_2_idx = {"a": {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5}, "b": {"E1": 0, "E2": 1, "E3": 2}}
         >>> my_model = SingleCSMean()
         >>> my_model({"a": torch.rand(size=(10, 6, 1000)), "b": torch.rand(size=(7, 3, 1000))},
@@ -73,7 +71,7 @@ def _forward_single_dataset(x, *, channel_split, channel_name_to_index):
 
     # Loop through all regions (dicts are ordered by default, meaning the ordering of the tensor will follow the
     # ordering of the dict keys)
-    for i, channels in enumerate(channel_split.ch_names.values()):
+    for i, channels in enumerate(channel_split.values()):
         # Extract the indices of the legal channels for this region
         allowed_node_indices = channel_names_to_indices(ch_names=channels, channel_name_to_index=channel_name_to_index)
 
