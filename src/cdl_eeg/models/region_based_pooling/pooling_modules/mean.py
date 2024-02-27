@@ -35,11 +35,11 @@ class SingleCSMean(SingleChannelSplitPoolingBase):
 
         Examples
         --------
-        >>> from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit, RegionID, ChannelsInRegion
-        >>> my_channels_a = ChannelsInRegionSplit({RegionID(0): ChannelsInRegion(("A", "C", "E")),
-        ...                                        RegionID(1): ChannelsInRegion(("C", "E", "B", "A"))})
-        >>> my_channels_b = ChannelsInRegionSplit({RegionID(0): ChannelsInRegion(("E1", "E3", "E2")),
-        ...                                        RegionID(1): ChannelsInRegion(("E2",))})
+        >>> from cdl_eeg.models.region_based_pooling.utils import ChannelsInRegionSplit, RegionID
+        >>> my_channels_a = ChannelsInRegionSplit({RegionID(0): ("A", "C", "E"),
+        ...                                        RegionID(1): ("C", "E", "B", "A")})
+        >>> my_channels_b = ChannelsInRegionSplit({RegionID(0): ("E1", "E3", "E2"),
+        ...                                        RegionID(1): ("E2",)})
         >>> name_2_idx = {"a": {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4, "F": 5}, "b": {"E1": 0, "E2": 1, "E3": 2}}
         >>> my_model = SingleCSMean()
         >>> my_model({"a": torch.rand(size=(10, 6, 1000)), "b": torch.rand(size=(7, 3, 1000))},
@@ -75,8 +75,7 @@ def _forward_single_dataset(x, *, channel_split, channel_name_to_index):
     # ordering of the dict keys)
     for i, channels in enumerate(channel_split.ch_names.values()):
         # Extract the indices of the legal channels for this region
-        allowed_node_indices = channel_names_to_indices(ch_names=channels.ch_names,
-                                                        channel_name_to_index=channel_name_to_index)
+        allowed_node_indices = channel_names_to_indices(ch_names=channels, channel_name_to_index=channel_name_to_index)
 
         # Compute region representation by averaging and insert it
         region_representations[:, i] = torch.mean(x[:, allowed_node_indices])  # Consider to keep dim in the future
