@@ -44,7 +44,7 @@ class VoronoiSplit(MontageSplitBase):
         electrodes_2d = project_to_2d(electrodes_3d)
 
         # Loop through all electrodes
-        for electrode_name, electrode_position in electrodes_2d.positions.items():
+        for electrode_name, electrode_position in electrodes_2d.items():
             # Try all polygons
             for polygon_id, polygon in self._voronoi.items():
                 # If the 2D coordinate is contained in the current polygon, append it
@@ -92,7 +92,7 @@ def _electrode_2d_to_tuple(electrodes_2d):
 
     Parameters
     ----------
-    electrodes_2d : cdl_eeg.models.region_based_pooling.utils.Electrodes2D
+    electrodes_2d : cdl_eeg.models.region_based_pooling.utils.ELECTRODES_2D
 
     Returns
     -------
@@ -100,11 +100,10 @@ def _electrode_2d_to_tuple(electrodes_2d):
 
     Examples
     --------
-    >>> from cdl_eeg.models.region_based_pooling.utils import Electrodes2D
-    >>> _electrode_2d_to_tuple(Electrodes2D({"a": (1, 2), "b": (6, 2)}))
+    >>> _electrode_2d_to_tuple({"a": (1, 2), "b": (6, 2)})
     ((1, 2), (6, 2))
     """
-    return tuple(tuple(pos) for pos in electrodes_2d.positions.values())
+    return tuple(tuple(pos) for pos in electrodes_2d.values())
 
 
 def _pruned_random_centroids(channel_systems, min_nodes, x_min, x_max, y_min, y_max, num_initial_centroids):
@@ -272,6 +271,6 @@ if __name__ == "__main__":
 
         positions_3d = {ch_name: position for ch_name, position in my_positions.items()
                         if ch_name in channel_names.ch_names}
-        pyplot.scatter(*zip(*project_to_2d(positions_3d).positions.values()))
+        pyplot.scatter(*zip(*project_to_2d(positions_3d).values()))
 
     pyplot.show()

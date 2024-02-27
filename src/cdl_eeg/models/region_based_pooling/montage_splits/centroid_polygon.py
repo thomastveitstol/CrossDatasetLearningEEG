@@ -551,7 +551,7 @@ class CentroidPolygons(MontageSplitBase):
 
         # Place all electrode using their 2D projections
         channels_in_regions: Dict[CPRegionID, List[str]] = dict()
-        for electrode_name, position in electrodes_2d.positions.items():
+        for electrode_name, position in electrodes_2d.items():
             # Place in region and store in dict
             region = self._place_single_node(node=Point2D(*position))
 
@@ -670,13 +670,13 @@ def _electrode_2d_to_point_tuple(electrodes_2d):
 
     Parameters
     ----------
-    electrodes_2d : cdl_eeg.models.region_based_pooling.utils.Electrodes2D
+    electrodes_2d : cdl_eeg.models.region_based_pooling.utils.ELECTRODES_2D
 
     Returns
     -------
     tuple[Point2D, ...]
     """
-    return tuple(Point2D(*pos) for pos in electrodes_2d.positions.values())
+    return tuple(Point2D(*pos) for pos in electrodes_2d.values())
 
 
 def _euclidean_distance(node_1, node_2):
@@ -876,7 +876,7 @@ if __name__ == "__main__":
 
     # 2D and numpy arrays
     my_nodes_2d = project_to_2d(my_nodes_3d)
-    my_points_ = tuple(Point2D(*node_) for node_ in my_nodes_2d.positions.values())
+    my_points_ = tuple(Point2D(*node_) for node_ in my_nodes_2d.values())
 
     # ------------------
     # Generate split and plot it
@@ -896,7 +896,7 @@ if __name__ == "__main__":
     # Loop through to plot all regions separately
     for region_, electrodes in my_placed_electrodes.ch_names.items():
         # Get all channels and their positions
-        positions_ = tuple(my_nodes_2d.positions[ch_name] for ch_name in electrodes.ch_names)
+        positions_ = tuple(my_nodes_2d[ch_name] for ch_name in electrodes.ch_names)
         x_, y_ = zip(*positions_)
         pyplot.scatter(x_, y_)
 

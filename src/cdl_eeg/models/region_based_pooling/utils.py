@@ -6,33 +6,16 @@ from mne.transforms import _cart_to_sph, _pol_to_cart
 
 
 # --------------------
-# Convenient classes for regions and channels
-# todo: in general, I don't think these classes are good...
+# Types for type hinting
 # --------------------
-@dataclasses.dataclass(frozen=True)
-class Electrodes2D:
-    """Class for 2D coordinates of multiple electrodes"""
-
-    positions: Dict[str, Tuple[float, float]]
-
-    def __getitem__(self, item):
-        """
-        Get item method
-
-        Parameters
-        ----------
-        item : str
-
-        Returns
-        -------
-        tuple[float, float]
-        """
-        return self.positions[item]
-
-
+ELECTRODES_2D = Dict[str, Tuple[float, float]]
 ELECTRODES_3D = Dict[str, Tuple[float, float, float]]
 
 
+# --------------------
+# Convenient classes for regions and channels
+# todo: in general, I don't think these classes are good...
+# --------------------
 @dataclasses.dataclass(frozen=True)
 class RegionID:
     id: Union[int, str]
@@ -88,16 +71,16 @@ def project_to_2d(electrode_positions):
 
     Returns
     -------
-    cdl_eeg.models.region_based_pooling.utils.Electrodes2D
+    cdl_eeg.models.region_based_pooling.utils.ELECTRODES_2D
         The 2D projection of the electrodes
 
     Examples
     --------
     >>> import mne
     >>> my_positions = mne.channels.make_standard_montage(kind="GSN-HydroCel-129").get_positions()["ch_pos"]
-    >>> tuple(project_to_2d(my_positions).positions.keys())[:3]
+    >>> tuple(project_to_2d(my_positions).keys())[:3]
     ('E1', 'E2', 'E3')
-    >>> tuple(project_to_2d(my_positions).positions.values())[:3]
+    >>> tuple(project_to_2d(my_positions).values())[:3]
     (array([0.07890224, 0.0752648 ]), array([0.05601906, 0.07102252]), array([0.03470422, 0.06856416]))
     """
     # ---------------------------
@@ -109,5 +92,4 @@ def project_to_2d(electrode_positions):
     out *= cartesian_coords[:, [0]] / (numpy.pi / 2.)
 
     # Convert to Dict and return
-    return Electrodes2D({channel_name: projection_2d for channel_name, projection_2d in
-                         zip(electrode_positions, out)})
+    return {channel_name: projection_2d for channel_name, projection_2d in zip(electrode_positions, out)}
