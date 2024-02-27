@@ -893,7 +893,7 @@ if __name__ == "__main__":
     my_placed_electrodes = my_split_.place_in_regions(my_nodes_3d)
 
     # Loop through to plot all regions separately
-    for region_, electrodes in my_placed_electrodes.ch_names.items():
+    for region_, electrodes in my_placed_electrodes.items():
         # Get all channels and their positions
         positions_ = tuple(my_nodes_2d[ch_name] for ch_name in electrodes)
         x_, y_ = zip(*positions_)
