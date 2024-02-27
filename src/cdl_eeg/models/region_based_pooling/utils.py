@@ -34,42 +34,6 @@ ELECTRODES_3D = Dict[str, Tuple[float, float, float]]
 
 
 @dataclasses.dataclass(frozen=True)
-class Electrodes3D:
-    """Class for cartesian coordinates of multiple electrodes"""
-    positions: Dict[str, Tuple[float, float, float]]
-
-    def __len__(self):
-        """
-        Length is the same as number of electrodes
-
-        Returns
-        -------
-        int
-            Number of electrodes
-
-        Examples
-        --------
-        >>> len(Electrodes3D({"Ch1": (.1, .0, 2), "Ch2": (.5, .9, 4.2), "Ch3": (.2, .11, .9), "Ch4": (1.1, 2.3, .6)}))
-        4
-        """
-        return len(self.positions)
-
-    def __getitem__(self, item):
-        """
-        Get item method
-
-        Parameters
-        ----------
-        item : str
-
-        Returns
-        -------
-        tuple[float, float, float]
-        """
-        return self.positions[item]
-
-
-@dataclasses.dataclass(frozen=True)
 class RegionID:
     id: Union[int, str]
 
