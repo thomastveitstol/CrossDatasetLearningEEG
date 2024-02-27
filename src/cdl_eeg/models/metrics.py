@@ -19,7 +19,7 @@ from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error,
 import torch
 from torch import nn
 
-from cdl_eeg.data.data_split import Subject
+from cdl_eeg.data.subject_split import Subject
 
 
 # ----------------

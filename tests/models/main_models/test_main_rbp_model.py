@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 
 from cdl_eeg.data.combined_datasets import LoadDetails, CombinedDatasets
 from cdl_eeg.data.data_generators.data_generator import SelfSupervisedDataGenerator
-from cdl_eeg.data.data_split import KFoldDataSplit
+from cdl_eeg.data.subject_split import KFoldDataSplit
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.rockhill_dataset import Rockhill

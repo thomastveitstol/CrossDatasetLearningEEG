@@ -4,7 +4,7 @@ import numpy
 import pytest
 
 from cdl_eeg.data.combined_datasets import LoadDetails, CombinedDatasets
-from cdl_eeg.data.data_split import Subject
+from cdl_eeg.data.subject_split import Subject
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.rockhill_dataset import Rockhill

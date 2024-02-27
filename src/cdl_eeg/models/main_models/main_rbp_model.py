@@ -7,7 +7,7 @@ import torch.nn as nn
 from sklearn.manifold import TSNE
 
 from cdl_eeg.data.data_generators.data_generator import strip_tensors
-from cdl_eeg.data.data_split import Subject
+from cdl_eeg.data.subject_split import Subject
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.models.domain_adaptation.domain_discriminators.getter import get_domain_discriminator
 from cdl_eeg.models.metrics import Histories, is_improved_model

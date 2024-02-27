@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 
-from cdl_eeg.data.data_split import Subject
+from cdl_eeg.data.subject_split import Subject
 
 
 class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]

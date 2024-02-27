@@ -1,163 +1,257 @@
+import abc
 import dataclasses
-from typing import Any, Tuple, Dict
+import itertools
+import random
+from typing import List, Tuple
 
-from cdl_eeg.data.data_split import Subject
+import numpy
 
 
-# todo: I think this .py file should be removed
 # -----------------
 # Convenient dataclasses
 # -----------------
 @dataclasses.dataclass(frozen=True)
-class Criterion:
-    """Criterion for a group within a split. (This is important mainly because it may be used as a key, as opposed to
-    mutable objects)"""
-    crit: Any
+class Subject:
+    """
+    Class for defining a subject. Convenient particularly when different datasets use the same subject IDs
+
+    Examples
+    --------
+    >>> Subject("Person", "Dataset")
+    Subject(subject_id='Person', dataset_name='Dataset')
+
+    Can be used as keys in a dict
+
+    >>> my_subject = {Subject("P1", "D1"): "this_is_a_value"}
+    >>> my_subject[Subject("P1", "D1")]
+    'this_is_a_value'
+
+    Attributes can also be obtained as if the class was a dict
+
+    >>> Subject("P1", "D1")["dataset_name"]
+    'D1'
+    """
+    subject_id: str
+    dataset_name: str
+
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+
+# -----------------
+# Base classes
+# -----------------
+class DataSplitBase(abc.ABC):
+
+    __slots__ = ()
+
+    @property
+    @abc.abstractmethod
+    def folds(self):
+        """
+        Get the folds
+
+        Returns
+        -------
+        tuple[tuple[Subject, ...], ...]
+        """
+
+
+# -----------------
+# Classes
+# -----------------
+class KFoldDataSplit(DataSplitBase):
+    """
+    Class for splitting the data into k folds. The different datasets are neglected
+
+    Examples
+    --------
+    >>> f1_drivers = {"Mercedes": ("Hamilton", "Russel", "Wolff"), "Red Bull": ("Verstappen", "Checo"),
+    ...               "Ferrari": ("Leclerc", "Smooth Sainz"), "McLaren": ("Norris", "Piastri"),
+    ...               "Aston Martin": ("Alonso", "Stroll"), "Haas": ("Magnussen", "Hülkenberg")}
+    >>> de_vries_points = 0
+    >>> my_folds = KFoldDataSplit(num_folds=3, dataset_subjects=f1_drivers, seed=de_vries_points).folds
+    >>> my_folds  # doctest: +NORMALIZE_WHITESPACE
+    ((Subject(subject_id='Russel', dataset_name='Mercedes'), Subject(subject_id='Stroll', dataset_name='Aston Martin'),
+      Subject(subject_id='Alonso', dataset_name='Aston Martin'), Subject(subject_id='Leclerc', dataset_name='Ferrari'),
+      Subject(subject_id='Magnussen', dataset_name='Haas')),
+     (Subject(subject_id='Wolff', dataset_name='Mercedes'), Subject(subject_id='Verstappen', dataset_name='Red Bull'),
+      Subject(subject_id='Norris', dataset_name='McLaren'), Subject(subject_id='Piastri', dataset_name='McLaren')),
+     (Subject(subject_id='Checo', dataset_name='Red Bull'), Subject(subject_id='Hamilton', dataset_name='Mercedes'),
+      Subject(subject_id='Hülkenberg', dataset_name='Haas'),
+      Subject(subject_id='Smooth Sainz', dataset_name='Ferrari')))
+    """
+
+    __slots__ = "_folds",
+
+    def __init__(self, *, num_folds, dataset_subjects, seed=None):
+        """
+        Initialise
+
+        Parameters
+        ----------
+        num_folds : int
+            Number of folds
+        dataset_subjects : dict[str, tuple[str, ...]]
+            Subject IDs. The keys are dataset names, the values are the subject IDs of the corresponding dataset
+        seed : int, optional
+            Seed for making the data split reproducible. If None, no seed is set
+
+        """
+        # Pool all subjects together
+        subjects = []
+        for dataset_name, subject_ids in dataset_subjects.items():
+            for sub_id in subject_ids:
+                subjects.append(Subject(subject_id=sub_id, dataset_name=dataset_name))
+
+        # Maybe make data split reproducible
+        if seed is not None:
+            random.seed(seed)
+
+        # Shuffle
+        random.shuffle(subjects)
+
+        # Perform split
+        split = numpy.array_split(subjects, num_folds)  # type: ignore[arg-type, var-annotated]
+
+        # Set attribute (and some type fix, type hinting and mypy stuff)
+        folds: List[Tuple[Subject, ...]] = []
+        for fold in split:
+            folds.append(tuple(fold))
+        self._folds = tuple(folds)
+
+    # ---------------
+    # Properties
+    # ---------------
+    @property
+    def folds(self):
+        return self._folds
+
+
+class SplitOnDataset(DataSplitBase):
+    """
+    Class for splitting the data based on the provided datasets only
+
+    >>> f1_drivers = {"Mercedes": ("Hamilton", "Russel", "Wolff"), "Red Bull": ("Verstappen", "Checo"),
+    ...               "Ferrari": ("Leclerc", "Smooth Sainz"), "McLaren": ("Norris", "Piastri"),
+    ...               "Aston Martin": ("Alonso", "Stroll"), "Haas": ("Magnussen", "Hülkenberg")}
+    >>> de_vries_points = 0
+    >>> my_folds = SplitOnDataset(dataset_subjects=f1_drivers, seed=de_vries_points).folds
+    >>> my_folds  # doctest: +NORMALIZE_WHITESPACE
+    ((Subject(subject_id='Magnussen', dataset_name='Haas'), Subject(subject_id='Hülkenberg', dataset_name='Haas')),
+     (Subject(subject_id='Hamilton', dataset_name='Mercedes'), Subject(subject_id='Wolff', dataset_name='Mercedes'),
+      Subject(subject_id='Russel', dataset_name='Mercedes')),
+     (Subject(subject_id='Alonso', dataset_name='Aston Martin'), Subject(subject_id='Stroll',
+                                                                         dataset_name='Aston Martin')),
+     (Subject(subject_id='Checo', dataset_name='Red Bull'), Subject(subject_id='Verstappen', dataset_name='Red Bull')),
+     (Subject(subject_id='Leclerc', dataset_name='Ferrari'), Subject(subject_id='Smooth Sainz',
+                                                                     dataset_name='Ferrari')),
+     (Subject(subject_id='Norris', dataset_name='McLaren'), Subject(subject_id='Piastri', dataset_name='McLaren')))
+    """
+
+    def __init__(self, dataset_subjects, *, seed=None):
+        """
+        Initialise
+
+        Parameters
+        ----------
+        dataset_subjects : dict[str, tuple[str, ...]]
+            Subject IDs. The keys are dataset names, the values are the subject IDs of the corresponding dataset
+        seed : int, optional
+            Seed for making the data split reproducible. If None, no seed is set
+        """
+        # Maybe make data split reproducible
+        if seed is not None:
+            random.seed(seed)
+
+        # Loop though the datasets
+        folds = []
+        for dataset_name, subject_ids in dataset_subjects.items():
+            # Fix type
+            sub_ids = [Subject(dataset_name=dataset_name, subject_id=subject_id) for subject_id in subject_ids]
+
+            # Shuffle
+            random.shuffle(sub_ids)
+
+            # Add it as a tuple to the folds
+            folds.append(tuple(sub_ids))
+
+        # Shuffle the folds (likely not necessary, but why not)
+        random.shuffle(folds)
+
+        # Set attribute
+        self._folds = tuple(folds)
+
+    # ---------------
+    # Properties
+    # ---------------
+    @property
+    def folds(self):
+        return self._folds
 
 
 # -----------------
 # Functions
 # -----------------
-def filter_subjects(subjects, inclusion_criteria):
+def get_data_split(split, **kwargs):
     """
-    Function for filtering out subjects not satisfying the provided inclusion criteria
+    Function for getting the specified data split
 
     Parameters
     ----------
-    subjects: tuple[cdl_eeg.data.data_split.Subject, ...]
-    inclusion_criteria : dict[str, tuple]
+    split : str
+    kwargs
 
     Returns
     -------
-    tuple[cdl_eeg.data.data_split.Subject, ...]
-
-    Examples
-    --------
-    >>> my_subjects = (
-    ...     Subject("P1", "D1"),
-    ...     Subject("P2", "D1"),
-    ...     Subject("P3", "D1"),
-    ...     Subject("P1", "D2"),
-    ...     Subject("P2", "D2"),
-    ...     Subject("P1", "D3"),
-    ...     Subject("P2", "D3"),
-    ...     Subject("P3", "D3")
-    >>> my_criteria = {"dataset_name": ("D1", "D2")}
-    >>> filter_subjects(my_subjects, inclusion_criteria=my_criteria)  # doctest: +NORMALIZE_WHITESPACE
-    (Subject(subject_id='P3', dataset_name='D1', details={'sex': 'female', 'age': 'young'}),
-     Subject(subject_id='P3', dataset_name='D3', details={'sex': 'female', 'age': 'young'}))
-
-    Multiple inclusion criteria is supported
-
-    >>> my_criteria = {"sex": ("female", "male",), "age": ("old",)}
-    >>> filter_subjects(my_subjects, inclusion_criteria=my_criteria)  # doctest: +NORMALIZE_WHITESPACE
-    (Subject(subject_id='P1', dataset_name='D1', details={'sex': 'male', 'age': 'old'}),
-     Subject(subject_id='P2', dataset_name='D1', details={'sex': 'male', 'age': 'old'}),
-     Subject(subject_id='P1', dataset_name='D2', details={'sex': 'female', 'age': 'old'}),
-     Subject(subject_id='P1', dataset_name='D3', details={'sex': 'male', 'age': 'old'}),
-     Subject(subject_id='P2', dataset_name='D3', details={'sex': 'female', 'age': 'old'}))
-
-    To split on dataset, it must be included in the details
-
-    >>> my_criteria = {"dataset_name": ("D1", "D3")}
-    >>> filter_subjects(my_subjects, inclusion_criteria=my_criteria)
-    ()
+    DataSplitBase
     """
-    # Initialise list of included subjects
-    included_subjects = []
+    # All available data splits must be included here
+    available_splits = (KFoldDataSplit, SplitOnDataset)
 
-    # Loop through all subjects
-    for subject in subjects:
-        # Loop through all inclusion criteria. They must all be fulfilled to be included
-        for filter_, criterion in inclusion_criteria.items():
-            # Check current inclusion criteria and break if not satisfied
-            # todo: sub optimal for e.g. age range
-            if filter_ not in subject.details or subject.details[filter_] not in criterion:
-                break
-        else:
-            # Never seen for-else? This will run if and only if the for-loop was finished without breaking or exception.
-            # You may check it out in this video by mCoding (I know he doesn't recommend it, but I kinda liked it in
-            # this case): https://www.youtube.com/watch?v=6Im38sF-sjo&t=283s
-            included_subjects.append(subject)
+    # Loop through and select the correct one
+    for split_class in available_splits:
+        if split == split_class.__name__:
+            return split_class(**kwargs)
 
-    return tuple(included_subjects)
+    # If no match, an error is raised
+    raise ValueError(f"The data split '{split}' was not recognised. Please select among the following: "
+                     f"{tuple(split_class.__name__ for split_class in available_splits)}")
 
 
-def make_subject_splits(subjects, splits):
+def leave_1_fold_out(i, folds):
     """
-    Function for splitting subjects into different groups
+    Method for selecting all subject except for one fold (the i-th fold)
 
     Parameters
     ----------
-    subjects : subjects: tuple[cdl_eeg.data.data_split.Subject, ...]
-    splits : dict[str, tuple]
+    i : int
+        Fold to not include
+    folds : tuple[tuple[Subject, ...], ...]
 
     Returns
     -------
-    dict[str, dict[Condition, tuple[cdl_eeg.data.data_split.Subject, ...]]]
-    # todo: consider extending Condition dataclass to include the split and the included subjects
+    tuple[Subject, ...]
 
     Examples
     --------
-    >>> my_subjects = (
-    ...     Subject("P1", "D1", details={"sex": "male", "cognition": "hc"}),
-    ...     Subject("P2", "D1", details={"sex": "male", "cognition": "hc"}),
-    ...     Subject("P3", "D1", details={"sex": "female", "cognition": "mci"}),
-    ...     Subject("P1", "D2", details={"sex": "female", "cognition": "ad"}),
-    ...     Subject("P2", "D2", details={"sex": "male", "cognition": "ad"}),
-    ...     Subject("P1", "D3", details={"sex": "male", "cognition": "mci"}),
-    ...     Subject("P2", "D3", details={"sex": "female", "cognition": "hc"}),
-    ...     Subject("P3", "D3", details={"sex": "female", "cognition": "mci"}))
-    >>> my_splits = {"sex": (("female",), ("male",)), "cognition": (("hc",), ("mci",), ("ad",), ("mci", "hc"))}
-    >>> my_outs = make_subject_splits(subjects=my_subjects, splits=my_splits)
-    >>> tuple(my_outs.keys())
-    ('sex', 'cognition')
-    >>> my_outs["sex"]  # doctest: +NORMALIZE_WHITESPACE
-    {Criterion(crit=('female',)):
-         (Subject(subject_id='P3', dataset_name='D1', details={'sex': 'female', 'cognition': 'mci'}),
-          Subject(subject_id='P1', dataset_name='D2', details={'sex': 'female', 'cognition': 'ad'}),
-          Subject(subject_id='P2', dataset_name='D3', details={'sex': 'female', 'cognition': 'hc'}),
-          Subject(subject_id='P3', dataset_name='D3', details={'sex': 'female', 'cognition': 'mci'})),
-     Criterion(crit=('male',)):
-         (Subject(subject_id='P1', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
-          Subject(subject_id='P2', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
-          Subject(subject_id='P2', dataset_name='D2', details={'sex': 'male', 'cognition': 'ad'}),
-          Subject(subject_id='P1', dataset_name='D3', details={'sex': 'male', 'cognition': 'mci'}))}
-    >>> my_outs["cognition"]  # doctest: +NORMALIZE_WHITESPACE
-    {Criterion(crit=('hc',)):
-         (Subject(subject_id='P1', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
-          Subject(subject_id='P2', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
-          Subject(subject_id='P2', dataset_name='D3', details={'sex': 'female', 'cognition': 'hc'})),
-     Criterion(crit=('mci',)):
-         (Subject(subject_id='P3', dataset_name='D1', details={'sex': 'female', 'cognition': 'mci'}),
-          Subject(subject_id='P1', dataset_name='D3', details={'sex': 'male', 'cognition': 'mci'}),
-          Subject(subject_id='P3', dataset_name='D3', details={'sex': 'female', 'cognition': 'mci'})),
-     Criterion(crit=('ad',)):
-         (Subject(subject_id='P1', dataset_name='D2', details={'sex': 'female', 'cognition': 'ad'}),
-          Subject(subject_id='P2', dataset_name='D2', details={'sex': 'male', 'cognition': 'ad'})),
-     Criterion(crit=('mci', 'hc')):
-         (Subject(subject_id='P1', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
-          Subject(subject_id='P2', dataset_name='D1', details={'sex': 'male', 'cognition': 'hc'}),
-          Subject(subject_id='P3', dataset_name='D1', details={'sex': 'female', 'cognition': 'mci'}),
-          Subject(subject_id='P1', dataset_name='D3', details={'sex': 'male', 'cognition': 'mci'}),
-          Subject(subject_id='P2', dataset_name='D3', details={'sex': 'female', 'cognition': 'hc'}),
-          Subject(subject_id='P3', dataset_name='D3', details={'sex': 'female', 'cognition': 'mci'}))}
+    >>> my_folds = ((Subject("TW", "Merc"), Subject("MV", "RB"), Subject("LN", "McL")),
+    ...             (Subject("YT", "AT"), Subject("CS", "F")), (Subject("CL", "F"), Subject("VB", "AR")),
+    ...             (Subject("FA", "AM"), Subject("LS", "AM"), Subject("DH", "RB")))
+    >>> leave_1_fold_out(2, my_folds)  # doctest: +NORMALIZE_WHITESPACE
+    (Subject(subject_id='TW', dataset_name='Merc'), Subject(subject_id='MV', dataset_name='RB'),
+     Subject(subject_id='LN', dataset_name='McL'), Subject(subject_id='YT', dataset_name='AT'),
+     Subject(subject_id='CS', dataset_name='F'), Subject(subject_id='FA', dataset_name='AM'),
+     Subject(subject_id='LS', dataset_name='AM'), Subject(subject_id='DH', dataset_name='RB'))
+    >>> leave_1_fold_out(-1, my_folds)  # doctest: +NORMALIZE_WHITESPACE
+    (Subject(subject_id='TW', dataset_name='Merc'), Subject(subject_id='MV', dataset_name='RB'),
+     Subject(subject_id='LN', dataset_name='McL'), Subject(subject_id='YT', dataset_name='AT'),
+     Subject(subject_id='CS', dataset_name='F'), Subject(subject_id='CL', dataset_name='F'),
+     Subject(subject_id='VB', dataset_name='AR'))
+
     """
-    # Loop through all desired splits (e.g. 'sex' and 'education')
-    subjects_split: Dict[str, Dict[Criterion, Tuple[Subject, ...]]] = dict()
-    for split, criteria in splits.items():
-        # Loop through the different criteria (e.g. 'male' and 'female' for sex split)
-        subjects_split[split] = dict()
-        for criterion in criteria:
-            c = criterion.crit if isinstance(criterion, Criterion) else criterion
+    # Handle negative index
+    i = len(folds) + i if i < 0 else i
 
-            # Loop through all subjects to append the ones which satisfy the criterion
-            included_subjects = []
-            for subject in subjects:
-                if split in subject.details and subject.details[split] in c:
-                    included_subjects.append(subject)
-
-            # Add the included subjects as criterion satisfied for the split
-            subjects_split[split][Criterion(crit=c)] = tuple(included_subjects)
-
-    return subjects_split
+    # Return as unpacked tuple
+    return tuple(itertools.chain(*tuple(fold for j, fold in enumerate(folds) if j != i)))

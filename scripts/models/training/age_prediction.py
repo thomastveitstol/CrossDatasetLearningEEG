@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader
 
 from cdl_eeg.data.combined_datasets import CombinedDatasets
 from cdl_eeg.data.data_generators.data_generator import DownstreamDataGenerator
-from cdl_eeg.data.data_split import get_data_split, leave_1_fold_out
+from cdl_eeg.data.subject_split import get_data_split, leave_1_fold_out
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
 from cdl_eeg.models.losses import get_loss_function
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
