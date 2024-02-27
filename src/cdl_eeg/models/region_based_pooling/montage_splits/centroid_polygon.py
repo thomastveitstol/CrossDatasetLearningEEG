@@ -540,7 +540,7 @@ class CentroidPolygons(MontageSplitBase):
 
         Parameters
         ----------
-        electrodes_3d : Electrodes3D
+        electrodes_3d : cdl_eeg.models.region_based_pooling.utils.ELECTRODES_3D
 
         Returns
         -------
@@ -863,8 +863,6 @@ if __name__ == "__main__":
 
     import mne
 
-    from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
-
     numpy.random.seed(7)
     random.seed(7)
 
@@ -877,7 +875,7 @@ if __name__ == "__main__":
     my_nodes_3d = {key: (value[0], value[1], value[2]) for key, value in my_nodes_3d.items()}
 
     # 2D and numpy arrays
-    my_nodes_2d = project_to_2d(Electrodes3D(my_nodes_3d))
+    my_nodes_2d = project_to_2d(my_nodes_3d)
     my_points_ = tuple(Point2D(*node_) for node_ in my_nodes_2d.positions.values())
 
     # ------------------
@@ -893,7 +891,7 @@ if __name__ == "__main__":
     # Plot the electrodes
     # ------------------
     # Place in regions
-    my_placed_electrodes = my_split_.place_in_regions(Electrodes3D(my_nodes_3d))
+    my_placed_electrodes = my_split_.place_in_regions(my_nodes_3d)
 
     # Loop through to plot all regions separately
     for region_, electrodes in my_placed_electrodes.ch_names.items():

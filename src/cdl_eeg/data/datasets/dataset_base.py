@@ -14,7 +14,7 @@ from matplotlib import pyplot
 from mne.transforms import _cart_to_sph, _pol_to_cart
 
 from cdl_eeg.data.paths import get_raw_data_storage_path, get_numpy_data_storage_path
-from cdl_eeg.models.region_based_pooling.utils import Electrodes3D
+from cdl_eeg.models.region_based_pooling.utils import ELECTRODES_3D
 
 
 # --------------------
@@ -38,14 +38,12 @@ class ChannelSystem:
     """Data class for channel systems"""
     name: str  # Should ideally be the same as dataset name
     channel_name_to_index: Dict[str, int]
-    electrode_positions: Electrodes3D
+    electrode_positions: ELECTRODES_3D
 
 
 class EEGDatasetBase(abc.ABC):
     """
     Base class for all datasets to be used
-
-    todo: use Electrodes3D more
     """
 
     __slots__ = "_name"
@@ -125,7 +123,7 @@ class EEGDatasetBase(abc.ABC):
                     warnings.filterwarnings("ignore", category=RuntimeWarning)  # todo
 
                     eeg_data.set_montage(
-                        mne.channels.make_dig_montage(ch_pos=self.channel_system.electrode_positions.positions)
+                        mne.channels.make_dig_montage(ch_pos=self.channel_system.electrode_positions)
                     )
 
                 eeg_data.interpolate_bads(method={"eeg": interpolation}, verbose=False)
@@ -405,7 +403,7 @@ class EEGDatasetBase(abc.ABC):
     @property
     def channel_system(self) -> ChannelSystem:
         return ChannelSystem(name=self.name, channel_name_to_index=self.channel_name_to_index(),
-                             electrode_positions=Electrodes3D(self.get_electrode_positions()))  # type: ignore[arg-type]
+                             electrode_positions=self.get_electrode_positions())
 
     # ----------------
     # Path methods
@@ -440,7 +438,7 @@ class EEGDatasetBase(abc.ABC):
 
         Returns
         -------
-        dict[str, tuple[float, float, float]]
+        ELECTRODES_3D
             Cartesian coordinates of the channels. Keys are channel names
         """
         if subject_id is None:
@@ -464,7 +462,7 @@ class EEGDatasetBase(abc.ABC):
 
         Returns
         -------
-        dict[str, tuple[float, float, float]]
+        ELECTRODES_3D
             Cartesian coordinates of the channels. Keys are channel names
         """
         raise NotImplementedError
@@ -475,7 +473,7 @@ class EEGDatasetBase(abc.ABC):
 
         Returns
         -------
-        dict[str, tuple[float, float, float]]
+        ELECTRODES_3D
             Cartesian coordinates of the channels. Keys are channel names
         """
         raise NotImplementedError

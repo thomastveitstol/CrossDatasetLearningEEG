@@ -30,6 +30,9 @@ class Electrodes2D:
         return self.positions[item]
 
 
+ELECTRODES_3D = Dict[str, Tuple[float, float, float]]
+
+
 @dataclasses.dataclass(frozen=True)
 class Electrodes3D:
     """Class for cartesian coordinates of multiple electrodes"""
@@ -116,7 +119,7 @@ def project_to_2d(electrode_positions):
 
     Parameters
     ----------
-    electrode_positions : cdl_eeg.models.region_based_pooling.utils.Electrodes3D
+    electrode_positions : cdl_eeg.models.region_based_pooling.utils.ELECTRODES_3D
         Electrodes to project
 
     Returns
@@ -128,19 +131,19 @@ def project_to_2d(electrode_positions):
     --------
     >>> import mne
     >>> my_positions = mne.channels.make_standard_montage(kind="GSN-HydroCel-129").get_positions()["ch_pos"]
-    >>> tuple(project_to_2d(Electrodes3D(my_positions)).positions.keys())[:3]
+    >>> tuple(project_to_2d(my_positions).positions.keys())[:3]
     ('E1', 'E2', 'E3')
-    >>> tuple(project_to_2d(Electrodes3D(my_positions)).positions.values())[:3]
+    >>> tuple(project_to_2d(my_positions).positions.values())[:3]
     (array([0.07890224, 0.0752648 ]), array([0.05601906, 0.07102252]), array([0.03470422, 0.06856416]))
     """
     # ---------------------------
     # Apply the same steps as _auto_topomap_coordinates
     # from MNE.transforms
     # ---------------------------
-    cartesian_coords = _cart_to_sph(tuple(electrode_positions.positions.values()))
+    cartesian_coords = _cart_to_sph(tuple(electrode_positions.values()))
     out = _pol_to_cart(cartesian_coords[:, 1:][:, ::-1])
     out *= cartesian_coords[:, [0]] / (numpy.pi / 2.)
 
     # Convert to Dict and return
     return Electrodes2D({channel_name: projection_2d for channel_name, projection_2d in
-                         zip(electrode_positions.positions, out)})
+                         zip(electrode_positions, out)})
