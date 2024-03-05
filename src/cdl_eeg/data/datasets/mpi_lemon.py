@@ -2,11 +2,13 @@ import os
 from typing import Tuple
 
 import boto3
+import numpy
+import pandas
 from botocore import UNSIGNED
 from botocore.client import Config
 import mne
 
-from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase
+from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, target_method
 
 
 class MPILemon(EEGDatasetBase):
@@ -33,6 +35,10 @@ class MPILemon(EEGDatasetBase):
     # ----------------
     # Loading methods
     # ----------------
+    def get_participants_tsv_path(self):
+        # todo: the method name says tsv, but it is a csv file...
+        return os.path.join(self.get_mne_path(), "Participants_MPILMBB_LEMON.csv")
+
     def get_subject_ids(self) -> Tuple[str, ...]:
         # TODO: I think that MPI Lemon has a participants.tsv file as well
         return tuple(os.listdir(self.get_mne_path()))
@@ -137,3 +143,24 @@ class MPILemon(EEGDatasetBase):
         # todo: make tests
         # TODO: channel present in the data is inconsistent!!!
         return {ch_name: i for i, ch_name in enumerate(self._channel_names)}
+
+    # ----------------
+    # Target methods
+    # ----------------
+    @target_method
+    def age(self, subject_ids):
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path())
+
+        # Setting age to the mean of lower and upper bound of the interval
+        age_intervals = df["Age"]
+        lower = numpy.array([int(age_interval.split("-")[0]) for age_interval in age_intervals])
+        upper = numpy.array([int(age_interval.split("-")[1]) for age_interval in age_intervals])
+
+        mean_age = (upper + lower) / 2
+
+        # Convert to dict
+        sub_id_to_age = {name: age for name, age in zip(df["Unnamed: 0"], mean_age)}
+
+        # Extract the ages of the subjects, in the same order as the input argument
+        return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
