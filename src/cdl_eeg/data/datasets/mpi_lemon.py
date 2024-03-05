@@ -1,5 +1,5 @@
 import os
-from typing import Tuple
+from typing import Tuple, Optional
 
 import boto3
 import numpy
@@ -18,7 +18,9 @@ class MPILemon(EEGDatasetBase):
     >>> MPILemon().name
     'mpi_lemon'
     >>> len(MPILemon().get_subject_ids()), MPILemon().get_subject_ids()[:4]
-    (203, ('sub-032341', 'sub-032380', 'sub-032360', 'sub-032453'))
+    (203, ('sub-032301', 'sub-032302', 'sub-032303', 'sub-032304'))
+    >>> len(MPILemon()._channel_names)
+    61
     """
 
     __slots__ = ()
@@ -40,15 +42,59 @@ class MPILemon(EEGDatasetBase):
         return os.path.join(self.get_mne_path(), "Participants_MPILMBB_LEMON.csv")
 
     def get_subject_ids(self) -> Tuple[str, ...]:
-        return tuple(set(pandas.read_csv(self.get_participants_tsv_path())["ID"]) &
-                     set(os.listdir(self.get_mne_path())))
+        # Get the subject IDs from participants file
+        participants = pandas.read_csv(self.get_participants_tsv_path())["ID"]
 
-    def _load_single_raw_mne_object(self, subject_id, **_):
+        # Keep only the ones in the downloaded EEG data
+        _eeg_availables = os.listdir(self.get_mne_path())
+        return tuple(participant for participant in participants if participant in _eeg_availables)
+
+    def _load_single_raw_mne_object(self, subject_id, *, interpolation_method: Optional[str]):
+        # -------------
+        # Load object
+        # -------------
         # Create path
         path = os.path.join(self.get_mne_path(), subject_id, f"{subject_id}.set")
 
-        # Load MNE object and return
-        return mne.io.read_raw_eeglab(path, preload=True, verbose=False)
+        # Load MNE object
+        raw = mne.io.read_raw_eeglab(path, preload=True, verbose=False)
+
+        # If no interpolation method is used, just return the object
+        if interpolation_method is None:
+            return raw
+
+        # -------------
+        # Interpolation
+        # -------------
+        # Get missing channels
+        missing_channels = tuple(set(self._channel_names) - set(raw.ch_names))
+        if not missing_channels:
+            return raw
+
+        # Create info objects
+        info = mne.create_info(ch_names=raw.ch_names + list(missing_channels), sfreq=raw.info["sfreq"], ch_types="eeg",
+                               verbose=False)
+
+        # Create numpy array
+        data = raw.get_data()
+        data = numpy.concatenate((data, numpy.zeros(shape=(len(missing_channels), data.shape[-1]))), axis=0)
+
+        # Create raw object
+        raw = mne.io.RawArray(data=data, info=info, verbose=False)
+
+        # Reorder channels
+        raw.reorder_channels(list(self._channel_names))
+
+        # Set the montage
+        raw.set_montage(
+            mne.channels.make_dig_montage(ch_pos=self.channel_system.electrode_positions), verbose=False
+        )
+
+        # Set the zero-filled channels to bads, and interpolate
+        raw.info["bads"] = list(missing_channels)
+        raw.interpolate_bads(verbose=False, method={"eeg": interpolation_method})
+
+        return raw
 
     def download(self, to_path=None):
         """
