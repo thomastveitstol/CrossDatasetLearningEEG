@@ -37,6 +37,11 @@ Datasets:
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
+  mpi_lemon:
+    num_subjects: 203
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+    target_availability: [ age, sex ]
   # ous:
   #   num_subjects: 1000
   #   num_time_steps: *num_time_steps
