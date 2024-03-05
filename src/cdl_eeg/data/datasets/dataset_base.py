@@ -322,7 +322,7 @@ class EEGDatasetBase(abc.ABC):
         # ------------------
         # Loop through all subjects
         # ------------------
-        for sub_id in subject_ids:
+        for i, sub_id in enumerate(subject_ids):
             # Load the EEG data as MNE object
             raw = self.load_single_mne_object(subject_id=sub_id, derivatives=derivatives, **kwargs)
 
@@ -341,6 +341,14 @@ class EEGDatasetBase(abc.ABC):
                 eeg_data = eeg_data[:, time_series_start:]
             if num_time_steps is not None:
                 eeg_data = eeg_data[:, :num_time_steps]
+
+            # Check if the shape is as expected
+            if i == 0:
+                expected_shape = eeg_data.shape
+            else:
+                # noinspection PyUnboundLocalVariable
+                if eeg_data.shape != expected_shape:
+                    raise DataError("Expected all numpy arrays to have the same shape, but that was not the case")
 
             # Save the EEG data as numpy arrays
             numpy.save(os.path.join(path, sub_id), arr=eeg_data)
@@ -584,3 +592,10 @@ def channel_names_to_indices(ch_names, channel_name_to_index):
     (0, 2, 1, 4)
     """
     return tuple(channel_name_to_index[channel_name] for channel_name in ch_names)
+
+
+# ------------------
+# Errors
+# ------------------
+class DataError(Exception):
+    ...
