@@ -69,6 +69,67 @@ class Experiment:
     # -------------
     # Methods to be used inside cross validation
     # -------------
+    def inverted_run_cross_validation(self, *, folds, channel_systems, channel_name_to_index, combined_dataset):
+        test_histories: Dict[str, Histories] = dict()
+
+        # Loop through all folds
+        for i, train_val_subjects in enumerate(folds):
+            print(f"\nFold {i + 1}/{len(folds)}")
+
+            # -----------------
+            # Make folder for the current fold
+            # -----------------
+            fold_path = os.path.join(self._results_path, f"Fold_{i}")
+            os.mkdir(fold_path)
+
+            # -----------------
+            # Split into train and validation
+            # -----------------
+            # Shuffle the non-test subjects randomly
+            non_test_subjects = train_val_subjects
+            random.shuffle(non_test_subjects)
+
+            # Split into train and validation
+            num_subjects = len(non_test_subjects)
+            split_idx = int(num_subjects * (1 - self.train_config["val_split"]))
+            train_subjects = tuple(non_test_subjects[:split_idx])
+            val_subjects = tuple(non_test_subjects[split_idx:])
+
+            # Get the test subjects
+            test_subjects = leave_1_fold_out(i, folds=folds)
+
+            # -----------------
+            # Run the current fold
+            # -----------------
+            histories = self._run_single_fold(
+                train_subjects=train_subjects, val_subjects=val_subjects, test_subjects=test_subjects,
+                results_path=fold_path, channel_systems=channel_systems, channel_name_to_index=channel_name_to_index,
+                combined_dataset=combined_dataset
+            )
+            # -----------------
+            # Save test history
+            # -----------------
+            # Extract the test history (should only be one)
+            _test_histories = tuple(history for history in histories if history.name[:4] == "test")
+
+            if not _test_histories:
+                continue
+            if len(_test_histories) != 1:
+                raise RuntimeError(f"Expected only one test history per fold, but found {len(_test_histories)}")
+
+            test_history = tuple(_test_histories)[0]
+
+            # If there is only one dataset in the test fold, name it as the dataset name, otherwise just use fold number
+            test_datasets = set(subject.dataset_name for subject in test_subjects)
+            test_name = tuple(test_datasets)[0] if len(test_datasets) == 1 else f"Fold {i}"
+
+            # Add histories object to dict
+            if test_name in test_histories:
+                raise RuntimeError  # todo: add message
+            test_histories[test_name] = test_history
+
+        save_test_histories_plots(path=self._results_path, histories=test_histories)
+
     def run_cross_validation(self, *, folds, channel_systems, channel_name_to_index, combined_dataset):
         test_histories: Dict[str, Histories] = dict()
 
