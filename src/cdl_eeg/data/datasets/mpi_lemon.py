@@ -100,6 +100,10 @@ class MPILemon(EEGDatasetBase):
                     # Download
                     s3_bucket.download_file(file_path, os.path.join(path, f"{subject_id}.{file_type}"))
 
+        # Participants file
+        s3_bucket.download_file("data/Projects/INDI/MPI-LEMON/Participants_MPILMBB_LEMON.csv",
+                                os.path.join(to_path, "Participants_MPILMBB_LEMON.csv"))
+
     # ----------------
     # Channel system
     # ----------------
