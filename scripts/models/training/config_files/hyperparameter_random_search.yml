@@ -1,4 +1,5 @@
 run_baseline: false
+cv_method: inverted
 selected_target: &selected_target sex
 
 Shared Dataset Details:
