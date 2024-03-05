@@ -232,9 +232,9 @@ class MultiMSSharedRocketHeadRegion(MultiMontageSplitsPoolingBase):
             region_representations = torch.empty(size=(batch, num_regions, time_steps)).to(x.device)
 
             # Compute channel indices of head region  todo: poor variable naming?
-            ch_names = tuple(channel_split.ch_names.values())
+            ch_names = tuple(channel_split.values())
             head_region_indices = channel_names_to_indices(
-                ch_names=ch_names[head_region_idx].ch_names,
+                ch_names=ch_names[head_region_idx],
                 channel_name_to_index=channel_name_to_index
             )
 
