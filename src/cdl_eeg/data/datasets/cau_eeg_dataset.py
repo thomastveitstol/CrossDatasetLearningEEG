@@ -32,7 +32,7 @@ class CAUEEG(EEGDatasetBase):
     # ----------------
     # Loading methods
     # ----------------
-    def _load_single_raw_mne_object(self, subject_id, **_):
+    def _load_single_raw_mne_object(self, subject_id):
         # Create path
         path = os.path.join(self.get_mne_path(), "signal", "edf", f"{subject_id}.edf")
 
