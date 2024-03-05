@@ -69,7 +69,7 @@ class Experiment:
     # -------------
     # Methods to be used inside cross validation
     # -------------
-    def inverted_run_cross_validation(self, *, folds, channel_systems, channel_name_to_index, combined_dataset):
+    def run_inverted_cross_validation(self, *, folds, channel_systems, channel_name_to_index, combined_dataset):
         test_histories: Dict[str, Histories] = dict()
 
         # Loop through all folds
@@ -539,10 +539,18 @@ class Experiment:
         # -----------------
         # Run cross validation
         # -----------------
-        self.run_cross_validation(
-            folds=folds, channel_systems=channel_systems, channel_name_to_index=channel_name_to_index,
-            combined_dataset=combined_dataset
-        )
+        if self._config["cv_method"] == "normal":
+            self.run_cross_validation(
+                folds=folds, channel_systems=channel_systems, channel_name_to_index=channel_name_to_index,
+                combined_dataset=combined_dataset
+            )
+        elif self._config["cv_method"] == "inverted":
+            self.run_inverted_cross_validation(
+                folds=folds, channel_systems=channel_systems, channel_name_to_index=channel_name_to_index,
+                combined_dataset=combined_dataset
+            )
+        else:
+            raise ValueError
 
     # -------------
     # Properties

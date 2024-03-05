@@ -24,8 +24,15 @@ def main():
         config = yaml.safe_load(f)
 
     # Create path and folder
+    cv_method = config["cv_method"]
+    if cv_method == "normal":
+        _title_cv = "cv"
+    elif cv_method == "inverted":
+        _title_cv = "inverted_cv"
+    else:
+        raise ValueError
     results_path = os.path.join(get_results_dir(),
-                                f"debug_{config['selected_target']}_experiments_{date.today()}_"
+                                f"debug_{config['selected_target']}_{_title_cv}_experiments_{date.today()}_"
                                 f"{datetime.now().strftime('%H%M%S')}")
     os.mkdir(results_path)
 
