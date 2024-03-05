@@ -298,12 +298,12 @@ InceptionNetwork: &InceptionNetwork
     dist: log_uniform_int
     kwargs:
       base: 2
-      a: 2
-      b: 4
+      a: 3
+      b: 6
   depth:  # todo
     dist: uniform_discrete
     kwargs:
-      domain: [ 3, 6, 9 ]
+      domain: [ 3, 6, 9, 12 ]
 
 EEGNetv4MTS: &EEGNetv4MTS
   num_classes: 1
