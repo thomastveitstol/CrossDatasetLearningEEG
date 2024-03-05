@@ -86,7 +86,7 @@ class Experiment:
             # Split into train and validation
             # -----------------
             # Shuffle the non-test subjects randomly
-            non_test_subjects = train_val_subjects
+            non_test_subjects = list(train_val_subjects)
             random.shuffle(non_test_subjects)
 
             # Split into train and validation
