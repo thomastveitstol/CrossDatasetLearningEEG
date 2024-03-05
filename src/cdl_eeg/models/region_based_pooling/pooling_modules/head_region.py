@@ -247,7 +247,7 @@ class MultiMSSharedRocketHeadRegion(MultiMontageSplitsPoolingBase):
                     in enumerate(zip(non_head_ch_names, receivers, search_gates,
                                      cycle((None,)) if search_linear is None else search_linear)):
                 # Extract the indices of the legal channels for this region
-                allowed_node_indices = channel_names_to_indices(ch_names=legal_ch_names.ch_names,
+                allowed_node_indices = channel_names_to_indices(ch_names=legal_ch_names,
                                                                 channel_name_to_index=channel_name_to_index)
 
                 # Compute receive vectors. Will have shape=(batch, channel, latent)
