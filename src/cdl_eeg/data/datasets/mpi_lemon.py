@@ -10,6 +10,7 @@ from botocore.client import Config
 import mne
 
 from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, target_method
+from cdl_eeg.data.datasets.utils import sex_to_int
 
 
 class MPILemon(EEGDatasetBase):
@@ -216,3 +217,27 @@ class MPILemon(EEGDatasetBase):
 
         # Extract the ages of the subjects, in the same order as the input argument
         return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
+
+    @target_method
+    def sex(self, subject_ids):
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path())
+
+        # Convert to sex dict
+        sex = {sub_id: sex_to_int(_int_to_sex(gender)) for sub_id, gender
+               in zip(df["ID"], df["Gender_ 1=female_2=male"])}
+
+        # Select the ones passed in the subjects list, and return as numpy array
+        return numpy.array([sex[sub_id] for sub_id in subject_ids])
+
+
+# -------------
+# Functions
+# -------------
+def _int_to_sex(integer):
+    if integer == 1:
+        return "female"
+    elif integer == 2:
+        return "male"
+    else:
+        raise ValueError
