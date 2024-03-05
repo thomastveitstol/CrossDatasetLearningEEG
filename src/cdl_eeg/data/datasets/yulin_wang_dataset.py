@@ -78,7 +78,7 @@ class YulinWang(EEGDatasetBase):
             mne.rename_channels(raw.info, mapping={"FPz": "Fpz"})
 
         # Add FCz as reference
-        raw.add_reference_channels("FCz")
+        raw.add_reference_channels("FCz")  # todo
 
         return raw
 
