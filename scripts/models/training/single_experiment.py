@@ -84,7 +84,7 @@ def main():
         leave_one_dataset_out_experiment.run_experiment()
     except NotImplementedError:
         print("DL model incompatible with domain discriminator...")
-        shutil.rmtree(results_path)
+        shutil.rmtree(results_path)  # todo: exit the program as well
 
     if config["run_baseline"]:
         # k-fold CV
