@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, Optional
+from typing import Tuple
 
 import boto3
 import numpy
@@ -49,7 +49,7 @@ class MPILemon(EEGDatasetBase):
         _eeg_availables = os.listdir(self.get_mne_path())
         return tuple(participant for participant in participants if participant in _eeg_availables)
 
-    def _load_single_raw_mne_object(self, subject_id, *, interpolation_method: Optional[str]):
+    def _load_single_raw_mne_object(self, subject_id, *, interpolation_method):
         # -------------
         # Load object
         # -------------
