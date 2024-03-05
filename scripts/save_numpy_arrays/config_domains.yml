@@ -4,45 +4,45 @@
 Delta: &Delta
   low:
     mean: 0.5
-    std: 0.05
+    std: 0.0
   high:
     mean: 4
-    std: 0.25
+    std: 0.0
 Theta: &Theta
   low:
     mean : 4
-    std: 0.25
+    std: 0.0
   high:
     mean: 8
-    std: 0.25
+    std: 0.0
 Alpha: &Alpha
   low:
     mean: 8
-    std: 0.5
+    std: 0.0
   high:
     mean: 12
-    std: 0.5
+    std: 0.0
 Beta: &Beta
   low:
     mean: 12
-    std: 0.5
+    std: 0.0
   high:
     mean: 30
-    std: 1
+    std: 0.0
 Gamma: &Gamma
   low:
     mean: 30
-    std: 1
+    std: 0.0
   high:
     mean: 45
-    std: 2
-RandomUniform: &RandomUniform
+    std: 0.0
+All: &All
   low:
-    min: 0.5
-    max: 30
+    mean: 0.5
+    std: 0.0
   high:
-    min: 7  # This may be changed to l_freq in the code
-    max: 90
+    mean: 45
+    std: 0.0
 
 BandPass:
   - name: delta
@@ -55,8 +55,8 @@ BandPass:
     <<: *Beta
   - name: gamma
     <<: *Gamma
-  - name: uniform
-    <<: *RandomUniform
+  - name: all
+    <<: *All
 
 # --------------
 # Other general hyperparameters
@@ -68,7 +68,7 @@ num_seconds: [ 30 ]
 time_series_start: [ 30, 45, 60 ]  # This variable should have unit [seconds]
 avg_reference: [ true ]
 derivatives: [ false ]
-remove_above_std: [ 40.0e-06, 80.0e-06, 120.0e-06, 160.0e-06 ]
+remove_above_std: [ 80.0e-06, 120.0e-06, 160.0e-06 ]
 interpolation: [ spline, MNE ]
 
 # --------------
@@ -76,6 +76,8 @@ interpolation: [ spline, MNE ]
 # --------------
 Datasets:
   # OUS: {}
+  MPILemon:
+    interpolation_method: "spline"
   CAUEEG:
     excluded_channels: [ Photic, EKG ]
   Rockhill:

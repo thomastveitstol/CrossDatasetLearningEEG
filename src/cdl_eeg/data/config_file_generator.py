@@ -12,12 +12,9 @@ def generate_preprocessing_config_file(config):
     band = random.choice(config["BandPass"])
 
     # Sample from distribution
-    if band["name"] in ("delta", "theta", "alpha", "beta", "gamma"):
+    if band["name"] in ("delta", "theta", "alpha", "beta", "gamma", "all"):
         l_freq = numpy.random.normal(loc=band["low"]["mean"], scale=band["low"]["std"])
         h_freq = numpy.random.normal(loc=band["high"]["mean"], scale=band["high"]["std"])
-    elif band["name"] == "uniform":
-        l_freq = numpy.random.uniform(low=band["low"]["min"], high=band["low"]["max"])
-        h_freq = numpy.random.uniform(low=max(band["high"]["min"], l_freq), high=band["high"]["max"])
     else:
         raise ValueError(f"The band-pass name {band['name']} was not recognised")
 
