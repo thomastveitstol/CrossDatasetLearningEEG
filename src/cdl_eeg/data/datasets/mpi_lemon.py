@@ -1,4 +1,5 @@
 import os
+import warnings
 from typing import Tuple
 
 import boto3
@@ -57,7 +58,9 @@ class MPILemon(EEGDatasetBase):
         path = os.path.join(self.get_mne_path(), subject_id, f"{subject_id}.set")
 
         # Load MNE object
-        raw = mne.io.read_raw_eeglab(path, preload=True, verbose=False)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(action="ignore", category=RuntimeWarning)
+            raw = mne.io.read_raw_eeglab(path, preload=True, verbose=False)
 
         # If no interpolation method is used, just return the object
         if interpolation_method is None:
@@ -86,9 +89,12 @@ class MPILemon(EEGDatasetBase):
         raw.reorder_channels(list(self._channel_names))
 
         # Set the montage
-        raw.set_montage(
-            mne.channels.make_dig_montage(ch_pos=self.channel_system.electrode_positions), verbose=False
-        )
+        with warnings.catch_warnings():  # todo
+            warnings.filterwarnings(action="ignore", category=RuntimeWarning)
+
+            raw.set_montage(
+                mne.channels.make_dig_montage(ch_pos=self.channel_system.electrode_positions), verbose=False
+            )
 
         # Set the zero-filled channels to bads, and interpolate
         raw.info["bads"] = list(missing_channels)
