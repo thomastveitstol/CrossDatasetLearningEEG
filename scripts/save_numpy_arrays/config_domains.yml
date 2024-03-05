@@ -76,6 +76,9 @@ interpolation: [ spline, MNE ]
 # --------------
 Datasets:
   # OUS: {}
+  HatlestadHall:
+    session: "t1"
+    derivatives: true
   MPILemon:
     interpolation_method: "spline"
   CAUEEG:
@@ -86,8 +89,5 @@ Datasets:
   YulinWang:
     visit: 1
     recording: EC
-    derivatives: true
-  HatlestadHall:
-    session: "t1"
     derivatives: true
   Miltiadous: {}
