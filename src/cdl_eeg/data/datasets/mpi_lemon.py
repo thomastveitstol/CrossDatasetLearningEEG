@@ -17,8 +17,8 @@ class MPILemon(EEGDatasetBase):
     ----------
     >>> MPILemon().name
     'mpi_lemon'
-    >>> len(MPILemon().get_subject_ids())
-    203
+    >>> len(MPILemon().get_subject_ids()), MPILemon().get_subject_ids()[:4]
+    (203, ('sub-032341', 'sub-032380', 'sub-032360', 'sub-032453'))
     """
 
     __slots__ = ()
@@ -40,8 +40,8 @@ class MPILemon(EEGDatasetBase):
         return os.path.join(self.get_mne_path(), "Participants_MPILMBB_LEMON.csv")
 
     def get_subject_ids(self) -> Tuple[str, ...]:
-        # TODO: I think that MPI Lemon has a participants.tsv file as well
-        return tuple(os.listdir(self.get_mne_path()))
+        return tuple(set(pandas.read_csv(self.get_participants_tsv_path())["ID"]) &
+                     set(os.listdir(self.get_mne_path())))
 
     def _load_single_raw_mne_object(self, subject_id, **_):
         # Create path
@@ -160,7 +160,7 @@ class MPILemon(EEGDatasetBase):
         mean_age = (upper + lower) / 2
 
         # Convert to dict
-        sub_id_to_age = {name: age for name, age in zip(df["Unnamed: 0"], mean_age)}
+        sub_id_to_age = {name: age for name, age in zip(df["ID"], mean_age)}
 
         # Extract the ages of the subjects, in the same order as the input argument
         return numpy.array([sub_id_to_age[sub_id] for sub_id in subject_ids])
