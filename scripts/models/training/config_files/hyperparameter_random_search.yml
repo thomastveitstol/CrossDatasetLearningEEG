@@ -1,5 +1,5 @@
 run_baseline: true
-selected_target: &selected_target age
+selected_target: &selected_target sex
 
 Shared Dataset Details:
   num_time_steps: &num_time_steps null
@@ -11,7 +11,7 @@ SubjectSplit:
     seed: 42  # todo: should we fix the seed?
 
 SubGroups:
-  verbose: false
+  verbose: true
   sub_groups:
     dataset_name:  # todo: don't hardcode like this
       [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg ]
@@ -106,7 +106,7 @@ Targets:
 Training:
   # Fixed hyperparameters
   batch_size: 16
-  num_epochs: 200
+  num_epochs: 50
   verbose: true
   val_split: 0.2
   target: *selected_target
@@ -292,12 +292,12 @@ InceptionNetwork: &InceptionNetwork
     dist: log_uniform_int
     kwargs:
       base: 2
-      a: 3  # 2^3 = 8
-      b: 8  # 2^8 = 256
+      a: 2
+      b: 4
   depth:  # todo
     dist: uniform_discrete
     kwargs:
-      domain: [ 3, 6, 9, 12, 15, 18 ]
+      domain: [ 3, 6, 9 ]
 
 EEGNetv4MTS: &EEGNetv4MTS
   num_classes: 1

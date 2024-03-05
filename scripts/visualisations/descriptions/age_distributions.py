@@ -8,6 +8,7 @@ from matplotlib import pyplot
 from cdl_eeg.data.datasets.cau_eeg_dataset import CAUEEG
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
+from cdl_eeg.data.datasets.mpi_lemon import MPILemon
 from cdl_eeg.data.datasets.rockhill_dataset import Rockhill
 from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
 
@@ -22,7 +23,7 @@ def _sex_int_to_str(sex):
 
 
 def main():
-    datasets = (HatlestadHall(), YulinWang(), Miltiadous(), Rockhill(), CAUEEG())
+    datasets = (HatlestadHall(), YulinWang(), Miltiadous(), Rockhill(), CAUEEG(), MPILemon())
 
     # ----------------
     # Load data
