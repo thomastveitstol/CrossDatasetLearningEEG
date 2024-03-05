@@ -1,4 +1,4 @@
-run_baseline: true
+run_baseline: false
 cv_method: normal
 selected_target: &selected_target sex
 
