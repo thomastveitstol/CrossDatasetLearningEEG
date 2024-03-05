@@ -80,7 +80,11 @@ def main():
     print(f"\n{' Leave-one-dataset-out cross validation ':=^50}\n")
     leave_one_dataset_out_experiment = Experiment(config=lodo_config, pre_processing_config=pre_processed_config,
                                                   results_path=os.path.join(results_path, "leave_one_dataset_out"))
-    leave_one_dataset_out_experiment.run_experiment()
+    try:
+        leave_one_dataset_out_experiment.run_experiment()
+    except NotImplementedError:
+        print("DL model incompatible with domain discriminator...")
+        shutil.rmtree(results_path)
 
     if config["run_baseline"]:
         # k-fold CV
