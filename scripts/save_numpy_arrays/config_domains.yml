@@ -76,10 +76,10 @@ interpolation: [ spline, MNE ]
 # --------------
 Datasets:
   # OUS: {}
-  ChildMind: { }
   HatlestadHall:
     session: "t1"
     derivatives: true
+  ChildMind: { }
   MPILemon:
     interpolation_method: "spline"
   CAUEEG:
