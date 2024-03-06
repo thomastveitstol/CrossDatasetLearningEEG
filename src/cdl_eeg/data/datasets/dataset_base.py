@@ -302,7 +302,7 @@ class EEGDatasetBase(abc.ABC):
         # ------------------
         # Check if all subjects are passed only once
         if len(set(subject_ids)) != len(subject_ids):
-            _num_non_unique_subjects = len(set(subject_ids)) != len(subject_ids)
+            _num_non_unique_subjects = len(subject_ids) - len(set(subject_ids))
             raise ValueError(f"Expected all subject IDs to be unique, but there were {_num_non_unique_subjects} "
                              f"subject IDs which were passed more than once")
 

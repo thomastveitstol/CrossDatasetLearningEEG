@@ -19,16 +19,25 @@ class ChildMind(EEGDatasetBase):
     >>> ChildMind.get_available_targets()
     ('age', 'sex')
     >>> len(ChildMind().get_subject_ids())
-    2552
+    2550
+    >>> len(set(ChildMind().get_subject_ids()))
+    2550
+    >>> ChildMind().get_subject_ids()[:5]
+    ('NDARAA075AMK', 'NDARAA112DMH', 'NDARAA117NEJ', 'NDARAA396TWZ', 'NDARAA947ZG5')
     """
 
     # ----------------
     # Loading methods
     # ----------------
     def get_subject_ids(self) -> Tuple[str, ...]:
-        # Get the subject IDs from participants file
+        # Get the subject IDs from the preprocessed files
+        eeg_availables = tuple(file_name[:-4] for file_name in os.listdir(self.get_mne_path())
+                               if file_name[-4:] == ".set")
+
+        # Needs to be in the .tsv file as well
         df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
-        participants = df["participant_id"]
+        participants = tuple(participant for participant in eeg_availables
+                             if participant in tuple(df["participant_id"]))
 
         # The sex and age must be known
         sexes = df["Sex"]
