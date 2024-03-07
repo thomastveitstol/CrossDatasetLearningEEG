@@ -1,5 +1,5 @@
-run_baseline: false
-cv_method: inverted
+run_baseline: true
+cv_method: normal
 selected_target: &selected_target sex
 
 Shared Dataset Details:
@@ -303,12 +303,12 @@ InceptionNetwork: &InceptionNetwork
     dist: log_uniform_int
     kwargs:
       base: 2
-      a: 3
+      a: 5
       b: 6
   depth:  # todo
     dist: uniform_discrete
     kwargs:
-      domain: [ 3, 6, 9, 12 ]
+      domain: [ 39, 60, 75, 87 ]
 
 EEGNetv4MTS: &EEGNetv4MTS
   num_classes: 1
@@ -404,7 +404,7 @@ Deep4NetMTS: &Deep4NetMTS
 
 MTS Module:
   InceptionNetwork: *InceptionNetwork
-  EEGNetv4MTS: *EEGNetv4MTS
-  EEGResNetMTS: *EEGResNetMTS
+  # EGNetv4MTS: *EEGNetv4MTS
+  # EEGResNetMTS: *EEGResNetMTS
   # ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
-  Deep4NetMTS: *Deep4NetMTS
+  # Deep4NetMTS: *Deep4NetMTS
