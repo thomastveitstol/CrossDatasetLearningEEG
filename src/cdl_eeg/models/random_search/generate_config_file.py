@@ -135,7 +135,7 @@ def generate_config_file(config):
     discriminator_name = random.choice(tuple(config["DomainDiscriminator"]["discriminators"].keys()))
 
     discriminator: Optional[Dict[str, Any]]
-    if discriminator_name != "NoDiscriminator":
+    if discriminator_name != "NoDiscriminator" and config["cv_method"] != "inverted":
         # Architecture hyperparameters
         discriminator_architecture = {"name": discriminator_name, "kwargs": dict()}
         for param, domain in config["DomainDiscriminator"]["discriminators"][discriminator_name].items():
