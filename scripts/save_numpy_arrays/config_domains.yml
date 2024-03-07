@@ -79,7 +79,7 @@ Datasets:
   HatlestadHall:
     session: "t1"
     derivatives: true
-  ChildMind: { }
+  # ChildMind: { }
   MPILemon:
     interpolation_method: "spline"
   CAUEEG:

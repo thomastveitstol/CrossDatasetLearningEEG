@@ -303,12 +303,12 @@ InceptionNetwork: &InceptionNetwork
     dist: log_uniform_int
     kwargs:
       base: 2
-      a: 5
+      a: 4
       b: 6
   depth:  # todo
     dist: uniform_discrete
     kwargs:
-      domain: [ 39, 60, 75, 87 ]
+      domain: [ 6, 12, 24, 48, 60, 75, 87 ]
 
 EEGNetv4MTS: &EEGNetv4MTS
   num_classes: 1
@@ -404,7 +404,7 @@ Deep4NetMTS: &Deep4NetMTS
 
 MTS Module:
   InceptionNetwork: *InceptionNetwork
-  # EGNetv4MTS: *EEGNetv4MTS
-  # EEGResNetMTS: *EEGResNetMTS
+  EGNetv4MTS: *EEGNetv4MTS
+  EEGResNetMTS: *EEGResNetMTS
   # ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
-  # Deep4NetMTS: *Deep4NetMTS
+  Deep4NetMTS: *Deep4NetMTS
