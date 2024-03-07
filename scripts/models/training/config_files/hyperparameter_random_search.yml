@@ -15,14 +15,13 @@ SubGroups:
   verbose: true
   sub_groups:
     dataset_name:  # todo: don't hardcode like this
-      [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg, mpi_lemon, ous ]
+      [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg, mpi_lemon ]
 
 Datasets:
-  ous:
-    num_subjects: 1000
-    num_time_steps: *num_time_steps
-    time_series_start: *time_series_start
-    target_availability: [ age, sex ]
+  # ous:
+  #   num_subjects: 1000
+  #   num_time_steps: *num_time_steps
+  #   time_series_start: *time_series_start
   rockhill:
     num_subjects: 31
     num_time_steps: *num_time_steps
@@ -229,7 +228,7 @@ VoronoiSplit: &VoronoiSplit
   channel_systems:
     dist: uniform_discrete
     kwargs:
-      domain: [ [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg, mpi_lemon, ous] ]
+      domain: [ [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg, mpi_lemon] ]
   min_nodes: 1  # todo: other values must be implemented
   num_initial_centroids:
     dist: log_uniform_int
