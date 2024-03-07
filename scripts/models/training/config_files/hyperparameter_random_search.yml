@@ -1,5 +1,5 @@
 run_baseline: false
-cv_method: normal
+cv_method: inverted
 selected_target: &selected_target sex
 
 Shared Dataset Details:
@@ -15,9 +15,14 @@ SubGroups:
   verbose: true
   sub_groups:
     dataset_name:  # todo: don't hardcode like this
-      [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg, mpi_lemon ]
+      [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg, mpi_lemon, ous ]
 
 Datasets:
+  ous:
+    num_subjects: 1000
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+    target_availability: [ age, sex ]
   rockhill:
     num_subjects: 31
     num_time_steps: *num_time_steps
@@ -43,10 +48,11 @@ Datasets:
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
-  # ous:
-  #   num_subjects: 1000
+  # child_mind:
+  #   num_subjects: 173
   #   num_time_steps: *num_time_steps
   #   time_series_start: *time_series_start
+  #   target_availability: [ age, sex ]
   cau_eeg:
     num_subjects: 1379
     num_time_steps: *num_time_steps
@@ -223,7 +229,7 @@ VoronoiSplit: &VoronoiSplit
   channel_systems:
     dist: uniform_discrete
     kwargs:
-      domain: [ [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg, mpi_lemon] ]
+      domain: [ [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg, mpi_lemon, ous] ]
   min_nodes: 1  # todo: other values must be implemented
   num_initial_centroids:
     dist: log_uniform_int
