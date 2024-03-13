@@ -27,11 +27,11 @@ Datasets:
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
-  miltiadous:
-    num_subjects: 88
-    num_time_steps: *num_time_steps
-    time_series_start: *time_series_start
-    target_availability: [ age, sex ]
+  # miltiadous:
+  #   num_subjects: 88
+  #   num_time_steps: *num_time_steps
+  #   time_series_start: *time_series_start
+  #   target_availability: [ age, sex ]
   hatlestad_hall:
     num_subjects: 111
     num_time_steps: *num_time_steps
@@ -129,7 +129,7 @@ Training:
     kwargs:
       base: 10
       a: -5
-      b: -2
+      b: -3
   beta_1:
     dist: uniform
     kwargs:
@@ -138,8 +138,8 @@ Training:
   beta_2:
     dist: uniform
     kwargs:
-      a: 0.8
-      b: 1.0
+      a: 0.9
+      b: 0.98
   eps:
     dist: log_uniform
     kwargs:
@@ -404,7 +404,7 @@ Deep4NetMTS: &Deep4NetMTS
 
 MTS Module:
   InceptionNetwork: *InceptionNetwork
-  EEGNetv4MTS: *EEGNetv4MTS
-  EEGResNetMTS: *EEGResNetMTS
+  # EEGNetv4MTS: *EEGNetv4MTS
+  # EEGResNetMTS: *EEGResNetMTS
   # ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
-  Deep4NetMTS: *Deep4NetMTS
+  # Deep4NetMTS: *Deep4NetMTS

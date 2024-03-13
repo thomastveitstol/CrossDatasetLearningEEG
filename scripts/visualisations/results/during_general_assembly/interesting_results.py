@@ -74,11 +74,11 @@ def create_data_dict(bad_runs, stable_runs, promising_runs, key_path, results_fo
 def main():
     # Interesting values: beta_2, learning_rate
 
-    key_path = ("general", "resample")  # "num_montage_splits"
-    log_scale = True
-    preprocessing = True
+    key_path = ("Training", "beta_2")  # "num_montage_splits"
+    log_scale = False
+    preprocessing = False
 
-    plot_type = "countplot"
+    plot_type = "histplot"
 
     results_folder = os.path.join(get_results_dir(), "ga_runs")
 
