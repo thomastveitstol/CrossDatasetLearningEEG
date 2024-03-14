@@ -30,6 +30,13 @@ class YulinWang(EEGDatasetBase):
      'CP3', 'CP5', 'TP7', 'TP9', 'Pz', 'P1', 'P3', 'P5', 'P7', 'PO3', 'PO7', 'Oz', 'O1', 'Fpz', 'Fp2', 'AF4', 'AF8',
      'F2', 'F4', 'F6', 'F8', 'FC2', 'FC4', 'FC6', 'FT8', 'C2', 'C4', 'C6', 'T8', 'CPz', 'CP2', 'CP4', 'CP6', 'TP8',
      'TP10', 'P2', 'P4', 'P6', 'P8', 'POz', 'PO4', 'PO8', 'O2', 'FCz')
+     >>> YulinWang().channel_name_to_index()  # doctest: +NORMALIZE_WHITESPACE
+     {'Fp1': 0, 'AF3': 1, 'AF7': 2, 'Fz': 3, 'F1': 4, 'F3': 5, 'F5': 6, 'F7': 7, 'FC1': 8, 'FC3': 9, 'FC5': 10,
+      'FT7': 11, 'Cz': 12, 'C1': 13, 'C3': 14, 'C5': 15, 'T7': 16, 'CP1': 17, 'CP3': 18, 'CP5': 19, 'TP7': 20,
+      'TP9': 21, 'Pz': 22, 'P1': 23, 'P3': 24, 'P5': 25, 'P7': 26, 'PO3': 27, 'PO7': 28, 'Oz': 29, 'O1': 30, 'Fpz': 31,
+      'Fp2': 32, 'AF4': 33, 'AF8': 34, 'F2': 35, 'F4': 36, 'F6': 37, 'F8': 38, 'FC2': 39, 'FC4': 40, 'FC6': 41,
+      'FT8': 42, 'C2': 43, 'C4': 44, 'C6': 45, 'T8': 46, 'CPz': 47, 'CP2': 48, 'CP4': 49, 'CP6': 50, 'TP8': 51,
+      'TP10': 52, 'P2': 53, 'P4': 54, 'P6': 55, 'P8': 56, 'POz': 57, 'PO4': 58, 'PO8': 59, 'O2': 60, 'FCz': 61}
      >>> my_raw = YulinWang()._load_single_cleaned_mne_object(visit=1, recording="EC", subject_id="sub-01")
      >>> tuple(my_raw.info["ch_names"] ) == my_channels
      True
