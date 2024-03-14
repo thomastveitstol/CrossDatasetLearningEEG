@@ -1,3 +1,4 @@
+import mne
 from matplotlib import pyplot
 
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
@@ -31,7 +32,7 @@ def main():
     # -----------------
     # Plot data
     # -----------------
-    eeg.plot()
+    eeg.plot(noise_cov=mne.compute_raw_covariance(raw=eeg, verbose=False))
     eeg.compute_psd().plot()
 
     pyplot.show()
