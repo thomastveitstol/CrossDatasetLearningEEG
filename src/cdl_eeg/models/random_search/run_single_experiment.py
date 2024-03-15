@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional, List
 import matplotlib
 import numpy
 import pandas
+import seaborn
 import torch
 from matplotlib import pyplot
 from torch import optim
@@ -21,7 +22,7 @@ from cdl_eeg.data.scalers.target_scalers import get_target_scaler
 from cdl_eeg.models.losses import CustomWeightedLoss, get_activation_function
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
 from cdl_eeg.models.metrics import save_discriminator_histories_plots, save_histories_plots, Histories, \
-    save_test_histories_plots
+    save_test_histories_plots, compute_distribution_distance
 from cdl_eeg.models.utils import tensor_dict_to_device
 
 
@@ -615,14 +616,19 @@ class Experiment:
             for dataset_name, data_loader in data_loaders.items()
         }
 
+        # Compute distances between the latent distributions
+        distances_df = self._compute_distribution_distances(data=latent_features,
+                                                            distance_measures=self._config["distance_measures"])
+
         # Convert to dataframe
-        df = self._latent_dict_features_to_dataframe(latent_features)
+        features_df = self._latent_dict_features_to_dataframe(latent_features)
 
         # -----------------
         # Compute UMAP plots
         # -----------------
         umap = UMAP(n_components=2)
-        umap_data = umap.fit_transform(df[[col_name for col_name in df.columns if col_name != "dataset_name"]]).T
+        umap_data = umap.fit_transform(features_df[[col_name for col_name in features_df.columns
+                                                    if col_name != "dataset_name"]]).T
 
         # Selecting colors
         colormap = matplotlib.colormaps.get_cmap(self._config["colormap"])
@@ -630,7 +636,7 @@ class Experiment:
 
         # Loop through all datasets
         for col, dataset_name in zip(colors, latent_features):
-            indices = df["dataset_name"] == dataset_name
+            indices = features_df["dataset_name"] == dataset_name
             pyplot.scatter(umap_data[0][indices], umap_data[1][indices], marker='o', label=dataset_name,
                            color=col)
 
@@ -641,7 +647,45 @@ class Experiment:
         pyplot.title("UMAP")
         pyplot.legend()
 
+        # -----------------
+        # Plot distances
+        # -----------------
+        pyplot.figure()
+        seaborn.heatmap(distances_df)
+
         pyplot.show()
+
+    @staticmethod
+    def _compute_distribution_distances(data, distance_measures):
+        """
+        Examples
+        --------
+        >>> _ = torch.manual_seed(2)
+        >>> my_data = {"d1": torch.rand(43, 64), "d2": torch.rand(29, 64), "d3": torch.rand(7, 64)}
+        >>> Experiment._compute_distribution_distances(my_data, ("centroid_l2",))  # doctest: +NORMALIZE_WHITESPACE
+                 centroid_l2
+        i | j
+        d1 | d1     0.000000
+        d1 | d2     0.562180
+        d1 | d3     0.966971
+        d2 | d1     0.562180
+        d2 | d2     0.000000
+        d2 | d3     0.994625
+        d3 | d1     0.966971
+        d3 | d2     0.994625
+        d3 | d3     0.000000
+        """
+        distances = {"i | j": [], **{distance: [] for distance in distance_measures}}
+        for distance_measure in distance_measures:
+            for dataset_i, features_i in data.items():
+                for dataset_j, features_j in data.items():
+                    distances["i | j"].append(f"{dataset_i} | {dataset_j}")
+                    distances[distance_measure].append(
+                        compute_distribution_distance(metric=distance_measure, x1=features_i, x2=features_j)
+                    )
+        df = pandas.DataFrame.from_dict(distances)
+        df.set_index("i | j", inplace=True)
+        return df
 
     @staticmethod
     def _latent_dict_features_to_dataframe(latent_features):
