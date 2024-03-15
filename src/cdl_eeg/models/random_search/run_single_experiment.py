@@ -780,7 +780,7 @@ class Experiment:
         """
         distances = dict()
         for distance_measure in distance_measures:
-            distances_single_metric = {dataset: [] for dataset in data}
+            distances_single_metric: Dict[str, List[float]] = {dataset: [] for dataset in data}
             for features_j in data.values():
                 for dataset_i, features_i in data.items():
                     distances_single_metric[dataset_i].append(
