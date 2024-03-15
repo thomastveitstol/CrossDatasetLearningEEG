@@ -1,10 +1,10 @@
 preprocessed_version: &preprocessed_version debug_preprocessed_2024-03-07_141650
 colormap: viridis
-distance_measures: [ centroid_l2 ]
+distance_measures: [ centroid_l2, average_l2_to_centroid ]
 DL Architecture:
   kwargs:
     cnn_units: 4
-    depth: 6
+    depth: 60
     num_classes: 1
   model: InceptionNetwork
 Datasets:

@@ -617,8 +617,8 @@ class Experiment:
         }
 
         # Compute distances between the latent distributions
-        distances_df = self._compute_distribution_distances(data=latent_features,
-                                                            distance_measures=self._config["distance_measures"])
+        distances = self._compute_distribution_distances(data=latent_features,
+                                                         distance_measures=self._config["distance_measures"])
 
         # Convert to dataframe
         features_df = self._latent_dict_features_to_dataframe(latent_features)
@@ -650,8 +650,10 @@ class Experiment:
         # -----------------
         # Plot distances
         # -----------------
-        pyplot.figure()
-        seaborn.heatmap(distances_df)
+        for metric, distance_matrix in distances.items():
+            pyplot.figure()
+            seaborn.heatmap(distance_matrix, annot=True, fmt=".3f")
+            pyplot.title(metric)
 
         pyplot.show()
 
@@ -660,32 +662,35 @@ class Experiment:
         """
         Examples
         --------
-        >>> _ = torch.manual_seed(2)
-        >>> my_data = {"d1": torch.rand(43, 64), "d2": torch.rand(29, 64), "d3": torch.rand(7, 64)}
-        >>> Experiment._compute_distribution_distances(my_data, ("centroid_l2",))  # doctest: +NORMALIZE_WHITESPACE
-                 centroid_l2
-        i | j
-        d1 | d1     0.000000
-        d1 | d2     0.562180
-        d1 | d3     0.966971
-        d2 | d1     0.562180
-        d2 | d2     0.000000
-        d2 | d3     0.994625
-        d3 | d1     0.966971
-        d3 | d2     0.994625
-        d3 | d3     0.000000
+        >>> my_x1 = torch.tensor([[0, 1], [2, 1], [2, -1], [0, -1]], dtype=torch.float)
+        >>> my_x2 = torch.tensor([[1, 0], [3, 0], [3, -2], [1, -2], [2, -1]], dtype=torch.float)
+        >>> my_distances = Experiment._compute_distribution_distances({"d1": my_x1, "d2": my_x2},
+        ...                                                           ("centroid_l2", "average_l2_to_centroid"))
+        >>> my_distances["centroid_l2"]  # doctest: +NORMALIZE_WHITESPACE
+                       d1        d2
+        dataset
+        d1       0.000000  1.414214
+        d2       1.414214  0.000000
+        >>> my_distances["average_l2_to_centroid"]  # doctest: +NORMALIZE_WHITESPACE
+                       d1        d2
+        dataset
+        d1       1.414214  1.707107
+        d2       1.648528  1.131371
         """
-        distances = {"i | j": [], **{distance: [] for distance in distance_measures}}
+        distances = dict()
         for distance_measure in distance_measures:
-            for dataset_i, features_i in data.items():
-                for dataset_j, features_j in data.items():
-                    distances["i | j"].append(f"{dataset_i} | {dataset_j}")
-                    distances[distance_measure].append(
+            distances_single_metric = {dataset: [] for dataset in data}
+            for features_j in data.values():
+                for dataset_i, features_i in data.items():
+                    distances_single_metric[dataset_i].append(
                         compute_distribution_distance(metric=distance_measure, x1=features_i, x2=features_j)
                     )
-        df = pandas.DataFrame.from_dict(distances)
-        df.set_index("i | j", inplace=True)
-        return df
+
+            df = pandas.DataFrame.from_dict(distances_single_metric)
+            df["dataset"] = tuple(data.keys())
+            df.set_index("dataset", inplace=True)
+            distances[distance_measure] = df
+        return distances
 
     @staticmethod
     def _latent_dict_features_to_dataframe(latent_features):

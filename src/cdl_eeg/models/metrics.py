@@ -564,11 +564,13 @@ class DistanceMetrics:
     Examples
     --------
     >>> DistanceMetrics.get_available_distance_metrics()
-    ('centroid_l2',)
+    ('average_l2_to_centroid', 'centroid_l2')
     >>> my_x1 = torch.tensor([[0, 1], [2, 1], [2, -1], [0, -1]], dtype=torch.float)
     >>> my_x2 = torch.tensor([[1, 0], [3, 0], [3, -2], [1, -2]], dtype=torch.float)
     >>> DistanceMetrics.compute_distance(metric="centroid_l2", x1=my_x1, x2=my_x2)  # doctest: +ELLIPSIS
     1.414...
+    >>> DistanceMetrics.compute_distance(metric="average_l2_to_centroid", x1=my_x1, x2=my_x2)  # doctest: +ELLIPSIS
+    1.707...
     """
 
     __slots__ = ()
@@ -601,6 +603,13 @@ class DistanceMetrics:
     def centroid_l2(x1, x2):
         """Compute the L2 distance between the centroids of the distribution"""
         return numpy.linalg.norm(numpy.array(torch.mean(x1, dim=0) - torch.mean(x2, dim=0)), ord=2)
+
+    @staticmethod
+    @distance_metric
+    def average_l2_to_centroid(x1, x2):
+        """Measures the average distance from the points of x2 to the centroid of x1. This is not actually a valid
+        distance metric"""
+        return numpy.mean(numpy.linalg.norm(numpy.array(torch.mean(x1, dim=0, keepdim=True) - x2), ord=2, axis=-1))
 
 
 # ----------------
