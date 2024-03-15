@@ -222,6 +222,10 @@ class Experiment:
             self._fit_cmmn_layers(model=model, train_data=combined_dataset.get_data(train_subjects),
                                   channel_systems=channel_systems)
 
+            # Fit the test data as well (needed here if analysing the latent feature distributions)
+            self._fit_cmmn_layers_test_data(model=model, test_data=combined_dataset.get_data(test_subjects),
+                                            channel_systems=channel_systems)
+
         # -----------------
         # Maybe make plots of latent feature distribution distances
         # -----------------
@@ -251,10 +255,6 @@ class Experiment:
             test_loader = self._load_test_data_loader(model=model, test_subjects=test_subjects,
                                                       combined_dataset=combined_dataset, target_scaler=target_scaler)
 
-            # Also, maybe fit the CMMN monge filters
-            if model.any_rbp_cmmn_layers:
-                self._fit_cmmn_layers_test_data(model=model, test_data=combined_dataset.get_data(test_subjects),
-                                                channel_systems=channel_systems)
         else:
             test_loader = None
 
