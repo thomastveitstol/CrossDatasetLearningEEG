@@ -17,3 +17,4 @@ scikit-learn~=1.3.0
 PyYAML~=6.0.1
 Braindecode~=0.8
 seaborn~=0.13.2
+umap-learn~=0.5.5

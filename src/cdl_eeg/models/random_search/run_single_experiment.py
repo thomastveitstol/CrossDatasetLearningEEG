@@ -1,15 +1,21 @@
 import copy
+import itertools
 import os
 import random
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
+import matplotlib
+import numpy
+import pandas
 import torch
+from matplotlib import pyplot
 from torch import optim
 from torch.utils.data import DataLoader
+from umap import UMAP
 
 from cdl_eeg.data.combined_datasets import CombinedDatasets
-from cdl_eeg.data.data_generators.data_generator import DownstreamDataGenerator
+from cdl_eeg.data.data_generators.data_generator import DownstreamDataGenerator, strip_tensors
 from cdl_eeg.data.subject_split import get_data_split, leave_1_fold_out
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
 from cdl_eeg.models.losses import CustomWeightedLoss, get_activation_function
@@ -26,7 +32,7 @@ class Experiment:
 
     __slots__ = "_config", "_pre_processing_config", "_results_path", "_device"
 
-    def __init__(self, config, pre_processing_config, results_path):
+    def __init__(self, config, pre_processing_config, results_path, device=None):
         """
         Initialise
 
@@ -42,7 +48,7 @@ class Experiment:
         self._config = config
         self._pre_processing_config = pre_processing_config
         self._results_path = results_path
-        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if device is None else device
 
     # -------------
     # Methods for preparing for cross validation
@@ -551,6 +557,139 @@ class Experiment:
             )
         else:
             raise ValueError
+
+    # -------------
+    # Methods for exploration of why cross dataset DL is difficult
+    # -------------
+    def initial_hidden_layer_distributions(self):
+        """Method which investigates the distribution of a hidden layer of the various EEG datasets"""
+        print(f"Running on device: {self._device}")
+
+        # -----------------
+        # Load data and extract some details
+        # -----------------
+        combined_dataset = self._load_data()
+
+        # Get some dataset details
+        dataset_details = self._extract_dataset_details(combined_dataset)
+
+        dataset_subjects = dataset_details["subjects"]
+        channel_systems = dataset_details["channel_systems"]
+        channel_name_to_index = dataset_details["channel_name_to_index"]
+
+        # -----------------
+        # Define model
+        # -----------------
+        print("Defining model...")
+        # Filter some warnings from Voronoi split
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+            model = self._make_model()
+
+        # Fit channel systems
+        self._fit_channel_systems(model=model, channel_systems=channel_systems)
+
+        # (Maybe) fit the CMMN layers of RBP  todo: must check with and without CMMN
+        # if model.any_rbp_cmmn_layers:
+        #     self._fit_cmmn_layers(model=model, train_data=combined_dataset.get_data(train_subjects),
+        #                           channel_systems=channel_systems)
+        # -----------------
+        # Split on dataset level
+        # -----------------
+        folds = get_data_split(split="SplitOnDataset", dataset_subjects=dataset_subjects).folds
+
+        # Get the data loaders (the targets are not important, may change a little here in a future refactoring)
+        data_loaders = {fold[0].dataset_name:  # todo
+                        self._load_test_data_loader(
+                            model=model, test_subjects=fold, combined_dataset=combined_dataset,
+                            target_scaler=get_target_scaler(scaler="NoScaler")
+                        ) for fold in folds}
+
+        # -----------------
+        # Compute features
+        # -----------------
+        latent_features = {
+            dataset_name: self._extract_all_latent_features(model=model, data_loader=data_loader, device=self._device,
+                                                            channel_name_to_index=channel_name_to_index)
+            for dataset_name, data_loader in data_loaders.items()
+        }
+
+        # Convert to dataframe
+        df = self._latent_dict_features_to_dataframe(latent_features)
+
+        # -----------------
+        # Compute UMAP plots
+        # -----------------
+        umap = UMAP(n_components=2)
+        umap_data = umap.fit_transform(df[[col_name for col_name in df.columns if col_name != "dataset_name"]]).T
+
+        # Selecting colors
+        colormap = matplotlib.colormaps.get_cmap(self._config["colormap"])
+        colors = colormap(numpy.linspace(start=0, stop=1, num=len(latent_features)))
+
+        # Loop through all datasets
+        for col, dataset_name in zip(colors, latent_features):
+            indices = df["dataset_name"] == dataset_name
+            pyplot.scatter(umap_data[0][indices], umap_data[1][indices], marker='o', label=dataset_name,
+                           color=col)
+
+        # Plot cosmetics
+        fontsize = 15
+        pyplot.xlabel("Dimension 1", fontsize=fontsize)
+        pyplot.ylabel("Dimension 2", fontsize=fontsize)
+        pyplot.title("UMAP")
+        pyplot.legend()
+
+        pyplot.show()
+
+    @staticmethod
+    def _latent_dict_features_to_dataframe(latent_features):
+        """
+        Examples
+        --------
+        >>> _ = torch.manual_seed(2)
+        >>> my_features = {"d1": torch.rand((2, 64)), "d3": torch.rand((3, 64)), "d2": torch.rand((1, 64))}
+        >>> Experiment._latent_dict_features_to_dataframe(my_features)  # doctest: +NORMALIZE_WHITESPACE
+            dataset_name        v0        v1  ...       v61       v62       v63
+        0           d1  0.614695  0.381013  ...  0.072670  0.646266  0.980437
+        1           d1  0.944122  0.492143  ...  0.141569  0.321714  0.840315
+        2           d3  0.013947  0.061767  ...  0.722807  0.688880  0.075720
+        3           d3  0.823534  0.679069  ...  0.031638  0.116090  0.781444
+        4           d3  0.564110  0.829796  ...  0.206841  0.694941  0.774273
+        5           d2  0.324212  0.210616  ...  0.162639  0.147315  0.668140
+        <BLANKLINE>
+        [6 rows x 65 columns]
+        """
+
+        features = numpy.array(torch.cat(tuple(latent_features.values()), dim=0))
+        _dataset_names = tuple([dataset_name]*feature.shape[0] for dataset_name, feature in latent_features.items())
+        dataset_names = tuple(itertools.chain(*_dataset_names))
+
+        # Create dataframe
+        features_dict: Dict[str, Any] = {f"v{i}": feature for i, feature in enumerate(numpy.transpose(features))}
+        return pandas.DataFrame.from_dict({"dataset_name": dataset_names, **features_dict})
+
+    @staticmethod
+    def _extract_all_latent_features(model, data_loader, device, channel_name_to_index):
+        outputs: List[torch.Tensor] = []
+        with torch.no_grad():
+            for x, pre_computed, _, _ in data_loader:
+                # Strip the dictionaries for 'ghost tensors'
+                x = strip_tensors(x)
+                pre_computed = [strip_tensors(pre_comp) for pre_comp in pre_computed]
+
+                # Send data to correct device
+                x = tensor_dict_to_device(x, device=device)
+                pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device) for pre_comp in pre_computed)
+
+                # Feature extraction
+                outputs.append(
+                    model.extract_latent_features(x, pre_computed=pre_computed,
+                                                  channel_name_to_index=channel_name_to_index).to("cpu")
+                )
+
+        return torch.cat(outputs, dim=0)
 
     # -------------
     # Properties
