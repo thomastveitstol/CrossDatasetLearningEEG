@@ -3,8 +3,8 @@ colormap: viridis
 distance_measures: [ centroid_l2, average_l2_to_centroid ]
 DL Architecture:
   kwargs:
-    cnn_units: 4
-    depth: 60
+    cnn_units: 16
+    depth: 6
     num_classes: 1
   model: InceptionNetwork
 Datasets:
@@ -37,7 +37,8 @@ Varied Numbers of Channels:
   RegionBasedPooling:
     RBPDesigns:
       RBPDesign0:
-        cmmn_kwargs: null
+        cmmn_kwargs:
+          kernel_size: 128
         num_designs: 1
         pooling_methods: MultiCSSharedRocket
         pooling_methods_kwargs:

@@ -166,4 +166,5 @@ def generate_config_file(config):
             "DL Architecture": dl_model,
             "DomainDiscriminator": discriminator,
             "run_baseline": config["run_baseline"],
-            "cv_method": config["cv_method"]}
+            "cv_method": config["cv_method"],
+            "LatentFeatureDistribution": config["LatentFeatureDistribution"]}

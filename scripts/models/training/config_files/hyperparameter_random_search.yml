@@ -17,6 +17,11 @@ SubGroups:
     dataset_name:  # todo: don't hardcode like this
       [ rockhill, miltiadous, hatlestad_hall, yulin_wang, cau_eeg, mpi_lemon ]
 
+LatentFeatureDistribution:
+  make_initial_distribution_exploration: true
+  colormap: viridis
+  distance_measures: [ centroid_l2, average_l2_to_centroid ]
+
 Datasets:
   # ous:
   #   num_subjects: 1000

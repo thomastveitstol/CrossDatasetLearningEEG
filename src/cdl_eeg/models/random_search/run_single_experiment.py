@@ -223,6 +223,20 @@ class Experiment:
                                   channel_systems=channel_systems)
 
         # -----------------
+        # Maybe make plots of latent feature distribution distances
+        # -----------------
+        if self.latent_feature_distributions_config["make_initial_distribution_exploration"]:
+            print("Analysing latent feature distributions...")
+
+            # Make folder
+            latent_path = os.path.join(results_path, "latent_features")
+            os.mkdir(latent_path)
+
+            # Do analysis
+            self._save_initial_latent_feature_distributions(model=model, channel_name_to_index=channel_name_to_index,
+                                                            combined_dataset=combined_dataset, results_path=latent_path)
+
+        # -----------------
         # Create data loaders (and target scaler)
         # -----------------
         print("Creating data loaders...")
@@ -591,14 +605,15 @@ class Experiment:
         # Fit channel systems
         self._fit_channel_systems(model=model, channel_systems=channel_systems)
 
-        # (Maybe) fit the CMMN layers of RBP  todo: must check with and without CMMN
-        # if model.any_rbp_cmmn_layers:
-        #     self._fit_cmmn_layers(model=model, train_data=combined_dataset.get_data(train_subjects),
-        #                           channel_systems=channel_systems)
         # -----------------
         # Split on dataset level
         # -----------------
         folds = get_data_split(split="SplitOnDataset", dataset_subjects=dataset_subjects).folds
+
+        # (Maybe) fit the CMMN layers of RBP  todo: must check with and without CMMN
+        if model.any_rbp_cmmn_layers:
+            self._fit_cmmn_layers(model=model, train_data=combined_dataset.get_data(tuple(itertools.chain(*folds))),
+                                  channel_systems=channel_systems)
 
         # Get the data loaders (the targets are not important, may change a little here in a future refactoring)
         data_loaders = {fold[0].dataset_name:  # todo
@@ -610,11 +625,11 @@ class Experiment:
         # -----------------
         # Compute features
         # -----------------
-        latent_features = {
+        latent_features = dict(sorted({
             dataset_name: self._extract_all_latent_features(model=model, data_loader=data_loader, device=self._device,
                                                             channel_name_to_index=channel_name_to_index)
             for dataset_name, data_loader in data_loaders.items()
-        }
+        }.items()))
 
         # Compute distances between the latent distributions
         distances = self._compute_distribution_distances(data=latent_features,
@@ -635,27 +650,115 @@ class Experiment:
         colors = colormap(numpy.linspace(start=0, stop=1, num=len(latent_features)))
 
         # Loop through all datasets
+        pyplot.figure(figsize=(16, 9))
+        for col, dataset_name in zip(colors, latent_features):
+            indices = features_df["dataset_name"] == dataset_name
+            pyplot.scatter(umap_data[0][indices], umap_data[1][indices], marker='o', label=dataset_name, color=col)
+
+        # Plot cosmetics
+        fontsize = 17
+        pyplot.xlabel("Dimension 1", fontsize=fontsize)
+        pyplot.ylabel("Dimension 2", fontsize=fontsize)
+        pyplot.xticks(fontsize=fontsize)
+        pyplot.yticks(fontsize=fontsize)
+        pyplot.title("UMAP", fontsize=fontsize+5)
+        pyplot.legend(fontsize=fontsize)
+
+        # -----------------
+        # Plot distances
+        # -----------------
+        for metric, distance_matrix in distances.items():
+            fig, ax = pyplot.subplots(figsize=(16, 9))
+            seaborn.heatmap(distance_matrix, annot=True, fmt=".3f", annot_kws={"size": fontsize}, ax=ax)
+
+            # Set the font size of the color bar labels
+            cbar = ax.collections[0].colorbar
+            cbar.ax.tick_params(labelsize=fontsize)
+            cbar.ax.set_ylabel("Distance", fontsize=fontsize)
+
+            ax.tick_params(labelsize=fontsize)
+            ax.tick_params(axis="x", labelrotation=20)
+            ax.tick_params(axis="y", labelrotation=70)
+            ax.set_title(metric, fontsize=fontsize)
+
+        pyplot.show()
+
+    def _save_initial_latent_feature_distributions(self, model, channel_name_to_index, combined_dataset, results_path):
+        # Get the data loaders (the targets are not important, may change a little here in a future refactoring)
+        # todo
+        _folds = get_data_split(split="SplitOnDataset", dataset_subjects=combined_dataset.dataset_subjects).folds
+        data_loaders = {fold[0].dataset_name: self._load_test_data_loader(
+            model=model, test_subjects=fold, combined_dataset=combined_dataset,
+            target_scaler=get_target_scaler(scaler="NoScaler")
+        ) for fold in _folds}
+
+        # -----------------
+        # Compute features
+        # -----------------
+        # Compute and sort by key (just sorting in alphabetical order)
+        latent_features = dict(sorted({
+            dataset_name: self._extract_all_latent_features(model=model, data_loader=data_loader, device=self._device,
+                                                            channel_name_to_index=channel_name_to_index)
+            for dataset_name, data_loader in data_loaders.items()
+        }.items()))
+
+        # Compute distances between the latent distributions
+        distances = self._compute_distribution_distances(
+            data=latent_features, distance_measures=self.latent_feature_distributions_config["distance_measures"]
+        )
+
+        # Convert to dataframe
+        features_df = self._latent_dict_features_to_dataframe(latent_features)
+
+        # -----------------
+        # Compute UMAP plots
+        # -----------------
+        umap = UMAP(n_components=2)
+        umap_data = umap.fit_transform(features_df[[col_name for col_name in features_df.columns
+                                                    if col_name != "dataset_name"]]).T
+
+        # Selecting colors
+        colormap = matplotlib.colormaps.get_cmap(self.latent_feature_distributions_config["colormap"])
+        colors = colormap(numpy.linspace(start=0, stop=1, num=len(latent_features)))
+
+        # Loop through all datasets
+        pyplot.figure(figsize=(16, 9))
         for col, dataset_name in zip(colors, latent_features):
             indices = features_df["dataset_name"] == dataset_name
             pyplot.scatter(umap_data[0][indices], umap_data[1][indices], marker='o', label=dataset_name,
                            color=col)
 
         # Plot cosmetics
-        fontsize = 15
+        fontsize = 17
         pyplot.xlabel("Dimension 1", fontsize=fontsize)
         pyplot.ylabel("Dimension 2", fontsize=fontsize)
-        pyplot.title("UMAP")
-        pyplot.legend()
+        pyplot.xticks(fontsize=fontsize)
+        pyplot.yticks(fontsize=fontsize)
+        pyplot.title("UMAP", fontsize=fontsize + 5)
+        pyplot.legend(fontsize=fontsize)
+
+        pyplot.savefig(os.path.join(results_path, "umap.png"))
+        pyplot.close("all")
 
         # -----------------
         # Plot distances
         # -----------------
         for metric, distance_matrix in distances.items():
-            pyplot.figure()
-            seaborn.heatmap(distance_matrix, annot=True, fmt=".3f")
-            pyplot.title(metric)
+            fig, ax = pyplot.subplots(figsize=(16, 9))
+            seaborn.heatmap(distance_matrix, annot=True, fmt=".3f", annot_kws={"size": fontsize}, ax=ax)
 
-        pyplot.show()
+            # Set the font size of the color bar labels
+            cbar = ax.collections[0].colorbar
+            cbar.ax.tick_params(labelsize=fontsize)
+            cbar.ax.set_ylabel("Distance", fontsize=fontsize)
+
+            ax.tick_params(labelsize=fontsize)
+            ax.tick_params(axis="x", labelrotation=20)
+            ax.tick_params(axis="y", labelrotation=70)
+            ax.set_title(metric, fontsize=fontsize)
+
+            fig.savefig(os.path.join(results_path, f"{metric}.png"))
+            pyplot.close("all")
 
     @staticmethod
     def _compute_distribution_distances(data, distance_measures):
@@ -666,16 +769,14 @@ class Experiment:
         >>> my_x2 = torch.tensor([[1, 0], [3, 0], [3, -2], [1, -2], [2, -1]], dtype=torch.float)
         >>> my_distances = Experiment._compute_distribution_distances({"d1": my_x1, "d2": my_x2},
         ...                                                           ("centroid_l2", "average_l2_to_centroid"))
-        >>> my_distances["centroid_l2"]  # doctest: +NORMALIZE_WHITESPACE
-                       d1        d2
-        dataset
-        d1       0.000000  1.414214
-        d2       1.414214  0.000000
-        >>> my_distances["average_l2_to_centroid"]  # doctest: +NORMALIZE_WHITESPACE
-                       d1        d2
-        dataset
-        d1       1.414214  1.707107
-        d2       1.648528  1.131371
+        >>> my_distances["centroid_l2"]
+                  d1        d2
+        d1  0.000000  1.414214
+        d2  1.414214  0.000000
+        >>> my_distances["average_l2_to_centroid"]
+                  d1        d2
+        d1  1.414214  1.707107
+        d2  1.648528  1.131371
         """
         distances = dict()
         for distance_measure in distance_measures:
@@ -689,6 +790,7 @@ class Experiment:
             df = pandas.DataFrame.from_dict(distances_single_metric)
             df["dataset"] = tuple(data.keys())
             df.set_index("dataset", inplace=True)
+            df.index.name = None
             distances[distance_measure] = df
         return distances
 
@@ -780,3 +882,8 @@ class Experiment:
     def shared_pre_processing_config(self):
         """Get the dict of the pre-processing config file which contains all shared pre-processing configurations"""
         return self._pre_processing_config["general"]
+
+    @property
+    def latent_feature_distributions_config(self):
+        """Get the dict of the plots of latent feature distributions and distances"""
+        return self._config["LatentFeatureDistribution"]
