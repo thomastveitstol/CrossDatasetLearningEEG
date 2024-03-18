@@ -16,13 +16,9 @@ from cdl_eeg.data.paths import get_results_dir
 # --------------
 # Functions for getting the distribution distance
 # --------------
-def _get_distances(*, path, dataset, metric, exclude_self):
+def _get_distances(*, path, metric):
     # Load file
     df = pandas.read_csv(os.path.join(path, f"{metric}.csv"), index_col=0)
-
-    # Maybe exclude the self column
-    if exclude_self:
-        df.drop(dataset, axis="index", inplace=True)
 
     # Return
     return df
@@ -42,9 +38,18 @@ def _aggregate_distances(*, distances: pandas.DataFrame, method: str):
         raise ValueError(f"Aggregation method {method} was not recognised")
 
 
-def _get_aggregated_distance(*, path, dataset, metric, exclude_self, aggregation_method):
-    # Get the distance matrix
-    df = _get_distances(path=path, dataset=dataset, metric=metric, exclude_self=exclude_self)
+def _get_aggregated_distance(*, path, dataset, metric, exclude_self, aggregation_method, scale):
+    # Get the distances
+    df = _get_distances(path=path, metric=metric)
+
+    # Maybe scale based on diagonal entries
+    if scale:
+        for row in df.index:
+            df.at[row, dataset] /= df.at[row, row]
+
+    # Maybe exclude the self column
+    if exclude_self:
+        df.drop(dataset, axis="index", inplace=True)
 
     # Aggregate the distances
     return _aggregate_distances(distances=df[dataset], method=aggregation_method)
@@ -123,17 +128,18 @@ def main():
     # Hyperparameters
     # --------------
     distance_metric = "average_l2_to_centroid"  # "centroid_l2"
+    scale = True
     distance_aggregation_method = "median"
     exclude_self = True
 
-    dataset = "rockhill"
+    dataset = "yulin_wang"
     performance_metric = "auc"
     balance_validation_performance = False
 
     results_dir = os.path.join(get_results_dir(), "debug_plot_script")
 
     # Cosmetics
-    colormap = "viridis"
+    colormap = "Blues"
     fontsize = 17
     figsize = (16, 9)
 
@@ -172,14 +178,15 @@ def main():
         # Get distance
         distances.append(_get_aggregated_distance(aggregation_method=distance_aggregation_method,
                                                   exclude_self=exclude_self, dataset=dataset, metric=distance_metric,
-                                                  path=os.path.join(path, "latent_features")))  # type: ignore
+                                                  path=os.path.join(path, "latent_features"),  # type: ignore
+                                                  scale=scale))
 
     # --------------
     # Plotting
     # --------------
     pyplot.figure(figsize=figsize)
 
-    pyplot.scatter(x=distances, y=test_performance, c=val_performance, cmap=matplotlib.colormaps.get_cmap(colormap),
+    pyplot.scatter(x=distances, y=val_performance, c=test_performance, cmap=matplotlib.colormaps.get_cmap(colormap),
                    marker="o")
 
     # Cosmetics
