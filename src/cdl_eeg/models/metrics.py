@@ -434,10 +434,6 @@ class Histories:
         # Save as .csv
         df.to_csv(os.path.join(path, f"{history_name}_history.csv"), index=False)
 
-    def save_subgroups_history(self):
-        pass
-
-
     # -----------------
     # Methods for getting the available metrics
     # -----------------
