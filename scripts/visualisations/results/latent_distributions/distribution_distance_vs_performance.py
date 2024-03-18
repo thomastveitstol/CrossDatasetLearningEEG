@@ -146,7 +146,7 @@ def main():
                    "hatlestad_hall": "HatlestadHall",
                    "yulin_wang": "YulinWang",
                    "rockhill": "Rockhill",
-                   "mpi_lemon": "MPI Lemon",}
+                   "mpi_lemon": "MPI Lemon"}
 
     # --------------
     # Select runs
