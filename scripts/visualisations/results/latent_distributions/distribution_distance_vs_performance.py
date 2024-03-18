@@ -17,11 +17,7 @@ from cdl_eeg.data.paths import get_results_dir
 # Functions for getting the distribution distance
 # --------------
 def _get_distances(*, path, metric):
-    # Load file
-    df = pandas.read_csv(os.path.join(path, f"{metric}.csv"), index_col=0)
-
-    # Return
-    return df
+    return pandas.read_csv(os.path.join(path, f"{metric}.csv"), index_col=0)
 
 
 def _aggregate_distances(*, distances: pandas.DataFrame, method: str):
