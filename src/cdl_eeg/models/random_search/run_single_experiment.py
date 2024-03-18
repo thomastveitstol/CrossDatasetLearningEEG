@@ -337,27 +337,31 @@ class Experiment:
     # Methods for saving results
     # -------------
     def _save_results(self, *, histories, test_estimate, results_path):
+        decimals = 3
+
         # Save prediction histories
         if self.domain_discriminator_config is None:
             train_history, val_history, test_history = histories
 
-            train_history.save_main_history(history_name="train_history", path=results_path)
-            val_history.save_main_history(history_name="val_history", path=results_path)
+            train_history.save_main_history(history_name="train_history", path=results_path, decimals=decimals)
+            val_history.save_main_history(history_name="val_history", path=results_path, decimals=decimals)
             if test_history is not None:
-                test_history.save_main_history(history_name="test_history", path=results_path)
+                test_history.save_main_history(history_name="test_history", path=results_path, decimals=decimals)
         else:
             domain_discriminator_path = os.path.join(results_path, "domain_discriminator")
             os.mkdir(domain_discriminator_path)
 
             train_history, val_history, test_history, dd_train_history, dd_val_history = histories
 
-            train_history.save_main_history(history_name="train_history", path=results_path)
-            val_history.save_main_history(history_name="val_history", path=results_path)
+            train_history.save_main_history(history_name="train_history", path=results_path, decimals=decimals)
+            val_history.save_main_history(history_name="val_history", path=results_path, decimals=decimals)
             if test_history is not None:
-                test_history.save_main_history(history_name="test_history", path=results_path)
+                test_history.save_main_history(history_name="test_history", path=results_path, decimals=decimals)
 
-            dd_train_history.save_main_history(history_name="dd_train_history", path=domain_discriminator_path)
-            dd_val_history.save_main_history(history_name="dd_val_history", path=domain_discriminator_path)
+            dd_train_history.save_main_history(history_name="dd_train_history", path=domain_discriminator_path,
+                                               decimals=decimals)
+            dd_val_history.save_main_history(history_name="dd_val_history", path=domain_discriminator_path,
+                                             decimals=decimals)
 
             # Save domain discriminator metrics plots
             save_discriminator_histories_plots(path=domain_discriminator_path,
@@ -367,11 +371,10 @@ class Experiment:
         sub_group_path = os.path.join(results_path, "sub_groups_plots")
         os.mkdir(sub_group_path)
 
-        _decimals = 3
-        train_history.save_subgroup_metrics(history_name="train", path=sub_group_path, decimals=_decimals)
-        val_history.save_subgroup_metrics(history_name="val", path=sub_group_path, decimals=_decimals)
+        train_history.save_subgroup_metrics(history_name="train", path=sub_group_path, decimals=decimals)
+        val_history.save_subgroup_metrics(history_name="val", path=sub_group_path, decimals=decimals)
         if test_history is not None:
-            test_history.save_subgroup_metrics(history_name="test", path=sub_group_path, decimals=_decimals)
+            test_history.save_subgroup_metrics(history_name="test", path=sub_group_path, decimals=decimals)
 
         # Save plots
         save_histories_plots(path=results_path, train_history=train_history, val_history=val_history,
