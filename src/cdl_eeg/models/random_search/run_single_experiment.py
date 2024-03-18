@@ -341,25 +341,23 @@ class Experiment:
         if self.domain_discriminator_config is None:
             train_history, val_history, test_history = histories
 
-            train_history.save_prediction_history(history_name="train_history", path=results_path)
-            val_history.save_prediction_history(history_name="val_history", path=results_path)
+            train_history.save_main_history(history_name="train_history", path=results_path)
+            val_history.save_main_history(history_name="val_history", path=results_path)
             if test_history is not None:
-                test_history.save_prediction_history(history_name="test_history", path=results_path)
+                test_history.save_main_history(history_name="test_history", path=results_path)
         else:
             domain_discriminator_path = os.path.join(results_path, "domain_discriminator")
             os.mkdir(domain_discriminator_path)
 
             train_history, val_history, test_history, dd_train_history, dd_val_history = histories
 
-            train_history.save_prediction_history(history_name="train_history", path=results_path)
-            val_history.save_prediction_history(history_name="val_history", path=results_path)
+            train_history.save_main_history(history_name="train_history", path=results_path)
+            val_history.save_main_history(history_name="val_history", path=results_path)
             if test_history is not None:
-                test_history.save_prediction_history(history_name="test_history", path=results_path)
+                test_history.save_main_history(history_name="test_history", path=results_path)
 
-            dd_train_history.save_prediction_history(history_name="dd_train_history",
-                                                     path=domain_discriminator_path)
-            dd_val_history.save_prediction_history(history_name="dd_val_history",
-                                                   path=domain_discriminator_path)
+            dd_train_history.save_main_history(history_name="dd_train_history", path=domain_discriminator_path)
+            dd_val_history.save_main_history(history_name="dd_val_history", path=domain_discriminator_path)
 
             # Save domain discriminator metrics plots
             save_discriminator_histories_plots(path=domain_discriminator_path,
@@ -369,10 +367,11 @@ class Experiment:
         sub_group_path = os.path.join(results_path, "sub_groups_plots")
         os.mkdir(sub_group_path)
 
-        train_history.save_subgroup_metrics_plots(history_name="train", path=sub_group_path)
-        val_history.save_subgroup_metrics_plots(history_name="val", path=sub_group_path)
+        _decimals = 3
+        train_history.save_subgroup_metrics(history_name="train", path=sub_group_path, decimals=_decimals)
+        val_history.save_subgroup_metrics(history_name="val", path=sub_group_path, decimals=_decimals)
         if test_history is not None:
-            test_history.save_subgroup_metrics_plots(history_name="test", path=sub_group_path)
+            test_history.save_subgroup_metrics(history_name="test", path=sub_group_path, decimals=_decimals)
 
         # Save plots
         save_histories_plots(path=results_path, train_history=train_history, val_history=val_history,
@@ -759,6 +758,9 @@ class Experiment:
 
             fig.savefig(os.path.join(results_path, f"{metric}.png"))
             pyplot.close("all")
+
+            # Save as a .csv file
+            distance_matrix.to_csv(os.path.join(results_path, f"{metric}.csv"))
 
     @staticmethod
     def _compute_distribution_distances(data, distance_measures):

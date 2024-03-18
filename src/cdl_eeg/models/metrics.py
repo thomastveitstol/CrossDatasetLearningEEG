@@ -347,9 +347,9 @@ class Histories:
         df = df.round({col: decimals for col in epochs_column_names})
 
         # Save csv file
-        df.to_csv(os.path.join(path, f"{history_name}.csv"), index=False)
+        df.to_csv(os.path.join(path, f"{history_name}_predictions.csv"), index=False)
 
-    def save_subgroup_metrics_plots(self, history_name, path):
+    def save_subgroup_metrics(self, history_name, path, decimals=None):
         # If there are no subgroups registered, raise a warning and do nothing
         if self._subgroup_histories is None:
             warnings.warn(message="Tried to save plot of metrics computed per sub-group, but there were no subgroups",
@@ -405,6 +405,38 @@ class Histories:
                 # Save figure and close it
                 pyplot.savefig(os.path.join(metric_path, f"{history_name}_{metric_to_plot}.png"))
                 pyplot.close()
+
+                # Save history object as well
+                df = pandas.DataFrame.from_dict(self._history)
+
+                if decimals is not None:
+                    df = df.round(decimals)
+
+                df.to_csv(os.path.join(path, f"{history_name}_{metric_to_plot}.csv"), index=False)
+
+    def save_main_history(self, history_name, path, decimals):
+        """Method for saving the main (non subgroup) history"""
+        # ---------------
+        # Save predictions
+        # ---------------
+        self.save_prediction_history(history_name=history_name, path=path, decimals=decimals)
+
+        # ---------------
+        # Save the metrics in .csv format
+        # ---------------
+        # Create pandas dataframe
+        df = pandas.DataFrame.from_dict(self._history)
+
+        # Maybe set decimals
+        if decimals is not None:
+            df = df.round(decimals)
+
+        # Save as .csv
+        df.to_csv(os.path.join(path, f"{history_name}_history.csv"), index=False)
+
+    def save_subgroups_history(self):
+        pass
+
 
     # -----------------
     # Methods for getting the available metrics
