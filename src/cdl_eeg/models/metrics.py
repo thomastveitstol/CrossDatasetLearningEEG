@@ -282,6 +282,13 @@ class Histories:
     @classmethod
     def _compute_metric(cls, metric: str, *, y_pred: torch.Tensor, y_true: torch.Tensor):
         """Method for computing the specified metric"""
+
+        # Input check
+        if metric not in cls.get_available_metrics():
+            raise ValueError(f"The metric {metric} was not recognised. The available ones are: "
+                             f"{cls.get_available_metrics()}")
+
+        # Compute the metric
         return getattr(cls, metric)(y_pred=y_pred, y_true=y_true)
 
     # -----------------
@@ -450,6 +457,12 @@ class Histories:
         # Convert to tuple and return
         return tuple(metrics)
 
+    @classmethod
+    def get_available_metrics(cls):
+        """Get all available metrics"""
+        return (cls.get_available_classification_metrics() + cls.get_available_multiclass_classification_metrics() +
+                cls.get_available_regression_metrics())
+
     # -----------------
     # Regression metrics
     # todo: make tests and add more metrics
@@ -593,6 +606,13 @@ class DistanceMetrics:
 
     @classmethod
     def compute_distance(cls, metric, *, x1, x2):
+        """Main method for computing distances"""
+        # Input check
+        if metric not in cls.get_available_distance_metrics():
+            raise ValueError(f"The metric {metric} was not recognised. The available metrics for this class are: "
+                             f"{cls.get_available_distance_metrics()}")
+
+        # Return distance
         return getattr(cls, metric)(x1=x1, x2=x2)
 
     # -------------
