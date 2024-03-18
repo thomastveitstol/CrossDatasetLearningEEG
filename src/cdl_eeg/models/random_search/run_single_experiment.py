@@ -575,6 +575,12 @@ class Experiment:
         else:
             raise ValueError
 
+        # -----------------
+        # Create a file indicating that everything ran as expected
+        # -----------------
+        with open(os.path.join(self._results_path, "finished_successfully.txt"), "w"):
+            pass
+
     # -------------
     # Methods for exploration of why cross dataset DL is difficult
     # -------------
