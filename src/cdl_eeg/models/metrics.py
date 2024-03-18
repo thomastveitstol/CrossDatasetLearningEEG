@@ -412,7 +412,7 @@ class Histories:
                 if decimals is not None:
                     df = df.round(decimals)
 
-                df.to_csv(os.path.join(path, f"{history_name}_{metric_to_plot}.csv"), index=False)
+                df.to_csv(os.path.join(metric_path, f"{history_name}_{metric_to_plot}.csv"), index=False)
 
     def save_main_history(self, history_name, path, decimals):
         """Method for saving the main (non subgroup) history"""
@@ -432,7 +432,7 @@ class Histories:
             df = df.round(decimals)
 
         # Save as .csv
-        df.to_csv(os.path.join(path, f"{history_name}_history.csv"), index=False)
+        df.to_csv(os.path.join(path, f"{history_name}_metrics.csv"), index=False)
 
     # -----------------
     # Methods for getting the available metrics
