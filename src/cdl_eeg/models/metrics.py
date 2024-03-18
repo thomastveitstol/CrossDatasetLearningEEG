@@ -384,9 +384,14 @@ class Histories:
                     os.mkdir(metric_path)
 
                 # Loop through all subgroups
+                df_dict: Dict[str, List[float]] = dict()
                 for subgroup_name, subgroup_metrics in subgroups.items():
                     # Get the performance
                     performance = subgroup_metrics[metric_to_plot]
+
+                    # Only add it if it is non-empty
+                    if performance:
+                        df_dict[subgroup_name] = performance
 
                     # Plot, if values are registered
                     if performance:
@@ -407,7 +412,7 @@ class Histories:
                 pyplot.close()
 
                 # Save history object as well
-                df = pandas.DataFrame.from_dict(self._history)
+                df = pandas.DataFrame.from_dict(df_dict)
 
                 if decimals is not None:
                     df = df.round(decimals)

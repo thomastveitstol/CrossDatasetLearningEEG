@@ -61,7 +61,16 @@ def _get_val_test_performance(path, *, metric, balance_validation_performance):
 
     # Get the validation and test performances
     if balance_validation_performance:
-        raise NotImplementedError
+        val_df_path = os.path.join(path, "sub_groups_plots", "dataset_name", metric, f"val_{metric}.csv")
+        val_df = pandas.read_csv(val_df_path)  # type: ignore
+
+        # todo: consider merging by median
+        val_performances = numpy.mean(val_df.values, axis=-1)
+
+        # Get the best performance and its epoch  # todo: assumes the higher the better
+        val_idx = numpy.argmax(val_performances)
+        val_performance = val_performances[val_idx]
+
     else:
         # Load the dataframe of the validation performances
         val_df = pandas.read_csv(os.path.join(path, "val_history_metrics.csv"))
@@ -70,9 +79,9 @@ def _get_val_test_performance(path, *, metric, balance_validation_performance):
         val_idx = numpy.argmax(val_df[metric])
         val_performance = val_df[metric][val_idx]
 
-        # Get the test performance from the same epoch
-        test_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
-        test_performance = test_df[metric][val_idx]
+    # Get the test performance from the same epoch
+    test_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
+    test_performance = test_df[metric][val_idx]
 
     return val_performance, test_performance
 
@@ -132,7 +141,7 @@ def main():
     performance_metric = "auc"
     balance_validation_performance = False
 
-    results_dir = os.path.join(get_results_dir(), "debug_plot_script")
+    results_dir = os.path.join(get_results_dir(), "debug_plot_script_new")
 
     # Cosmetics
     colormap = "Blues"
