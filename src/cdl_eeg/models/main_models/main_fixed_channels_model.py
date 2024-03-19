@@ -19,8 +19,10 @@ class MainFixedChannelsModel(nn.Module):
     --------
     >>> my_mts_kwargs = {"in_channels": 19, "num_classes": 7, "depth": 3}
     >>> my_dd_kwargs = {"hidden_units": (8, 4), "num_classes": 3}
+    >>> my_cmmn_kwargs = {"kernel_size": 128}
     >>> MainFixedChannelsModel("InceptionNetwork", mts_module_kwargs=my_mts_kwargs, domain_discriminator="FCModule",
-    ...                        domain_discriminator_kwargs=my_dd_kwargs)
+    ...                        domain_discriminator_kwargs=my_dd_kwargs, use_cmmn_layer=True,
+    ...                        cmmn_kwargs=my_cmmn_kwargs)
     MainFixedChannelsModel(
       (_mts_module): InceptionNetwork(
         (_inception_modules): ModuleList(
@@ -77,7 +79,7 @@ class MainFixedChannelsModel(nn.Module):
         domain_discriminator : str, optional
         domain_discriminator_kwargs: dict[str, typing.Any] | None
         use_cmmn_layer : bool
-        cmmn_kwargs : dict[str, typing.Any]
+        cmmn_kwargs : dict[str, typing.Any] | None
         """
         super().__init__()
 
@@ -108,7 +110,7 @@ class MainFixedChannelsModel(nn.Module):
             )
 
     @classmethod
-    def from_config(cls, mts_config, discriminator_config):
+    def from_config(cls, mts_config, discriminator_config, cmmn_config):
         """
         Initialise from config file
 
@@ -116,11 +118,15 @@ class MainFixedChannelsModel(nn.Module):
         ----------
         mts_config : dict[str, typing.Any]
         discriminator_config : dict[str, typing.Any] | None
+        cmmn_config : dict[str, typing.Any]
         """
+        use_cmmn_layer = cmmn_config["use_cmmn_layer"]
         return cls(mts_module=mts_config["name"],
                    mts_module_kwargs=mts_config["kwargs"],
                    domain_discriminator=None if discriminator_config is None else discriminator_config["name"],
-                   domain_discriminator_kwargs=None if discriminator_config is None else discriminator_config["kwargs"])
+                   domain_discriminator_kwargs=None if discriminator_config is None else discriminator_config["kwargs"],
+                   use_cmmn_layer=cmmn_config["use_cmmn_layer"],
+                   cmmn_kwargs=None if not use_cmmn_layer else cmmn_config["kwargs"])
 
     # ---------------
     # Methods for forward propagation
@@ -145,8 +151,10 @@ class MainFixedChannelsModel(nn.Module):
         --------
         >>> my_mts_kwargs = {"in_channels": 23, "num_classes": 11, "depth": 3}
         >>> my_dd_kwargs = {"hidden_units": (8, 4), "num_classes": 3}
+        >>> my_cmmn_kwargs = {"kernel_size": 64}
         >>> my_model = MainFixedChannelsModel("InceptionNetwork", mts_module_kwargs=my_mts_kwargs,
-        ...                                   domain_discriminator="FCModule", domain_discriminator_kwargs=my_dd_kwargs)
+        ...                                   domain_discriminator="FCModule", domain_discriminator_kwargs=my_dd_kwargs,
+        ...                                   use_cmmn_layer=True, cmmn_kwargs=my_cmmn_kwargs)
         >>> my_model(torch.rand(size=(10, 23, 300))).size()
         torch.Size([10, 11])
 
