@@ -1,3 +1,5 @@
+import warnings
+
 import enlighten
 import torch
 import torch.nn as nn
@@ -48,8 +50,10 @@ class MainFixedChannelsModel(nn.Module):
         torch.Size([14, 11])
         """
         # (Maybe) concatenate all tensors. This should be possible, as this class should ony be used with a fixed number
-        # of input channels
+        # of input channels. However, such usage is not recommended, as it is not necessary to store in a dict. Storing
+        # in dict also makes it a little more difficult to know which is the i-th subject
         if isinstance(x, dict):
+            warnings.warn("Passing the data as a dictionary of torch.Tensor values is not recommended.")
             x = torch.cat(tuple(x.values()), dim=0)
 
         # Run through MTS module and return
