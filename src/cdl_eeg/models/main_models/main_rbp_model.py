@@ -4,7 +4,6 @@ from typing import List, Dict
 import enlighten
 import torch
 import torch.nn as nn
-from sklearn.manifold import TSNE
 
 from cdl_eeg.data.data_generators.data_generator import strip_tensors
 from cdl_eeg.data.subject_split import Subject
@@ -660,49 +659,6 @@ class MainRBPModel(nn.Module):
             history.on_epoch_end(verbose=verbose, verbose_sub_groups=sub_groups_verbose)
 
         return history
-
-    # ----------------
-    # Methods for t-SNE
-    # ----------------
-    def fit_tsne(self, input_tensors, *, channel_name_to_index, pre_computed=None, n_components=2):
-        """
-        Method for fitting t-SNE
-
-        Parameters
-        ----------
-        input_tensors : dict[str, torch.Tensor]
-        channel_name_to_index : dict[str, dict[str, int]]
-        pre_computed : tuple[dict[str, typing.Any], ...], optional
-        n_components : int
-            Number of components for the t-SNE object
-
-        Returns
-        -------
-        numpy.ndarray
-        """
-        with torch.no_grad():
-            # ---------------
-            # Forward pass
-            # ---------------
-            # Pass through RBP layer
-            x = self._region_based_pooling(input_tensors, channel_name_to_index=channel_name_to_index,
-                                           pre_computed=pre_computed)
-
-            # Merge by concatenation
-            x = torch.cat(x, dim=1)
-
-            # Pass through MTS module, and extract features
-            x = self._mts_module(x, return_features=True)
-
-            # ---------------
-            # Create and fit t-SNE
-            # ---------------
-            # Send features to cpu
-            x = x.cpu()
-
-        # Create and fit t-SNE
-        tsne = TSNE(n_components=n_components)
-        return tsne.fit_transform(x)
 
     # ----------------
     # Properties
