@@ -25,10 +25,9 @@ def _get_test_performances(path, metric):
     if len(val_df.columns) != 1:
         raise ValueError(f"Expected only one dataset in the validation set, but found {len(val_df.columns)}: "
                          f"{val_df.columns}")
-    print(val_df)
+
     # Get the best epoch of best performance  # todo: assumes the higher the better
     val_idx = numpy.argmax(val_df.iloc[:, 0])
-    print(val_idx)
 
     # --------------
     # Get the test performance from the same epoch, for all datasets in the test set
@@ -95,10 +94,19 @@ def main():
     # --------------
     # Hyperparameters
     # --------------
-    source_dataset = "hatlestad_hall"
+    source_dataset = "mpi_lemon"
     metric = "auc"
 
     results_dir = os.path.join(get_results_dir(), "debug_results_inverted_lodo_1")
+
+    # --------------
+    # Define some prettier names
+    # --------------
+    pretty_name = {"auc": "AUC",
+                   "hatlestad_hall": "HatlestadHall",
+                   "yulin_wang": "YulinWang",
+                   "rockhill": "Rockhill",
+                   "mpi_lemon": "MPI Lemon"}
 
     # --------------
     # Select runs
@@ -119,7 +127,8 @@ def main():
         curr_performances = _get_test_performances(path=path, metric=metric)
 
         # Add it
-        for dataset, performance in curr_performances.items():
+        for _dataset, performance in curr_performances.items():
+            dataset = pretty_name[_dataset]  # Just a prettier version of the dataset name to get a pretty plot
             if dataset in all_performances:
                 all_performances[dataset].append(performance)
             else:
@@ -128,7 +137,16 @@ def main():
     # --------------
     # Plotting
     # --------------
-    seaborn.boxplot(data=all_performances)
+    ax = seaborn.boxplot(data=all_performances)
+
+    # Cosmetics
+    fontsize = 17
+    ax.tick_params(labelsize=fontsize)
+    ax.set_title(f"Source dataset: {pretty_name[source_dataset]}", fontsize=fontsize + 3)
+    ax.set_ylabel(f"Performance ({pretty_name[metric]})", fontsize=fontsize)
+    ax.grid(axis="y")
+    ax.xaxis.label.set_size(fontsize)
+    ax.yaxis.label.set_size(fontsize)
 
     pyplot.show()
 
