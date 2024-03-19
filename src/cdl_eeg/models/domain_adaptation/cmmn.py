@@ -23,7 +23,8 @@ from cdl_eeg.models.region_based_pooling.utils import RegionID, CHANNELS_IN_MONT
 
 class ConvMMN:
     """
-    Implementation of CMMN
+    Implementation of CMMN. It is important that the input tensors/arrays are consistent in which EEG channel is the
+    i-th channel in the data matrix
 
     Examples
     --------
