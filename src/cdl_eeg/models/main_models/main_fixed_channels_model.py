@@ -310,6 +310,6 @@ class MainFixedChannelsModel(nn.Module):
         return self._domain_discriminator is not None
 
     @property
-    def has_cmmn_layer(self):  # todo: inconsistent property name with respect to the RBP version
+    def has_cmmn_layer(self) -> bool:  # todo: inconsistent property name with respect to the RBP version
         """Boolean indicating if the model uses a CMMN layer (True) or not (False)"""
         return self._cmmn_layer is not None
