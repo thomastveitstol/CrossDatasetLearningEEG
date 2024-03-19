@@ -13,7 +13,7 @@ from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
 
 def main():
     average_reference = True
-    num_subjects_per_dataset = 50
+    num_subjects_per_dataset = 150
 
     fmin = 0
     fmax = 60
@@ -72,11 +72,18 @@ def main():
     # Plotting
     # --------------
     for dataset_name, psd in grand_averages.items():
-        pyplot.plot(numpy.linspace(start=fmin, stop=fmax, num=psd.shape[0]), psd, label=dataset_name)
-        pyplot.title("Grand average PSDs")
+        # Plot with common units (dB)
+        pyplot.plot(numpy.linspace(start=fmin, stop=fmax, num=psd.shape[0]), 10*numpy.log10(psd*10**12),
+                    label=dataset_name)
 
-    pyplot.legend()
-    pyplot.yscale('log')
+    # Cosmetics
+    fontsize = 17
+    pyplot.xlabel("Frequency [Hz]", fontsize=fontsize)
+    pyplot.ylabel(r"Power [$\mu^2V^2 / Hz$] (dB)", fontsize=fontsize)
+    pyplot.legend(fontsize=fontsize)
+    pyplot.xticks(fontsize=fontsize)
+    pyplot.yticks(fontsize=fontsize)
+    pyplot.title("Grand average PSDs", fontsize=fontsize+5)
 
     pyplot.show()
 
