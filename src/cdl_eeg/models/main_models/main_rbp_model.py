@@ -680,7 +680,7 @@ class MainRBPModel(nn.Module):
 # ----------------
 # Functions
 # ----------------
-def reorder_subjects(order, subjects):
+def reorder_subjects(order, subjects):  # todo: move to base .py file
     """
     Function for re-ordering subjects such that they align with how the input and target tensors are concatenated
 
