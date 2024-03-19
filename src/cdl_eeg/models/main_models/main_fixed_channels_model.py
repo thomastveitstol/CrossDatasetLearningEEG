@@ -391,10 +391,12 @@ class MainFixedChannelsModel(nn.Module):
                         if target_scaler is not None:
                             y_pred = target_scaler.inv_transform(scaled_data=y_pred)
                             y = target_scaler.inv_transform(scaled_data=y)
-                        test_history.store_batch_evaluation(y_pred=y_pred, y_true=y, subjects=subjects)
+                        test_history.store_batch_evaluation(y_pred=y_pred, y_true=y,  # type: ignore[union-attr]
+                                                            subjects=subjects)
 
                     # Finalise epoch for validation history object
-                    test_history.on_epoch_end(verbose=verbose, verbose_sub_groups=sub_groups_verbose)
+                    test_history.on_epoch_end(verbose=verbose,  # type: ignore[union-attr]
+                                              verbose_sub_groups=sub_groups_verbose)
 
             # ----------------
             # If this is the highest performing model, as evaluated on the validation set, store it
@@ -408,7 +410,7 @@ class MainFixedChannelsModel(nn.Module):
                 best_metrics = val_history.newest_metrics
 
         # Set the parameters back to those of the best model
-        self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})
+        self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})  # type: ignore[arg-type]
 
         # Return the histories
         return train_history, val_history, test_history
