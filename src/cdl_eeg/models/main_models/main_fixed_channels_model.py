@@ -7,6 +7,7 @@ import torch.nn as nn
 from cdl_eeg.models.domain_adaptation.domain_discriminators.getter import get_domain_discriminator
 from cdl_eeg.models.metrics import Histories
 from cdl_eeg.models.mts_modules.getter import get_mts_module
+from cdl_eeg.models.utils import ReverseLayerF
 
 
 class MainFixedChannelsModel(nn.Module):
@@ -115,13 +116,16 @@ class MainFixedChannelsModel(nn.Module):
     # ---------------
     # Methods for forward propagation
     # ---------------
-    def forward(self, x):
+    def forward(self, x, use_domain_discriminator=False):
         """
         Forward method
 
         Parameters
         ----------
         x : torch.Tensor | dict[str, torch.Tensor]
+        use_domain_discriminator : bool
+            Boolean to indicate if the domain disciminator should be used as well as the downstream model (True) or not
+            (False)
 
         Returns
         -------
@@ -136,6 +140,12 @@ class MainFixedChannelsModel(nn.Module):
         ...                                   domain_discriminator="FCModule", domain_discriminator_kwargs=my_dd_kwargs)
         >>> my_model(torch.rand(size=(10, 23, 300))).size()
         torch.Size([10, 11])
+
+        If the domain discriminator is used, its output will be the last of two in a tuple of torch tensors
+
+        >>> my_outs = my_model(torch.rand(size=(10, 23, 300)), use_domain_discriminator=True)
+        >>> my_outs[0].shape, my_outs[1].shape
+        (torch.Size([10, 11]), torch.Size([10, 3]))
         """
         # (Maybe) concatenate all tensors. This should be possible, as this class should ony be used with a fixed number
         # of input channels. However, such usage is not recommended, as it is not necessary to store in a dict. Storing
@@ -144,8 +154,23 @@ class MainFixedChannelsModel(nn.Module):
             warnings.warn("Passing the data as a dictionary of torch.Tensor values is not recommended.")
             x = torch.cat(tuple(x.values()), dim=0)
 
-        # Run through MTS module and return
-        return self._mts_module(x)
+        # If no domain discriminator is used, just run the normal forward method
+        if not use_domain_discriminator:
+            return self._mts_module(x)
+
+        # ----------------
+        # Extract latent features
+        # ----------------
+        x = self.extract_latent_features(x)
+
+        # ----------------
+        # Pass through both the classifier and domain discriminator
+        # ----------------
+        # Adding a gradient reversal layer to the features passed to domain discriminator
+        # todo: I think alpha can be set to 1 without loss of generality, as long as the weighing in the loss is varied
+        gradient_reversed_x = ReverseLayerF.apply(x, 1.)
+
+        return self._mts_module.classify_latent_features(x), self._domain_discriminator(gradient_reversed_x)
 
     def extract_latent_features(self, x):
         """Method for extracting latent features"""
