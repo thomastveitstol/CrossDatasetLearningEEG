@@ -163,6 +163,7 @@ class Experiment:
                 results_path=fold_path, channel_systems=channel_systems, channel_name_to_index=channel_name_to_index,
                 combined_dataset=combined_dataset
             )
+
             # -----------------
             # Save test history
             # -----------------
