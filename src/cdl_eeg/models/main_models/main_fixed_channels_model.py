@@ -4,6 +4,7 @@ import enlighten
 import torch
 import torch.nn as nn
 
+from cdl_eeg.models.domain_adaptation.cmmn import ConvMMN
 from cdl_eeg.models.domain_adaptation.domain_discriminators.getter import get_domain_discriminator
 from cdl_eeg.models.metrics import Histories
 from cdl_eeg.models.mts_modules.getter import get_mts_module
@@ -64,7 +65,8 @@ class MainFixedChannelsModel(nn.Module):
     )
     """
 
-    def __init__(self, mts_module, mts_module_kwargs, domain_discriminator, domain_discriminator_kwargs):
+    def __init__(self, mts_module, mts_module_kwargs, domain_discriminator, domain_discriminator_kwargs, use_cmmn_layer,
+                 cmmn_kwargs):
         """
         Initialise
 
@@ -74,8 +76,15 @@ class MainFixedChannelsModel(nn.Module):
         mts_module_kwargs : dict[str, typing.Any]
         domain_discriminator : str, optional
         domain_discriminator_kwargs: dict[str, typing.Any] | None
+        use_cmmn_layer : bool
+        cmmn_kwargs : dict[str, typing.Any]
         """
         super().__init__()
+
+        # ----------------
+        # (Maybe) create CMMN layer
+        # ----------------
+        self._cmmn_layer = None if not use_cmmn_layer else ConvMMN(**cmmn_kwargs)
 
         # ----------------
         # Create MTS module
@@ -183,9 +192,19 @@ class MainFixedChannelsModel(nn.Module):
         # Run through MTS module and return
         return self._mts_module.extract_latent_features(x)
 
+    # ----------------
+    # Methods for fitting CMMN layer
+    # ----------------
+    def fit_psd_barycenters(self, data, sampling_freq):
+        self._cmmn_layer.fit_psd_barycenters(data=data, sampling_freq=sampling_freq)
+
+    def fit_monge_filters(self, data):
+        self._cmmn_layer.fit_monge_filters(data=data, is_psds=False)
+
     # ---------------
     # Methods for training
     # ---------------
+    # todo: this must be updated
     def fit_model(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser, device,
                   prediction_activation_function=None, verbose=True):
         """
@@ -273,3 +292,16 @@ class MainFixedChannelsModel(nn.Module):
                 val_history.on_epoch_end(verbose=verbose)
 
         return train_history, val_history
+
+    # ---------------
+    # Properties
+    # ---------------
+    @property
+    def has_domain_discriminator(self) -> bool:
+        """Indicates if the model has a domain discriminator for domain adversarial learning (True) or not (False)"""
+        return self._domain_discriminator is not None
+
+    @property
+    def has_cmmn_layer(self):  # todo: inconsistent property name with respect to the RBP version
+        """Boolean indicating if the model uses a CMMN layer (True) or not (False)"""
+        return self._cmmn_layer is not None
