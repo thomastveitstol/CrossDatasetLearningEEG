@@ -1,16 +1,31 @@
+import copy
 import warnings
 
 import enlighten
+import numpy
 import torch
 import torch.nn as nn
 
+from cdl_eeg.data.data_generators.data_generator import strip_tensors
 from cdl_eeg.models.domain_adaptation.cmmn import ConvMMN
 from cdl_eeg.models.domain_adaptation.domain_discriminators.getter import get_domain_discriminator
-from cdl_eeg.models.metrics import Histories
+from cdl_eeg.models.main_models.main_rbp_model import reorder_subjects
+from cdl_eeg.models.metrics import Histories, is_improved_model
 from cdl_eeg.models.mts_modules.getter import get_mts_module
-from cdl_eeg.models.utils import ReverseLayerF
+from cdl_eeg.models.utils import ReverseLayerF, tensor_dict_to_device, flatten_targets
 
 
+# ----------------
+# Convenient decorators  todo: move to some base .py file
+# ----------------
+def train_method(func):
+    setattr(func, "_is_train_method", True)
+    return func
+
+
+# ----------------
+# Classes
+# ----------------
 class MainFixedChannelsModel(nn.Module):
     """
     Main model when the number of input channels is fixed
@@ -210,9 +225,191 @@ class MainFixedChannelsModel(nn.Module):
         self._cmmn_layer.fit_monge_filters(data=data, is_psds=False)
 
     # ---------------
-    # Methods for training
+    # Methods for training and testing
     # ---------------
-    # todo: this must be updated
+    @train_method
+    def downstream_training(self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs,
+                            criterion, optimiser, device, prediction_activation_function=None,
+                            verbose=True, target_scaler=None, sub_group_splits, sub_groups_verbose):
+        """
+        Method for normal downstream training
+
+        todo: a lot is copied from RBP
+
+        Parameters
+        ----------
+        train_loader : torch.utils.data.DataLoader
+        val_loader : torch.utils.data.DataLoader
+        test_loader : torch.utils.data.DataLoader, optional
+        metrics : str | tuple[str, ...]
+        main_metric : str
+        num_epochs : int
+        criterion : cdl_eeg.models.losses.CustomWeightedLoss
+        optimiser : torch.optim.Optimizer
+        device : torch.device
+        prediction_activation_function : typing.Callable | None
+        verbose : bool
+        target_scaler : cdl_eeg.data.scalers.target_scalers.TargetScalerBase, optional
+        sub_group_splits
+        sub_groups_verbose
+
+        Returns
+        -------
+        tuple[Histories, Histories, Histories | None]
+                    Training and validation histories
+        """
+        # Defining histories objects
+        train_history = Histories(metrics=metrics, splits=sub_group_splits)
+        val_history = Histories(metrics=metrics, name="val", splits=sub_group_splits)
+        test_history = None if test_loader is None else Histories(metrics=metrics, name="test", splits=sub_group_splits)
+
+        # ---------------
+        # Fit model
+        # ---------------
+        best_metrics = None
+        best_model_state = {k: v.cpu() for k, v in self.state_dict().items()}
+        for epoch in range(num_epochs):
+            # Start progress bar
+            pbar = enlighten.Counter(total=numpy.ceil(len(train_loader.dataset) / train_loader.batch_size),
+                                     desc=f"Epoch {epoch + 1}/{num_epochs}", unit="batch")
+
+            # ---------------
+            # Training
+            # ---------------
+            self.train()
+            for x, y, subject_indices in train_loader:
+                # Strip the dictionaries for 'ghost tensors'
+                x = strip_tensors(x)
+                y = strip_tensors(y)
+
+                # Extract subjects and correct the ordering
+                subjects = reorder_subjects(order=tuple(x.keys()),
+                                            subjects=train_loader.dataset.get_subjects_from_indices(subject_indices))
+
+                # Send data to correct device
+                x = tensor_dict_to_device(x, device=device)
+                y = flatten_targets(y).to(device)
+
+                # Forward pass
+                output = self(x, use_domain_discriminator=False)
+
+                # Compute loss
+                optimiser.zero_grad()
+                loss = criterion(output, y, subjects=subjects)
+                loss.backward()
+                optimiser.step()
+
+                # Update train history
+                with torch.no_grad():
+                    y_pred = torch.clone(output)
+                    if prediction_activation_function is not None:
+                        y_pred = prediction_activation_function(y_pred)
+
+                    # (Maybe) re-scale targets and predictions before computing metrics
+                    if target_scaler is not None:
+                        y_pred = target_scaler.inv_transform(scaled_data=y_pred)
+                        y_train = target_scaler.inv_transform(scaled_data=y_train)
+                    train_history.store_batch_evaluation(y_pred=y_pred, y_true=y_train, subjects=subjects)
+
+                # Update progress bar
+                pbar.update()
+
+            # Finalise epoch for train history object
+            train_history.on_epoch_end(verbose=verbose, verbose_sub_groups=sub_groups_verbose)
+
+            # ---------------
+            # Validation
+            # ---------------
+            self.eval()
+            with torch.no_grad():
+                for x, y, subject_indices in val_loader:
+                    # Strip the dictionaries for 'ghost tensors'
+                    x = strip_tensors(x)
+                    y = strip_tensors(y)
+
+                    # Extract subjects and correct the ordering
+                    subjects = reorder_subjects(
+                        order=tuple(x.keys()),
+                        subjects=val_loader.dataset.get_subjects_from_indices(subject_indices)
+                    )
+
+                    # Send data to correct device
+                    x = tensor_dict_to_device(x, device=device)
+                    y = flatten_targets(y).to(device)
+
+                    # Forward pass
+                    y_pred = self(x, use_domain_discriminator=False)
+
+                    # Update validation history
+                    if prediction_activation_function is not None:
+                        y_pred = prediction_activation_function(y_pred)
+
+                    # (Maybe) re-scale targets and predictions before computing metrics
+                    if target_scaler is not None:
+                        y_pred = target_scaler.inv_transform(scaled_data=y_pred)
+                        y = target_scaler.inv_transform(scaled_data=y)
+                    val_history.store_batch_evaluation(y_pred=y_pred, y_true=y, subjects=subjects)
+
+                # Finalise epoch for validation history object
+                val_history.on_epoch_end(verbose=verbose, verbose_sub_groups=sub_groups_verbose)
+
+            # ----------------
+            # (Maybe) testing
+            # ----------------
+            if test_loader is not None:
+                with torch.no_grad():
+                    for x, y, subject_indices in test_loader:
+                        # Strip the dictionaries for 'ghost tensors'
+                        x = strip_tensors(x)
+                        y = strip_tensors(y)
+
+                        # Extract subjects and correct the ordering
+                        subjects = reorder_subjects(
+                            order=tuple(x.keys()),
+                            subjects=test_loader.dataset.get_subjects_from_indices(subject_indices)
+                        )
+
+                        # Send data to correct device
+                        x = tensor_dict_to_device(x, device=device)
+                        y = flatten_targets(y).to(device)
+
+                        # Forward pass
+                        y_pred = self(x, use_domain_discriminator=False)
+
+                        # Update test history
+                        if prediction_activation_function is not None:
+                            y_pred = prediction_activation_function(y_pred)
+
+                        # (Maybe) re-scale targets and predictions before computing metrics
+                        if target_scaler is not None:
+                            y_pred = target_scaler.inv_transform(scaled_data=y_pred)
+                            y = target_scaler.inv_transform(scaled_data=y)
+                        test_history.store_batch_evaluation(y_pred=y_pred, y_true=y, subjects=subjects)
+
+                    # Finalise epoch for validation history object
+                    test_history.on_epoch_end(verbose=verbose, verbose_sub_groups=sub_groups_verbose)
+
+            # ----------------
+            # If this is the highest performing model, as evaluated on the validation set, store it
+            # ----------------
+            if is_improved_model(old_metrics=best_metrics, new_metrics=val_history.newest_metrics,
+                                 main_metric=main_metric):
+                # Store the model on the cpu
+                best_model_state = copy.deepcopy({k: v.cpu() for k, v in self.state_dict().items()})
+
+                # Update the best metrics
+                best_metrics = val_history.newest_metrics
+
+        # Set the parameters back to those of the best model
+        self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})
+
+        # Return the histories
+        return train_history, val_history, test_history
+
+    @train_method
+    def domain_discriminator_training(self):
+        raise NotImplementedError
+
     def fit_model(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser, device,
                   prediction_activation_function=None, verbose=True):
         """
