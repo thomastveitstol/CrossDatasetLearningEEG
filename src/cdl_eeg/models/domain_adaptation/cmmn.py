@@ -36,6 +36,21 @@ class ConvMMN:
     >>> my_convoluted_source_data = my_cmmn(my_source_data)
     >>> {name: data_.shape for name, data_ in my_convoluted_source_data.items()}  # type: ignore[attr-defined]
     {'d1': (10, 32, 2000), 'd2': (8, 32, 2000), 'd3': (17, 32, 2000)}
+
+    When new datasets are introduced at test time, the monge filters must be fit
+
+    >>> my_target_data = {"t1": numpy.random.normal(0, 1, size=(6, 32, 2000)),
+    ...                   "t2": numpy.random.normal(0, 1, size=(4, 32, 2000)),
+    ...                   "t3": numpy.random.normal(0, 1, size=(7, 32, 2000))}
+    >>> my_cmmn(my_target_data)  # doctest: +NORMALIZE_WHITESPACE
+    Traceback (most recent call last):
+    ...
+    RuntimeError: The monge filters must be computed prior to applying them, but this was not the case for the following
+    datasets: ('t1', 't2', 't3')
+    >>> my_cmmn.fit_monge_filters(data=my_target_data)
+    >>> my_convoluted_target_data = my_cmmn(my_target_data)
+    >>> {name: data_.shape for name, data_ in my_convoluted_target_data.items()}  # type: ignore[attr-defined]
+    {'t1': (6, 32, 2000), 't2': (4, 32, 2000), 't3': (7, 32, 2000)}
     """
 
     __slots__ = "_sampling_freq", "_kernel_size", "_psd_barycenters", "_monge_filters"
@@ -212,7 +227,7 @@ class ConvMMN:
         elif all(isinstance(arr, torch.Tensor) for arr in data.values()):
             data_type = "torch"
         else:
-            raise TypeError(f"Expected all data values to be either all numpy arrays or all torch tesnors, but found "
+            raise TypeError(f"Expected all data values to be either all numpy arrays or all torch tensors, but found "
                             f"{set(type(arr) for arr in data.values())}")
 
         # --------------
