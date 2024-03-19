@@ -132,16 +132,16 @@ def main():
     # --------------
     # Hyperparameters
     # --------------
-    distance_metric = "average_l2_to_centroid"  # "centroid_l2"
+    distance_metric = ("average_l2_to_centroid", "centroid_l2")[0]
     scale = True
-    distance_aggregation_method = "median"
+    distance_aggregation_method = "mean"
     exclude_self = True
 
-    dataset = "yulin_wang"
+    dataset = "mpi_lemon"
     performance_metric = "auc"
-    balance_validation_performance = False
+    balance_validation_performance = True
 
-    results_dir = os.path.join(get_results_dir(), "debug_plot_script_new")
+    results_dir = os.path.join(get_results_dir(), "debug_results_1")
 
     # Cosmetics
     colormap = "Blues"
@@ -162,7 +162,9 @@ def main():
     # --------------
     # Select runs
     # --------------
-    runs = os.listdir(results_dir)
+    runs = (run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
+                                                                                  "leave_one_dataset_out",
+                                                                                  "finished_successfully.txt")))
 
     # --------------
     # Get performances and distances per run
@@ -191,11 +193,14 @@ def main():
     # --------------
     pyplot.figure(figsize=figsize)
 
-    pyplot.scatter(x=distances, y=val_performance, c=test_performance, cmap=matplotlib.colormaps.get_cmap(colormap),
+    pyplot.scatter(x=val_performance, y=test_performance, c=distances, cmap=matplotlib.colormaps.get_cmap(colormap),
                    marker="o")
 
     # Cosmetics
-    pyplot.xlabel(pretty_name[distance_metric], fontsize=fontsize)
+    _xlabel = pretty_name[distance_metric]
+    if scale:
+        _xlabel = f"{_xlabel}, Scaled"
+    pyplot.xlabel(_xlabel, fontsize=fontsize)
     pyplot.ylabel(pretty_name[performance_metric], fontsize=fontsize)
     pyplot.xticks(fontsize=fontsize)
     pyplot.yticks(fontsize=fontsize)
