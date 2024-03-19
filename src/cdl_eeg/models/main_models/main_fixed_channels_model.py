@@ -202,7 +202,8 @@ class MainFixedChannelsModel(nn.Module):
         # todo: I think alpha can be set to 1 without loss of generality, as long as the weighing in the loss is varied
         gradient_reversed_x = ReverseLayerF.apply(x, 1.)
 
-        return self._mts_module.classify_latent_features(x), self._domain_discriminator(gradient_reversed_x)
+        return (self._mts_module.classify_latent_features(x),
+                self._domain_discriminator(gradient_reversed_x))  # type: ignore[misc]
 
     def extract_latent_features(self, x):
         """Method for extracting latent features"""
@@ -219,9 +220,15 @@ class MainFixedChannelsModel(nn.Module):
     # Methods for fitting CMMN layer
     # ----------------
     def fit_psd_barycenters(self, data, sampling_freq):
+        if self._cmmn_layer is None:
+            raise RuntimeError("Cannot fit PSD barycenters of the CMMN layers, when none is used")
+
         self._cmmn_layer.fit_psd_barycenters(data=data, sampling_freq=sampling_freq)
 
     def fit_monge_filters(self, data):
+        if self._cmmn_layer is None:
+            raise RuntimeError("Cannot fit monge filters of the CMMN layers, when none is used")
+
         self._cmmn_layer.fit_monge_filters(data=data, is_psds=False)
 
     # ---------------
@@ -308,8 +315,8 @@ class MainFixedChannelsModel(nn.Module):
                     # (Maybe) re-scale targets and predictions before computing metrics
                     if target_scaler is not None:
                         y_pred = target_scaler.inv_transform(scaled_data=y_pred)
-                        y_train = target_scaler.inv_transform(scaled_data=y_train)
-                    train_history.store_batch_evaluation(y_pred=y_pred, y_true=y_train, subjects=subjects)
+                        y = target_scaler.inv_transform(scaled_data=y)
+                    train_history.store_batch_evaluation(y_pred=y_pred, y_true=y, subjects=subjects)
 
                 # Update progress bar
                 pbar.update()
