@@ -64,6 +64,7 @@ class MainFixedChannelsModel(nn.Module):
         # (Maybe) concatenate all tensors. This should be possible, as this class should ony be used with a fixed number
         # of input channels
         if isinstance(x, dict):
+            warnings.warn("Passing the data as a dictionary of torch.Tensor values is not recommended.")
             x = torch.cat(tuple(x.values()), dim=0)
 
         # Run through MTS module and return
