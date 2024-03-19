@@ -21,7 +21,7 @@ def main():
     datasets = (HatlestadHall(), YulinWang(), Miltiadous(), Rockhill(), CAUEEG())
     kwargs = {"HatlestadHall": {"derivatives": True, "session": "t1"},
               "YulinWang": {"derivatives": True, "visit": 1, "recording": "EC"},
-              "Miltiadous": {},
+              "Miltiadous": {"derivatives": True},
               "Rockhill": {"on": True, "excluded_channels": "EXG"},
               "CAUEEG": {"excluded_channels": ["Photic", "EKG"]}}
 
