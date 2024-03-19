@@ -207,6 +207,7 @@ class Experiment:
                          combined_dataset: CombinedDatasets, results_path):
         # -----------------
         # Define model
+        # todo: must implement interpolation model
         # -----------------
         print("Defining model...")
         # Filter some warnings from Voronoi split
@@ -243,6 +244,7 @@ class Experiment:
 
         # -----------------
         # Create data loaders (and target scaler)
+        # todo: must implement data loader for interpolated data
         # -----------------
         print("Creating data loaders...")
         # Create loaders for training and validation
