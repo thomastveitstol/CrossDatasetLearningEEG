@@ -3,7 +3,7 @@ import copy
 import dataclasses
 import os
 import warnings
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Optional
 
 import enlighten
 import inflection
@@ -39,6 +39,7 @@ class ChannelSystem:
     name: str  # Should ideally be the same as dataset name
     channel_name_to_index: Dict[str, int]
     electrode_positions: ELECTRODES_3D
+    montage_name: Optional[str] = None
 
 
 class EEGDatasetBase(abc.ABC):
@@ -570,6 +571,77 @@ class EEGDatasetBase(abc.ABC):
 # ------------------
 # Functions
 # ------------------
+def get_channel_name_order(channel_name_to_index):
+    """
+    This function ensures that one obtains the correct channel name order, even if the channel_name_to_index is poorly
+    sorted. Input checks are also included
+
+    Parameters
+    ----------
+    channel_name_to_index : dict[str, int]
+
+    Returns
+    -------
+    cdl_eeg.models.region_based_pooling.utils.CHANNELS_NAMES
+
+    Examples
+    --------
+    >>> get_channel_name_order(channel_name_to_index={"C2": 2, "C0": 0, "C1": 1, "C4": 3})
+    ('C0', 'C1', 'C2', 'C4')
+
+    If there are too small or large values, a ValueError is raised
+
+    >>> get_channel_name_order(channel_name_to_index={"C2": 2, "C0": -2, "C1": 1, "C4": 3})
+    Traceback (most recent call last):
+    ...
+    ValueError: Expected all values to be between 0 and 3, but found (2, -2, 1, 3)
+    >>> get_channel_name_order(channel_name_to_index={"C2": 2, "C0": 0, "C1": 1, "C4": 5})
+    Traceback (most recent call last):
+    ...
+    ValueError: Expected all values to be between 0 and 3, but found (2, 0, 1, 5)
+
+    Duplicates are not allowed
+
+    >>> get_channel_name_order(channel_name_to_index={"C2": 1, "C0": 0, "C1": 1, "C4": 3})
+    Traceback (most recent call last):
+    ...
+    ValueError: Expected all values to be unique, but number of channel names was 4 and number of unique values were 3
+    """
+    # ----------------
+    # Input checks
+    # ----------------
+    num_channels = len(channel_name_to_index)
+
+    # All channel names must be strings
+    if not all(ch_name for ch_name in channel_name_to_index):
+        raise TypeError(f"Expected all channel names to be strings, but found "
+                        f"{set(ch_name for ch_name in channel_name_to_index)}")
+
+    # All indices must be in [0, num_channels - 1]
+    if not all(idx in range(num_channels) for idx in channel_name_to_index.values()):
+        raise ValueError(f"Expected all values to be between 0 and {num_channels-1}, but found "
+                         f"{tuple(channel_name_to_index.values())}")
+
+    # All indices must be integers
+    if not all(isinstance(idx, int) for idx in channel_name_to_index.values()):
+        raise TypeError(f"Expected all values to be integers, but found "
+                        f"{set(type(idx for idx in channel_name_to_index.values()))}")
+
+    # No duplicates of indices
+    if len(channel_name_to_index) != len(set(channel_name_to_index.values())):
+        raise ValueError(f"Expected all values to be unique, but number of channel names was "
+                         f"{len(channel_name_to_index)} and number of unique values were "
+                         f"{len(set(channel_name_to_index.values()))}")
+
+    # ----------------
+    # Invert the dict
+    # ----------------
+    inverted_dict = {idx: ch_name for ch_name, idx in channel_name_to_index.items()}
+
+    # Ensure correct ordering by looping through 0 to num_channels - 1
+    return tuple(inverted_dict[i] for i in range(num_channels))
+
+
 def channel_names_to_indices(ch_names, channel_name_to_index):
     """
     Same as channel_name_to_index, but now you can pass in a tuple of channel names
