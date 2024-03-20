@@ -25,6 +25,8 @@ class HatlestadHall(EEGDatasetBase):
     'Fp2': 33, 'AF8': 34, 'AF4': 35, 'AFz': 36, 'Fz': 37, 'F2': 38, 'F4': 39, 'F6': 40, 'F8': 41, 'FT8': 42, 'FC6': 43,
     'FC4': 44, 'FC2': 45, 'FCz': 46, 'Cz': 47, 'C2': 48, 'C4': 49, 'C6': 50, 'T8': 51, 'TP8': 52, 'CP6': 53, 'CP4': 54,
     'CP2': 55, 'P2': 56, 'P4': 57, 'P6': 58, 'P8': 59, 'P10': 60, 'PO8': 61, 'PO4': 62, 'O2': 63}
+    >>> set(type(idx) for idx in HatlestadHall().channel_name_to_index().values())  # type: ignore[attr-defined]
+    {<class 'int'>}
     """
 
     __slots__ = ()
@@ -202,4 +204,4 @@ class HatlestadHall(EEGDatasetBase):
         ch_names = tuple(df["ch_name"])
 
         # Convert to dict and return
-        return {ch_name: idx for ch_name, idx in zip(ch_names, indices)}
+        return {ch_name: int(idx) for ch_name, idx in zip(ch_names, indices)}
