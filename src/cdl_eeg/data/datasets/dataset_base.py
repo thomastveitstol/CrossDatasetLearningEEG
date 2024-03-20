@@ -625,7 +625,7 @@ def get_channel_name_order(channel_name_to_index):
     # All indices must be integers
     if not all(isinstance(idx, int) for idx in channel_name_to_index.values()):
         raise TypeError(f"Expected all values to be integers, but found "
-                        f"{set(type(idx for idx in channel_name_to_index.values()))}")
+                        f"{set(type(idx) for idx in channel_name_to_index.values())}")
 
     # No duplicates of indices
     if len(channel_name_to_index) != len(set(channel_name_to_index.values())):
