@@ -109,6 +109,11 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
 
 
 class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
+    """
+    Pytorch dataset for downstream training of RBP models of type MainRBPModel
+
+    todo: should change the name to something with RBP
+    """
 
     # Remember to remove the yielded -1 tensors!
     strip_outputs = True
