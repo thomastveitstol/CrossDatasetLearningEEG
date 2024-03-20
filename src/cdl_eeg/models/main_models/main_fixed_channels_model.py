@@ -594,93 +594,43 @@ class MainFixedChannelsModel(nn.Module):
         # Return the histories
         return train_history, val_history, test_history
 
-    def fit_model(self, *, train_loader, val_loader, metrics, num_epochs, criterion, optimiser, device,
-                  prediction_activation_function=None, verbose=True):
-        """
-        Method for fitting model
+    def test_model(self, *, data_loader, metrics, device, prediction_activation_function=None, verbose=True,
+                   target_scaler=None, sub_group_splits, sub_groups_verbose):
+        # Defining histories objects
+        history = Histories(metrics=metrics, name="test", splits=sub_group_splits)
 
-        Parameters
-        ----------
-        train_loader : torch.utils.data.DataLoader
-        val_loader : torch.utils.data.DataLoader
-        metrics :  str | tuple[str, ...]
-        num_epochs : int
-        criterion : nn.modules.loss._Loss
-        optimiser : torch.optim.Optimizer
-        device : torch.device
-        prediction_activation_function : typing.Callable | None
-        verbose : bool
+        # No gradients needed
+        self.eval()
+        with torch.no_grad():
+            for x, y, subject_indices in data_loader:
+                # Strip the dictionaries for 'ghost tensors'
+                x = strip_tensors(x)
+                y = strip_tensors(y)
 
-        Returns
-        -------
-
-        """
-        # Defining histories objects  todo: must fix
-        train_history = Histories(metrics=metrics)  # type: ignore[call-arg]
-        val_history = Histories(metrics=metrics, name="val")  # type: ignore[call-arg]
-
-        # ------------------------
-        # Fit model
-        # ------------------------
-        for epoch in range(num_epochs):
-            print(f"Epoch {epoch + 1}/{num_epochs}")
-
-            # Start progress bar
-            pbar = enlighten.Counter(total=int(len(train_loader) / train_loader.batch_size + 1),
-                                     desc=f"Epoch {epoch + 1}/{num_epochs}", unit="batch")
-
-            # ----------------
-            # Training
-            # ----------------
-            self.train()
-            for x_train, y_train in train_loader:
                 # Send data to correct device
-                x_train = x_train.to(device)
-                y_train = y_train.to(device)
+                x = tensor_dict_to_device(x, device=device)
+                y = flatten_targets(y).to(device)
 
                 # Forward pass
-                output = self(x_train)
+                y_pred = self(x, use_domain_discriminator=False)
 
-                # Compute loss
-                loss = criterion(output, y_train)
-                loss.backward()
-                optimiser.step()
+                # Update validation history
+                if prediction_activation_function is not None:
+                    y_pred = prediction_activation_function(y_pred)
 
-                # Update train history
-                with torch.no_grad():
-                    y_pred = torch.clone(output)
-                    if prediction_activation_function is not None:
-                        y_pred = prediction_activation_function(y_pred)
-                    train_history.store_batch_evaluation(y_pred=y_pred, y_true=y_train)
+                # (Maybe) re-scale targets and predictions before computing metrics
+                if target_scaler is not None:
+                    y_pred = target_scaler.inv_transform(scaled_data=y_pred)
+                    y = target_scaler.inv_transform(scaled_data=y)
+                history.store_batch_evaluation(
+                    y_pred=y_pred, y_true=y,
+                    subjects=data_loader.dataset.get_subjects_from_indices(subject_indices)
+                )
 
-                # Update progress bar
-                pbar.update()
+            # Finalise epoch for validation history object
+            history.on_epoch_end(verbose=verbose, verbose_sub_groups=sub_groups_verbose)
 
-            # Finalise epoch for train history object
-            train_history.on_epoch_end(verbose=verbose)
-
-            # ----------------
-            # Validation
-            # ----------------
-            self.eval()
-            with torch.no_grad():
-                for x_val, y_val in val_loader:
-                    # Send data to correct device
-                    x_val = x_val.to(device)
-                    y_val = y_val.to(device)
-
-                    # Forward pass
-                    y_pred = self(x_val)
-
-                    # Update validation history
-                    if prediction_activation_function is not None:
-                        y_pred = prediction_activation_function(y_pred)
-                    val_history.store_batch_evaluation(y_pred=y_pred, y_true=y_val)
-
-                # Finalise epoch for validation history object
-                val_history.on_epoch_end(verbose=verbose)
-
-        return train_history, val_history
+        return history
 
     # ---------------
     # Properties
