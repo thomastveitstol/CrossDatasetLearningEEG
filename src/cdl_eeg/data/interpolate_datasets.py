@@ -13,6 +13,8 @@ def interpolate_datasets(datasets, main_channel_system, method, sampling_freq):
     """
     Function for interpolating all datasets to a single main channel system
 
+    (unit test in test folder)
+
     Parameters
     ----------
     datasets : dict[str, dict[str, numpy.ndarray | ChannelSystem]]
@@ -90,7 +92,9 @@ def _interpolate_single_dataset(dataset, to_channel_system, method, sampling_fre
     # Create source info
     # --------------
     source_ch_names = get_channel_name_order(source_channel_system.channel_name_to_index)
+    source_montage = mne.channels.make_standard_montage(kind=source_channel_system.montage_name)
     source_info = mne.create_info(ch_names=source_ch_names, sfreq=sampling_freq, ch_types="eeg")
+    source_info.set_montage(source_montage)
 
     # --------------
     # Map all EEGs to target montage/channel system
