@@ -169,7 +169,7 @@ class HatlestadHall(EEGDatasetBase):
 
     def _get_template_electrode_positions(self):
         # Following the international 10-20 system according to the documentation. Thus using MNE default
-        montage = mne.channels.make_standard_montage("standard_1020")
+        montage = mne.channels.make_standard_montage("standard_1020")  # todo: is it 1020 or biosemi??
         channel_positions = montage.get_positions()["ch_pos"]
 
         # ---------------
