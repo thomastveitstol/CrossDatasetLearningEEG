@@ -253,6 +253,81 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
         return {dataset_name: i for i, dataset_name in enumerate(self._data)}
 
 
+class InterpolationDataGenerator(Dataset):  # type: ignore[type-arg]
+    """
+    Pytorch dataset for downstream training of models which require interpolation for spatial dimension consistency
+
+    Examples
+    --------
+    >>> import numpy
+    >>> my_data = {"d1": numpy.random.rand(3, 7, 300), "d2": numpy.random.rand(4, 7, 300),
+    ...            "d3": numpy.random.rand(1, 7, 300)}
+    >>> my_targets = {"d1": numpy.random.rand(3), "d2": numpy.random.rand(4), "d3": numpy.random.rand(1)}
+    >>> my_subjects = {"d1": (Subject("P1", "d1"), Subject("P2", "d1"), Subject("P3", "d1")),
+    ...                "d2": (Subject("P1", "d2"), Subject("P2", "d2"), Subject("P3", "d2"), Subject("P4", "d2")),
+    ...                "d3": (Subject("P1", "d2"),)}
+    >>> _ = InterpolationDataGenerator(my_data, my_targets, my_subjects)
+
+    A ValueError is raise if spatial dimension is inconsistent
+
+    >>> my_data["d2"] = numpy.random.rand(4, 77, 300)
+    >>> InterpolationDataGenerator(my_data, my_targets, my_subjects)  # doctest: +NORMALIZE_WHITESPACE
+    Traceback (most recent call last):
+    ...
+    ValueError: Expected spatial dimension consistency of all EEG data passed, as the data should already be
+    interpolated. Instead, the following shapes were found {'d1': (3, 7, 300), 'd2': (4, 77, 300), 'd3': (1, 7, 300)}
+    """
+
+    # --------------
+    # Magic/dunder methods
+    # --------------
+    def __init__(self, data, targets, subjects):
+        """
+        Initialise
+
+        Parameters
+        ----------
+        data : dict[str, numpy.ndarray]
+            The data should be interpolated prior to passing them to this method
+        targets : dict[str, numpy.ndarray]
+        subjects : dict[str, tuple[str, ...]]
+        """
+        # Input check (data should already be interpolated). Thus checking spatial dimension consistency
+        if not len(set(eeg_data.shape[1] for eeg_data in data.values())) == 1:
+            _all_shapes = {dataset: eeg_data.shape for dataset, eeg_data in data.items()}
+            raise ValueError(f"Expected spatial dimension consistency of all EEG data passed, as the data should "
+                             f"already be interpolated. Instead, the following shapes were found {_all_shapes}")
+
+        super().__init__()
+
+        self._data = data
+        self._targets = targets
+        self._subjects = subjects
+
+    def __len__(self):
+        return sum(x.shape[0] for x in self._data.values())
+
+    def __getitem__(self, item):
+        # Varying keys in the returned dictionary is not possible with the DataLoader of PyTorch. This solution to the
+        # problem is to simply return a tensor of -1s for the datasets not used
+        data = {dataset_name: torch.ones(size=x.shape[1:]) * (-1) for dataset_name, x in self._data.items()}
+        targets = {dataset_name: torch.unsqueeze(torch.ones(size=y.shape[1:]) * (-1), dim=-1)
+                   for dataset_name, y in self._targets.items()}
+
+        # Select dataset and subject in the dataset
+        dataset_sizes = {dataset_name: x.shape[0] for dataset_name, x in self._data.items()}
+        dataset_name, idx = _select_dataset_and_index(item, dataset_sizes)
+
+        # Add the data which should be used
+        data[dataset_name] = torch.tensor(self._data[dataset_name][idx], dtype=torch.float)
+        targets[dataset_name] = torch.unsqueeze(torch.tensor(self._targets[dataset_name][idx], dtype=torch.float,
+                                                             requires_grad=False),
+                                                dim=-1)
+
+        # Return input data, targets, and the item (will be converted to Subject later)
+        return data, targets, item
+
+
 # ----------------
 # Functions
 # ----------------
