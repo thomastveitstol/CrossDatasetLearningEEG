@@ -91,4 +91,5 @@ Datasets:
     visit: 1
     recording: EC
     derivatives: true
-  Miltiadous: {}
+  Miltiadous:
+    derivatives: true
