@@ -143,7 +143,7 @@ class CombinedDatasets:
             )
 
         # Extract details for interpolation
-        interpolation_method = None if interpolation_config is None else interpolation_config["interpolation_method"]
+        interpolation_method = None if interpolation_config is None else interpolation_config["method"]
         main_channel_system = None if interpolation_method is None else interpolation_config["main_channel_system"]
 
         # Load all data and return object
