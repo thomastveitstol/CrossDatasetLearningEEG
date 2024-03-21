@@ -1,4 +1,5 @@
 import copy
+from typing import List
 
 import enlighten
 import numpy
@@ -231,6 +232,31 @@ class MainFixedChannelsModel(nn.Module):
     # ---------------
     # Methods for training and testing
     # ---------------
+    @classmethod
+    def get_available_training_methods(cls):
+        """Get all training methods available for the class. The training method must be decorated by @train_method to
+        be properly registered"""
+        # Get all train methods
+        train_methods: List[str] = []
+        for method in dir(cls):
+            attribute = getattr(cls, method)
+
+            # Append (as type 'str') if it is a training method
+            if callable(attribute) and getattr(attribute, "_is_train_method", False):
+                train_methods.append(method)
+
+        # Convert to tuple and return
+        return tuple(train_methods)
+
+    def train_model(self, method, **kwargs):
+        """Method for training"""
+        if method not in self.get_available_training_methods():
+            raise ValueError(f"The training method {method} was not recognised. The available ones are: "
+                             f"{self.get_available_training_methods()}")
+
+        # Train
+        return getattr(self, method)(**kwargs)
+
     @train_method
     def downstream_training(self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs,
                             criterion, optimiser, device, prediction_activation_function=None,
