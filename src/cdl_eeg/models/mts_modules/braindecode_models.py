@@ -205,10 +205,7 @@ class EEGResNetMTS(MTSModuleBase):
         # ----------------
         self._model = EEGResNet(n_chans=in_channels, n_outputs=num_classes, n_times=num_time_steps,
                                 final_pool_length=final_pool_length, n_first_filters=n_first_filters,
-                                **kwargs)
-
-        # Remove LogSoftmax activation function
-        del self._model.final_layer.logsoftmax
+                                add_log_softmax=False, **kwargs)
 
     def forward(self, x):
         """
@@ -273,10 +270,8 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
         # ----------------
         # Initialise the model
         # ----------------
-        self._model = ShallowFBCSPNet(n_chans=in_channels, n_outputs=num_classes, n_times=num_time_steps, **kwargs)
-
-        # Remove LogSoftmax activation function
-        del self._model.final_layer.logsoftmax
+        self._model = ShallowFBCSPNet(n_chans=in_channels, n_outputs=num_classes, n_times=num_time_steps,
+                                      add_log_softmax=False, **kwargs)
 
     def forward(self, x):
         """
@@ -376,10 +371,7 @@ class Deep4NetMTS(MTSModuleBase):
         # Initialise the model
         # ----------------
         self._model = Deep4Net(n_chans=in_channels, n_outputs=num_classes, n_times=num_time_steps,
-                               final_conv_length=final_conv_length, **kwargs)
-
-        # Remove LogSoftmax activation function
-        del self._model.final_layer.logsoftmax
+                               final_conv_length=final_conv_length, add_log_softmax=False, **kwargs)
 
     def forward(self, x):
         """
