@@ -206,13 +206,12 @@ class MainRBPModel(nn.Module):
     # Methods for training and testing
     # ----------------
     def train_model(
-            self, *, train_loader, val_loader, test_loader, metrics, main_metric, num_epochs, classifier_criterion,
-            optimiser, discriminator_criterion=None, discriminator_weight=None, discriminator_metrics=None, device,
-            channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,
-            sub_group_splits, sub_groups_verbose
+            self, *, method, train_loader, val_loader, test_loader, metrics, main_metric, num_epochs,
+            classifier_criterion, optimiser, discriminator_criterion=None, discriminator_weight=None,
+            discriminator_metrics=None, device, channel_name_to_index, prediction_activation_function=None,
+            verbose=True, target_scaler=None, sub_group_splits, sub_groups_verbose
     ):  # todo: use decorator
-        if any(discriminator_arg is None for discriminator_arg
-               in (discriminator_criterion, discriminator_weight)):
+        if method == "downstream_training":
             return self._train_model(
                 train_loader=train_loader, val_loader=val_loader, test_loader=test_loader, metrics=metrics,
                 main_metric=main_metric, num_epochs=num_epochs, criterion=classifier_criterion, optimiser=optimiser,
@@ -220,7 +219,7 @@ class MainRBPModel(nn.Module):
                 target_scaler=target_scaler, prediction_activation_function=prediction_activation_function,
                 sub_group_splits=sub_group_splits, sub_groups_verbose=sub_groups_verbose
             )
-        else:
+        elif method == "domain_discriminator_training":
             return self._train_model_with_domain_adversarial_learning(
                 train_loader=train_loader, val_loader=val_loader, test_loader=test_loader, metrics=metrics,
                 main_metric=main_metric, num_epochs=num_epochs, classifier_criterion=classifier_criterion,
@@ -230,6 +229,8 @@ class MainRBPModel(nn.Module):
                 prediction_activation_function=prediction_activation_function, verbose=verbose,
                 target_scaler=target_scaler, sub_group_splits=sub_group_splits, sub_groups_verbose=sub_groups_verbose
             )
+        else:
+            raise ValueError(f"Unexpected training method: {method}")
 
     def _train_model_with_domain_adversarial_learning(
             self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs, classifier_criterion,
