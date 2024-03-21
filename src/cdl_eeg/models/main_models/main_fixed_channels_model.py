@@ -1,5 +1,4 @@
 import copy
-import warnings
 
 import enlighten
 import numpy
@@ -181,10 +180,8 @@ class MainFixedChannelsModel(nn.Module):
         (torch.Size([10, 11]), torch.Size([10, 3]))
         """
         # (Maybe) concatenate all tensors. This should be possible, as this class should ony be used with a fixed number
-        # of input channels. However, such usage is not recommended, as it is not necessary to store in a dict. Storing
-        # in dict also makes it a little more difficult to know which is the i-th subject
+        # of input channels
         if isinstance(x, dict):
-            warnings.warn("Passing the data as a dictionary of torch.Tensor values is not recommended.")
             x = torch.cat(tuple(x.values()), dim=0)
 
         # If no domain discriminator is used, just run the normal forward method
@@ -211,7 +208,6 @@ class MainFixedChannelsModel(nn.Module):
         # (Maybe) concatenate all tensors. This should be possible, as this class should ony be used with a fixed number
         # of input channels
         if isinstance(x, dict):
-            warnings.warn("Passing the data as a dictionary of torch.Tensor values is not recommended.")
             x = torch.cat(tuple(x.values()), dim=0)
 
         # Run through MTS module and return
