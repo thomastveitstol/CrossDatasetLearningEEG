@@ -412,6 +412,10 @@ class EEGDatasetBase(abc.ABC):
         return self._name
 
     @property
+    def num_channels(self):
+        return len(self.channel_name_to_index())
+
+    @property
     def channel_system(self) -> ChannelSystem:
         return ChannelSystem(name=self.name, channel_name_to_index=self.channel_name_to_index(),
                              electrode_positions=self.get_electrode_positions(), montage_name=self._montage_name)
