@@ -113,7 +113,7 @@ class CombinedDatasets:
         Parameters
         ----------
         config : dict[str, typing.Any]
-        interpolation_config : dict[str, typing.Any]
+        interpolation_config : dict[str, typing.Any] | None
         target : str, optional
         sampling_freq : float
 
@@ -143,7 +143,7 @@ class CombinedDatasets:
             )
 
         # Extract details for interpolation
-        interpolation_method = interpolation_config["interpolation_method"]
+        interpolation_method = None if interpolation_config is None else interpolation_config["interpolation_method"]
         main_channel_system = None if interpolation_method is None else interpolation_config["main_channel_system"]
 
         # Load all data and return object
