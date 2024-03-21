@@ -7,6 +7,7 @@ import random
 import shutil
 from datetime import datetime, date
 
+import torch
 import yaml
 
 from cdl_eeg.data.paths import get_results_dir, get_numpy_data_storage_path
@@ -24,7 +25,8 @@ def main():
         config = yaml.safe_load(f)
 
     # Create path and folder
-    cv_method = config["cv_method"]
+    cv_method = random.choice(config["cv_method"])
+    config["cv_method"] = cv_method
     if cv_method == "normal":
         _title_cv = "cv"
     elif cv_method == "inverted":
@@ -82,8 +84,7 @@ def main():
                                                   results_path=os.path.join(results_path, "leave_one_dataset_out"))
     try:
         leave_one_dataset_out_experiment.run_experiment()
-    except NotImplementedError:
-        print("DL model incompatible with domain discriminator...")
+    except (NotImplementedError, torch.cuda.OutOfMemoryError):
         shutil.rmtree(results_path)  # todo: exit the program as well
 
     if config["run_baseline"]:

@@ -97,19 +97,22 @@ def generate_config_file(config):
     # Sample method for handling a varied
     # number of channels
     # -----------------
-    varied_numbers_of_channels = dict()
-    method = random.choice(tuple(config["Varied Numbers of Channels"].keys()))
-    if method == "RegionBasedPooling":
-        varied_numbers_of_channels[method] = sample_rbp_designs(
-            config["Varied Numbers of Channels"][method]
-        )
+    spatial_dimension_config = random.choice(config["Varied Numbers of Channels"])
+    spatial_dimension_method = spatial_dimension_config["name"]
+    if spatial_dimension_method == "RegionBasedPooling":
+        varied_numbers_of_channels = {"name": spatial_dimension_method,
+                                      "kwargs": sample_rbp_designs(spatial_dimension_config["kwargs"])}
         # config["Varied Numbers of Channels"][method]
-    elif method == "SphericalSplineInterpolation":
-        # Todo: Implement how to sample, and the code should NOT be in this script (even if it is trivial code)
-        varied_numbers_of_channels[method] = random.choice(config["Varied Numbers of Channels"][method])
+    elif spatial_dimension_config["name"] == "Interpolation":
+        # Todo: Not very elegant to have this piece of code here...
+        varied_numbers_of_channels = {
+            "name": spatial_dimension_method,
+            "kwargs": {"method": random.choice(spatial_dimension_config["kwargs"]["method"]),
+                       "main_channel_system": random.choice(spatial_dimension_config["kwargs"]["main_channel_system"])},
+        }
     else:
         raise ValueError(f"Expected method for handling varied numbers of EEG channels to be either region based "
-                         f"pooling or spherical spline interpolation, but found {method}")
+                         f"pooling or interpolation, but found {spatial_dimension_method}")
 
     # -----------------
     # Sample DL architecture and its hyperparameters
@@ -127,6 +130,16 @@ def generate_config_file(config):
 
     # Combine architecture name and hyperparameters in a dict
     dl_model = {"model": mts_module_name, "kwargs": mts_module_hyperparameters}
+
+    # Maybe add CMMN to DL architecture
+    if spatial_dimension_method == "Interpolation":
+        dl_model["CMMN"] = {"use_cmmn_layer": random.choice(config["CMMN"]["use_cmmn_layer"]),
+                            "kwargs": {}}
+        for param, domain in config["CMMN"]["kwargs"].items():
+            if isinstance(domain, dict) and "dist" in domain:
+                dl_model["CMMN"]["kwargs"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
+            else:
+                dl_model["CMMN"]["kwargs"][param] = domain
 
     # -----------------
     # Domain discriminator
@@ -153,6 +166,10 @@ def generate_config_file(config):
                 discriminator["training"][param] = domain
     else:
         discriminator = None
+
+    # Add method to train hyperparameters  todo: unelegant
+    train_hyperparameters["method"] = "domain_discriminator_training" if discriminator is not None \
+        else "downstream_training"
 
     # -----------------
     # Create final dictionary

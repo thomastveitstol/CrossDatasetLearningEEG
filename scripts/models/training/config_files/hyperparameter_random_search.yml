@@ -1,5 +1,5 @@
 run_baseline: false
-cv_method: inverted  # normal
+cv_method: [ inverted, normal ]
 selected_target: &selected_target sex
 
 Shared Dataset Details:
@@ -32,11 +32,11 @@ Datasets:
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
-  # miltiadous:
-  #   num_subjects: 88
-  #   num_time_steps: *num_time_steps
-  #   time_series_start: *time_series_start
-  #   target_availability: [ age, sex ]
+  miltiadous:
+    num_subjects: 88
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+    target_availability: [ age, sex ]
   hatlestad_hall:
     num_subjects: 111
     num_time_steps: *num_time_steps
@@ -181,6 +181,14 @@ DomainDiscriminator:
         a: -6
         b: -1
 
+CMMN:
+  use_cmmn_layer: [ true, false ]
+  kwargs:
+      kernel_size:  # todo: what to use here?
+        dist: uniform_discrete
+        kwargs:
+          domain: [ 64, 128, 256, 512, 1024, 2048 ]
+
 
 # -----------------
 # Methods for handling a varied number of channels
@@ -291,11 +299,15 @@ RegionBasedPooling: &RegionBasedPooling
           domain: [ 64, 128, 256, 512, 1024, 2048 ]
 
 # Interpolation
-SphericalSplineInterpolation: &SphericalSplineInterpolation [ HatlestadHall, YulinWang ]
+Interpolation: &Interpolation
+  main_channel_system: [ rockhill, hatlestad_hall, yulin_wang, mpi_lemon]
+  method: [ MNE, spline ]
 
 Varied Numbers of Channels:
-  RegionBasedPooling: *RegionBasedPooling
-  # SphericalSplineInterpolation: *SphericalSplineInterpolation
+  - name: RegionBasedPooling
+    kwargs: *RegionBasedPooling
+  - name: Interpolation
+    kwargs: *Interpolation
 
 
 # -----------------
