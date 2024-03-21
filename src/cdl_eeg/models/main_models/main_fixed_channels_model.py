@@ -670,4 +670,7 @@ class MainFixedChannelsModel(nn.Module):
 
     @property
     def cmmn_fitted_channel_systems(self):
-        return self._cmmn_layer.fitted_monge_filters
+        if not self.has_cmmn_layer:
+            raise RuntimeError(f"{type(self).__name__} has not property 'cmmn_fitted_channel_systems' when no CMMN "
+                               f"layer is used")
+        return self._cmmn_layer.fitted_monge_filters  # type: ignore[union-attr]

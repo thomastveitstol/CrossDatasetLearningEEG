@@ -582,7 +582,7 @@ class Experiment:
 
         # Add number of input channels
         mts_config["kwargs"]["in_channels"] = get_dataset(
-            dataset_name=self.interpolation_config["main_channel_system"]
+            dataset_name=self.interpolation_config["main_channel_system"]  # type: ignore[index]
         ).num_channels
 
         # Define model
@@ -737,7 +737,8 @@ class Experiment:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-            model = self._make_rbp_model()
+            # todo: must fix or remove method
+            model = self._make_rbp_model()  # type: ignore[call-arg]
 
         # Fit channel systems
         self._fit_channel_systems(model=model, channel_systems=channel_systems)
@@ -1026,7 +1027,7 @@ class Experiment:
         if self._config["Varied Numbers of Channels"]["name"] != "Interpolation":
             return None
         else:
-            return self._config["Varied Numbers of Channels"]["kwargs"]
+            return self._config["Varied Numbers of Channels"]["kwargs"]  # type: ignore[no-any-return]
 
     @property
     def subject_split_config(self):

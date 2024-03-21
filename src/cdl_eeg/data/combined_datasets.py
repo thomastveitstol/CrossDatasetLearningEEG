@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy
 
@@ -80,9 +80,10 @@ class CombinedDatasets:
                                                                   channels=details.channels)
                           for dataset, details in zip(datasets, load_details)}
         else:
-            non_interpolated: Dict[str, Dict[str, numpy.ndarray | ChannelSystem]] = dict()  # type: ignore[type-arg]
+            non_interpolated: Dict[str, Dict[str, Union[numpy.ndarray, ChannelSystem]]] = (  # type: ignore[type-arg]
+                dict())
+
             for dataset, details in zip(datasets, load_details):
-                dataset: EEGDatasetBase
                 non_interpolated[dataset.name] = {
                     "data": dataset.load_numpy_arrays(
                         subject_ids=details.subject_ids, pre_processed_version=details.pre_processed_version,
