@@ -210,7 +210,7 @@ class MainRBPModel(nn.Module):
             optimiser, discriminator_criterion=None, discriminator_weight=None, discriminator_metrics=None, device,
             channel_name_to_index, prediction_activation_function=None, verbose=True, target_scaler=None,
             sub_group_splits, sub_groups_verbose
-    ):
+    ):  # todo: use decorator
         if any(discriminator_arg is None for discriminator_arg
                in (discriminator_criterion, discriminator_weight)):
             return self._train_model(
