@@ -645,3 +645,7 @@ class MainFixedChannelsModel(nn.Module):
     def has_cmmn_layer(self) -> bool:  # todo: inconsistent property name with respect to the RBP version
         """Boolean indicating if the model uses a CMMN layer (True) or not (False)"""
         return self._cmmn_layer is not None
+
+    @property
+    def cmmn_fitted_channel_systems(self):
+        return self._cmmn_layer.fitted_monge_filters
