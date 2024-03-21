@@ -83,7 +83,7 @@ class CombinedDatasets:
             non_interpolated: Dict[str, Dict[str, numpy.ndarray | ChannelSystem]] = dict()  # type: ignore[type-arg]
             for i, (dataset, details) in enumerate(zip(datasets, load_details)):
                 if verbose:
-                    print(f"Interpolating {dataset.__name__} ({i + 1}/{len(datasets)})")
+                    print(f"Interpolating {type(dataset).__name__} ({i + 1}/{len(datasets)})")
 
                 dataset: EEGDatasetBase
                 non_interpolated[dataset.name] = {
