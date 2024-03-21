@@ -16,10 +16,13 @@ from torch.utils.data import DataLoader
 from umap import UMAP
 
 from cdl_eeg.data.combined_datasets import CombinedDatasets
-from cdl_eeg.data.data_generators.data_generator import DownstreamDataGenerator, strip_tensors
+from cdl_eeg.data.data_generators.data_generator import DownstreamDataGenerator, strip_tensors, \
+    InterpolationDataGenerator
+from cdl_eeg.data.datasets.getter import get_dataset
 from cdl_eeg.data.subject_split import get_data_split, leave_1_fold_out
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
 from cdl_eeg.models.losses import CustomWeightedLoss, get_activation_function
+from cdl_eeg.models.main_models.main_fixed_channels_model import MainFixedChannelsModel
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
 from cdl_eeg.models.metrics import save_discriminator_histories_plots, save_histories_plots, Histories, \
     save_test_histories_plots, compute_distribution_distance
@@ -56,7 +59,9 @@ class Experiment:
     # -------------
     def _load_data(self):
         """Method for loading data"""
-        return CombinedDatasets.from_config(config=self.datasets_config, target=self.train_config["target"])
+        return CombinedDatasets.from_config(config=self.datasets_config, target=self.train_config["target"],
+                                            interpolation_config=self.interpolation_config,
+                                            sampling_freq=self.shared_pre_processing_config["resample"])
 
     @staticmethod
     def _extract_dataset_details(combined_dataset: CombinedDatasets):
@@ -207,26 +212,21 @@ class Experiment:
                          combined_dataset: CombinedDatasets, results_path):
         # -----------------
         # Define model
-        # todo: must implement interpolation model
         # -----------------
         print("Defining model...")
-        # Filter some warnings from Voronoi split
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=RuntimeWarning)
+        if self.spatial_dimension_handling_config["name"] == "RegionBasedPooling":
+            # Filter some warnings from Voronoi split
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-            model = self._make_model()
-
-        # Fit channel systems
-        self._fit_channel_systems(model=model, channel_systems=channel_systems)
-
-        # (Maybe) fit the CMMN layers of RBP
-        if model.any_rbp_cmmn_layers:
-            self._fit_cmmn_layers(model=model, train_data=combined_dataset.get_data(train_subjects),
-                                  channel_systems=channel_systems)
-
-            # Fit the test data as well (needed here if analysing the latent feature distributions)
-            self._fit_cmmn_layers_test_data(model=model, test_data=combined_dataset.get_data(test_subjects),
-                                            channel_systems=channel_systems)
+                model = self._make_rbp_model(channel_systems=channel_systems, combined_dataset=combined_dataset,
+                                             train_subjects=train_subjects, test_subjects=test_subjects)
+        elif self.spatial_dimension_handling_config["name"] == "Interpolation":
+            model = self._make_interpolation_model(combined_dataset=combined_dataset, train_subjects=train_subjects,
+                                                   test_subjects=test_subjects)
+        else:
+            raise ValueError(f"Unexpected method for handling a varied number of channels: "
+                             f"{self.spatial_dimension_handling_config['name']}")
 
         # -----------------
         # Maybe make plots of latent feature distribution distances
@@ -255,19 +255,23 @@ class Experiment:
         # Maybe create loaders for test data
         test_loader: Optional[DataLoader[Any]]
         if self.train_config["continuous_testing"]:
-            test_loader = self._load_test_data_loader(model=model, test_subjects=test_subjects,
-                                                      combined_dataset=combined_dataset, target_scaler=target_scaler)
-
+            test_loader = self._load_test_data_loader(
+                model=model, test_subjects=test_subjects, combined_dataset=combined_dataset,
+                target_scaler=target_scaler
+            )
         else:
             test_loader = None
 
         # Some type checks
-        if not isinstance(train_loader.dataset, DownstreamDataGenerator):
-            raise TypeError(f"Expected training Pytorch datasets to inherit from {DownstreamDataGenerator.__name__}, "
-                            f"but found {type(train_loader.dataset)}")
-        if not isinstance(val_loader.dataset, DownstreamDataGenerator):
-            raise TypeError(f"Expected validation Pytorch datasets to inherit from {DownstreamDataGenerator.__name__}, "
-                            f"but found {type(val_loader.dataset)}")
+        _allowed_dataset_types = (DownstreamDataGenerator, InterpolationDataGenerator)
+        if not isinstance(train_loader.dataset, _allowed_dataset_types):
+            raise TypeError(f"Expected training Pytorch datasets to inherit from "
+                            f"{tuple(data_gen.__name__ for data_gen in _allowed_dataset_types)}, but found "
+                            f"{type(train_loader.dataset)}")
+        if not isinstance(val_loader.dataset, _allowed_dataset_types):
+            raise TypeError(f"Expected validation Pytorch datasets to inherit from "
+                            f"{tuple(data_gen.__name__ for data_gen in _allowed_dataset_types)}, but found "
+                            f"{type(val_loader.dataset)}")
 
         # -----------------
         # Create loss and optimiser
@@ -280,25 +284,28 @@ class Experiment:
         # Maybe for a domain discriminator
         discriminator_criterion: Optional[CustomWeightedLoss]
         if self.domain_discriminator_config is None:
-            discriminator_criterion = None
-            discriminator_weight = None
-            discriminator_metrics = None
+            discriminator_kwargs = dict()
         else:
             (discriminator_criterion, discriminator_weight,
              discriminator_metrics) = self._get_domain_discriminator_details(dataset_sizes=dataset_sizes)
+            discriminator_kwargs = {"discriminator_criterion": discriminator_criterion,
+                                    "discriminator_weight": discriminator_weight,
+                                    "discriminator_metrics": discriminator_metrics}
 
         # -----------------
         # Train model
         # -----------------
         print(f"{' Training ':-^20}")
 
+        channel_name_to_index_kwarg = {"channel_name_to_index": channel_name_to_index} \
+            if self.spatial_dimension_handling_config["name"] == "RegionBasedPooling" else dict()
+
         histories = model.train_model(
-            train_loader=train_loader, val_loader=val_loader, test_loader=test_loader,
-            metrics=self.train_config["metrics"], main_metric=self.train_config["main_metric"],
-            classifier_criterion=criterion, optimiser=optimiser, discriminator_criterion=discriminator_criterion,
-            discriminator_weight=discriminator_weight, discriminator_metrics=discriminator_metrics,
+            method=self.train_config["method"], train_loader=train_loader, val_loader=val_loader,
+            test_loader=test_loader, metrics=self.train_config["metrics"], main_metric=self.train_config["main_metric"],
+            classifier_criterion=criterion, optimiser=optimiser, **discriminator_kwargs,
             num_epochs=self.train_config["num_epochs"], verbose=self.train_config["verbose"],
-            channel_name_to_index=channel_name_to_index, device=self._device, target_scaler=target_scaler,
+            device=self._device, target_scaler=target_scaler, **channel_name_to_index_kwarg,
             prediction_activation_function=get_activation_function(self.train_config["prediction_activation_function"]),
             sub_group_splits=self.sub_groups_config["sub_groups"], sub_groups_verbose=self.sub_groups_config["verbose"]
         )
@@ -417,7 +424,71 @@ class Experiment:
     # -------------
     # Method for creating Pytorch data loaders
     # -------------
-    def _load_train_val_data_loaders(self, *, model, train_subjects, val_subjects, combined_dataset):
+    def _load_train_val_data_loaders(self, *, model=None, train_subjects, val_subjects, combined_dataset):
+        if self.spatial_dimension_handling_config["name"] == "RegionBasedPooling":
+            return self._load_rbp_train_val_data_loaders(
+                model=model, train_subjects=train_subjects, val_subjects=val_subjects, combined_dataset=combined_dataset
+            )
+        elif self.spatial_dimension_handling_config["name"] == "Interpolation":
+            return self._load_interpolation_train_val_data_loaders(
+                train_subjects=train_subjects, val_subjects=val_subjects, combined_dataset=combined_dataset
+            )
+        else:
+            raise ValueError
+
+    def _load_test_data_loader(self, *, model=None, test_subjects, combined_dataset, target_scaler):
+        if self.spatial_dimension_handling_config["name"] == "RegionBasedPooling":
+            return self._load_rbp_test_data_loader(
+                    model=model, test_subjects=test_subjects, combined_dataset=combined_dataset,
+                    target_scaler=target_scaler
+                )
+        elif self.spatial_dimension_handling_config["name"] == "Interpolation":
+            return self._load_interpolation_test_data_loader(
+                    test_subjects=test_subjects, combined_dataset=combined_dataset, target_scaler=target_scaler
+            )
+        else:
+            raise ValueError
+
+    def _load_interpolation_train_val_data_loaders(self, *, train_subjects, val_subjects, combined_dataset):
+        # Extract input data
+        train_data = combined_dataset.get_data(subjects=train_subjects)
+        val_data = combined_dataset.get_data(subjects=val_subjects)
+
+        # Extract scaled target data and the scaler itself
+        train_targets, val_targets, target_scaler = self._get_targets_and_scaler(
+            train_subjects=train_subjects, val_subjects=val_subjects, combined_dataset=combined_dataset
+        )
+
+        # Create data generators
+        train_gen = InterpolationDataGenerator(data=train_data, targets=train_targets,
+                                               subjects=combined_dataset.get_subjects_dict(train_subjects))
+        val_gen = InterpolationDataGenerator(data=val_data, targets=val_targets,
+                                             subjects=combined_dataset.get_subjects_dict(val_subjects))
+
+        # Create data loaders
+        train_loader = DataLoader(dataset=train_gen, batch_size=self.train_config["batch_size"], shuffle=True)
+        val_loader = DataLoader(dataset=val_gen, batch_size=self.train_config["batch_size"], shuffle=True)
+
+        return train_loader, val_loader, target_scaler
+
+    def _load_interpolation_test_data_loader(self, *, test_subjects, combined_dataset, target_scaler):
+        # Extract input data
+        test_data = combined_dataset.get_data(subjects=test_subjects)
+
+        # Extract scaled targets
+        test_targets = combined_dataset.get_targets(subjects=test_subjects)
+        test_targets = target_scaler.transform(test_targets)
+
+        # Create data generators
+        test_gen = InterpolationDataGenerator(data=test_data, targets=test_targets,
+                                              subjects=combined_dataset.get_subjects_dict(test_subjects))
+
+        # Create data loader
+        test_loader = DataLoader(dataset=test_gen, batch_size=self.train_config["batch_size"], shuffle=True)
+
+        return test_loader
+
+    def _load_rbp_train_val_data_loaders(self, *, model, train_subjects, val_subjects, combined_dataset):
         # Extract input data
         train_data = combined_dataset.get_data(subjects=train_subjects)
         val_data = combined_dataset.get_data(subjects=val_subjects)
@@ -443,7 +514,7 @@ class Experiment:
 
         return train_loader, val_loader, target_scaler
 
-    def _load_test_data_loader(self, *, model, test_subjects, combined_dataset, target_scaler):
+    def _load_rbp_test_data_loader(self, *, model, test_subjects, combined_dataset, target_scaler):
         # Extract input data
         test_data = combined_dataset.get_data(subjects=test_subjects)
 
@@ -502,7 +573,36 @@ class Experiment:
     # -------------
     # Method for making and preparing model
     # -------------
-    def _make_model(self):
+    def _make_interpolation_model(self, *, combined_dataset, train_subjects, test_subjects):
+        """Method for defining a model which expects the same number of channels"""
+        # Maybe add number of time steps
+        mts_config = copy.deepcopy(self.dl_architecture_config)
+        if "num_time_steps" in mts_config["kwargs"] and mts_config["kwargs"]["num_time_steps"] is None:
+            mts_config["kwargs"]["num_time_steps"] = self.shared_pre_processing_config["num_time_steps"]
+
+        # Add number of input channels
+        mts_config["kwargs"]["in_channels"] = get_dataset(
+            dataset_name=self.interpolation_config["main_channel_system"]
+        ).num_channels
+
+        # Define model
+        model = MainFixedChannelsModel.from_config(
+            mts_config=mts_config,
+            discriminator_config=None if self.domain_discriminator_config is None
+            else self.domain_discriminator_config["discriminator"],
+            cmmn_config=self.cmmn_config
+        ).to(self._device)
+
+        # Maybe fit CMMN layers
+        if model.has_cmmn_layer:
+            self._fit_cmmn_layers(model=model, train_data=combined_dataset.get_data(train_subjects))
+
+            # Fit the test data as well (needed here if analysing the latent feature distributions)
+            self._fit_cmmn_layers_test_data(model=model, test_data=combined_dataset.get_data(test_subjects))
+
+        return model
+
+    def _make_rbp_model(self, *, channel_systems, combined_dataset, train_subjects, test_subjects):
         """Method for defining a model with RBP as the first layer"""
         # Maybe add number of time steps
         mts_config = copy.deepcopy(self.dl_architecture_config)
@@ -510,29 +610,55 @@ class Experiment:
             mts_config["kwargs"]["num_time_steps"] = self.shared_pre_processing_config["num_time_steps"]
 
         # Define model
-        return MainRBPModel.from_config(
+        model = MainRBPModel.from_config(
             rbp_config=self.rbp_config,
             mts_config=mts_config,
             discriminator_config=None if self.domain_discriminator_config is None
             else self.domain_discriminator_config["discriminator"]
         ).to(self._device)
 
+        # Fit channel systems
+        self._fit_channel_systems(model=model, channel_systems=channel_systems)
+
+        # (Maybe) fit the CMMN layers of RBP
+        if model.any_rbp_cmmn_layers:
+            self._fit_cmmn_layers(model=model, train_data=combined_dataset.get_data(train_subjects),
+                                  channel_systems=channel_systems)
+
+            # Fit the test data as well (needed here if analysing the latent feature distributions)
+            self._fit_cmmn_layers_test_data(model=model, test_data=combined_dataset.get_data(test_subjects),
+                                            channel_systems=channel_systems)
+
+        return model
+
     @staticmethod
     def _fit_channel_systems(model, channel_systems):
         model.fit_channel_systems(tuple(channel_systems.values()))
 
-    def _fit_cmmn_layers(self, *, model, train_data, channel_systems):
-        model.fit_psd_barycenters(data=train_data, channel_systems=channel_systems,
-                                  sampling_freq=self.shared_pre_processing_config["resample"])
-        model.fit_monge_filters(data=train_data, channel_systems=channel_systems)
+    def _fit_cmmn_layers(self, *, model, train_data, channel_systems=None):
+        if self.spatial_dimension_handling_config["name"] == "RegionBasedPooling":
+            model.fit_psd_barycenters(data=train_data, channel_systems=channel_systems,
+                                      sampling_freq=self.shared_pre_processing_config["resample"])
+            model.fit_monge_filters(data=train_data, channel_systems=channel_systems)
+        elif self.spatial_dimension_handling_config["name"] == "Interpolation":
+            model.fit_psd_barycenters(data=train_data, sampling_freq=self.shared_pre_processing_config["resample"])
+            model.fit_monge_filters(data=train_data)
+        else:
+            raise ValueError(f"Unexpected method for handling a varied number of channels: "
+                             f"{self.spatial_dimension_handling_config['name']}")
 
-    @staticmethod
-    def _fit_cmmn_layers_test_data(*, model, test_data, channel_systems):
+    def _fit_cmmn_layers_test_data(self, *, model, test_data, channel_systems=None):
         for name, eeg_data in test_data.items():
             if name not in model.cmmn_fitted_channel_systems:
                 # As long as the channel systems for the test data are present in 'channel_systems', this works
                 # fine. Redundant channel systems is not a problem
-                model.fit_monge_filters(data={name: eeg_data}, channel_systems=channel_systems)
+                if self.spatial_dimension_handling_config["name"] == "RegionBasedPooling":
+                    model.fit_monge_filters(data={name: eeg_data}, channel_systems=channel_systems)
+                elif self.spatial_dimension_handling_config["name"] == "Interpolation":
+                    model.fit_monge_filters(data={name: eeg_data})
+                else:
+                    raise ValueError(f"Unexpected method for handling a varied number of channels: "
+                                     f"{self.spatial_dimension_handling_config['name']}")
 
     # -------------
     # Main method for running the cross validation experiment
@@ -545,7 +671,7 @@ class Experiment:
         # -----------------
         combined_dataset = self._load_data()
 
-        # Get some dataset details
+        # Get some dataset details. Not really necessary when using interpolation rather than RBP, but it doesn't hurt
         dataset_details = self._extract_dataset_details(combined_dataset)
 
         subjects = dataset_details["subjects"]
@@ -611,7 +737,7 @@ class Experiment:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-            model = self._make_model()
+            model = self._make_rbp_model()
 
         # Fit channel systems
         self._fit_channel_systems(model=model, channel_systems=channel_systems)
@@ -835,8 +961,17 @@ class Experiment:
         features_dict: Dict[str, Any] = {f"v{i}": feature for i, feature in enumerate(numpy.transpose(features))}
         return pandas.DataFrame.from_dict({"dataset_name": dataset_names, **features_dict})
 
+    def _extract_all_latent_features(self, model, data_loader, device, channel_name_to_index=None):
+        if self.spatial_dimension_handling_config["name"] == "RegionBasedPooling":
+            return self._extract_all_latent_features_rbp(model=model, data_loader=data_loader, device=device,
+                                                         channel_name_to_index=channel_name_to_index)
+        elif self.spatial_dimension_handling_config["name"] == "Interpolation":
+            return self._extract_all_latent_features_interpolation(model=model, data_loader=data_loader, device=device)
+        else:
+            raise ValueError
+
     @staticmethod
-    def _extract_all_latent_features(model, data_loader, device, channel_name_to_index):
+    def _extract_all_latent_features_rbp(*, model, data_loader, device, channel_name_to_index):
         outputs: List[torch.Tensor] = []
         with torch.no_grad():
             for x, pre_computed, _, _ in data_loader:
@@ -856,6 +991,24 @@ class Experiment:
 
         return torch.cat(outputs, dim=0)
 
+    @staticmethod
+    def _extract_all_latent_features_interpolation(*, model, data_loader, device):
+        outputs: List[torch.Tensor] = []
+        with torch.no_grad():
+            for x, *_ in data_loader:
+                # Strip the dictionaries for 'ghost tensors'
+                x = strip_tensors(x)
+
+                # Send data to correct device
+                x = tensor_dict_to_device(x, device=device)
+
+                # Feature extraction
+                outputs.append(
+                    model.extract_latent_features(x).to("cpu")
+                )
+
+        return torch.cat(outputs, dim=0)
+
     # -------------
     # Properties
     # -------------
@@ -869,6 +1022,13 @@ class Experiment:
         return self._config["Datasets"]
 
     @property
+    def interpolation_config(self) -> Optional[Dict[str, Any]]:
+        if self._config["Varied Numbers of Channels"]["name"] != "Interpolation":
+            return None
+        else:
+            return self._config["Varied Numbers of Channels"]["kwargs"]
+
+    @property
     def subject_split_config(self):
         return self._config["SubjectSplit"]
 
@@ -878,7 +1038,14 @@ class Experiment:
 
     @property
     def rbp_config(self):
-        return self._config["Varied Numbers of Channels"]["RegionBasedPooling"]
+        if self._config["Varied Numbers of Channels"]["name"] != "RegionBasedPooling":
+            return None
+        else:
+            return self._config["Varied Numbers of Channels"]["kwargs"]
+
+    @property
+    def spatial_dimension_handling_config(self):
+        return self._config["Varied Numbers of Channels"]
 
     @property
     def dl_architecture_config(self):
@@ -887,6 +1054,12 @@ class Experiment:
     @property
     def domain_discriminator_config(self):
         return self._config["DomainDiscriminator"]
+
+    @property
+    def cmmn_config(self):
+        """Config file for CMMN. Only relevant for non-RBP models, as CMMN configurations are part of the RBP config for
+        RBP models"""
+        return self.dl_architecture_config["CMMN"]
 
     @property
     def scaler_config(self):
