@@ -327,6 +327,76 @@ class InterpolationDataGenerator(Dataset):  # type: ignore[type-arg]
         # Return input data, targets, and the item (will be converted to Subject later)
         return data, targets, item
 
+    # --------------
+    # Convenient methods
+    # --------------
+    def get_subject_from_idx(self, item):
+        """
+        Get the subject from the index. It is needed because the subject information cannot easily be returned in the
+        __getitem__ method. Therefore, the index is returned instead, and the subject information can be extracted by
+        passing the index to this method.
+
+        Parameters
+        ----------
+        item : torch.Tensor
+
+        Returns
+        -------
+        Subject
+        """
+        # Get the dataset name and index
+        dataset_sizes = {dataset_name: len(subjects) for dataset_name, subjects in self._subjects.items()}
+        dataset_name, idx = _select_dataset_and_index(item=int(item), dataset_sizes=dataset_sizes)
+
+        # Use correct type and return
+        return Subject(subject_id=self._subjects[dataset_name][idx], dataset_name=dataset_name)
+
+    def get_subjects_from_indices(self, items):
+        """
+        Get the subjects from the indices returned by the __getitem__ method (and later collated).
+
+        Parameters
+        ----------
+        items : torch.Tensor
+
+        Returns
+        -------
+        tuple[Subject, ...]
+        """
+        return tuple(self.get_subject_from_idx(item=item) for item in items)
+
+    def get_dataset_indices_from_subjects(self, subjects):
+        """
+        Get the dataset indices from a tuple of subjects
+
+        Parameters
+        ----------
+        subjects : tuple[Subject, ...]
+
+        Returns
+        -------
+        torch.Tensor
+        """
+        # Get the dictionary mapping from dataset name to dataset index
+        dataset_mapping = self.dataset_indices
+
+        # return indices as a torch tensor
+        return torch.tensor([dataset_mapping[subject.dataset_name] for subject in subjects])
+
+    # --------------
+    # Properties
+    # --------------
+    @property
+    def dataset_sizes(self):
+        """Get the sizes of the datasets. The keys are the dataset names, the values are the number of subjects in the
+        dataset"""
+        return {dataset_name: x.shape[0] for dataset_name, x in self._data.items()}
+
+    @property
+    def dataset_indices(self):
+        """Get a dictionary mapping the dataset name to the dataset index"""
+        return {dataset_name: i for i, dataset_name in enumerate(self._data)}
+
 
 # ----------------
 # Functions
