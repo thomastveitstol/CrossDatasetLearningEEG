@@ -137,7 +137,7 @@ class MainFixedChannelsModel(nn.Module):
             todo: this may be merged with the MTS config
         """
         use_cmmn_layer = cmmn_config["use_cmmn_layer"]
-        return cls(mts_module=mts_config["name"],
+        return cls(mts_module=mts_config["model"],
                    mts_module_kwargs=mts_config["kwargs"],
                    domain_discriminator=None if discriminator_config is None else discriminator_config["name"],
                    domain_discriminator_kwargs=None if discriminator_config is None else discriminator_config["kwargs"],
