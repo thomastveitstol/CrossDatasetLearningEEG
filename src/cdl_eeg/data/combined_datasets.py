@@ -83,7 +83,7 @@ class CombinedDatasets:
             non_interpolated: Dict[str, Dict[str, numpy.ndarray | ChannelSystem]] = dict()  # type: ignore[type-arg]
             for dataset, details in zip(datasets, load_details):
                 dataset: EEGDatasetBase
-                non_interpolated["dataset"] = {
+                non_interpolated[dataset.name] = {
                     "data": dataset.load_numpy_arrays(
                         subject_ids=details.subject_ids, pre_processed_version=details.pre_processed_version,
                         time_series_start=details.time_series_start, num_time_steps=details.num_time_steps,
