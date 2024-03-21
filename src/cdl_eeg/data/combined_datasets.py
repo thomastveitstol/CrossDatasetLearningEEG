@@ -33,7 +33,7 @@ class CombinedDatasets:
     __slots__ = "_subject_ids", "_data", "_targets", "_datasets"
 
     def __init__(self, datasets, load_details=None, target=None, interpolation_method=None, main_channel_system=None,
-                 sampling_freq=None, verbose=True):
+                 sampling_freq=None):
         """
         Initialise
 
@@ -81,10 +81,7 @@ class CombinedDatasets:
                           for dataset, details in zip(datasets, load_details)}
         else:
             non_interpolated: Dict[str, Dict[str, numpy.ndarray | ChannelSystem]] = dict()  # type: ignore[type-arg]
-            for i, (dataset, details) in enumerate(zip(datasets, load_details)):
-                if verbose:
-                    print(f"Interpolating {type(dataset).__name__} ({i + 1}/{len(datasets)})")
-
+            for dataset, details in zip(datasets, load_details):
                 dataset: EEGDatasetBase
                 non_interpolated[dataset.name] = {
                     "data": dataset.load_numpy_arrays(
