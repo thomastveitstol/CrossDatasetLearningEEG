@@ -134,6 +134,7 @@ class MainFixedChannelsModel(nn.Module):
         mts_config : dict[str, typing.Any]
         discriminator_config : dict[str, typing.Any] | None
         cmmn_config : dict[str, typing.Any]
+            todo: this may be merged with the MTS config
         """
         use_cmmn_layer = cmmn_config["use_cmmn_layer"]
         return cls(mts_module=mts_config["name"],
