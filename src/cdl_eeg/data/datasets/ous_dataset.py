@@ -27,6 +27,7 @@ class OUS(EEGDatasetBase):
     __slots__ = ()
     _channel_names = ('Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'F7', 'F8', 'T7', 'T8', 'P7', 'P8',
                       'Fz', 'Cz', 'Pz', 'F9', 'F10', 'T9', 'T10', 'P9', 'P10')  # todo: make test to verify this for all
+    _montage_name = "standard_1020"
 
     # ----------------
     # Loading methods

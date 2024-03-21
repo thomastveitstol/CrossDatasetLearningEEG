@@ -44,6 +44,8 @@ class YulinWang(EEGDatasetBase):
 
     __slots__ = ()
 
+    _montage_name = "standard_1020"
+
     # ----------------
     # Methods for loading
     # ----------------

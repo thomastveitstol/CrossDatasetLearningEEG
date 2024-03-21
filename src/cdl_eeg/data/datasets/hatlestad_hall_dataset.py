@@ -27,9 +27,13 @@ class HatlestadHall(EEGDatasetBase):
     'CP2': 55, 'P2': 56, 'P4': 57, 'P6': 58, 'P8': 59, 'P10': 60, 'PO8': 61, 'PO4': 62, 'O2': 63}
     >>> set(type(idx) for idx in HatlestadHall().channel_name_to_index().values())  # type: ignore[attr-defined]
     {<class 'int'>}
+    >>> HatlestadHall().channel_system.montage_name
+    'standard_1020'
     """
 
     __slots__ = ()
+
+    _montage_name = "standard_1020"  # todo: it might be biosemi
 
     # ----------------
     # Loading methods

@@ -49,6 +49,8 @@ class EEGDatasetBase(abc.ABC):
 
     __slots__ = "_name"
 
+    _montage_name: Optional[str] = None
+
     def __init__(self, name=None):
         """
         Initialisation method
@@ -412,7 +414,7 @@ class EEGDatasetBase(abc.ABC):
     @property
     def channel_system(self) -> ChannelSystem:
         return ChannelSystem(name=self.name, channel_name_to_index=self.channel_name_to_index(),
-                             electrode_positions=self.get_electrode_positions())
+                             electrode_positions=self.get_electrode_positions(), montage_name=self._montage_name)
 
     # ----------------
     # Path methods
