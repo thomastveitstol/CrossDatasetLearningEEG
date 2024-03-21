@@ -259,7 +259,7 @@ class MainFixedChannelsModel(nn.Module):
 
     @train_method
     def downstream_training(self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs,
-                            criterion, optimiser, device, prediction_activation_function=None,
+                            classifier_criterion, optimiser, device, prediction_activation_function=None,
                             verbose=True, target_scaler=None, sub_group_splits, sub_groups_verbose):
         """
         Method for normal downstream training
@@ -274,7 +274,7 @@ class MainFixedChannelsModel(nn.Module):
         metrics : str | tuple[str, ...]
         main_metric : str
         num_epochs : int
-        criterion : cdl_eeg.models.losses.CustomWeightedLoss
+        classifier_criterion : cdl_eeg.models.losses.CustomWeightedLoss
         optimiser : torch.optim.Optimizer
         device : torch.device
         prediction_activation_function : typing.Callable | None
@@ -325,7 +325,7 @@ class MainFixedChannelsModel(nn.Module):
 
                 # Compute loss
                 optimiser.zero_grad()
-                loss = criterion(output, y, subjects=subjects)
+                loss = classifier_criterion(output, y, subjects=subjects)
                 loss.backward()
                 optimiser.step()
 
