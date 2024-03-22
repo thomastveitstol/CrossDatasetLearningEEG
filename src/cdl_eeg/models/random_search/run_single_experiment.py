@@ -19,7 +19,7 @@ from cdl_eeg.data.combined_datasets import CombinedDatasets
 from cdl_eeg.data.data_generators.data_generator import DownstreamDataGenerator, strip_tensors, \
     InterpolationDataGenerator
 from cdl_eeg.data.datasets.getter import get_dataset
-from cdl_eeg.data.subject_split import get_data_split, leave_1_fold_out
+from cdl_eeg.data.subject_split import get_data_split, leave_1_fold_out, TrainValBase
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
 from cdl_eeg.models.losses import CustomWeightedLoss, get_activation_function
 from cdl_eeg.models.main_models.main_fixed_channels_model import MainFixedChannelsModel
@@ -158,7 +158,10 @@ class Experiment:
             # -----------------
             # Split into train and validation
             # -----------------
-            train_subjects, val_subjects = self._train_val_split(folds=folds, left_out_fold=i)
+            non_test_subjects = leave_1_fold_out(i=i, folds=folds)
+            train_subjects, val_subjects = self._train_val_split(
+                dataset_subjects=combined_dataset.get_subjects_dict(non_test_subjects)
+            )
 
             # -----------------
             # Run the current fold
@@ -193,18 +196,17 @@ class Experiment:
 
         save_test_histories_plots(path=self._results_path, histories=test_histories)
 
-    def _train_val_split(self, folds, left_out_fold):
-        # Exclude the test fold
-        non_test_subjects = list(leave_1_fold_out(i=left_out_fold, folds=folds))
+    def _train_val_split(self, dataset_subjects):
+        # Get the subject split
+        subject_split = get_data_split(split=self.train_config["ValSplit"]["name"],
+                                       dataset_subjects=dataset_subjects,
+                                       **self.train_config["ValSplit"]["kwargs"])
+        if not isinstance(subject_split, TrainValBase):
+            raise TypeError(f"Expected train/val split object to inherit from {TrainValBase.__name__}, but found type "
+                            f"{type(subject_split)}")
 
-        # Shuffle the non-test subjects randomly
-        random.shuffle(non_test_subjects)
-
-        # Split into train and validation
-        num_subjects = len(non_test_subjects)
-        split_idx = int(num_subjects * (1 - self.train_config["val_split"]))
-        train_subjects = non_test_subjects[:split_idx]
-        val_subjects = non_test_subjects[split_idx:]
+        # Get train and validation subjects
+        train_subjects, val_subjects = subject_split.folds
 
         return train_subjects, val_subjects
 

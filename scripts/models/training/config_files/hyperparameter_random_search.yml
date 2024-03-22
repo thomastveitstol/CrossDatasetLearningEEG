@@ -124,7 +124,10 @@ Training:
   batch_size: 16
   num_epochs: 50
   verbose: true
-  val_split: 0.2
+  ValSplit:
+    name: DatasetBalancedTrainValSplit
+    kwargs:
+      val_split: 0.2
   target: *selected_target
   continuous_testing: true
   # metrics: regression
