@@ -24,7 +24,7 @@ class MPILemon(EEGDatasetBase):
     'mpi_lemon'
     >>> len(MPILemon().get_subject_ids()), MPILemon().get_subject_ids()[:4]
     (203, ('sub-032301', 'sub-032302', 'sub-032303', 'sub-032304'))
-    >>> len(MPILemon()._channel_names)
+    >>> len(MPILemon()._channel_names)  # There are 61 because the 62nd is VEOG (eye electrode), see original article
     61
     """
 
