@@ -122,7 +122,7 @@ Targets:
 Training:
   # Fixed hyperparameters
   batch_size: 16
-  num_epochs: 50
+  num_epochs: 100
   verbose: true
   ValSplit:
     name: DatasetBalancedTrainValSplit
@@ -147,7 +147,7 @@ Training:
     dist: uniform
     kwargs:
       a: 0.9
-      b: 0.98
+      b: 1.0
   eps:
     dist: log_uniform
     kwargs:
@@ -163,7 +163,7 @@ FCModule: &FCModule
     dist: uniform_discrete
     kwargs:
       # domain: [ [], [32], [64], [32, 32], [64, 64], [64, 32] ]  # todo
-      domain: [ [], [4, 8], [4, 4], [8, 8] ]
+      domain: [ [4], [8], [4, 8], [4, 4], [8, 8] ]
 
 DomainDiscriminator:
   discriminators:
@@ -190,7 +190,7 @@ CMMN:
       kernel_size:  # todo: what to use here?
         dist: uniform_discrete
         kwargs:
-          domain: [ 64, 128, 256, 512, 1024, 2048 ]
+          domain: [ 64, 128, 256, 512, 1024 ]
 
 
 # -----------------
@@ -299,7 +299,7 @@ RegionBasedPooling: &RegionBasedPooling
       kernel_size:  # todo: what to use here?
         dist: uniform_discrete
         kwargs:
-          domain: [ 64, 128, 256, 512, 1024, 2048 ]
+          domain: [ 64, 128, 256, 512, 1024 ]
 
 # Interpolation
 Interpolation: &Interpolation
