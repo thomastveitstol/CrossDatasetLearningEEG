@@ -18,6 +18,8 @@ class HatlestadHall(EEGDatasetBase):
     ('age', 'ravlt_del', 'ravlt_rec', 'ravlt_tot', 'sex')
     >>> len(HatlestadHall().get_subject_ids())
     111
+    >>> len(HatlestadHall().channel_name_to_index())
+    64
     >>> HatlestadHall().channel_name_to_index()  # doctest: +NORMALIZE_WHITESPACE
     {'Fp1': 0, 'AF7': 1, 'AF3': 2, 'F1': 3, 'F3': 4, 'F5': 5, 'F7': 6, 'FT7': 7, 'FC5': 8, 'FC3': 9, 'FC1': 10,
     'C1': 11, 'C3': 12, 'C5': 13, 'T7': 14, 'TP7': 15, 'CP5': 16, 'CP3': 17, 'CP1': 18, 'P1': 19, 'P3': 20, 'P5': 21,
