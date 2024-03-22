@@ -190,6 +190,77 @@ class SplitOnDataset(DataSplitBase):
         return self._folds
 
 
+class TrainValBase(DataSplitBase, abc.ABC):
+    """
+    Base class when slitting into training and validation
+    """
+
+    __slots__ = ()
+
+    @property
+    @abc.abstractmethod
+    def folds(self):
+        """
+        Get the folds. The first 'fold' is meant for training, the last for validation. Not the nicest way to do things,
+        so todo: this could benefit from a refactoring
+
+        Returns
+        -------
+        tuple[tuple[Subject, ...], tuple[Subject, ...]]
+        """
+
+
+class DatasetBalancedTrainValSplit(TrainValBase):
+    """
+    Ensure that the training and validation is split per dataset
+
+    Examples
+    --------
+    >>> my_subjects = {"d1": tuple(f"s{i}" for i in range(10)), # type: ignore[attr-defined]
+    ...                "d2": tuple(f"s{i}" for i in range(20)),  # type: ignore[attr-defined]
+    ...                "d3": tuple(f"s{i}" for i in range(15))}  # type: ignore[attr-defined]
+    >>> my_folds = DatasetBalancedTrainValSplit(my_subjects, val_split=0.2, seed=2).folds
+
+    Check dataset sizes in train and validation set
+
+    >>> {dataset: len(tuple(sub for sub in my_folds[0] if sub.dataset_name == dataset))   # type: ignore[attr-defined]
+    ...  for dataset in my_subjects}
+    {'d1': 8, 'd2': 16, 'd3': 12}
+    >>> {dataset: len(tuple(sub for sub in my_folds[1] if sub.dataset_name == dataset))   # type: ignore[attr-defined]
+    ...  for dataset in my_subjects}
+    {'d1': 2, 'd2': 4, 'd3': 3}
+
+    Train and validation are not overlapping
+
+    >>> any(sub in my_folds[0] for sub in my_folds[1])  # type: ignore[attr-defined]
+    False
+    """
+
+    __slots__ = "_train_subjects", "_val_subjects"
+
+    def __init__(self, dataset_subjects, *, val_split, seed=None):
+        # Maybe make data split reproducible
+        if seed is not None:
+            random.seed(seed)
+
+        # Loop through all datasets
+        train_subjects: List[Subject] = []
+        val_subjects: List[Subject] = []
+        for dataset, subjects in dataset_subjects.items():
+            dataset_train_subjects, dataset_val_subjects = _split_randomly(subjects=subjects, split_percent=val_split)
+
+            train_subjects.extend([Subject(subject_id=sub_id, dataset_name=dataset)
+                                   for sub_id in dataset_train_subjects])
+            val_subjects.extend([Subject(subject_id=sub_id, dataset_name=dataset) for sub_id in dataset_val_subjects])
+
+        self._train_subjects = tuple(train_subjects)
+        self._val_subjects = tuple(val_subjects)
+
+    @property
+    def folds(self):
+        return self._train_subjects, self._val_subjects
+
+
 # -----------------
 # Functions
 # -----------------
@@ -255,3 +326,22 @@ def leave_1_fold_out(i, folds):
 
     # Return as unpacked tuple
     return tuple(itertools.chain(*tuple(fold for j, fold in enumerate(folds) if j != i)))
+
+
+def _split_randomly(subjects, split_percent):
+    # Input checks
+    assert all(isinstance(subject, (Subject, str)) for subject in subjects)
+    assert isinstance(split_percent, float)
+    assert 0 < split_percent < 1
+
+    # Make a list and a copy
+    subjects = list(subjects)
+
+    # Shuffle randomly
+    random.shuffle(subjects)
+
+    # Split by the percentage
+    num_subjects = len(subjects)
+    split_idx = int(num_subjects * (1 - split_percent))
+
+    return subjects[:split_idx], subjects[split_idx:]
