@@ -191,7 +191,6 @@ class Rockhill(EEGDatasetBase):
     # Methods for channel system
     # ----------------
     def _get_template_electrode_positions(self):
-        # todo: This looks really bad when plotting...
         # Following the international 10-20 system according to the README file. Thus using MNE default
         montage = mne.channels.make_standard_montage("standard_1020")
         channel_positions = montage.get_positions()["ch_pos"]
