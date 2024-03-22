@@ -25,7 +25,8 @@ class Rockhill(EEGDatasetBase):
     _channel_names = ('Fp1', 'AF3', 'F7', 'F3', 'FC1', 'FC5', 'T7', 'C3', 'CP1', 'CP5', 'P7', 'P3', 'Pz', 'PO3', 'O1',
                       'Oz', 'O2', 'PO4', 'P4', 'P8', 'CP6', 'CP2', 'C4', 'T8', 'FC6', 'FC2', 'F4', 'F8', 'AF4', 'Fp2',
                       'Fz', 'Cz')  # Removed EXG channels, as these channel names are supposed to match numpy arrays
-    _montage_name = "standard_1020"
+    _montage_name = "standard_1020"  # Can't find the montage name in README file, but the channel names would suggest
+    # standard 10-20
 
     def pre_process(self, eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False,
                     interpolation=None, remove_above_std, excluded_channels="EXG"):
@@ -191,8 +192,7 @@ class Rockhill(EEGDatasetBase):
     # Methods for channel system
     # ----------------
     def _get_template_electrode_positions(self):
-        # Following the international 10-20 system according to the README file. Thus using MNE default
-        montage = mne.channels.make_standard_montage("standard_1020")
+        montage = mne.channels.make_standard_montage(self._montage_name)
         channel_positions = montage.get_positions()["ch_pos"]
 
         # Return dict with channel positions, keeping only the ones in the data
