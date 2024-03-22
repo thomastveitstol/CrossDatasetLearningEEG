@@ -22,8 +22,8 @@ def main():
     eeg = VanHees().load_single_mne_object(subject_id=subject_id)
 
     # Pre-process
-    eeg = VanHees.pre_process(eeg, filtering=filtering, notch_filter=notch_filter, avg_reference=avg_reference,
-                              resample=resampling_freq)
+    eeg = VanHees().pre_process(eeg, filtering=filtering, notch_filter=notch_filter, avg_reference=avg_reference,
+                                resample=resampling_freq, excluded_channels=None, remove_above_std=None)
 
     # -----------------
     # Plot data
