@@ -234,6 +234,17 @@ class DatasetBalancedTrainValSplit(TrainValBase):
 
     >>> any(sub in my_folds[0] for sub in my_folds[1])  # type: ignore[attr-defined]
     False
+
+    No problem if there is only one dataset
+
+    >>> DatasetBalancedTrainValSplit({"d1": tuple(f"s{i}" for i in range(10))},  # type: ignore[attr-defined]
+    ...                              val_split=0.2, seed=2).folds
+    ((Subject(subject_id='s5', dataset_name='d1'), Subject(subject_id='s9', dataset_name='d1'),
+      Subject(subject_id='s3', dataset_name='d1'), Subject(subject_id='s4', dataset_name='d1'),
+      Subject(subject_id='s6', dataset_name='d1'), Subject(subject_id='s7', dataset_name='d1'),
+      Subject(subject_id='s2', dataset_name='d1'), Subject(subject_id='s8', dataset_name='d1')),
+     (Subject(subject_id='s1', dataset_name='d1'), Subject(subject_id='s0', dataset_name='d1')))
+
     """
 
     __slots__ = "_train_subjects", "_val_subjects"
