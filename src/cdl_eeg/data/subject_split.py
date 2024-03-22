@@ -289,7 +289,7 @@ def get_data_split(split, **kwargs):
     DataSplitBase
     """
     # All available data splits must be included here
-    available_splits = (KFoldDataSplit, SplitOnDataset)
+    available_splits = (KFoldDataSplit, SplitOnDataset, DatasetBalancedTrainValSplit)
 
     # Loop through and select the correct one
     for split_class in available_splits:
