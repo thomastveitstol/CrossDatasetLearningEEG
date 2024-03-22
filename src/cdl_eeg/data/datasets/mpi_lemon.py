@@ -15,6 +15,9 @@ from cdl_eeg.data.datasets.utils import sex_to_int
 
 class MPILemon(EEGDatasetBase):
     """
+    Original article:
+    https://www.nature.com/articles/sdata2018308
+
     Examples:
     ----------
     >>> MPILemon().name
@@ -158,7 +161,7 @@ class MPILemon(EEGDatasetBase):
                         os.mkdir(path)
 
                     # Download
-                    s3_bucket.download_file(file_path, os.path.join(path, f"{subject_id}.{file_type}"))
+                    s3_bucket.download_file(file_path, os.path.join(path, f"{subject_id}.{file_type}"))  # type: ignore
 
         # Participants file
         s3_bucket.download_file("data/Projects/INDI/MPI-LEMON/Participants_MPILMBB_LEMON.csv",
@@ -185,9 +188,9 @@ class MPILemon(EEGDatasetBase):
         return {ch_name: tuple(pos) for ch_name, pos in channel_positions.items() if ch_name in ch_names}
 
     def _get_template_electrode_positions(self):
-        # TODO: verify that it is the international 10-20 system
+        # Following the standard 10-20 system according to the original article
         # TODO: channel present in the data is inconsistent!!!
-        montage = mne.channels.make_standard_montage("standard_1020")
+        montage = mne.channels.make_standard_montage(self._montage_name)
         channel_positions = montage.get_positions()["ch_pos"]
 
         # Return dict with channel positions, keeping only the ones in the data
