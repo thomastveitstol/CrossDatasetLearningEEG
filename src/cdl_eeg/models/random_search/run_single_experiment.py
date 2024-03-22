@@ -103,7 +103,7 @@ class Experiment:
 
             # Split into train and validation
             num_subjects = len(non_test_subjects)
-            split_idx = int(num_subjects * (1 - self.train_config["val_split"]))
+            split_idx = int(num_subjects * (1 - self.train_config["ValSplit"]["kwargs"]["val_split"]))
             train_subjects = tuple(non_test_subjects[:split_idx])
             val_subjects = tuple(non_test_subjects[split_idx:])
 
