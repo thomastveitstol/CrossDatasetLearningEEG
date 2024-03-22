@@ -12,6 +12,9 @@ from cdl_eeg.data.datasets.utils import sex_to_int
 
 class YulinWang(EEGDatasetBase):
     """
+    Original paper:
+    https://www.nature.com/articles/s41597-022-01607-9
+
     Examples:
     ----------
     >>> YulinWang().name
@@ -44,7 +47,7 @@ class YulinWang(EEGDatasetBase):
 
     __slots__ = ()
 
-    _montage_name = "standard_1020"
+    _montage_name = "standard_1020"  # See 'EEG acquisition' in the original paper
 
     # ----------------
     # Methods for loading
@@ -157,8 +160,7 @@ class YulinWang(EEGDatasetBase):
         return {ch_name: (x, y, z) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
 
     def _get_template_electrode_positions(self):
-        # Following the international 10-20 system according to the original paper. Thus using MNE default
-        montage = mne.channels.make_standard_montage("standard_1020")
+        montage = mne.channels.make_standard_montage(self._montage_name)
         channel_positions = montage.get_positions()["ch_pos"]
 
         # ---------------
