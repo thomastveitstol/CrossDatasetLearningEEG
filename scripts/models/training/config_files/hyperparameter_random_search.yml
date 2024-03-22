@@ -303,7 +303,7 @@ RegionBasedPooling: &RegionBasedPooling
 
 # Interpolation
 Interpolation: &Interpolation
-  main_channel_system: [ rockhill, hatlestad_hall, yulin_wang, mpi_lemon]
+  main_channel_system: [ rockhill, hatlestad_hall, yulin_wang, mpi_lemon, miltiadous ]
   method: [ MNE, spline ]
 
 Varied Numbers of Channels:
