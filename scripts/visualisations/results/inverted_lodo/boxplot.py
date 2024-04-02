@@ -91,13 +91,15 @@ def _get_path(run, results_dir, source_dataset):
 # Main function
 # ----------------
 def main():
+    folder_name = "easter_runs"  # "debug_results_inverted_lodo_1"
+
     # --------------
     # Hyperparameters
     # --------------
     source_dataset = "mpi_lemon"
     metric = "auc"
 
-    results_dir = os.path.join(get_results_dir(), "debug_results_inverted_lodo_1")
+    results_dir = os.path.join(get_results_dir(), folder_name)
 
     # --------------
     # Define some prettier names
@@ -106,14 +108,16 @@ def main():
                    "hatlestad_hall": "HatlestadHall",
                    "yulin_wang": "YulinWang",
                    "rockhill": "Rockhill",
-                   "mpi_lemon": "MPI Lemon"}
+                   "mpi_lemon": "MPI Lemon",
+                   "miltiadous": "Miltiadous"}
 
     # --------------
     # Select runs
     # --------------
     runs = (run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
                                                                                   "leave_one_dataset_out",
-                                                                                  "finished_successfully.txt")))
+                                                                                  "finished_successfully.txt"))
+            and "inverted_cv" in run)
 
     # --------------
     # Get performances per run

@@ -129,22 +129,24 @@ def _get_path(run, results_dir, dataset):
 # Main function
 # --------------
 def main():
+    folder_name = "easter_runs"  # "debug_results_1"
+
     # --------------
     # Hyperparameters
     # --------------
-    distance_metric = ("average_l2_to_centroid", "centroid_l2")[0]
-    scale = True
+    distance_metric = ("average_l2_to_centroid", "centroid_l2")[1]
+    scale = False
     distance_aggregation_method = "mean"
     exclude_self = True
 
-    dataset = "mpi_lemon"
+    dataset = "hatlestad_hall"
     performance_metric = "auc"
     balance_validation_performance = True
 
-    results_dir = os.path.join(get_results_dir(), "debug_results_1")
+    results_dir = os.path.join(get_results_dir(), folder_name)
 
     # Cosmetics
-    colormap = "Blues"
+    colormap = "viridis"  # "Blues"
     fontsize = 17
     figsize = (16, 9)
 
@@ -157,14 +159,16 @@ def main():
                    "hatlestad_hall": "HatlestadHall",
                    "yulin_wang": "YulinWang",
                    "rockhill": "Rockhill",
-                   "mpi_lemon": "MPI Lemon"}
+                   "mpi_lemon": "MPI Lemon",
+                   "miltiadous": "Miltiadous"}
 
     # --------------
     # Select runs
     # --------------
     runs = (run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
                                                                                   "leave_one_dataset_out",
-                                                                                  "finished_successfully.txt")))
+                                                                                  "finished_successfully.txt"))
+            and "inverted_cv" not in run)
 
     # --------------
     # Get performances and distances per run
