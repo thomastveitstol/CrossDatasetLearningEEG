@@ -4,12 +4,9 @@ Script for plotting the preprocessed version of the Miltiadous
 Conclusion:
     Looks quite good, although not sure if all is resting state (see e.g. subject 56).
 """
-import os
-
-import mne
 from matplotlib import pyplot
 
-from cdl_eeg.data.paths import get_raw_data_storage_path
+from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 
 
 def main():
@@ -17,40 +14,36 @@ def main():
     # Hyperparameters
     # -----------------
     # Data
-    subject = 24
-    derivatives = True  # boolean, indicating cleaned/not cleaned data
+    subject_number = 55
+    derivatives = False
 
-    # Preprocessing
-    l_freq = 1
-    h_freq = 45
+    # Pre-processing
+    filtering = (1, 40)  # None  # (1, 40)
+    resampling_freq = None
+    notch_filter = None
+    avg_reference = True
+    remove_above_std = None  # 80e-06
+    excluded_channels = None
+    interpolation_method = "MNE"
 
     # -----------------
     # Load data
     # -----------------
-    # Make path
-    dataset_path = os.path.join(get_raw_data_storage_path(), "miltiadous")
-    dataset_path = os.path.join(dataset_path, "derivatives") if derivatives else dataset_path
+    subject_id = Miltiadous().get_subject_ids()[subject_number]
 
-    subject_id = tuple(dataset for dataset in os.listdir(dataset_path) if dataset[:4] == "sub-")[subject]
-    path = os.path.join(dataset_path, subject_id, "eeg", f"{subject_id}_task-eyesclosed_eeg.set")
+    eeg = Miltiadous().load_single_mne_object(subject_id=subject_id, derivatives=derivatives)
 
-    # Make MNE raw object
-    eeg: mne.io.eeglab.eeglab.RawEEGLAB = mne.io.read_raw_eeglab(input_fname=path, preload=True)
-
-    # -----------------
-    # Some additional preprocessing steps
-    # -----------------
-    # Filtering
-    eeg.filter(l_freq=l_freq, h_freq=h_freq)
-
-    # Re-referencing
-    eeg.set_eeg_reference(ref_channels="average")
+    # Pre-process
+    eeg = Miltiadous().pre_process(eeg, filtering=filtering, notch_filter=notch_filter,
+                                   avg_reference=avg_reference, resample=resampling_freq,
+                                   excluded_channels=excluded_channels, remove_above_std=remove_above_std,
+                                   interpolation=interpolation_method)
 
     # -----------------
     # Plot data
     # -----------------
     eeg.plot()
-    eeg.compute_psd(fmax=h_freq+15).plot()
+    eeg.compute_psd().plot()
 
     pyplot.show()
 
