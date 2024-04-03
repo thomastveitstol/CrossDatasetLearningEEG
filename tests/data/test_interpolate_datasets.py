@@ -5,8 +5,8 @@ import pytest
 
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
+from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.mpi_lemon import MPILemon
-from cdl_eeg.data.datasets.rockhill_dataset import Rockhill
 from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
 from cdl_eeg.data.interpolate_datasets import interpolate_datasets
 from cdl_eeg.data.paths import get_numpy_data_storage_path
@@ -21,8 +21,8 @@ def test_interpolate_datasets():
     num_subjects = 4  # Will be per dataset
     method = "MNE"
 
-    datasets = HatlestadHall(), MPILemon(), Rockhill(), YulinWang()
-    preprocessed_version = "debug_preprocessed_2024-03-07_134145"
+    datasets = HatlestadHall(), MPILemon(), Miltiadous(), YulinWang()
+    preprocessed_version = "debug_preprocessed_2024-04-03_173246"
 
     # ----------------
     # Load data
@@ -50,14 +50,14 @@ def test_interpolate_datasets():
                                         montage_name="standard_1020")
 
     interpolated_data = interpolate_datasets(
-        datasets=loaded_data, main_channel_system=main_channel_system, method=method, sampling_freq=9.5111534412567
+        datasets=loaded_data, main_channel_system=main_channel_system, method=method, sampling_freq=180.43533650801245
     )  # todo: hard-coded sampling frequency
 
     # ----------------
     # Check outputs
     # ----------------
     # Test keys
-    assert set(interpolated_data) == {"rockhill", "yulin_wang", "hatlestad_hall", "mpi_lemon"}
+    assert set(interpolated_data) == {"miltiadous", "yulin_wang", "hatlestad_hall", "mpi_lemon"}
 
     # Type check of all arrays
     assert all(isinstance(arr, numpy.ndarray) for arr in interpolated_data.values())
