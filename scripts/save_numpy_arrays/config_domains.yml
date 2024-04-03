@@ -81,8 +81,7 @@ Datasets:
   HatlestadHall:
     session: "t1"
     derivatives: true
-  MPILemon:
-    interpolation_method: "MNE"
+  MPILemon: {}  # Interpolation method is same as in general
   YulinWang:
     visit: 1
     recording: EC

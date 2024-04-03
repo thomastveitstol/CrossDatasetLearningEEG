@@ -1,5 +1,4 @@
 import random
-from typing import Optional
 
 import numpy
 
@@ -36,11 +35,7 @@ def generate_preprocessing_config_file(config):
 
     # Bad channels handling
     remove_above_std = random.uniform(config["remove_above_std"]["low"], config["remove_above_std"]["high"])
-    interpolation: Optional[str]
-    if remove_above_std is not None:
-        interpolation = random.choice(config["interpolation"])
-    else:
-        interpolation = None
+    interpolation = random.choice(config["interpolation"])
 
     # ---------------
     # Construct config dictionary (the dataset specifics are currently fixed)
@@ -48,4 +43,7 @@ def generate_preprocessing_config_file(config):
     general_config = {"filtering": (l_freq, h_freq), "resample": sampling_freq, "avg_reference": avg_reference,
                       "num_time_steps": num_time_steps, "time_series_start": time_series_start,
                       "remove_above_std": remove_above_std, "interpolation": interpolation}
-    return {"general": general_config, "datasets": config["Datasets"]}
+    datasets = config["Datasets"]
+    datasets["MPILemon"]["interpolation_method"] = interpolation
+
+    return {"general": general_config, "datasets": datasets}
