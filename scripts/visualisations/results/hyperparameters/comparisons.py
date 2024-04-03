@@ -408,7 +408,7 @@ def main_inverted_lodo():
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
     # Datasets
-    source_dataset = "mpi_lemon"
+    source_dataset = "rockhill"
     performance_metric = "auc"
     jitter = None
 

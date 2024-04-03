@@ -1,16 +1,9 @@
 """
 Script for plotting the preprocessed version of the Yulin Wang dataset, using tools from MNE.
-
-Conclusion: The data does not look good, and needs further preprocessing. Simply applying some filtering made it look
-far better
 """
-import os
-import pathlib
-
-import mne
 from matplotlib import pyplot
 
-from cdl_eeg.data.paths import get_raw_data_storage_path
+from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
 
 
 def main():
@@ -21,37 +14,35 @@ def main():
     subject = 57  # Number between (and including) 1 and 60
     recording = "EC"  # Can  be one of the following: 'EC', 'EO', 'Ma', 'Me', 'Mu'
     visit = 3  # Number between (and including) 1 and 3
+    derivatives = True
 
     # Preprocessing
     l_freq = 1
     h_freq = 45
+    notch_filter = None
+    avg_reference = True
+    resampling_freq = None
+    excluded_channels = None
+    remove_above_std = None
 
     # -----------------
     # Load data
     # -----------------
-    # Make path
-    path_to_cleaned = "derivatives/preprocessed data/preprocessed_data"
-    subject_path = pathlib.Path(f"sub{str(subject).zfill(2)}_{str(visit).zfill(2)}_{recording}")
-    subject_path = subject_path.with_suffix(".set")
-    path = os.path.join(get_raw_data_storage_path(), "yulin_wang", path_to_cleaned, subject_path)
+    subject_id = YulinWang().get_subject_ids()[subject]
 
-    # Make MNE raw object
-    eeg: mne.io.eeglab.eeglab.RawEEGLAB = mne.io.read_raw_eeglab(input_fname=path, preload=True)
+    eeg = YulinWang().load_single_mne_object(subject_id=subject_id, derivatives=derivatives, visit=visit,
+                                             recording=recording)
 
-    # -----------------
-    # Some additional preprocessing steps
-    # -----------------
-    # Filtering
-    eeg.filter(l_freq=l_freq, h_freq=h_freq)
-
-    # Re-referencing
-    eeg.set_eeg_reference(ref_channels="average")
+    # Pre-process
+    eeg = YulinWang().pre_process(eeg, filtering=(l_freq, h_freq), notch_filter=notch_filter,
+                                  avg_reference=avg_reference, resample=resampling_freq,
+                                  excluded_channels=excluded_channels, remove_above_std=remove_above_std)
 
     # -----------------
     # Plot data
     # -----------------
-    eeg.plot()
-    eeg.compute_psd(fmax=h_freq+15).plot()
+    eeg.plot(verbose=False)
+    eeg.compute_psd(fmax=h_freq+15, verbose=False).plot()
 
     pyplot.show()
 
