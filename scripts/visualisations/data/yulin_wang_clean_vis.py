@@ -23,7 +23,8 @@ def main():
     avg_reference = True
     resampling_freq = None
     excluded_channels = None
-    remove_above_std = None
+    remove_above_std = 40e-6
+    interpolation = "MNE"
 
     # -----------------
     # Load data
@@ -36,12 +37,13 @@ def main():
     # Pre-process
     eeg = YulinWang().pre_process(eeg, filtering=(l_freq, h_freq), notch_filter=notch_filter,
                                   avg_reference=avg_reference, resample=resampling_freq,
-                                  excluded_channels=excluded_channels, remove_above_std=remove_above_std)
+                                  excluded_channels=excluded_channels, remove_above_std=remove_above_std,
+                                  interpolation=interpolation)
 
     # -----------------
     # Plot data
     # -----------------
-    eeg.plot(verbose=False)
+    eeg.plot(verbose=True)
     eeg.compute_psd(fmax=h_freq+15, verbose=False).plot()
 
     pyplot.show()

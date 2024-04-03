@@ -1,5 +1,6 @@
 import os
 import pathlib
+import warnings
 
 import mne
 import numpy
@@ -69,7 +70,10 @@ class YulinWang(EEGDatasetBase):
             mne.rename_channels(raw.info, mapping={"FPz": "Fpz"})
 
         # Add FCz as reference
-        raw.add_reference_channels("FCz")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+            raw.add_reference_channels("FCz")
 
         return raw
 
@@ -90,7 +94,11 @@ class YulinWang(EEGDatasetBase):
             mne.rename_channels(raw.info, mapping={"FPz": "Fpz"})
 
         # Add FCz as reference
-        raw.add_reference_channels("FCz")  # todo
+        with warnings.catch_warnings():
+            # todo: MNE thinks the zeroth channel is reference due to the digitisation
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+            raw.add_reference_channels("FCz")
 
         return raw
 
