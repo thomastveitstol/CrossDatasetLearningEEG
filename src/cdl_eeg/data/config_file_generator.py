@@ -26,19 +26,16 @@ def generate_preprocessing_config_file(config):
                                                   high=config["sampling_freq_high_freq_multiple"]["high"])
 
     # Number of time steps
-    num_time_steps = int(sampling_freq * random.choice(config["num_seconds"]))
+    num_time_steps = int(sampling_freq * random.uniform(config["num_seconds"]["low"], config["num_seconds"]["high"]))
 
     # Number of time steps to skip
-    time_series_start = int(sampling_freq * random.choice(config["time_series_start"]))
+    time_series_start = config["time_series_start"]
 
     # Re-referencing
-    avg_reference = random.choice(config["avg_reference"])
-
-    # Using already pre-processed version
-    # derivatives = random.choice(config["derivatives"])
+    avg_reference = config["avg_reference"]
 
     # Bad channels handling
-    remove_above_std = random.choice(config["remove_above_std"])
+    remove_above_std = random.uniform(config["remove_above_std"]["low"], config["remove_above_std"]["high"])
     interpolation: Optional[str]
     if remove_above_std is not None:
         interpolation = random.choice(config["interpolation"])
