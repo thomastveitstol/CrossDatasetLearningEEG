@@ -118,6 +118,8 @@ def _get_hyperparameter(config, hparam: HParam):
         return _get_weight_loss_lambda(config, hparam=hparam)
     elif hparam.key_path == "sampling_freq_multiple":
         return config["general"]["resample"] / config["general"]["filtering"][-1]
+    elif hparam.key_path == "num_seconds":
+        return config["general"]["num_time_steps"] / config["general"]["resample"]
 
     hyperparameter = config
     for key in hparam.key_path:
@@ -305,7 +307,11 @@ HYPERPARAMETERS = {
     "Sampling freq (multiple of fmax)": HParam(key_path="sampling_freq_multiple", default=NotImplemented,
                                                preprocessing=True, variable_type=VariableType.NUMERICAL),
     "Inception depth": HParam(key_path=("DL Architecture", "kwargs", "depth"), default=None, preprocessing=False,
-                              variable_type=VariableType.NUMERICAL)
+                              variable_type=VariableType.NUMERICAL),
+    "Remove above STD": HParam(key_path=("general", "remove_above_std"), default=NotImplemented, preprocessing=True,
+                               variable_type=VariableType.CATEGORICAL),
+    "Time series length (s)": HParam(key_path="num_seconds", default=NotImplemented, preprocessing=True,
+                                     variable_type=VariableType.NUMERICAL)
 }
 
 PRETTY_NAME = {"auc": "AUC",
@@ -404,7 +410,7 @@ def main_inverted_lodo():
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Band-pass filter"
+    hyperparameter_name = "Time series length (s)"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
     # Datasets

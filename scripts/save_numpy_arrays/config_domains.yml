@@ -63,12 +63,12 @@ BandPass:
 # --------------
 sampling_freq_high_freq_multiple:  # Sampling freq will be this variable * h_freq
   low: 2
-  high: 5
-num_seconds: [ 30 ]
+  high: 8
+num_seconds: [ 15, 30, 45 ]  # todo!!!
 time_series_start: [ 30, 45, 60 ]  # This variable should have unit [seconds]
 avg_reference: [ true ]
 derivatives: [ false ]
-remove_above_std: [ 80.0e-06, 120.0e-06, 160.0e-06 ]
+remove_above_std: [ 40.0e-06, 80.0e-06, 120.0e-06, 160.0e-06 ]
 interpolation: [ spline, MNE ]
 
 # --------------
