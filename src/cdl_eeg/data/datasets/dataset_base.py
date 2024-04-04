@@ -1,10 +1,9 @@
 import abc
-import copy
 import dataclasses
 import os
-import warnings
 from typing import Dict, Tuple, List, Optional
 
+import autoreject
 import enlighten
 import inflection
 import mne
@@ -63,7 +62,7 @@ class EEGDatasetBase(abc.ABC):
         self._name: str = inflection.underscore(self.__class__.__name__) if name is None else name
 
     def pre_process(self, eeg_data, *, remove_above_std, interpolation=None, filtering=None, resample=None,
-                    notch_filter=None, avg_reference=False, excluded_channels):
+                    notch_filter=None, avg_reference=False, excluded_channels, num_time_steps, time_series_start):
         """
         Method for pre-processing EEG data
 
@@ -79,6 +78,8 @@ class EEGDatasetBase(abc.ABC):
         notch_filter : float, optional
         avg_reference : bool
         excluded_channels : tuple[str, ...], optional
+        num_time_steps : int
+        time_series_start : int, optional
 
         Returns
         -------
@@ -87,7 +88,9 @@ class EEGDatasetBase(abc.ABC):
         """
         # TODO: Such shared pre processing steps is not optimal. The EEG data may e.g. contain boundary events or have
         #   unequal requirements such as line noise
-        # todo: Maybe try out AutoReject and use spherical spline interpolation?
+        # -------------
+        # Basic steps
+        # -------------
         # Excluding channels
         if excluded_channels is not None:
             eeg_data = eeg_data.pick(picks="eeg", exclude=excluded_channels)
@@ -104,33 +107,21 @@ class EEGDatasetBase(abc.ABC):
         if resample is not None:
             eeg_data.resample(resample, verbose=False)
 
-        if remove_above_std is not None:
-            # If there are any currently labelled bad channels, keep them
-            bad_channels = set(copy.deepcopy(eeg_data.info["bads"]))
+        # -------------
+        # Autoreject
+        # -------------
+        # Epoch
+        t0 = time_series_start / eeg_data.info["sfreq"]
+        t1 = t0 + num_time_steps / eeg_data.info["sfreq"]
+        eeg_data.crop(tmin=time_series_start*eeg_data.info["sfreq"], tmax=t1)
 
-            # Loop through all channels and store the ones which are bad
-            for channel in eeg_data.info["ch_names"]:
-                channel_data = eeg_data.get_data()[eeg_data.info["ch_names"].index(channel)]  # TODO!
-                if numpy.std(channel_data) > remove_above_std:
-                    bad_channels.add(channel)
+        # Autoreject
+        reject = autoreject.AutoReject()  # todo: hyperparameters
+        eeg_data = reject.fit_transform(eeg_data, return_log=False)
 
-            # Add the bad channels to the MNE object
-            eeg_data.info["bads"] = list(bad_channels)
-
-            # Interpolate
-            if interpolation is None:
-                raise ValueError("Expected an interpolation method, but none was received")
-            if bad_channels:
-                # Need the channel positions
-                with warnings.catch_warnings():
-                    warnings.filterwarnings("ignore", category=RuntimeWarning)  # todo
-
-                    eeg_data.set_montage(
-                        mne.channels.make_dig_montage(ch_pos=self.channel_system.electrode_positions)
-                    )
-
-                eeg_data.interpolate_bads(method={"eeg": interpolation}, verbose=False)
-
+        # -------------
+        # Final steps
+        # -------------
         # Re-referencing
         if avg_reference:
             eeg_data.set_eeg_reference(ref_channels="average", verbose=False)
@@ -330,20 +321,16 @@ class EEGDatasetBase(abc.ABC):
             raw = self.load_single_mne_object(subject_id=sub_id, derivatives=derivatives, **kwargs)
 
             # Pre-process
-            raw = self.pre_process(raw, filtering=filtering, resample=resample, notch_filter=notch_filter,
-                                   excluded_channels=excluded_channels, avg_reference=avg_reference,
-                                   remove_above_std=remove_above_std, interpolation=interpolation)
+            raw = self.pre_process(
+                raw, filtering=filtering, resample=resample, notch_filter=notch_filter,
+                excluded_channels=excluded_channels, avg_reference=avg_reference, remove_above_std=remove_above_std,
+                interpolation=interpolation, num_time_steps=num_time_steps, time_series_start=time_series_start
+            )
 
             # Convert to numpy arrays
             eeg_data = raw.get_data()
             assert eeg_data.ndim == 2, (f"Expected the EEG data to have two dimensions (channels, time steps), but "
                                         f"found shape={eeg_data.shape}")
-
-            # (Maybe crop the signal)
-            if time_series_start is not None:
-                eeg_data = eeg_data[:, time_series_start:]
-            if num_time_steps is not None:
-                eeg_data = eeg_data[:, :num_time_steps]
 
             # Check if the shape is as expected
             if i == 0:
