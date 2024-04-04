@@ -97,9 +97,12 @@ def main():
         if verbose:
             print(f"Preprocessing and saving dataset {i + 1}/{num_datasets}: '{dataset_name}'...")
 
+        # Make path and folder
+        dataset_array_folder = os.path.join(path, dataset_name)
+
         # Save the data with the preprocessing specifications
         get_dataset(dataset_name).save_epochs_as_numpy_arrays(
-            path=path, frequency_bands=config["frequency_bands"],
+            path=dataset_array_folder, frequency_bands=config["frequency_bands"],
             resample_fmax_multiples=config["resample_fmax_multiples"], **preprocessing_kwargs, **config["general"],
             plot_data=False
         )
