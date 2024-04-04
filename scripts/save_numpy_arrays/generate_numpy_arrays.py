@@ -101,7 +101,7 @@ def main():
         get_dataset(dataset_name).save_epochs_as_numpy_arrays(
             path=path, frequency_bands=config["frequency_bands"],
             resample_fmax_multiples=config["resample_fmax_multiples"], **preprocessing_kwargs, **config["general"],
-            plot_data=True
+            plot_data=False
         )
 
 
