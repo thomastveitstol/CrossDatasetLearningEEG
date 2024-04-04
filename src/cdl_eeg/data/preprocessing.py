@@ -6,7 +6,7 @@ import numpy
 from matplotlib import pyplot
 
 
-def _create_folder_name(*, l_freq, h_freq, is_autorejected, resample_multiple):
+def create_folder_name(*, l_freq, h_freq, is_autorejected, resample_multiple):
     return f"data_band_pass_{l_freq}-{h_freq}_autoreject_{is_autorejected}_sampling_multiple_{resample_multiple}"
 
 
@@ -50,8 +50,8 @@ def _save_eeg_with_resampling_and_average_referencing(epochs: mne.Epochs, l_freq
             pyplot.show()
 
         # Save numpy array
-        _folder_name = _create_folder_name(l_freq=l_freq, h_freq=h_freq, is_autorejected=is_autorejected,
-                                           resample_multiple=resample_multiple)
+        _folder_name = create_folder_name(l_freq=l_freq, h_freq=h_freq, is_autorejected=is_autorejected,
+                                          resample_multiple=resample_multiple)
         array_path = os.path.join(path, _folder_name, f"{subject_id}.npy")
         numpy.save(array_path, arr=data)
 
