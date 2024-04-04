@@ -104,7 +104,7 @@ def main():
 
         # Save the data with the preprocessing specifications
         get_dataset(dataset_name).save_epochs_as_numpy_arrays(
-            path=dataset_array_folder, frequency_bands=config["frequency_bands"],
+            path=path, frequency_bands=config["frequency_bands"],
             resample_fmax_multiples=config["resample_fmax_multiples"], **preprocessing_kwargs, **config["general"],
             plot_data=False
         )
