@@ -99,6 +99,7 @@ def main():
 
         # Make path and folder
         dataset_array_folder = os.path.join(path, dataset_name)
+        os.mkdir(dataset_array_folder)
 
         # Save the data with the preprocessing specifications
         get_dataset(dataset_name).save_epochs_as_numpy_arrays(
