@@ -13,7 +13,7 @@ def create_folder_name(*, l_freq, h_freq, is_autorejected, resample_multiple):
 def _run_autoreject(epochs, autoreject_resample):
     if autoreject_resample is not None:
         epochs.resample(autoreject_resample, verbose=False)
-    reject = autoreject.AutoReject()  # todo: hyperparameters
+    reject = autoreject.AutoReject(verbose=False)  # todo: hyperparameters
     return reject.fit_transform(epochs, return_log=True)
 
 
