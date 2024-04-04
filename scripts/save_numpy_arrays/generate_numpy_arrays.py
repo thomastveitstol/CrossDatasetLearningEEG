@@ -88,6 +88,11 @@ def main():
                                                                    resample_multiple=resample_multiple))
                 os.mkdir(sub_folder)
 
+                # Make folder for each dataset
+                for dataset_name in config["Datasets"]:
+                    dataset_array_folder = os.path.join(sub_folder, dataset_name)
+                    os.mkdir(dataset_array_folder)
+
     # --------------
     # Perform pre-processing
     # --------------
