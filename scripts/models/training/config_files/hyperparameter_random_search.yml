@@ -18,7 +18,7 @@ SubGroups:
       [ miltiadous, hatlestad_hall, yulin_wang, mpi_lemon ]
 
 LatentFeatureDistribution:
-  make_initial_distribution_exploration: true
+  make_initial_distribution_exploration: false
   colormap: viridis
   distance_measures: [ centroid_l2, average_l2_to_centroid ]
 
@@ -405,7 +405,7 @@ Deep4NetMTS: &Deep4NetMTS
 
 MTS Module:
   InceptionNetwork: *InceptionNetwork
-  # EEGNetv4MTS: *EEGNetv4MTS
-  # EEGResNetMTS: *EEGResNetMTS
-  # ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
-  # Deep4NetMTS: *Deep4NetMTS
+  EEGNetv4MTS: *EEGNetv4MTS
+  EEGResNetMTS: *EEGResNetMTS
+  ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
+  Deep4NetMTS: *Deep4NetMTS
