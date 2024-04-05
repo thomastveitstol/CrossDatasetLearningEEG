@@ -62,8 +62,8 @@ class Histories:
     """
     Class for keeping track of all metrics during training. Works for both classification and regression
 
-    TODO: It is strange to store outputs and targets, and compute metrics at the end of the epoch for correlation
-        metrics
+    Keep in mind that it is strange to store outputs and targets, and compute metrics at the end of the epoch for
+    correlation metrics in particular, as the outputs are computed with different weights.
 
     Examples
     --------
@@ -73,6 +73,9 @@ class Histories:
     ('mae', 'mape', 'mse', 'pearson_r', 'r2_score', 'spearman_rho')
     >>> Histories.get_available_multiclass_classification_metrics()
     ('acc', 'auc_ovo', 'auc_ovr', 'balanced_acc', 'ce_loss', 'kappa', 'mcc')
+    >>> Histories.get_available_metrics()  # doctest: +NORMALIZE_WHITESPACE
+    ('auc', 'acc', 'auc_ovo', 'auc_ovr', 'balanced_acc', 'ce_loss', 'kappa', 'mcc', 'mae', 'mape', 'mse', 'pearson_r',
+     'r2_score', 'spearman_rho')
     """
 
     __slots__ = ("_history", "_prediction_history", "_subgroup_histories", "_epoch_y_pred", "_epoch_y_true",
