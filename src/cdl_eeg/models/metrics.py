@@ -6,6 +6,7 @@ https://github.com/thomastveitstol/RegionBasedPoolingEEG/blob/master/src/metrics
 
 Author: Thomas Tveitstøl (Oslo University Hospital)
 """
+import itertools
 import os
 import warnings
 from typing import Dict, List, Tuple, Optional, Any, NamedTuple, Union
@@ -357,13 +358,30 @@ class Histories:
         -------
         None
         """
-        # Sanity check
+        # --------------
+        # Sanity checks
+        # --------------
+        # Check if number of epochs is the same for all subjects
         num_epochs = len(tuple(self._prediction_history.values())[0])  # type: ignore
         assert all(len(predictions) == num_epochs for predictions in self._prediction_history.values())
 
+        # Check if number of EEG epochs is the same for all subjects and epochs
+        all_num_eeg_epochs = set(len(eeg_epoch_predictions) for epoch_predictions in self._prediction_history.values()
+                                 for eeg_epoch_predictions in epoch_predictions)
+        assert len(all_num_eeg_epochs) == 1, (f"Expected number of EEG epochs to be the same for all epochs and "
+                                              f"subjects, but found {all_num_eeg_epochs}")
+        num_eeg_epochs = tuple(all_num_eeg_epochs)[0]
+
+        # --------------
+        # Saving of prediction history
+        # --------------
+        # Flatten out the prediction history
+        prediction_history = {sub_id: tuple(itertools.chain(*epoch_predictions))
+                              for sub_id, epoch_predictions in self._prediction_history.items()}
+
         # Create pandas dataframe with the prediction histories
-        epochs_column_names = [f"epoch{i+1}" for i in range(num_epochs)]
-        df = pandas.DataFrame.from_dict(self._prediction_history, orient="index", columns=epochs_column_names)
+        epochs_column_names = [f"pred{j+1}_epoch{i+1}" for i in range(num_epochs) for j in range(num_eeg_epochs)]
+        df = pandas.DataFrame.from_dict(prediction_history, orient="index", columns=epochs_column_names)
 
         # Add dataset and subject ID
         df.insert(loc=0, value=tuple(subject.subject_id for subject in self._prediction_history),  # type: ignore
@@ -952,23 +970,3 @@ def is_improved_model(old_metrics, new_metrics, main_metric):
         raise ValueError(f"Expected the metric to be in {higher_is_better + lower_is_better}, but found "
                          f"'{main_metric}'")
 
-
-if __name__ == "__main__":
-
-    scores_ = torch.tensor([
-        [0.1, 0.2, 0.7],
-        [0.5, 0.2, 0.3],
-        [0.3, 0.4, 0.3],
-        [0.5, 0.4, 0.1]
-    ], dtype=torch.float)
-
-    targets_ = torch.tensor([
-        [0, 1, 0],
-        [1, 0, 0],
-        [0, 1, 0],
-        [0, 1, 0]
-    ], dtype=torch.float).argmax(dim=-1)
-    print(torch.sum(scores_, dim=-1))
-
-    print(f"Multiclass performance (sklearn): {log_loss(['b', 'a', 'b', 'b'], scores_)}")
-    print(f"Multiclass performance (pytorch): {nn.CrossEntropyLoss(reduction='mean')(scores_, targets_)}")
