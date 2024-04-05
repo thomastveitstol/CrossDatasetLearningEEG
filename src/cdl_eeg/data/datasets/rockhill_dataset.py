@@ -28,18 +28,18 @@ class Rockhill(EEGDatasetBase):
     _montage_name = "standard_1020"  # Can't find the montage name in README file, but the channel names would suggest
     # standard 10-20
 
-    def pre_process(self, eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False,
-                    interpolation=None, remove_above_std, excluded_channels="EXG"):
-        """See the parent class implementation for details. This overriding method excludes non-EEG channels prior to
-        pre-processing by default"""
-        if excluded_channels == "EXG":
-            # Keep EEG channels only
-            excluded_channels = tuple(ch_name for ch_name in eeg_data.ch_names if ch_name[:3] == "EXG")
+    # def pre_process(self, eeg_data, *, filtering=None, resample=None, notch_filter=None, avg_reference=False,
+    #                 interpolation=None, remove_above_std, excluded_channels="EXG"):
+    #     """See the parent class implementation for details. This overriding method excludes non-EEG channels prior to
+    #     pre-processing by default"""
+    #     if excluded_channels == "EXG":
+    #         # Keep EEG channels only
+    #         excluded_channels = tuple(ch_name for ch_name in eeg_data.ch_names if ch_name[:3] == "EXG")
 
-        # Run the super method and return
-        return super().pre_process(eeg_data, filtering=filtering, resample=resample, notch_filter=notch_filter,
-                                   avg_reference=avg_reference, excluded_channels=excluded_channels,
-                                   remove_above_std=remove_above_std, interpolation=interpolation)
+    #     # Run the super method and return
+    #     return super().pre_process(eeg_data, filtering=filtering, resample=resample, notch_filter=notch_filter,
+    #                                avg_reference=avg_reference, excluded_channels=excluded_channels,
+    #                                remove_above_std=remove_above_std, interpolation=interpolation)
 
     # ----------------
     # Methods for different paths
