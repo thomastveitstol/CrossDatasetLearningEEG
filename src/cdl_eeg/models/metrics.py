@@ -16,7 +16,7 @@ import pandas
 from matplotlib import pyplot
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error, roc_auc_score, \
-    r2_score, accuracy_score, balanced_accuracy_score, matthews_corrcoef, cohen_kappa_score, log_loss
+    r2_score, accuracy_score, balanced_accuracy_score, matthews_corrcoef, cohen_kappa_score
 import torch
 from torch import nn
 
@@ -969,4 +969,3 @@ def is_improved_model(old_metrics, new_metrics, main_metric):
     else:
         raise ValueError(f"Expected the metric to be in {higher_is_better + lower_is_better}, but found "
                          f"'{main_metric}'")
-
