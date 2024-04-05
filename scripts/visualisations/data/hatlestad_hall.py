@@ -1,7 +1,5 @@
-import mne
-from matplotlib import pyplot
-
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
+from cdl_eeg.data.preprocessing import save_preprocessed_epochs
 
 
 def main():
@@ -14,10 +12,16 @@ def main():
     session = "t1"
 
     # Pre-processing
-    filtering = None
-    resampling_freq = None
+    excluded_channels = None
+    main_band_pass = (1, 45)
+    frequency_bands = ((1, 45),)
     notch_filter = None
-    avg_reference = False
+    num_epochs = 5
+    epoch_duration = 4
+    epoch_overlap = 0
+    time_series_start_secs = 30
+    resample_fmax_multiples = (4, None)
+    autoreject_resample = None
 
     # -----------------
     # Load data
@@ -25,17 +29,14 @@ def main():
     subject_id = HatlestadHall().get_subject_ids()[subject_number]
     eeg = HatlestadHall().load_single_mne_object(subject_id=subject_id, derivatives=derivatives, session=session)
 
-    # Pre-process
-    eeg = HatlestadHall().pre_process(eeg, filtering=filtering, notch_filter=notch_filter, avg_reference=avg_reference,
-                                      resample=resampling_freq, remove_above_std=None, excluded_channels=None)
-
-    # -----------------
-    # Plot data
-    # -----------------
-    eeg.plot(noise_cov=mne.compute_raw_covariance(raw=eeg, verbose=False))
-    eeg.compute_psd().plot()
-
-    pyplot.show()
+    # Pre-process without saving
+    save_preprocessed_epochs(
+        eeg, excluded_channels=excluded_channels, main_band_pass=main_band_pass, frequency_bands=frequency_bands,
+        notch_filter=notch_filter, num_epochs=num_epochs, epoch_duration=epoch_duration, epoch_overlap=epoch_overlap,
+        time_series_start_secs=time_series_start_secs, resample_fmax_multiples=resample_fmax_multiples,
+        autoreject_resample=autoreject_resample, dataset_name=None, path=None, subject_id=None, save_data=False,
+        plot_data=True
+    )
 
 
 if __name__ == "__main__":

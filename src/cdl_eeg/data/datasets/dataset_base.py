@@ -1,6 +1,7 @@
 import abc
 import dataclasses
 import os
+import warnings
 from typing import Dict, Tuple, List, Optional
 
 import autoreject
@@ -13,6 +14,7 @@ from matplotlib import pyplot
 from mne.transforms import _cart_to_sph, _pol_to_cart
 
 from cdl_eeg.data.paths import get_raw_data_storage_path, get_numpy_data_storage_path
+from cdl_eeg.data.preprocessing import save_preprocessed_epochs
 from cdl_eeg.models.region_based_pooling.utils import ELECTRODES_3D
 
 
@@ -62,7 +64,8 @@ class EEGDatasetBase(abc.ABC):
         self._name: str = inflection.underscore(self.__class__.__name__) if name is None else name
 
     def pre_process(self, eeg_data, *, remove_above_std, interpolation=None, filtering=None, resample=None,
-                    notch_filter=None, avg_reference=False, excluded_channels, num_time_steps, time_series_start):
+                    notch_filter=None, avg_reference=False, excluded_channels, num_time_steps, time_series_start,
+                    apply_autoreject):
         """
         Method for pre-processing EEG data
 
@@ -78,8 +81,9 @@ class EEGDatasetBase(abc.ABC):
         notch_filter : float, optional
         avg_reference : bool
         excluded_channels : tuple[str, ...], optional
-        num_time_steps : int
+        num_time_steps : int, optional
         time_series_start : int, optional
+        apply_autoreject : bool
 
         Returns
         -------
@@ -88,6 +92,11 @@ class EEGDatasetBase(abc.ABC):
         """
         # TODO: Such shared pre processing steps is not optimal. The EEG data may e.g. contain boundary events or have
         #   unequal requirements such as line noise
+        warnings.warn(message="This preprocessing method is not used when saving the data as numpy arrays, and this "
+                              "will therefore not be used for the actual research experiments. It is now preferred to "
+                              "use 'save_preprocessed_epochs', and set the 'save_data' argument to False",
+                      category=DeprecationWarning)
+
         # -------------
         # Basic steps
         # -------------
@@ -110,14 +119,18 @@ class EEGDatasetBase(abc.ABC):
         # -------------
         # Autoreject
         # -------------
-        # Epoch
-        t0 = time_series_start / eeg_data.info["sfreq"]
-        t1 = t0 + num_time_steps / eeg_data.info["sfreq"]
-        eeg_data.crop(tmin=time_series_start*eeg_data.info["sfreq"], tmax=t1)
+        if apply_autoreject:
+            # Epoch
+            t0 = time_series_start / eeg_data.info["sfreq"]
+            t1 = None if num_time_steps is None else t0 + num_time_steps / eeg_data.info["sfreq"]
 
-        # Autoreject
-        reject = autoreject.AutoReject()  # todo: hyperparameters
-        eeg_data = reject.fit_transform(eeg_data, return_log=False)
+            eeg_data.crop(tmin=t0, tmax=t1)
+            eeg_epochs = mne.make_fixed_length_epochs(eeg_data, duration=4,  # todo
+                                                      preload=True)
+
+            # Autoreject
+            reject = autoreject.AutoReject()  # todo: hyperparameters
+            eeg_data = reject.fit_transform(eeg_epochs, return_log=False)
 
         # -------------
         # Final steps
@@ -127,7 +140,7 @@ class EEGDatasetBase(abc.ABC):
             eeg_data.set_eeg_reference(ref_channels="average", verbose=False)
 
         # Return the MNE object
-        return eeg_data
+        return eeg_data  # todo: type
 
     # ----------------
     # Loading methods
@@ -252,45 +265,12 @@ class EEGDatasetBase(abc.ABC):
         # Concatenate to a single numpy ndarray
         return numpy.concatenate(data, axis=0)
 
-    def save_eeg_as_numpy_arrays(self, path=None, subject_ids=None, *, remove_above_std, filtering=None, resample=None,
-                                 notch_filter=None, avg_reference=False, num_time_steps=None, time_series_start=None,
-                                 derivatives=False, excluded_channels=None, interpolation=None, **kwargs):
-        """
-        Method for saving data as numpy arrays
-
-        todo: consider not using so many default arguments
-
-        Parameters
-        ----------
-        path : str, optional
-        subject_ids : tuple[str, ...]
-            Subject IDs to convert and save as numpy arrays
-        filtering : tuple[float, float], optional
-            See pre_process
-        resample : float, optional
-        notch_filter : float, optional
-        avg_reference : bool
-        num_time_steps : int, optional
-            Length of the numpy array, with unit number of time steps
-        time_series_start : int, optional
-            Starting point for saving the numpy array, with unit number of time steps. Indicates the number of time
-            steps to skip
-        derivatives : bool
-            For datasets where an already cleaned version is available. If True, the cleaned version will be used,
-            otherwise the non-cleaned data is loaded
-        excluded_channels : tuple[str, ...], optional
-            Channels to exclude. If None is passed, no channels will be excluded
-        remove_above_std : float, optional
-            See preprocessing
-        interpolation : str, optional
-        kwargs
-            Keyword arguments, which will be passed to load_single_mne_object
-
-        Returns
-        -------
-        None
-        """
+    def save_epochs_as_numpy_arrays(self, path, *, subject_ids, derivatives, excluded_channels, main_band_pass,
+                                    frequency_bands, notch_filter, num_epochs, epoch_duration, epoch_overlap,
+                                    time_series_start_secs, autoreject_resample, resample_fmax_multiples,
+                                    plot_data=False, **kwargs):
         subject_ids = self.get_subject_ids() if subject_ids is None else subject_ids
+
         # ------------------
         # Input checks
         # ------------------
@@ -307,41 +287,25 @@ class EEGDatasetBase(abc.ABC):
             raise ValueError(f"Unexpected subject IDs (N={len(_unexpected_subjects)}): {_unexpected_subjects}")
 
         # ------------------
-        # Prepare directory
-        # ------------------
-        # Make directory
-        path = self.get_numpy_arrays_path() if path is None else os.path.join(path, self.name)
-        os.mkdir(path)
-
-        # ------------------
         # Loop through all subjects
         # ------------------
-        for i, sub_id in enumerate(subject_ids):
+        pbar = enlighten.Counter(total=len(subject_ids), desc=type(self).__name__, unit="subjects")
+        for sub_id in subject_ids:
             # Load the EEG data as MNE object
             raw = self.load_single_mne_object(subject_id=sub_id, derivatives=derivatives, **kwargs)
 
-            # Pre-process
-            raw = self.pre_process(
-                raw, filtering=filtering, resample=resample, notch_filter=notch_filter,
-                excluded_channels=excluded_channels, avg_reference=avg_reference, remove_above_std=remove_above_std,
-                interpolation=interpolation, num_time_steps=num_time_steps, time_series_start=time_series_start
+            # Save preprocessed versions
+            save_preprocessed_epochs(
+                raw, excluded_channels=excluded_channels, main_band_pass=main_band_pass,
+                frequency_bands=frequency_bands, notch_filter=notch_filter, num_epochs=num_epochs,
+                epoch_duration=epoch_duration, epoch_overlap=epoch_overlap,
+                time_series_start_secs=time_series_start_secs, autoreject_resample=autoreject_resample,
+                resample_fmax_multiples=resample_fmax_multiples, subject_id=sub_id, path=path,
+                plot_data=plot_data, dataset_name=type(self).__name__
             )
 
-            # Convert to numpy arrays
-            eeg_data = raw.get_data()
-            assert eeg_data.ndim == 2, (f"Expected the EEG data to have two dimensions (channels, time steps), but "
-                                        f"found shape={eeg_data.shape}")
-
-            # Check if the shape is as expected
-            if i == 0:
-                expected_shape = eeg_data.shape
-            else:
-                # noinspection PyUnboundLocalVariable
-                if eeg_data.shape != expected_shape:
-                    raise DataError("Expected all numpy arrays to have the same shape, but that was not the case")
-
-            # Save the EEG data as numpy arrays
-            numpy.save(os.path.join(path, sub_id), arr=eeg_data)
+            # Update progress bar
+            pbar.update()
 
     def get_subject_ids(self) -> Tuple[str, ...]:
         """Get the subject IDs available. Unless this method is overridden, it will collect the IDs from the

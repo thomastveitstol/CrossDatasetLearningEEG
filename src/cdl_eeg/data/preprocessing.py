@@ -18,7 +18,8 @@ def _run_autoreject(epochs, autoreject_resample):
 
 
 def _save_eeg_with_resampling_and_average_referencing(epochs: mne.Epochs, l_freq, h_freq, resample_fmax_multiples, path,
-                                                      subject_id, is_autorejected, dataset_name: str, plot_data):
+                                                      subject_id, is_autorejected, dataset_name: str, plot_data,
+                                                      save_data):
     # Perform band-pass filtering
     epochs.filter(l_freq=l_freq, h_freq=h_freq, verbose=False)
 
@@ -46,23 +47,26 @@ def _save_eeg_with_resampling_and_average_referencing(epochs: mne.Epochs, l_freq
             print("--------------------------")
             print(f"Band-pass filter: {l_freq, h_freq}")
             print(f"Sampling rate: f_max * {resample_multiple}")
+            print(f"Autorejected: {is_autorejected}")
             resampled_epochs.plot(scalings="auto")
+            resampled_epochs.compute_psd().plot()
             pyplot.show()
 
         # Save numpy array
-        _folder_name = create_folder_name(l_freq=l_freq, h_freq=h_freq, is_autorejected=is_autorejected,
-                                          resample_multiple=resample_multiple)
-        array_path = os.path.join(path, _folder_name, dataset_name, f"{subject_id}.npy")
-        numpy.save(array_path, arr=data)
+        if save_data:
+            _folder_name = create_folder_name(l_freq=l_freq, h_freq=h_freq, is_autorejected=is_autorejected,
+                                              resample_multiple=resample_multiple)
+            array_path = os.path.join(path, _folder_name, dataset_name, f"{subject_id}.npy")
+            numpy.save(array_path, arr=data)
 
 
 def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_band_pass, frequency_bands, notch_filter,
                              num_epochs, epoch_duration, epoch_overlap, time_series_start_secs, autoreject_resample,
-                             resample_fmax_multiples, subject_id, path, dataset_name, plot_data=False):
+                             resample_fmax_multiples, subject_id, path, dataset_name, plot_data=False, save_data=True):
     # ---------------
     # Input checks
     # ---------------
-    if not isinstance(raw, mne.io.RawArray):
+    if not isinstance(raw, mne.io.BaseRaw):
         raise TypeError(f"Unexpected type: {type(raw)}")
 
     # ---------------
@@ -108,12 +112,13 @@ def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_ban
         # Save non-autorejected
         _save_eeg_with_resampling_and_average_referencing(
             epochs=epochs.copy(), l_freq=l_freq, h_freq=h_freq, resample_fmax_multiples=resample_fmax_multiples,
-            subject_id=subject_id, is_autorejected=False, path=path, plot_data=plot_data, dataset_name=dataset_name
+            subject_id=subject_id, is_autorejected=False, path=path, plot_data=plot_data, dataset_name=dataset_name,
+            save_data=save_data
         )
 
         # Save with autoreject
         _save_eeg_with_resampling_and_average_referencing(
             epochs=autoreject_epochs.copy(), l_freq=l_freq, h_freq=h_freq,
             resample_fmax_multiples=resample_fmax_multiples, subject_id=subject_id, is_autorejected=True, path=path,
-            plot_data=plot_data, dataset_name=dataset_name
+            plot_data=plot_data, dataset_name=dataset_name, save_data=save_data
         )
