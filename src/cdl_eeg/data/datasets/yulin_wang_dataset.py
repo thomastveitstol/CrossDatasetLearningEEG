@@ -1,3 +1,5 @@
+import contextlib
+import io
 import os
 import pathlib
 import warnings
@@ -73,7 +75,10 @@ class YulinWang(EEGDatasetBase):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-            raw.add_reference_channels("FCz")
+            # MNE logs (and thus prints) that Fcz is missing positions, but this is fixed in the base method. Therefore
+            # redirecting to an unused StringIO object
+            with contextlib.redirect_stdout(io.StringIO()):
+                raw.add_reference_channels("FCz")
 
         return raw
 
