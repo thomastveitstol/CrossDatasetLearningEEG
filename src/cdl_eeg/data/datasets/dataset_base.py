@@ -162,8 +162,13 @@ class EEGDatasetBase(abc.ABC):
         mne.io.base.BaseRaw
             MNE object of the subject
         """
-        return self._load_single_cleaned_mne_object(subject_id, **kwargs) if derivatives \
+        # Load raw object
+        raw = self._load_single_cleaned_mne_object(subject_id, **kwargs) if derivatives \
             else self._load_single_raw_mne_object(subject_id, **kwargs)
+
+        # Set montage
+        raw.set_montage(self.channel_system.montage_name)
+        return raw
 
     @abc.abstractmethod
     def _load_single_raw_mne_object(self, *args, **kwargs):
