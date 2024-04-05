@@ -11,6 +11,7 @@ Datasets:
     derivatives: true
   MPILemon:
     interpolation_method: MNE
+    derivatives: false
   YulinWang:
     visit: 1
     recording: EC
