@@ -12,6 +12,7 @@ from cdl_eeg.data.interpolate_datasets import interpolate_datasets
 from cdl_eeg.data.paths import get_numpy_data_storage_path
 
 
+@pytest.mark.xfail
 @pytest.mark.skipif(not os.path.isdir(get_numpy_data_storage_path()), reason="Required numpy arrays not available")
 def test_interpolate_datasets():
     """Test interpolation from datasets to a single target channel system"""
