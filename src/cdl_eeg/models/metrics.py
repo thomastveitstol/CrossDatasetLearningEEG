@@ -130,7 +130,7 @@ class Histories:
         self._history: Dict[str, List[float]] = {f"{metric}": [] for metric in metrics}
 
         # For storing all predictions .
-        self._prediction_history: Dict[Subject, List[Union[float, Tuple[float, ...]]]] = dict()
+        self._prediction_history: Dict[Subject, List[List[Union[float, Tuple[float, ...]]]]] = dict()
 
         # Histories per subgroup. Not doing any check for legal split names, as the subjects may inherit from Subject
         # and thus have additional attributes
@@ -177,7 +177,7 @@ class Histories:
                     _prediction = float(prediction)  # type: ignore[assignment]
                 else:
                     raise ValueError("This should never happen")
-                self._prediction_history[subject].append(_prediction)
+                self._prediction_history[subject][-1].append(_prediction)
             else:
                 if prediction.size()[0] > 1:
                     _prediction = tuple(float(pred) for pred in prediction.cpu().tolist())
@@ -185,7 +185,7 @@ class Histories:
                     _prediction = float(prediction)  # type: ignore[assignment]
                 else:
                     raise ValueError("This should never happen")
-                self._prediction_history[subject] = [_prediction]
+                self._prediction_history[subject] = [[_prediction]]
 
         # Store the corresponding subjects, if provided
         if subjects is not None:
@@ -254,9 +254,29 @@ class Histories:
         # (Maybe) update all metrics of all subgroups
         # -------------
         if self._subgroup_histories is not None:
-            # Make dictionary containing subjects combined with the prediction and target
-            subjects_pred_and_true = {subject: YYhat(y_true=y, y_pred=y_hat) for subject, y_hat, y
-                                      in zip(self._epoch_subjects, y_pred, y_true)}
+            # Make dictionary containing subjects combined with the prediction and target. The prediction is the average
+            # of all EEG epochs/segments
+            subjects_predictions: Dict[Subject, List[YYhat]] = dict()
+            for subject, y_hat, y in zip(self._epoch_subjects, y_pred, y_true):
+                if subject in subjects_predictions:
+                    subjects_predictions[subject].append(YYhat(y_true=y, y_pred=y_pred))
+                else:
+                    subjects_predictions[subject] = [YYhat(y_true=y, y_pred=y_pred)]
+
+            subjects_pred_and_true: Dict[Subject, YYhat] = dict()
+            for subject, predictions_and_truths in subjects_predictions.items():
+                # Verify that the ground truth is the same
+                # todo: consider removing this, as it is not necessarily true in self-supervised learning
+                all_ground_truths = set(yyhat.y_true for yyhat in predictions_and_truths)
+                if len(all_ground_truths) == 1:
+                    raise ValueError(f"Expected all ground truths to be the same per subject, but found "
+                                     f"{len(all_ground_truths)} unique ones")
+
+                # Set prediction to the average of all predictions, and the ground truth to the only element in the set
+                _pred = torch.mean(torch.cat([torch.unsqueeze(yyhat.y_pred, dim=0)
+                                              for yyhat in predictions_and_truths], dim=0), dim=0)
+                _true = tuple(all_ground_truths)[0]
+                subjects_pred_and_true[subject] = YYhat(y_pred=_pred, y_true=y_true)
 
             # Loop through all splits
             for split_level, sub_groups in self._subgroup_histories.items():
