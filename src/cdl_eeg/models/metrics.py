@@ -108,7 +108,15 @@ class Histories:
         # ----------------
         # Input checks
         # ----------------
-        # Todo
+        # Check if all metrics are implemented
+        if not all(metric in self.get_available_metrics() for metric in metrics):
+            raise ValueError(f"The following metrics were not recognised: "
+                             f"{set(metric for metric in metrics if metric not in self.get_available_metrics() )}. The "
+                             f"allowed ones are: {self.get_available_metrics()}")
+
+        # Type check the name
+        if name is not None and not isinstance(name, str):
+            raise TypeError(f"Unrecognised name type: {type(name)}")
 
         # ----------------
         # Set attributes
