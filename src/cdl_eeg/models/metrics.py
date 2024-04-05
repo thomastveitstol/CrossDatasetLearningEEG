@@ -277,7 +277,7 @@ class Histories:
                 _pred = torch.mean(torch.cat([torch.unsqueeze(yyhat.y_pred, dim=0)
                                               for yyhat in predictions_and_truths], dim=0), dim=0)
                 _true = tuple(all_ground_truths)[0]
-                subjects_pred_and_true[subject] = YYhat(y_pred=_pred, y_true=y_true)
+                subjects_pred_and_true[subject] = YYhat(y_pred=_pred, y_true=_true)
 
             # Loop through all splits
             for split_level, sub_groups in self._subgroup_histories.items():
