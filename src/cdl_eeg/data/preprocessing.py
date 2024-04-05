@@ -49,7 +49,7 @@ def _save_eeg_with_resampling_and_average_referencing(epochs: mne.Epochs, l_freq
             print(f"Sampling rate: f_max * {resample_multiple}")
             print(f"Autorejected: {is_autorejected}")
             resampled_epochs.plot(scalings="auto")
-            resampled_epochs.compute_psd().plot()
+            resampled_epochs.compute_psd(verbose=False).plot()
             pyplot.show()
 
         # Save numpy array
