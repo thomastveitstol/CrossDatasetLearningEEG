@@ -849,9 +849,3 @@ def _compute_psd_barycenters(psds):
     """
     # todo: in the future, other aggregation methods and weighting may be implemented
     return numpy.mean(numpy.concatenate([numpy.expand_dims(psd, axis=0) for psd in psds.values()], axis=0), axis=0)
-
-
-if __name__ == "__main__":
-    a_ = numpy.random.rand(6, 11, 19, 2000)
-    b_ = [numpy.concatenate(a_[i], axis=-1) for i in range(len(a_))]
-    print([m_.shape for m_ in b_])
