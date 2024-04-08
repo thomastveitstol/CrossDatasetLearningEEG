@@ -319,7 +319,7 @@ class InterpolationDataGenerator(Dataset):  # type: ignore[type-arg]
         self._subjects = subjects
 
     def __len__(self):
-        return sum(x.shape[0] for x in self._data.values())
+        return sum(x.shape[0] * x.shape[1] for x in self._data.values())
 
     def __getitem__(self, item):
         # Varying keys in the returned dictionary is not possible with the DataLoader of PyTorch. This solution to the
