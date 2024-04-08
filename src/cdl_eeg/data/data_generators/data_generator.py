@@ -362,7 +362,7 @@ class InterpolationDataGenerator(Dataset):  # type: ignore[type-arg]
                                                                          dataset_shapes=self.dataset_shapes)
 
         # Use correct type and return
-        return Subject(subject_id=self._subjects[dataset_name][subject_idx][epoch_idx], dataset_name=dataset_name)
+        return Subject(subject_id=self._subjects[dataset_name][subject_idx], dataset_name=dataset_name)
 
     def get_subjects_from_indices(self, items):
         """
