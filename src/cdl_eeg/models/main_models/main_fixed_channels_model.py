@@ -615,7 +615,7 @@ class MainFixedChannelsModel(nn.Module):
         self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})  # type: ignore[arg-type]
 
         # Return the histories
-        return train_history, val_history, test_history
+        return train_history, val_history, test_history, dd_train_history, dd_val_history
 
     def test_model(self, *, data_loader, metrics, device, prediction_activation_function=None, verbose=True,
                    target_scaler=None, sub_group_splits, sub_groups_verbose):
