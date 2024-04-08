@@ -3,6 +3,7 @@ Models provided by Braindecode are implemented here
 
 todo: cite
 """
+import torch
 from braindecode.models import EEGNetv4, EEGResNet, ShallowFBCSPNet, Deep4Net
 
 from cdl_eeg.models.mts_modules.mts_module_base import MTSModuleBase
@@ -291,9 +292,10 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
         >>> my_batch, my_channels, my_time_steps = 10, 103, 600*3
         >>> my_model = ShallowFBCSPNetMTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps)
         >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps))).size()
-        torch.Size([10, 3])  TODO: failing
+        torch.Size([10, 3])
         """
-        return self._model(x)
+        # todo: is it correct to aggregate the outputs by averaging here? Prior to activation function?
+        return torch.mean(self._model(x), dim=-1)
 
 
 class Deep4NetMTS(MTSModuleBase):
