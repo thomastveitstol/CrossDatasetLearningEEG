@@ -368,7 +368,8 @@ class Histories:
         # Remove the last 'epoch' if it is empty
         # --------------
         for epochs in self._prediction_history.values():
-            del epochs[-1]
+            if not epochs[-1]:
+                del epochs[-1]
 
         # --------------
         # Sanity checks
