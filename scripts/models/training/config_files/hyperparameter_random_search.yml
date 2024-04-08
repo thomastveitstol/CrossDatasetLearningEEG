@@ -23,22 +23,22 @@ LatentFeatureDistribution:
   distance_measures: [ centroid_l2, average_l2_to_centroid ]
 
 Datasets:
-  miltiadous:
+  Miltiadous:
     num_subjects: 88
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
-  hatlestad_hall:
+  HatlestadHall:
     num_subjects: 111
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
-  yulin_wang:
+  YulinWang:
     num_subjects: 60
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
-  mpi_lemon:
+  MPILemon:
     num_subjects: 203
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
