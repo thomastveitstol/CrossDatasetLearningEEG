@@ -195,6 +195,13 @@ class Histories:
     def on_epoch_end(self, verbose=True, verbose_sub_groups=False) -> None:
         """Updates the metrics, and should be called after each epoch"""
         self._update_metrics()
+
+        # Create an empty list for the next epoch for the prediction history
+        if self._subgroup_histories is not None:
+            for epoch_history in self._prediction_history.values():
+                epoch_history.append([])
+
+        # Printing
         if verbose:
             self._print_newest_metrics()
         if verbose_sub_groups and self._subgroup_histories is not None:
@@ -260,23 +267,22 @@ class Histories:
             subjects_predictions: Dict[Subject, List[YYhat]] = dict()
             for subject, y_hat, y in zip(self._epoch_subjects, y_pred, y_true):
                 if subject in subjects_predictions:
-                    subjects_predictions[subject].append(YYhat(y_true=y, y_pred=y_pred))
+                    subjects_predictions[subject].append(YYhat(y_true=y, y_pred=y_hat))
                 else:
-                    subjects_predictions[subject] = [YYhat(y_true=y, y_pred=y_pred)]
+                    subjects_predictions[subject] = [YYhat(y_true=y, y_pred=y_hat)]
 
             subjects_pred_and_true: Dict[Subject, YYhat] = dict()
             for subject, predictions_and_truths in subjects_predictions.items():
                 # Verify that the ground truth is the same
-                # todo: consider removing this, as it is not necessarily true in self-supervised learning
-                all_ground_truths = set(yyhat.y_true for yyhat in predictions_and_truths)
-                if len(all_ground_truths) == 1:
-                    raise ValueError(f"Expected all ground truths to be the same per subject, but found "
-                                     f"{len(all_ground_truths)} unique ones")
+                # todo: not necessarily true in self-supervised learning
+                all_ground_truths = tuple(yyhat.y_true for yyhat in predictions_and_truths)
+                if not all(torch.equal(all_ground_truths[0], ground_truth) for ground_truth in all_ground_truths):
+                    raise ValueError("Expected all ground truths to be the same per subject, but that was not the case")
 
                 # Set prediction to the average of all predictions, and the ground truth to the only element in the set
                 _pred = torch.mean(torch.cat([torch.unsqueeze(yyhat.y_pred, dim=0)
                                               for yyhat in predictions_and_truths], dim=0), dim=0)
-                _true = tuple(all_ground_truths)[0]
+                _true = all_ground_truths[0]
                 subjects_pred_and_true[subject] = YYhat(y_pred=_pred, y_true=_true)
 
             # Loop through all splits
@@ -359,11 +365,20 @@ class Histories:
         None
         """
         # --------------
+        # Remove the last 'epoch' if it is empty
+        # --------------
+        for epochs in self._prediction_history.values():
+            del epochs[-1]
+
+        # --------------
         # Sanity checks
         # --------------
         # Check if number of epochs is the same for all subjects
-        num_epochs = len(tuple(self._prediction_history.values())[0])  # type: ignore
-        assert all(len(predictions) == num_epochs for predictions in self._prediction_history.values())
+        all_num_epochs = set(len(epoch_history) for epoch_history in self._prediction_history.values())
+
+        assert len(all_num_epochs) == 1, (f"Expected number of EEG epochs to be the same for all epochs and subjects, "
+                                          f"but found {all_num_epochs}")
+        num_epochs = tuple(all_num_epochs)[0]
 
         # Check if number of EEG epochs is the same for all subjects and epochs
         all_num_eeg_epochs = set(len(eeg_epoch_predictions) for epoch_predictions in self._prediction_history.values()
