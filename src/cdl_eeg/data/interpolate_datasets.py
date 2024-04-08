@@ -41,9 +41,9 @@ def interpolate_datasets(datasets, main_channel_system, method, sampling_freq):
             raise TypeError(f"Expected the dataset to have a channel system of type '{ChannelSystem.__name__}', but "
                             f"found {type(dataset['channel_system'])} for the dataset {name}")
 
-        # Check that all datasets are 3D
-        if dataset["data"].ndim != 3:
-            raise ValueError(f"Expected data to be 3D, but found {dataset['data'].ndim} for the dataset {name}")
+        # Check that all datasets are 4D
+        if dataset["data"].ndim != 4:
+            raise ValueError(f"Expected data to be 3D, but found {dataset['data'].ndim}D for the dataset {name}")
 
     # -------------
     # Interpolate all datasets
@@ -103,7 +103,7 @@ def _interpolate_single_dataset(dataset, to_channel_system, method, sampling_fre
     interpolated_data: List[numpy.ndarray] = []  # type: ignore[type-arg]
     for subject_eeg in eeg_data:
         # Create raw
-        source_raw = mne.io.RawArray(data=subject_eeg, info=source_info, verbose=False)
+        source_raw = mne.EpochsArray(data=subject_eeg, info=source_info, verbose=False)
 
         # Perform mapping
         mapped_raw = _mne_map_montage(source_data=source_raw, target_montage=target_montage, method=method)
@@ -132,13 +132,13 @@ def _mne_map_montage(source_data, target_montage, method):
 
     Parameters
     ----------
-    source_data : mne.io.RawArray
+    source_data : mne.EpochsArray
     target_montage : mne.channels.DigMontage
     method : str
 
     Returns
     -------
-    mne.io.RawArray
+    mne.EpochsArray
 
     Examples
     --------
@@ -149,7 +149,7 @@ def _mne_map_montage(source_data, target_montage, method):
     >>> my_source_montage = mne.channels.make_standard_montage("standard_1020")
     >>> my_source_info = mne.create_info(ch_names=my_source_channels, sfreq=500, ch_types="eeg")
     >>> _ = my_source_info.set_montage(my_source_montage, verbose=False)
-    >>> my_source_data = mne.io.RawArray(data=numpy.random.normal(0, 1, size=(len(my_source_channels), 2000)),
+    >>> my_source_data = mne.EpochsArray(data=numpy.random.normal(0, 1, size=(5, len(my_source_channels), 2000)),
     ...                                  info=my_source_info, verbose=False)
     >>> # Create target montage
     >>> my_target_channels = ["Fp1", "Fp2", "F7", "F3", "Fz", "F4", "F8", "FC5", "FC1", "FC2", "FC6", "T7", "C3", "Cz",
@@ -163,7 +163,7 @@ def _mne_map_montage(source_data, target_montage, method):
     >>> # Perform interpolation to target montage
     >>> my_transformed_data = _mne_map_montage(source_data=my_source_data, target_montage=my_target_montage,
     ...                                        method="MNE")
-    >>> my_transformed_data.get_data().shape == (len(my_target_channels), 2000)
+    >>> my_transformed_data.get_data().shape == (5, len(my_target_channels), 2000)
     True
     >>> my_transformed_data.ch_names == my_target_channels
     True
@@ -190,10 +190,11 @@ def _mne_map_montage(source_data, target_montage, method):
     # Create RawArray object and interpolate
     num_target_channels = len(target_montage.ch_names)
     num_time_steps = source_data.get_data().shape[-1]
+    num_eeg_epochs = source_data.get_data().shape[0]
     combined_data = numpy.concatenate(
-        (source_data.get_data(), numpy.zeros(shape=(num_target_channels, num_time_steps)))
+        (source_data.get_data(), numpy.zeros(shape=(num_eeg_epochs, num_target_channels, num_time_steps))), axis=1
     )
-    combined_eeg = mne.io.RawArray(data=combined_data, info=combined_info, verbose=False)
+    combined_eeg = mne.EpochsArray(data=combined_data, info=combined_info, verbose=False)
     combined_eeg.interpolate_bads(method={"eeg": method}, verbose=False)
 
     # -------------
@@ -204,7 +205,7 @@ def _mne_map_montage(source_data, target_montage, method):
 
     # Create RawArray object, set montage, and return
     data = combined_eeg.get_data(picks=target_montage.ch_names)
-    eeg = mne.io.RawArray(data=data, info=info, verbose=False)
+    eeg = mne.EpochsArray(data=data, info=info, verbose=False)
     eeg.set_montage(target_montage, verbose=False)
 
     return eeg
