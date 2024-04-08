@@ -12,7 +12,6 @@ from cdl_eeg.data.interpolate_datasets import interpolate_datasets
 from cdl_eeg.data.paths import get_numpy_data_storage_path
 
 
-@pytest.mark.xfail
 @pytest.mark.skipif(not os.path.isdir(get_numpy_data_storage_path()), reason="Required numpy arrays not available")
 def test_interpolate_datasets():
     """Test interpolation from datasets to a single target channel system"""
@@ -23,7 +22,7 @@ def test_interpolate_datasets():
     method = "MNE"
 
     datasets = HatlestadHall(), MPILemon(), Miltiadous(), YulinWang()
-    preprocessed_version = "debug_preprocessed_2024-04-03_173246"
+    preprocessed_version = "preprocessed_2024-04-05_114614/data_band_pass_12-30_autoreject_True_sampling_multiple_4"
 
     # ----------------
     # Load data
@@ -58,14 +57,14 @@ def test_interpolate_datasets():
     # Check outputs
     # ----------------
     # Test keys
-    assert set(interpolated_data) == {"miltiadous", "yulin_wang", "hatlestad_hall", "mpi_lemon"}
+    assert set(interpolated_data) == {"HatlestadHall", "MPILemon", "Miltiadous", "YulinWang"}
 
     # Type check of all arrays
     assert all(isinstance(arr, numpy.ndarray) for arr in interpolated_data.values())
 
     # Check spatial dimension
     num_expected_channels = len(main_dataset.channel_name_to_index())
-    assert all(arr.shape[1] == num_expected_channels for arr in interpolated_data.values())
+    assert all(arr.shape[2] == num_expected_channels for arr in interpolated_data.values())
 
     # Check batch dimension
     assert all(arr.shape[0] == num_subjects for arr in interpolated_data.values())
