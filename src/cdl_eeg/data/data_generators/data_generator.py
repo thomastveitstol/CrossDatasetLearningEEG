@@ -159,7 +159,7 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
 
         # Varying keys in the returned dictionary is not possible with the DataLoader of PyTorch. This solution to the
         # problem is to simply return a tensor of -1s for the datasets not used
-        data = {dataset_name: torch.ones(size=x.shape[1:]) * (-1) for dataset_name, x in self._data.items()}
+        data = {dataset_name: torch.ones(size=x.shape[2:]) * (-1) for dataset_name, x in self._data.items()}
         targets = {dataset_name: torch.unsqueeze(torch.ones(size=y.shape[1:]) * (-1), dim=-1)
                    for dataset_name, y in self._targets.items()}
 
@@ -179,7 +179,7 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
             # assert False, {type(pre_comp) for pre_comp in self._pre_computed}
             pre_computed = []
             for pre_comp in self._pre_computed:
-                my_dict = {data_name: torch.ones(tensor.size()[1:]) * (-1) for data_name, tensor in pre_comp.items()}
+                my_dict = {data_name: torch.ones(tensor.size()[2:]) * (-1) for data_name, tensor in pre_comp.items()}
                 my_dict[dataset_name] = pre_comp[dataset_name][subject_idx][epoch_idx]
                 pre_computed.append(my_dict)
 
@@ -324,7 +324,7 @@ class InterpolationDataGenerator(Dataset):  # type: ignore[type-arg]
     def __getitem__(self, item):
         # Varying keys in the returned dictionary is not possible with the DataLoader of PyTorch. This solution to the
         # problem is to simply return a tensor of -1s for the datasets not used
-        data = {dataset_name: torch.ones(size=x.shape[1:]) * (-1) for dataset_name, x in self._data.items()}
+        data = {dataset_name: torch.ones(size=x.shape[2:]) * (-1) for dataset_name, x in self._data.items()}
         targets = {dataset_name: torch.unsqueeze(torch.ones(size=y.shape[1:]) * (-1), dim=-1)
                    for dataset_name, y in self._targets.items()}
 
