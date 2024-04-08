@@ -102,8 +102,8 @@ Targets:
 
 Training:
   # Fixed hyperparameters
-  batch_size: 16
-  num_epochs: 100
+  batch_size: 64
+  num_epochs: 20
   verbose: true
   ValSplit:
     name: DatasetBalancedTrainValSplit
