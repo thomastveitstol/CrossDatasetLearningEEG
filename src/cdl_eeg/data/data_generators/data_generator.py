@@ -1,3 +1,4 @@
+import numpy
 import torch
 from torch.utils.data import Dataset
 
@@ -52,7 +53,7 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
         self._pre_computed = pre_computed
 
     def __len__(self):
-        return sum(x.shape[0] for x in self._data.values())
+        return sum(x.shape[0] * x.shape[1] for x in self._data.values())
 
     def __getitem__(self, item):
         # todo: if the __getitem__ is to be standardised, the input to the transformation methods must also be
@@ -64,11 +65,12 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
                        for dataset_name in self._data}  # todo: hard-coded fill values
 
         # Select dataset and subject in the dataset
-        dataset_size = {dataset_name: x.shape[0] for dataset_name, x in self._data.items()}
-        dataset_name, idx = _select_dataset_and_index(item, dataset_size)
+        dataset_name, subject_idx, epoch_idx = _select_dataset_and_index(item, dataset_shapes=self.dataset_shapes)
 
         # Perform permutation and get details
-        transformed, details = self._transformation.transform(self._pretext_task)(self._data[dataset_name][idx])
+        transformed, details = self._transformation.transform(self._pretext_task)(
+            self._data[dataset_name][subject_idx][epoch_idx]
+        )
 
         # Add the data which should be used
         data[dataset_name] = torch.tensor(transformed, dtype=torch.float)
@@ -82,7 +84,7 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
             pre_computed = []
             for pre_comp in self._pre_computed:
                 my_dict = {data_name: torch.ones(tensor.size()[1:]) * (-1) for data_name, tensor in pre_comp.items()}
-                my_dict[dataset_name] = pre_comp[dataset_name][idx]
+                my_dict[dataset_name] = pre_comp[dataset_name][subject_idx][epoch_idx]
                 pre_computed.append(my_dict)
 
             # TODO: must fix return, as KeyError is raised when collating
@@ -92,6 +94,10 @@ class SelfSupervisedDataGenerator(Dataset):  # type: ignore[type-arg]
     # ---------------
     # Properties
     # ---------------
+    @property
+    def dataset_shapes(self):
+        return {x.shape for x in self._data.values()}
+
     @property
     def pretext_task(self):
         return self._pretext_task
@@ -132,6 +138,12 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
         subjects : dict[str, tuple[str, ...]]
         pre_computed : tuple[dict[str, typing.Any], ...]
         """
+        # Input check
+        if not all(x.ndim == 4 for x in data.values()):
+            _all_sizes = set(x.ndim for x in data.values())
+            raise ValueError(f"Expected all input arrays to be 4D with dimensions (subjects, EEG epochs, channels, "
+                             f"time_steps), but found {_all_sizes}")
+
         super().__init__()
 
         self._data = data
@@ -140,7 +152,7 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
         self._pre_computed = pre_computed
 
     def __len__(self):
-        return sum(x.shape[0] for x in self._data.values())
+        return sum(x.shape[0] * x.shape[1] for x in self._data.values())
 
     def __getitem__(self, item):
         # TODO: copied from SelfSupervisedDataGenerator
@@ -152,13 +164,12 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
                    for dataset_name, y in self._targets.items()}
 
         # Select dataset and subject in the dataset
-        dataset_size = {dataset_name: x.shape[0] for dataset_name, x in self._data.items()}
-        dataset_name, idx = _select_dataset_and_index(item, dataset_size)
+        dataset_name, subject_idx, epoch_idx = _select_dataset_and_index(item, dataset_shapes=self.dataset_shapes)
 
         # Add the data which should be used
-        data[dataset_name] = torch.tensor(self._data[dataset_name][idx], dtype=torch.float)
-        targets[dataset_name] = torch.unsqueeze(torch.tensor(self._targets[dataset_name][idx], dtype=torch.float,
-                                                             requires_grad=False),
+        data[dataset_name] = torch.tensor(self._data[dataset_name][subject_idx][epoch_idx], dtype=torch.float)
+        targets[dataset_name] = torch.unsqueeze(torch.tensor(self._targets[dataset_name][subject_idx],
+                                                             dtype=torch.float, requires_grad=False),
                                                 dim=-1)
 
         # TODO: quite hard coded?
@@ -169,7 +180,7 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
             pre_computed = []
             for pre_comp in self._pre_computed:
                 my_dict = {data_name: torch.ones(tensor.size()[1:]) * (-1) for data_name, tensor in pre_comp.items()}
-                my_dict[dataset_name] = pre_comp[dataset_name][idx]
+                my_dict[dataset_name] = pre_comp[dataset_name][subject_idx][epoch_idx]
                 pre_computed.append(my_dict)
 
             # TODO: must fix return, as KeyError is raised when collating
@@ -194,11 +205,10 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
         Subject
         """
         # Get the dataset name and index
-        dataset_sizes = {dataset_name: len(subjects) for dataset_name, subjects in self._subjects.items()}
-        dataset_name, idx = _select_dataset_and_index(item=int(item), dataset_sizes=dataset_sizes)
+        dataset_name, subject_idx, _ = _select_dataset_and_index(item=int(item), dataset_shapes=self.dataset_shapes)
 
         # Use correct type and return
-        return Subject(subject_id=self._subjects[dataset_name][idx], dataset_name=dataset_name)
+        return Subject(subject_id=self._subjects[dataset_name][subject_idx], dataset_name=dataset_name)
 
     def get_subjects_from_indices(self, items):
         """
@@ -240,6 +250,10 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
         """Get the dataset names included in the data. The order is as the keys of the data passed to the __init__
         method"""
         return tuple(self._data.keys())
+
+    @property
+    def dataset_shapes(self):
+        return {dataset_name: x.shape for dataset_name, x in self._data.items()}
 
     @property
     def dataset_sizes(self):
@@ -315,13 +329,12 @@ class InterpolationDataGenerator(Dataset):  # type: ignore[type-arg]
                    for dataset_name, y in self._targets.items()}
 
         # Select dataset and subject in the dataset
-        dataset_sizes = {dataset_name: x.shape[0] for dataset_name, x in self._data.items()}
-        dataset_name, idx = _select_dataset_and_index(item, dataset_sizes)
+        dataset_name, subject_idx, epoch_idx = _select_dataset_and_index(item, dataset_shapes=self.dataset_shapes)
 
         # Add the data which should be used
-        data[dataset_name] = torch.tensor(self._data[dataset_name][idx], dtype=torch.float)
-        targets[dataset_name] = torch.unsqueeze(torch.tensor(self._targets[dataset_name][idx], dtype=torch.float,
-                                                             requires_grad=False),
+        data[dataset_name] = torch.tensor(self._data[dataset_name][subject_idx][epoch_idx], dtype=torch.float)
+        targets[dataset_name] = torch.unsqueeze(torch.tensor(self._targets[dataset_name][subject_idx],
+                                                             dtype=torch.float, requires_grad=False),
                                                 dim=-1)
 
         # Return input data, targets, and the item (will be converted to Subject later)
@@ -345,11 +358,11 @@ class InterpolationDataGenerator(Dataset):  # type: ignore[type-arg]
         Subject
         """
         # Get the dataset name and index
-        dataset_sizes = {dataset_name: len(subjects) for dataset_name, subjects in self._subjects.items()}
-        dataset_name, idx = _select_dataset_and_index(item=int(item), dataset_sizes=dataset_sizes)
+        dataset_name, subject_idx, epoch_idx = _select_dataset_and_index(item=int(item),
+                                                                         dataset_shapes=self.dataset_shapes)
 
         # Use correct type and return
-        return Subject(subject_id=self._subjects[dataset_name][idx], dataset_name=dataset_name)
+        return Subject(subject_id=self._subjects[dataset_name][subject_idx][epoch_idx], dataset_name=dataset_name)
 
     def get_subjects_from_indices(self, items):
         """
@@ -387,6 +400,10 @@ class InterpolationDataGenerator(Dataset):  # type: ignore[type-arg]
     # Properties
     # --------------
     @property
+    def dataset_shapes(self):
+        return {dataset_name: x.shape for dataset_name, x in self._data.items()}
+
+    @property
     def dataset_sizes(self):
         """Get the sizes of the datasets. The keys are the dataset names, the values are the number of subjects in the
         dataset"""
@@ -401,14 +418,14 @@ class InterpolationDataGenerator(Dataset):  # type: ignore[type-arg]
 # ----------------
 # Functions
 # ----------------
-def _select_dataset_and_index(item, dataset_sizes):
+def _select_dataset_and_index(item, dataset_shapes):
     """
     Function for selecting dataset. Only works for positive integer items
 
     Parameters
     ----------
     item : int
-    dataset_sizes : tuple[dict[str, int], ...]
+    dataset_shapes : dict[str, tuple[int, ...]]
 
     Returns
     -------
@@ -416,10 +433,20 @@ def _select_dataset_and_index(item, dataset_sizes):
 
     Examples
     --------
-    >>> my_sizes = {"a": 3, "b": 6, "c": 10, "d": 2}
-    >>> _select_dataset_and_index(item=11, dataset_sizes=my_sizes)
-    ('c', 2)
-    >>> _select_dataset_and_index(item=-1, dataset_sizes=my_sizes)
+    >>> my_shapes = {"a": (3, 3, 19, 3000), "b": (4, 4, 19, 3000), "c": (6, 1, 19, 3000), "d": (7, 2, 19, 3000)}
+    >>> _select_dataset_and_index(item=15, dataset_shapes=my_shapes)
+    ('b', 1, 2)
+    >>> _select_dataset_and_index(item=27, dataset_shapes=my_shapes)
+    ('c', 2, 0)
+    >>> _select_dataset_and_index(item=36, dataset_shapes=my_shapes)
+    ('d', 2, 1)
+    >>> _select_dataset_and_index(item=44, dataset_shapes=my_shapes)
+    ('d', 6, 1)
+    >>> _select_dataset_and_index(item=45, dataset_shapes=my_shapes)
+    Traceback (most recent call last):
+    ...
+    IndexError: Index 45 exceeds the total size of the combined dataset 45
+    >>> _select_dataset_and_index(item=-1, dataset_shapes=my_shapes)
     Traceback (most recent call last):
     ...
     ValueError: Expected item to be a positive integer, but found -1 (type=<class 'int'>)
@@ -430,15 +457,19 @@ def _select_dataset_and_index(item, dataset_sizes):
 
     # Find the dataset name and position
     accumulated_sizes = 0
-    for name, size in dataset_sizes.items():
+    for name, shape in dataset_shapes.items():
+        num_subjects, num_eeg_epochs, *_ = shape
+        size = num_subjects * num_eeg_epochs
         accumulated_sizes += size
         if item < accumulated_sizes:
-            # Not very elegant...
+            # Now, the current dataset is the correct one. Need to extract the correct subject and EEG epoch indices
             idx = item - (accumulated_sizes - size)
-            return name, idx
+
+            subject_idx, eeg_epoch_idx = numpy.divmod(idx, num_eeg_epochs)
+            return name, subject_idx, eeg_epoch_idx
 
     # This should not happen...
-    raise RuntimeError("Found not select a dataset and an index")
+    raise IndexError(f"Index {item} exceeds the total size of the combined dataset {accumulated_sizes}")
 
 
 def strip_tensors(tensors, fill_val=-1):
