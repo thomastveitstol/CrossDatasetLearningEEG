@@ -287,17 +287,44 @@ class RocketConv1d(nn.Module):
         >>> my_model = RocketConv1d(num_kernels=321, max_receptive_field=123)
         >>> my_model(torch.rand(size=(10, 64, 500))).size()
         torch.Size([10, 64, 642])
+        >>> my_model(torch.rand(size=(10, 5, 64, 500))).size()
+        torch.Size([10, 5, 64, 642])
+
+        It does not matter if 3D or 4D with a single EEG epoch
+
+        >>> my_input = torch.rand(size=(10, 64, 500))
+        >>> torch.equal(my_model(my_input), torch.squeeze(my_model(torch.unsqueeze(my_input, dim=1)), dim=1))
+        True
         """
         # Initialise tensor. The features will be stored to this tensor
-        batch, num_channels, _ = x.size()
-        outputs = torch.empty(size=(batch, num_channels, 2 * self.num_kernels)).to(x.device)
+        if x.dim() == 3:
+            batch, num_channels, _ = x.size()
+            output_size = (batch, num_channels, 2 * self.num_kernels)
+        elif x.dim() == 4:
+            batch, num_eeg_epochs, num_channels, _ = x.size()
+            output_size = (batch, num_eeg_epochs, num_channels, 2 * self.num_kernels)
+        else:
+            raise ValueError(f"Expected input to be 3D or 4D, but received {x.dim()}D")
+
+        outputs = torch.empty(size=output_size).to(x.device)
 
         # Loop through all kernels
         for i, kernel in enumerate(self._kernels):
             # Perform convolution
-            convoluted = nn.functional.conv1d(input=x, weight=kernel.weight.data.repeat(num_channels, 1, 1),
-                                              bias=kernel.bias.data.repeat(num_channels), stride=1, padding="same",
-                                              dilation=kernel.dilation, groups=num_channels)
+            if x.dim() == 3:
+                convoluted = nn.functional.conv1d(input=x, weight=kernel.weight.data.repeat(num_channels, 1, 1),
+                                                  bias=kernel.bias.data.repeat(num_channels), stride=1, padding="same",
+                                                  dilation=kernel.dilation, groups=num_channels)
+            elif x.dim() == 4:
+                convoluted = torch.transpose(
+                    nn.functional.conv2d(input=torch.transpose(x, dim0=1, dim1=2),
+                                         weight=kernel.weight.data.repeat(num_channels, 1, 1, 1),
+                                         bias=kernel.bias.data.repeat(num_channels), stride=1, padding="same",
+                                         dilation=kernel.dilation, groups=num_channels),
+                    dim0=1, dim1=2
+                )
+            else:
+                raise ValueError("This should never happen...")
 
             # Compute PPV and max values, and insert in the output tensor
             outputs[..., (2 * i):(2 * i + 2)] = compute_ppv_and_max(convoluted)
