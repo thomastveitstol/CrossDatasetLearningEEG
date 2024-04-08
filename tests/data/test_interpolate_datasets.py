@@ -68,3 +68,6 @@ def test_interpolate_datasets():
 
     # Check batch dimension
     assert all(arr.shape[0] == num_subjects for arr in interpolated_data.values())
+
+    # Check EEG epoch dimension
+    assert len(set(arr.shape[1] for arr in interpolated_data.values())) == 1
