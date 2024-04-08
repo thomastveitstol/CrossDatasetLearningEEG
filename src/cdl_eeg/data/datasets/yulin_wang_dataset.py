@@ -21,7 +21,7 @@ class YulinWang(EEGDatasetBase):
     Examples:
     ----------
     >>> YulinWang().name
-    'yulin_wang'
+    'YulinWang'
     >>> YulinWang.get_available_targets()
     ('age', 'sex')
     >>> len(YulinWang().get_subject_ids())

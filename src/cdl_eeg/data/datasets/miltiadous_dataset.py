@@ -13,7 +13,7 @@ class Miltiadous(EEGDatasetBase):
     Examples:
     ----------
     >>> Miltiadous().name
-    'miltiadous'
+    'Miltiadous'
     >>> Miltiadous.get_available_targets()
     ('age', 'mmse', 'sex')
     >>> len(Miltiadous().get_subject_ids())

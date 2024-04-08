@@ -13,7 +13,7 @@ class HatlestadHall(EEGDatasetBase):
     Examples:
     ----------
     >>> HatlestadHall().name
-    'hatlestad_hall'
+    'HatlestadHall'
     >>> HatlestadHall.get_available_targets()
     ('age', 'ravlt_del', 'ravlt_rec', 'ravlt_tot', 'sex')
     >>> len(HatlestadHall().get_subject_ids())

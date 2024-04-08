@@ -61,7 +61,8 @@ class EEGDatasetBase(abc.ABC):
         name : str, optional
             Name of the EEG dataset
         """
-        self._name: str = inflection.underscore(self.__class__.__name__) if name is None else name
+        self._name: str = self.__class__.__name__ if name is None else name  # todo
+        # self._name: str = inflection.underscore(self.__class__.__name__) if name is None else name
 
     def pre_process(self, eeg_data, *, remove_above_std, interpolation=None, filtering=None, resample=None,
                     notch_filter=None, avg_reference=False, excluded_channels, num_time_steps, time_series_start,

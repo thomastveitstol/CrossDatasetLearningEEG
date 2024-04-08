@@ -21,7 +21,7 @@ class MPILemon(EEGDatasetBase):
     Examples:
     ----------
     >>> MPILemon().name
-    'mpi_lemon'
+    'MPILemon'
     >>> len(MPILemon().get_subject_ids()), MPILemon().get_subject_ids()[:4]
     (203, ('sub-032301', 'sub-032302', 'sub-032303', 'sub-032304'))
     >>> len(MPILemon()._channel_names)  # There are 61 because the 62nd is VEOG (eye electrode), see original article
@@ -36,9 +36,6 @@ class MPILemon(EEGDatasetBase):
                       "C1", "C2", "C6", "TP7", "CP3", "CPz", "CP4", "TP8", "P5", "P1", "P2", "P6", "PO7", "PO3", "POz",
                       "PO4", "PO8")  # TODO: This is inconsistent!!!
     _montage_name = "standard_1020"
-
-    def __init__(self):
-        super().__init__(name="mpi_lemon")
 
     # ----------------
     # Loading methods
