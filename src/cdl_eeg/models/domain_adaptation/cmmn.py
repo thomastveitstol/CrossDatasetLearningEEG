@@ -9,6 +9,7 @@ Paper:
     Neural Information Processing Systems (NeurIPS), 2023.
 """
 import itertools
+import warnings
 from typing import Dict, Optional, Tuple, List
 
 import numpy
@@ -128,11 +129,38 @@ class ConvMMN:
         True
         >>> torch.equal(my_output[:, 4:], my_permuted_output[:, 4:])
         True
+
+        Works with 4D as well
+
+        >>> my_x = torch.rand(size=(10, 5, 8, 2000))
+        >>> my_monge_filter = torch.rand(size=(8, 65))
+        >>> my_output = ConvMMN._compute_single_eeg_convolution_torch(x=my_x, monge_filter=my_monge_filter)
+        >>> my_output.size()
+        torch.Size([10, 5, 8, 2000])
+
+        It does not matter if 3D or 4D with a single EEG epoch
+
+        >>> my_x = torch.rand(size=(10, 8, 2000))
+        >>> my_monge_filter = torch.rand(size=(8, 65))
+        >>> my_out1 = ConvMMN._compute_single_eeg_convolution_torch(x=my_x, monge_filter=my_monge_filter)
+        >>> my_out2 = ConvMMN._compute_single_eeg_convolution_torch(x=torch.unsqueeze(my_x, dim=1),
+        ...                                                         monge_filter=my_monge_filter)
+        >>> torch.equal(my_out1, torch.squeeze(my_out2, dim=1))
+        True
         """
-        return nn.functional.conv1d(
-            input=x, weight=torch.unsqueeze(monge_filter, dim=1), bias=None, stride=1,
-            padding="same", dilation=1, groups=monge_filter.size()[0]
-        )
+        if x.dim() == 3:
+            return nn.functional.conv1d(
+                input=x, weight=torch.unsqueeze(monge_filter, dim=1), bias=None, stride=1,
+                padding="same", dilation=1, groups=monge_filter.size()[0]
+            )
+        elif x.dim() == 4:
+            return torch.transpose(
+                nn.functional.conv2d(input=torch.transpose(x, dim0=1, dim1=2),
+                                     weight=torch.unsqueeze(torch.unsqueeze(monge_filter, dim=1), dim=1),
+                                     bias=None, stride=1, padding="same", dilation=1, groups=monge_filter.size()[0]),
+                dim0=1, dim1=2)
+        else:
+            raise ValueError(f"Expected input tensor to tbe 3D or 4D, but found {x.dim()}D")
 
     def _apply_monge_filters_numpy(self, data):
         """
@@ -182,6 +210,8 @@ class ConvMMN:
         >>> ConvMMN._compute_single_eeg_convolution(my_x, my_monge_filter).shape
         (32, 2000)
         """
+        warnings.warn(message="Please use the Pytorch implementation instead", category=DeprecationWarning)
+
         # Input checks
         assert x.ndim == 2, (f"Expected the single EEG to only have 2 dimensions (channel and temporal dimensions), "
                              f"but found {x.ndim}")
@@ -438,9 +468,9 @@ class RBPConvMMN:
             representative_psds[dataset_name] = dict()
 
             # Quick dimension check, the EEG data should be 3D
-            if eeg_data.ndim != 3:
-                raise ValueError(f"Expected the provided EEG data to be 3D, but found {eeg_data.ndim} dimensions in "
-                                 f"the '{dataset_name}' dataset")
+            if eeg_data.ndim not in (3, 4):
+                raise ValueError(f"Expected the provided EEG data to be 3D or 4D, but found {eeg_data.ndim} dimensions "
+                                 f"in the '{dataset_name}' dataset")
 
             # Loop through the montage splits (or actually, the already computed mappings from Region ID to the channels
             # within the region of the given dataset, to be precise)
@@ -462,7 +492,8 @@ class RBPConvMMN:
 
                     # Compute a representative PSD for the region
                     region_psd = _compute_representative_region_psd(
-                        x=eeg_data[:, allowed_indices], kernel_size=cmmn_layer.kernel_size, sampling_freq=sampling_freq
+                        x=eeg_data[..., allowed_indices, :], kernel_size=cmmn_layer.kernel_size,
+                        sampling_freq=sampling_freq
                     )
 
                     # Store it
@@ -648,10 +679,14 @@ def _compute_single_source_psd(x, *, sampling_freq, kernel_size):
     >>> my_psds = _compute_single_source_psd(my_data, sampling_freq=10, kernel_size=128)
     >>> my_psds.shape
     (10, 32, 65)
+    >>> my_data = numpy.random.normal(0, 1, size=(10, 5, 32, 2000))
+    >>> my_psds = _compute_single_source_psd(my_data, sampling_freq=10, kernel_size=128)
+    >>> my_psds.shape
+    (10, 5, 32, 65)
     """
     # todo: I don't really understand nperseg
-    if x.ndim != 3:
-        raise ValueError(f"Expected input data to be 3D, but found {x.ndim} dimensions")
+    if x.ndim not in (3, 4):
+        raise ValueError(f"Expected input data to be 3D or 4D, but found {x.ndim} dimensions")
     # todo: i think nperseq should be adapted to sampling frequency. Could also tune nfft
     return signal.welch(x=x, axis=-1, fs=sampling_freq, nperseg=kernel_size)[-1]
 
@@ -679,7 +714,12 @@ def _aggregate_subject_psds(psds):
     # todo: Would be cool to support different aggregation methods, and in particular to support different weights
     #  for different sub-groups
     # todo: I think it should be the mean, due to 2.2 Welch estimation in the paper, but I'm not 100% sure
-    return numpy.mean(psds, axis=0)
+    if psds.ndim == 3:
+        return numpy.mean(psds, axis=0)
+    elif psds.ndim == 4:
+        return numpy.mean(psds, axis=(0, 1))
+    else:
+        raise ValueError(f"Expected PSDs to be 3D or 4D, but found {psds.ndim}D")
 
 
 def _compute_representative_psd(x, *, sampling_freq, kernel_size):
@@ -689,18 +729,21 @@ def _compute_representative_psd(x, *, sampling_freq, kernel_size):
     Parameters
     ----------
     x : numpy.ndarray
-        Expected shape=(num_subjects, channels, time_steps)
+        Expected shape=(num_subjects, channels, time_steps) or (num_subjects, EEG epochs, channels, time_steps)
     sampling_freq : float
     kernel_size : int
 
     Returns
     -------
     numpy.ndarray
-        Output will be 2D, shape=(channels, frequencies)
+        Output will be 2D or 3D, shape=(channels, frequencies) or shape=(channels, frequencies)
 
     Examples
     --------
     >>> _compute_representative_psd(numpy.random.normal(size=(10, 19, 3000)), sampling_freq=100, kernel_size=128).shape
+    (19, 65)
+    >>> _compute_representative_psd(numpy.random.normal(size=(10, 7, 19, 3000)), sampling_freq=100,
+    ...                             kernel_size=128).shape
     (19, 65)
     """
     # Compute PSDs and aggregate them
@@ -715,7 +758,8 @@ def _compute_representative_region_psd(x, *, sampling_freq, kernel_size):
     Parameters
     ----------
     x : numpy.ndarray
-        Shape should be shae=(subejcts, channels within region, time_steps)
+        Shape should be 3D or 4D with shape=(subjects, channels within region, time_steps) or
+        shape=(subjects, eeg_epochs, channels within region, time_steps)
     sampling_freq : float
     kernel_size : int
 
@@ -729,6 +773,9 @@ def _compute_representative_region_psd(x, *, sampling_freq, kernel_size):
     >>> my_data = numpy.random.normal(size=(10, 6, 3000))
     >>> _compute_representative_region_psd(my_data, sampling_freq=100, kernel_size=128).shape
     (65,)
+    >>> my_data = numpy.random.normal(size=(10, 5, 6, 3000))
+    >>> _compute_representative_region_psd(my_data, sampling_freq=100, kernel_size=128).shape
+    (65,)
     """
     # Compute all PSDs. Will have shape=(subjects, channel, frequencies)
     psds = _compute_single_source_psd(x, sampling_freq=sampling_freq, kernel_size=kernel_size)
@@ -738,8 +785,12 @@ def _compute_representative_region_psd(x, *, sampling_freq, kernel_size):
 
 
 def _aggregate_to_region_psd(psds):
-    # todo: Aggregate on subject or channel level first?
-    return numpy.mean(psds, axis=(0, 1))  # todo: this is likely wrong aggregation method
+    if psds.ndim == 3:
+        return numpy.mean(psds, axis=(0, 1))
+    elif psds.ndim == 4:
+        return numpy.mean(psds, axis=(0, 1, 2))
+    else:
+        raise ValueError(f"Expected PSDs to be 3D or 4D, but received {psds.ndim}")
 
 
 def _compute_representative_psds(data, *, sampling_freq, kernel_size):
@@ -768,6 +819,15 @@ def _compute_representative_psds(data, *, sampling_freq, kernel_size):
     {'d1': (32, 33), 'd2': (64, 33), 'd3': (19, 33)}
     >>> {name_: eeg_.shape for name_, eeg_ in my_data.items()}  # type: ignore[attr-defined]
     {'d1': (10, 32, 2000), 'd2': (8, 64, 1500), 'd3': (17, 19, 3000)}
+
+    Work with multiple EEG epochs as well
+
+    >>> my_data = {"d1": numpy.random.normal(0, 1, size=(10, 4, 32, 2000)),
+    ...            "d2": numpy.random.normal(0, 1, size=(8, 7, 64, 1500)),
+    ...            "d3": numpy.random.normal(0, 1, size=(17, 5, 19, 3000))}
+    >>> my_estimated_psds = _compute_representative_psds(my_data, sampling_freq=100, kernel_size=64)
+    >>> {name_: psds_.shape for name_, psds_ in my_estimated_psds.items()}  # type: ignore[attr-defined]
+    {'d1': (32, 33), 'd2': (64, 33), 'd3': (19, 33)}
     """
     return {dataset_name: _compute_representative_psd(x=x, sampling_freq=sampling_freq, kernel_size=kernel_size)
             for dataset_name, x in data.items()}

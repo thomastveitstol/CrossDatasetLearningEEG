@@ -298,9 +298,10 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         # -----------------
         # Check dimensions
         _sizes = set(d.shape for d in data.values())
-        assert all(len(_size) == 3 for _size in _sizes), (f"Expected all input data values to be 3D with "
-                                                          f"shape=(subejcts, channels, time_steps), but found: "
-                                                          f"{_sizes}")
+        assert all(len(_size) in (3, 4) for _size in _sizes), (
+            f"Expected all input data values to be 3D or 4D with shape=(subjects, channels, time_steps), or "
+            f"(subjects, eeg_epochs, channels, time_steps) but found: {_sizes}"
+        )
 
         self._cmmn_layer.fit_psd_barycenters(data, channel_systems=channel_systems, sampling_freq=sampling_freq)
 
