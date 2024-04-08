@@ -6,7 +6,6 @@ from typing import Dict, Tuple, List, Optional
 
 import autoreject
 import enlighten
-import inflection
 import mne
 import numpy
 import pandas

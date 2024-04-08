@@ -8,7 +8,7 @@ This code is likely to have overlap with a former implementation of mine (Thomas
 https://github.com/thomastveitstol/RegionBasedPoolingEEG/
 """
 import random
-from typing import List
+from typing import List, Tuple, Union
 
 import numpy
 import torch
@@ -297,6 +297,7 @@ class RocketConv1d(nn.Module):
         True
         """
         # Initialise tensor. The features will be stored to this tensor
+        output_size: Union[Tuple[int, int, int], Tuple[int, int, int, int]]
         if x.dim() == 3:
             batch, num_channels, _ = x.size()
             output_size = (batch, num_channels, 2 * self.num_kernels)
