@@ -340,7 +340,7 @@ def main_lodo():
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = r"Weighted loss ($\lambda$)"
+    hyperparameter_name = "Domain Adaptation"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
     dataset = "MPILemon"
@@ -504,7 +504,7 @@ def main_inverted_lodo():
 
 
 def main():
-    main_inverted_lodo()
+    main_lodo()
 
 
 if __name__ == "__main__":
