@@ -7,7 +7,7 @@ def main():
     # Hyperparameters
     # -----------------
     # Data
-    subject_number = 1
+    subject_number = 28
     derivatives = False
 
     # Pre-processing
@@ -26,6 +26,7 @@ def main():
     # Load data
     # -----------------
     subject_id = TDBrain().get_subject_ids()[subject_number]
+    print(f"Subject ID: {subject_id}")
 
     eeg = TDBrain().load_single_mne_object(subject_id=subject_id, derivatives=derivatives)
 
