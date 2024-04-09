@@ -6,6 +6,8 @@ frequency_bands:
   - [ 30, 45 ]
 resample_fmax_multiples: [ 2, 4, 8 ]
 Datasets:
+  TDBrain:
+    derivatives: false
   HatlestadHall:
     session: "t1"
     derivatives: true
