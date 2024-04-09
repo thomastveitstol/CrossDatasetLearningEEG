@@ -1,5 +1,5 @@
 import os
-from typing import Tuple
+from typing import Tuple, List
 
 import mne
 import pandas
@@ -15,6 +15,13 @@ class TDBrain(EEGDatasetBase):
         van Dijk, H., van Wingen, G., Denys, D. et al. The two decades brainclinics research archive for insights in
         neurophysiology (TDBRAIN) database. Sci Data 9, 333 (2022). https://doi.org/10.1038/s41597-022-01409-z
     Link: www.brainclinics.com/resources
+
+    Examples
+    --------
+    >>> len(TDBrain().get_subject_ids())
+    1274
+    >>> TDBrain().get_subject_ids()[:3]
+    ('sub-19681349', 'sub-19681385', 'sub-19684666')
     """
 
     # Extracting channel names from Table 3 in the paper
@@ -24,8 +31,18 @@ class TDBrain(EEGDatasetBase):
     _montage_name = "standard_1020"  # 10-10 according to the paper
 
     def get_subject_ids(self) -> Tuple[str, ...]:
-        """Get the subject IDs available. Have to override due to a minor variation in column name"""
-        return tuple(pandas.read_csv(self.get_participants_tsv_path(), sep="\t")["participants_ID"])
+        """Get the subject IDs available. Have to override due to (1) a minor variation in column name, and (2) repeated
+        subject IDs"""
+        # Get the subject IDs from participants file
+        participants = tuple(pandas.read_csv(self.get_participants_tsv_path(), sep="\t")["participants_ID"])
+
+        # Keep only a unique set. This implementation is reproducible
+        uniques: List[str] = []
+        for participant in participants:
+            if participant not in uniques:
+                uniques.append(participant)
+
+        return tuple(uniques)
 
     def get_participants_tsv_path(self):
         return os.path.join(self.get_mne_path(), "TDBRAIN_participants_V2_data", "TDBRAIN_participants_V2.tsv")
