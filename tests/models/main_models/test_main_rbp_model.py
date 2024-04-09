@@ -14,8 +14,6 @@ from cdl_eeg.data.data_generators.data_generator import SelfSupervisedDataGenera
 from cdl_eeg.data.subject_split import KFoldDataSplit
 from cdl_eeg.data.datasets.dataset_base import ChannelSystem
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
-from cdl_eeg.data.datasets.rockhill_dataset import Rockhill
-from cdl_eeg.data.datasets.van_hees import VanHees
 from cdl_eeg.data.paths import get_raw_data_storage_path
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel, tensor_dict_to_device
 from cdl_eeg.models.region_based_pooling.region_based_pooling import RBPDesign, RBPPoolType
@@ -147,7 +145,7 @@ def test_fit_real_channel_systems():
     # Create real channel systems
     # ------------------
     # Select datasets for testing
-    datasets = (VanHees(), Rockhill(), Miltiadous())
+    datasets = (Miltiadous(),)
 
     # Get their channel systems
     channel_systems = tuple(dataset.channel_system for dataset in datasets)
@@ -238,7 +236,7 @@ def test_pre_training():
     # ------------------
     # Load data  todo: use more datasets when supported
     # ------------------
-    datasets = (Miltiadous(), Rockhill())
+    datasets = (Miltiadous(),)
     channel_name_to_index = {dataset.name: dataset.channel_system.channel_name_to_index for dataset in datasets}
 
     # Defining load details

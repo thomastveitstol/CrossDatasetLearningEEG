@@ -7,7 +7,6 @@ from matplotlib import pyplot
 from cdl_eeg.data.datasets.cau_eeg_dataset import CAUEEG
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
-from cdl_eeg.data.datasets.rockhill_dataset import Rockhill
 from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
 
 
@@ -17,7 +16,7 @@ def main():
 
     frequency_bands = {"Delta": (0.5, 4), "Theta": (4, 8), "Alpha": (8, 12), "Beta": (12, 30), "Gamma": (30, 45)}
 
-    datasets = (HatlestadHall(), YulinWang(), Miltiadous(), Rockhill(), CAUEEG())
+    datasets = (HatlestadHall(), YulinWang(), Miltiadous(), CAUEEG())
     kwargs = {"HatlestadHall": {"derivatives": True, "session": "t1"},
               "YulinWang": {"derivatives": True, "visit": 1, "recording": "EC"},
               "Miltiadous": {},

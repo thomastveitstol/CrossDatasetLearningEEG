@@ -4,10 +4,10 @@ import numpy
 import pytest
 
 from cdl_eeg.data.combined_datasets import LoadDetails, CombinedDatasets
+from cdl_eeg.data.datasets.mpi_lemon import MPILemon
 from cdl_eeg.data.subject_split import Subject
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
-from cdl_eeg.data.datasets.rockhill_dataset import Rockhill
 from cdl_eeg.data.paths import get_numpy_data_storage_path
 
 
@@ -17,11 +17,11 @@ def test_data_loading():
     # ------------------
     # Define the datasets to test
     # ------------------
-    # Selecting datasets  todo: VanHees fails the test...
-    datasets = (Rockhill(), Miltiadous(), HatlestadHall())
+    # Selecting datasets
+    datasets = (Miltiadous(), HatlestadHall())
 
     # Defining load details
-    details_1 = LoadDetails(subject_ids=Rockhill().get_subject_ids()[:9], num_time_steps=1_003)
+    details_1 = LoadDetails(subject_ids=MPILemon().get_subject_ids()[:9], num_time_steps=1_003)
     details_2 = LoadDetails(subject_ids=Miltiadous().get_subject_ids()[:14], num_time_steps=305)
     details_3 = LoadDetails(subject_ids=HatlestadHall().get_subject_ids()[:3], time_series_start=1_000,
                             num_time_steps=975)
@@ -38,7 +38,7 @@ def test_data_loading():
     assert all(dataset.name in combined_dataset._data for dataset in datasets)
 
     # Check shapes of numpy arrays
-    subjects_1, _, time_steps_1 = combined_dataset._data[Rockhill().name].shape
+    subjects_1, _, time_steps_1 = combined_dataset._data[MPILemon().name].shape
     subjects_2, _, time_steps_2 = combined_dataset._data[Miltiadous().name].shape
     subjects_3, _, time_steps_3 = combined_dataset._data[HatlestadHall().name].shape
 
@@ -54,10 +54,10 @@ def test_get_data():
     # Define the datasets to test
     # ------------------
     # Selecting datasets
-    datasets = (Rockhill(), Miltiadous(), HatlestadHall())
+    datasets = (MPILemon(), Miltiadous(), HatlestadHall())
 
     # Defining load details
-    details_1 = LoadDetails(subject_ids=Rockhill().get_subject_ids()[:9], num_time_steps=1_003)
+    details_1 = LoadDetails(subject_ids=MPILemon().get_subject_ids()[:9], num_time_steps=1_003)
     details_2 = LoadDetails(subject_ids=Miltiadous().get_subject_ids()[:14], num_time_steps=305)
     details_3 = LoadDetails(subject_ids=HatlestadHall().get_subject_ids()[:3], time_series_start=1_000,
                             num_time_steps=975)
@@ -91,7 +91,7 @@ def test_get_data():
         "Expected dataset(s) not found"
 
     # Test if the dataset not asked for are not in the extracted data
-    assert Rockhill().name not in extracted_data, "Unexpected dataset"
+    assert MPILemon().name not in extracted_data, "Unexpected dataset"
 
     # Type check of all values
     assert all(isinstance(data_matrix, numpy.ndarray) for data_matrix in extracted_data.values()), \
