@@ -255,13 +255,19 @@ class Histories:
         # -------------
         # Update all metrics of the 'normal' history dict
         # -------------
+        # We need to aggregate the predictions by averaging, and reducing the targets
+        y_pred_per_subject, y_true_per_subject = _aggregate_predictions_and_ground_truths(
+            subjects=self._epoch_subjects, y_true=y_true, y_pred=y_pred,
+        )
+
         for metric, hist in self._history.items():
-            hist.append(self._compute_metric(metric=metric, y_pred=y_pred, y_true=y_true))
+            hist.append(self._compute_metric(metric=metric, y_pred=y_pred_per_subject, y_true=y_true_per_subject))
 
         # -------------
         # (Maybe) update all metrics of all subgroups
         # -------------
         if self._subgroup_histories is not None:
+            # todo: I should be able to just use what was calculated above
             # Make dictionary containing subjects combined with the prediction and target. The prediction is the average
             # of all EEG epochs/segments
             subjects_predictions: Dict[Subject, List[YYhat]] = dict()
@@ -733,6 +739,38 @@ class DistanceMetrics:
 # ----------------
 # Functions
 # ----------------
+def _aggregate_predictions_and_ground_truths(*, subjects, y_pred, y_true):
+    """Function for aggregating predictions when predictions have been made for multiple EEG epochs per subject. This
+    function computes the new prediction as the average of all, and also checks that the ground truth is always the same
+    per subject"""
+    # Make dictionary containing subjects combined with the prediction and target
+    subjects_predictions: Dict[Subject, List[YYhat]] = dict()
+    for subject, y_hat, y in zip(subjects, y_pred, y_true):
+        if subject in subjects_predictions:
+            subjects_predictions[subject].append(YYhat(y_true=y, y_pred=y_hat))
+        else:
+            subjects_predictions[subject] = [YYhat(y_true=y, y_pred=y_hat)]
+
+    subjects_pred_and_true: Dict[Subject, YYhat] = dict()
+    for subject, predictions_and_truths in subjects_predictions.items():
+        # Verify that the ground truth is the same
+        # todo: not necessarily true in self-supervised learning
+        all_ground_truths = tuple(yyhat.y_true for yyhat in predictions_and_truths)
+        if not all(torch.equal(all_ground_truths[0], ground_truth) for ground_truth in all_ground_truths):
+            raise ValueError("Expected all ground truths to be the same per subject, but that was not the case")
+
+        # Set prediction to the average of all predictions, and the ground truth to the only element in the set
+        _pred = torch.mean(torch.cat([torch.unsqueeze(yyhat.y_pred, dim=0)
+                                      for yyhat in predictions_and_truths], dim=0), dim=0)
+        _true = all_ground_truths[0]
+        subjects_pred_and_true[subject] = YYhat(y_pred=_pred, y_true=_true)
+
+    # Get as torch tensors
+    all_y_pred = torch.cat([yyhat.y_pred for yyhat in subjects_pred_and_true.values()], dim=0)
+    all_y_true = torch.cat([yyhat.y_true for yyhat in subjects_pred_and_true.values()], dim=0)
+    return all_y_pred, all_y_true
+
+
 def compute_distribution_distance(metric: str, *, x1: torch.Tensor, x2: torch.Tensor):
     """Function for computing the distance between two distributions"""
     return DistanceMetrics.compute_distance(metric=metric, x1=x1, x2=x2)
