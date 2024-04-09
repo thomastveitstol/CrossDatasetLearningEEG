@@ -1,5 +1,3 @@
-from matplotlib import pyplot
-
 from cdl_eeg.data.datasets.mpi_lemon import MPILemon
 from cdl_eeg.data.preprocessing import save_preprocessed_epochs
 
