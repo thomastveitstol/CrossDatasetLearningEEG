@@ -320,7 +320,11 @@ PRETTY_NAME = {"auc": "AUC",
                "yulin_wang": "YulinWang",
                "rockhill": "Rockhill",
                "mpi_lemon": "MPI Lemon",
-               "miltiadous": "Miltiadous"}
+               "miltiadous": "Miltiadous",
+               "HatlestadHall": "HatlestadHall",
+               "Miltiadous": "Miltiadous",
+               "YulinWang": "YulinWang",
+               "MPILemon": "MPI Lemon"}
 
 # Cosmetics
 FONTSIZE = 17
@@ -331,15 +335,15 @@ FIGSIZE = (16, 9)
 # Main functions
 # --------------
 def main_lodo():
-    folder_name = "easter_runs"  # "debug_results_1"
+    folder_name = "april_8"  # "debug_results_1"
 
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Inception depth"
+    hyperparameter_name = r"Weighted loss ($\lambda$)"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
-    dataset = "mpi_lemon"
+    dataset = "MPILemon"
     performance_metric = "auc"
     balance_validation_performance = True
 
@@ -405,18 +409,18 @@ def main_lodo():
 
 
 def main_inverted_lodo():
-    folder_name = "easter_runs"
+    folder_name = "april_8"  # "easter_runs"
 
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Time series length (s)"
+    hyperparameter_name = "DL Architecture"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
     # Datasets
-    source_dataset = "rockhill"
+    source_dataset = "YulinWang"
     performance_metric = "auc"
-    jitter = None
+    jitter = 0.1  # None
 
     alpha = 0.2
 
@@ -494,6 +498,7 @@ def main_inverted_lodo():
     pyplot.xticks(fontsize=FONTSIZE)
     pyplot.yticks(fontsize=FONTSIZE)
     pyplot.title(f"Source dataset: {PRETTY_NAME[source_dataset]}", fontsize=FONTSIZE+3)
+    pyplot.grid()
 
     pyplot.show()
 
