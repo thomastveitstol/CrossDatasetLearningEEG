@@ -287,7 +287,7 @@ class Histories:
 
                 # Set prediction to the average of all predictions, and the ground truth to the only element in the set
                 _pred = torch.mean(torch.cat([torch.unsqueeze(yyhat.y_pred, dim=0)
-                                              for yyhat in predictions_and_truths], dim=0), dim=0)
+                                              for yyhat in predictions_and_truths], dim=0), dim=0, keepdim=True)
                 _true = all_ground_truths[0]
                 subjects_pred_and_true[subject] = YYhat(y_pred=_pred, y_true=_true)
 
@@ -307,8 +307,15 @@ class Histories:
                     # Extract their predictions and targets
                     sub_group_y_pred = torch.cat([subjects_pred_and_true[subject].y_pred
                                                   for subject in sub_group_subjects], dim=0)
-                    sub_group_y_true = torch.cat([subjects_pred_and_true[subject].y_true
-                                                  for subject in sub_group_subjects], dim=0)
+                    sub_group_y_true = torch.cat([
+                        torch.unsqueeze(subjects_pred_and_true[subject].y_true, dim=0)
+                        if subjects_pred_and_true[subject].y_true.dim() == 0
+                        else subjects_pred_and_true[subject].y_true
+                        for subject in sub_group_subjects],
+                        dim=0)
+
+                    # Maybe remove redundant dimension
+                    sub_group_y_pred = torch.squeeze(sub_group_y_pred, dim=-1)
 
                     # Loop through and calculate the metrics
                     for metric_name, metric_values in sub_group_metrics.items():
@@ -761,13 +768,18 @@ def _aggregate_predictions_and_ground_truths(*, subjects, y_pred, y_true):
 
         # Set prediction to the average of all predictions, and the ground truth to the only element in the set
         _pred = torch.mean(torch.cat([torch.unsqueeze(yyhat.y_pred, dim=0)
-                                      for yyhat in predictions_and_truths], dim=0), dim=0)
+                                      for yyhat in predictions_and_truths], dim=0), dim=0, keepdim=True)
         _true = all_ground_truths[0]
         subjects_pred_and_true[subject] = YYhat(y_pred=_pred, y_true=_true)
 
     # Get as torch tensors
     all_y_pred = torch.cat([yyhat.y_pred for yyhat in subjects_pred_and_true.values()], dim=0)
-    all_y_true = torch.cat([yyhat.y_true for yyhat in subjects_pred_and_true.values()], dim=0)
+    all_y_true = torch.cat([torch.unsqueeze(yyhat.y_true, dim=0) if yyhat.y_true.dim() == 0 else yyhat.y_true
+                            for yyhat in subjects_pred_and_true.values()], dim=0)
+
+    # Maybe remove redundant dimension
+    all_y_pred = torch.squeeze(all_y_pred, dim=-1)
+
     return all_y_pred, all_y_true
 
 
