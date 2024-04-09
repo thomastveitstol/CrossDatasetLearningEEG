@@ -520,7 +520,7 @@ def strip_tensors(tensors, fill_val=-1):
     for dataset_name, x in tensors.items():
         # Get the indices of which indices to keep
         ghost_tensor = torch.ones(size=x.size()[1:]) * fill_val
-        kept_indices = [i for i, tensor in enumerate(x) if not torch.equal(tensor, ghost_tensor)]
+        kept_indices = [i for i, tensor in enumerate(x) if not torch.equal(tensor, ghost_tensor)]  # type: ignore
 
         # If no data is supposed to be used in the batch, the dataset should be deleted. Otherwise, keep only the real
         # ones
