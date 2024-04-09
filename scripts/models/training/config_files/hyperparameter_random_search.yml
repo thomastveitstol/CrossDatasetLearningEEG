@@ -251,7 +251,7 @@ CentroidPolygons: &CentroidPolygons
       domain: [[2, 2, 2, 2, 2, 2, 2], [3, 3, 3, 3, 3, 3, 3, 3], [2, 3, 2, 3, 2, 3, 2, 3, 2], [4, 3, 2, 3, 4, 3, 2, 3, 4]]
 
 MontageSplits: &MontageSplits
-  VoronoiSplit: *VoronoiSplit
+  # VoronoiSplit: *VoronoiSplit
   CentroidPolygons: *CentroidPolygons
 
 RegionBasedPooling: &RegionBasedPooling

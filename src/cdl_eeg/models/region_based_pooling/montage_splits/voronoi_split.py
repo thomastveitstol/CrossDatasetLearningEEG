@@ -12,6 +12,11 @@ from cdl_eeg.models.transformations.utils import UnivariateUniform
 
 
 class VoronoiSplit(MontageSplitBase):
+    """
+    This is not going to be used in the paper, but I won't remove it in case anyone would ever be interested in it.
+
+    PS: I didn't finish the implementation for 'min_nodes' != 1
+    """
 
     __slots__ = "_voronoi"
 
