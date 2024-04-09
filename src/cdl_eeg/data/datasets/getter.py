@@ -6,6 +6,7 @@ from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.mpi_lemon import MPILemon
 from cdl_eeg.data.datasets.ous_dataset import OUS
+from cdl_eeg.data.datasets.td_brain import TDBrain
 from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
 
 
@@ -25,7 +26,8 @@ def get_dataset(dataset_name, **kwargs):
     EEGDatasetBase
     """
     # All available datasets must be included here
-    available_datasets: Tuple[Type[EEGDatasetBase], ...] = (Miltiadous, HatlestadHall, YulinWang, OUS, CAUEEG, MPILemon)
+    available_datasets: Tuple[Type[EEGDatasetBase], ...] = (Miltiadous, HatlestadHall, YulinWang, OUS, CAUEEG, MPILemon,
+                                                            TDBrain)
 
     # Loop through and select the correct one
     for dataset in available_datasets:
