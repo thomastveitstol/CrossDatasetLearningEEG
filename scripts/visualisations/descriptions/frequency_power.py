@@ -34,7 +34,6 @@ def main():
     kwargs = {"HatlestadHall": {"derivatives": True, "session": "t1"},
               "YulinWang": {"derivatives": True, "visit": 1, "recording": "EC"},
               "Miltiadous": {},
-              "Rockhill": {"on": True, "excluded_channels": "EXG"},
               "CAUEEG": {"excluded_channels": ["Photic", "EKG"]}}
 
     # Loop through all datasets
