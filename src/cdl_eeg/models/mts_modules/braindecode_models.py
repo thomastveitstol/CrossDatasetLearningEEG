@@ -405,7 +405,7 @@ class EEGResNetMTS(MTSModuleBase):
     # Properties
     # ----------------
     @property
-    def latent_features_dim(self) -> int:
+    def latent_features_dim(self):
         # The latent features dimension is inferred from the dimension of their 'classifier_conv'
         return self._model.final_layer.conv_classifier.in_channels
 
