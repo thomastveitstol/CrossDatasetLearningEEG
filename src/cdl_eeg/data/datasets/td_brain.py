@@ -2,9 +2,11 @@ import os
 from typing import Tuple, List
 
 import mne
+import numpy
 import pandas
 
-from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase
+from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, target_method
+from cdl_eeg.data.datasets.utils import sex_to_int
 
 
 class TDBrain(EEGDatasetBase):
@@ -28,6 +30,9 @@ class TDBrain(EEGDatasetBase):
     1273
     >>> TDBrain().get_subject_ids()[:3]
     ('sub-19681349', 'sub-19681385', 'sub-19684666')
+    >>> # The discrepancy in sex with the .tsv file is due to differences in integer to sex mapping
+    >>> TDBrain().sex(TDBrain().get_subject_ids()[:3])
+    array([1, 0, 0])
     """
 
     # Extracting channel names from Table 3 in the paper
@@ -78,7 +83,18 @@ class TDBrain(EEGDatasetBase):
     # ----------------
     # Target methods
     # ----------------
-    # todo: add targets. Also, when adding sex, need to check what 0 and 1 is
+    @target_method
+    def sex(self, subject_ids):
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
+
+        # Convert to sex dict. Duplicates in the .tsv file should not be a problem as the kay/value pair will just be
+        # overridden. Need to remove the one nan value, thus requiring string participant IDs
+        sex = {sub_id: sex_to_int(_int_to_sex(gender)) for sub_id, gender in zip(df["participants_ID"], df["gender"])
+               if isinstance(sub_id, str)}
+
+        # Select the ones passed in the subjects list, and return as numpy array
+        return numpy.array([sex[sub_id] for sub_id in subject_ids])
 
     # ----------------
     # Channel system
@@ -92,3 +108,16 @@ class TDBrain(EEGDatasetBase):
 
     def channel_name_to_index(self):
         return {ch_name: i for i, ch_name in enumerate(self._channel_names)}
+
+
+# -------------
+# Functions
+# -------------
+def _int_to_sex(integer):
+    # This mapping was taken from the TDBRIAN_participants_V2.json file
+    if integer == 0:
+        return "female"
+    elif integer == 1:
+        return "male"
+    else:
+        raise ValueError(f"Unexpected integer sex: {integer}")
