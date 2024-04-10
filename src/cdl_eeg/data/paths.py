@@ -1,9 +1,8 @@
 """
 Functions for getting the path to different files related to the data and results
 """
+import json
 import os
-
-import yaml
 
 
 def get_results_dir():
@@ -25,7 +24,7 @@ def get_results_dir():
 def get_raw_data_storage_path():
     """
     Get the path to where the newly downloaded data is (supposed to be) stored. It should be specified in the
-    'config_paths.yml' file
+    'config_paths.json' file
 
     Returns
     -------
@@ -33,9 +32,9 @@ def get_raw_data_storage_path():
         The path to where the data is stored, or to be stored (e.g. in the scripts for downloading)
     """
     # Load the config file for paths
-    config_path = os.path.join(os.path.dirname(__file__), "config_paths.yml")
+    config_path = os.path.join(os.path.dirname(__file__), "config_paths.json")
     with open(config_path) as f:
-        config = yaml.safe_load(f)
+        config = json.load(f)
 
     return config["MNEPath"]
 

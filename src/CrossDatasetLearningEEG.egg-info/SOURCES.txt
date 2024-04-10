@@ -13,6 +13,7 @@ src/cdl_eeg/py.typed
 src/cdl_eeg/data/__init__.py
 src/cdl_eeg/data/combined_datasets.py
 src/cdl_eeg/data/config_file_generator.py
+src/cdl_eeg/data/config_paths.json
 src/cdl_eeg/data/interpolate_datasets.py
 src/cdl_eeg/data/paths.py
 src/cdl_eeg/data/preprocessing.py
