@@ -499,7 +499,7 @@ class Deep4NetMTS(MTSModuleBase):
 
     How the model looks like (the softmax/LogSoftmax activation function has been removed)
 
-    >>> Deep4NetMTS(19, 3, 1000)  # doctest: +NORMALIZE_WHITESPACE
+    >>> Deep4NetMTS(19, 3, 1800)  # doctest: +NORMALIZE_WHITESPACE
     Deep4NetMTS(
       (_model): Deep4Net(
         (ensuredims): Ensure4d()
@@ -531,7 +531,7 @@ class Deep4NetMTS(MTSModuleBase):
         (pool_4): MaxPool2d(kernel_size=(3, 1), stride=(3, 1), padding=0, dilation=1, ceil_mode=False)
         (pool_nonlin_4): Expression(expression=identity)
         (final_layer): Sequential(
-          (conv_classifier): Conv2d(200, 3, kernel_size=(7, 1), stride=(1, 1))
+          (conv_classifier): Conv2d(200, 3, kernel_size=(17, 1), stride=(1, 1))
           (squeeze): Expression(expression=squeeze_final_output)
         )
       )
@@ -554,13 +554,66 @@ class Deep4NetMTS(MTSModuleBase):
         self._model = Deep4Net(n_chans=in_channels, n_outputs=num_classes, n_times=num_time_steps,
                                final_conv_length=final_conv_length, add_log_softmax=False, **kwargs)
 
-    def forward(self, x):
+    def extract_latent_features(self, input_tensor):
+        """
+        Method for extracting latent features
+
+        Parameters
+        ----------
+        input_tensor : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> my_model = Deep4NetMTS(in_channels=4, num_classes=3, num_time_steps=1800,
+        ...                        n_filters_4=206)
+        >>> my_model.extract_latent_features(torch.rand(size=(10, 4, 1800))).size()
+        torch.Size([10, 3502])
+        """
+        return self(input_tensor, return_features=True)
+
+    def classify_latent_features(self, input_tensor):
+        """
+        Method for classifying the latent features
+
+        Parameters
+        ----------
+        input_tensor : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> my_model = Deep4NetMTS(in_channels=4, num_classes=8, num_time_steps=1800, n_filters_4=206)
+        >>> my_model.classify_latent_features(torch.rand(size=(10, 3502))).size()
+        torch.Size([10, 8])
+
+        Running (1) feature extraction and (2) classifying is the excact same as just running forward
+
+        >>> my_model = Deep4NetMTS(in_channels=19, num_classes=8, num_time_steps=1500)
+        >>> _ = my_model.eval()
+        >>> my_input = torch.rand(size=(10, 19, 1500))
+        >>> my_output_1 = my_model.classify_latent_features(my_model.extract_latent_features(my_input))
+        >>> my_output_2 = my_model(my_input)
+        >>> torch.equal(my_output_1, my_output_2)
+        True
+        """
+        shape = (input_tensor.size()[0], self._model.n_filters_4, self._model.final_conv_length, 1)
+        return self._model.final_layer(torch.reshape(input_tensor, shape=shape))
+
+    def forward(self, x, return_features=False):
         """
         Forward method
 
         Parameters
         ----------
         x : torch.Tensor
+        return_features : bool
 
         Returns
         -------
@@ -569,9 +622,34 @@ class Deep4NetMTS(MTSModuleBase):
         Examples
         --------
         >>> import torch
-        >>> my_batch, my_channels, my_time_steps = 10, 103, 600*3
-        >>> my_model = Deep4NetMTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps)
+        >>> my_batch, my_channels, my_time_steps = 10, 103, 1800
+        >>> my_model = Deep4NetMTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps,
+        ...                        n_filters_4=206)
         >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps))).size()
         torch.Size([10, 3])
+        >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps)), return_features=True).size()
+        torch.Size([10, 3502])
         """
-        return self._model(x)
+        # If predictions are to be made, just run forward method of the braindecode method
+        if not return_features:
+            return self._model(x)
+
+        activations_name = "latent_features"
+        activation = dict()
+
+        # noinspection PyUnusedLocal
+        def hook(model, inputs):
+            if len(inputs) != 1:
+                raise ValueError(f"Expected only one input, but received {len(inputs)}")
+            activation[activations_name] = inputs[0].detach()
+
+        self._model.final_layer.register_forward_pre_hook(hook)
+
+        # Run forward method, but we are interested the latent features
+        _ = self._model(x)
+        latent_features = activation[activations_name]
+
+        # Fix dimensions. Currently, shape=(batch, n_filters_4, final_conv_length, 1)
+        latent_features = torch.squeeze(latent_features, dim=-1)  # Removing redundant dimension
+        latent_features = torch.reshape(latent_features, shape=(latent_features.size()[0], -1))
+        return latent_features
