@@ -20,9 +20,14 @@ class EEGNetv4MTS(MTSModuleBase):
     --------
     >>> _ = EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=300)
 
+    Latent features
+
+    >>> EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=3000).latent_features_dim
+    1488
+
     How the model looks like (the softmax/LogSoftmax activation function has been removed)
 
-    >>> EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=300)  # doctest: +NORMALIZE_WHITESPACE
+    >>> EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=3000)  # doctest: +NORMALIZE_WHITESPACE
     EEGNetv4MTS(
       (_model): EEGNetv4(
         (ensuredims): Ensure4d()
@@ -42,7 +47,7 @@ class EEGNetv4MTS(MTSModuleBase):
         (pool_2): AvgPool2d(kernel_size=(1, 8), stride=(1, 8), padding=0)
         (drop_2): Dropout(p=0.25, inplace=False)
         (final_layer): Sequential(
-          (conv_classifier): Conv2d(16, 8, kernel_size=(1, 9), stride=(1, 1))
+          (conv_classifier): Conv2d(16, 8, kernel_size=(1, 93), stride=(1, 1))
           (permute_back): Rearrange('batch x y z -> batch x z y')
           (squeeze): Expression(expression=squeeze_final_output)
         )
@@ -58,13 +63,65 @@ class EEGNetv4MTS(MTSModuleBase):
         # ----------------
         self._model = EEGNetv4(n_chans=in_channels, n_outputs=num_classes, n_times=num_time_steps, **kwargs)
 
-    def forward(self, x):
+    def extract_latent_features(self, input_tensor):
+        """
+        Method for extracting latent features
+
+        Parameters
+        ----------
+        input_tensor : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> my_model = EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=500)
+        >>> my_model.extract_latent_features(torch.rand(size=(10, 4, 500))).size()
+        torch.Size([10, 240])
+        """
+        return self(input_tensor, return_features=True)
+
+    def classify_latent_features(self, input_tensor):
+        """
+        Method for classifying the latent features
+
+        Parameters
+        ----------
+        input_tensor : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> my_model = EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=500)
+        >>> my_model.classify_latent_features(torch.rand(size=(10, 240))).size()
+        torch.Size([10, 8])
+
+        Running (1) feature extraction and (2) classifying is the excact same as just running forward
+
+        >>> my_model = EEGNetv4MTS(in_channels=19, num_classes=8, num_time_steps=1500)
+        >>> _ = my_model.eval()
+        >>> my_input = torch.rand(size=(10, 19, 1500))
+        >>> my_output_1 = my_model.classify_latent_features(my_model.extract_latent_features(my_input))
+        >>> my_output_2 = my_model(my_input)
+        >>> torch.equal(my_output_1, my_output_2)
+        True
+        """
+        shape = (input_tensor.size()[0], self._model.F2, 1, self._model.final_conv_length)
+        return self._model.final_layer(torch.reshape(input_tensor, shape=shape))
+
+    def forward(self, x, return_features=False):
         """
         Forward method
 
         Parameters
         ----------
         x : torch.Tensor
+        return_features : bool
 
         Returns
         -------
@@ -73,12 +130,47 @@ class EEGNetv4MTS(MTSModuleBase):
         Examples
         --------
         >>> import torch
-        >>> my_batch, my_channels, my_time_steps = 10, 103, 300
+        >>> my_batch, my_channels, my_time_steps = 10, 103, 3000
         >>> my_model = EEGNetv4MTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps)
         >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps))).size()
         torch.Size([10, 3])
+        >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps)), return_features=True).size()
+        torch.Size([10, 1488])
         """
-        return self._model(x)
+        # If predictions are to be made, just run forward method of the braindecode method
+        if not return_features:
+            return self._model(x)
+
+        # If features prior to the classifier are to be returned instead, these features will be stored inside the
+        # activation dict. Following a combination of https://www.youtube.com/watch?v=syLFCVYua6Q and
+        # https://discuss.pytorch.org/t/how-can-l-load-my-best-model-as-a-feature-extractor-evaluator/17254/5
+        activations_name = "latent_features"
+        activation = dict()
+
+        # noinspection PyUnusedLocal
+        def hook(model, inputs):
+            if len(inputs) != 1:
+                raise ValueError(f"Expected only one input, but received {len(inputs)}")
+            activation[activations_name] = inputs[0].detach()
+
+        self._model.final_layer.register_forward_pre_hook(hook)
+
+        # Run forward method, but we are interested the latent features
+        _ = self._model(x)
+        latent_features = activation[activations_name]
+
+        # Fix the dimension. Currently, shape=(batch, F2, 1, final_conv_length)
+        latent_features = torch.squeeze(latent_features, dim=2)  # Removing redundant dimension
+        latent_features = torch.reshape(latent_features, shape=(latent_features.size()[0], -1))
+        return latent_features
+
+    # ----------------
+    # Properties
+    # ----------------
+    @property
+    def latent_features_dim(self):
+        # The latent features dimension is inferred from the dimension of their 'classifier_conv'
+        return self._model.final_conv_length * self._model.F2
 
 
 class EEGResNetMTS(MTSModuleBase):
