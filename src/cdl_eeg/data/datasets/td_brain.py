@@ -19,10 +19,13 @@ class TDBrain(EEGDatasetBase):
     Participant 'sub-19703068' has an error in the .eeg file in the .vhdr file. The problem is using '=' instead of ".".
     It was fixed manually. todo: contact providers
 
+    The .vhdr file of sub-19703550 was also fixed manually, as there were two instances where 3 was replaced by 6 in the
+    ID
+
     Examples
     --------
     >>> len(TDBrain().get_subject_ids())
-    1274
+    1273
     >>> TDBrain().get_subject_ids()[:3]
     ('sub-19681349', 'sub-19681385', 'sub-19684666')
     """
@@ -42,7 +45,8 @@ class TDBrain(EEGDatasetBase):
         # Keep only a unique set. This implementation is reproducible
         uniques: List[str] = []
         for participant in participants:
-            if participant not in uniques:
+            # Requiring the participant ID to be a string effectively removes a nan participant
+            if participant not in uniques and isinstance(participant, str):
                 uniques.append(participant)
 
         return tuple(uniques)
@@ -50,14 +54,21 @@ class TDBrain(EEGDatasetBase):
     def get_participants_tsv_path(self):
         return os.path.join(self.get_mne_path(), "TDBRAIN_participants_V2_data", "TDBRAIN_participants_V2.tsv")
 
-    def _load_single_raw_mne_object(self, subject_id):
-        # Create path
+    def _load_single_raw_mne_object(self, subject_id, *, preload=True):
+        # Create path. We will use the first available one
         # todo: hard-coding eyes closed here...
-        subject_path = f"{subject_id}/ses-1/eeg/{subject_id}_ses-1_task-restEC_eeg.vhdr"
-        path = os.path.join(self.get_mne_path(), subject_path)
+        for session in ("ses-1", "ses-2", "ses-3"):
+            subject_path = f"{subject_id}/{session}/eeg/{subject_id}_{session}_task-restEC_eeg.vhdr"
+            path = os.path.join(self.get_mne_path(), subject_path)
+
+            if os.path.isfile(path):
+                break
+
+        else:  # This will only run if we did not break after the for-loop
+            raise ValueError(f"No sessions found for subject {subject_id}")
 
         # Make MNE raw object
-        raw: mne.io.Raw = mne.io.read_raw_brainvision(vhdr_fname=path, preload=True, verbose=False)
+        raw: mne.io.Raw = mne.io.read_raw_brainvision(vhdr_fname=path, preload=preload, verbose=False)
 
         # Drop non-eeg channels
         raw.drop_channels(("VPVA", "VNVB", "HPHL", "HNHR", "Erbs", "OrbOcc", "Mass"))
