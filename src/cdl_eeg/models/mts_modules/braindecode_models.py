@@ -653,3 +653,11 @@ class Deep4NetMTS(MTSModuleBase):
         latent_features = torch.squeeze(latent_features, dim=-1)  # Removing redundant dimension
         latent_features = torch.reshape(latent_features, shape=(latent_features.size()[0], -1))
         return latent_features
+
+    # ----------------
+    # Properties
+    # ----------------
+    @property
+    def latent_features_dim(self):
+        # The latent features dimension is inferred from the dimension of their 'classifier_conv'
+        return self._model.n_filters_4 * self._model.final_conv_length
