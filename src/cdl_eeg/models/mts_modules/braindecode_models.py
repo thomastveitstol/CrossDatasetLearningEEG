@@ -183,9 +183,14 @@ class EEGResNetMTS(MTSModuleBase):
     --------
     >>> _ = EEGResNetMTS(in_channels=4, num_classes=8, num_time_steps=300)
 
+    Latent features dimension
+
+    >>> EEGResNetMTS(in_channels=4, num_classes=8, num_time_steps=300, n_first_filters=22).latent_features_dim
+    66
+
     How the model looks like (the softmax/LogSoftmax activation function has been removed)
 
-    >>> EEGResNetMTS(in_channels=4, num_classes=8, num_time_steps=300)  # doctest: +NORMALIZE_WHITESPACE
+    >>> EEGResNetMTS(in_channels=4, num_classes=8, num_time_steps=3000)  # doctest: +NORMALIZE_WHITESPACE
     EEGResNetMTS(
       (_model): EEGResNet(
         (ensuredims): Ensure4d()
@@ -295,18 +300,70 @@ class EEGResNetMTS(MTSModuleBase):
         # Initialise the model
         #
         # todo: default value of n_first_filters not provided by braindecode
+        # Also, I don't think the 'n_times' is actually used?
         # ----------------
         self._model = EEGResNet(n_chans=in_channels, n_outputs=num_classes, n_times=num_time_steps,
                                 final_pool_length=final_pool_length, n_first_filters=n_first_filters,
                                 add_log_softmax=False, **kwargs)
 
-    def forward(self, x):
+    def extract_latent_features(self, input_tensor):
+        """
+        Method for extracting latent features
+
+        Parameters
+        ----------
+        input_tensor : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> my_model = EEGResNetMTS(in_channels=4, num_classes=8, num_time_steps=500, n_first_filters=22)
+        >>> my_model.extract_latent_features(torch.rand(size=(10, 4, 500))).size()
+        torch.Size([10, 66])
+        """
+        return self(input_tensor, return_features=True)
+
+    def classify_latent_features(self, input_tensor):
+        """
+        Method for classifying the latent features
+
+        Parameters
+        ----------
+        input_tensor : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> my_model = EEGResNetMTS(in_channels=4, num_classes=8, num_time_steps=500, n_first_filters=22)
+        >>> my_model.classify_latent_features(torch.rand(size=(10, 66))).size()
+        torch.Size([10, 8])
+
+        Running (1) feature extraction and (2) classifying is the excact same as just running forward
+
+        >>> my_model = EEGResNetMTS(in_channels=19, num_classes=8, num_time_steps=1500, n_first_filters=22)
+        >>> _ = my_model.eval()
+        >>> my_input = torch.rand(size=(10, 19, 1500))
+        >>> my_output_1 = my_model.classify_latent_features(my_model.extract_latent_features(my_input))
+        >>> my_output_2 = my_model(my_input)
+        >>> torch.equal(my_output_1, my_output_2)
+        True
+        """
+        return self._model.final_layer(torch.unsqueeze(torch.unsqueeze(input_tensor, dim=-1), dim=-1))
+
+    def forward(self, x, return_features=False):
         """
         Forward method
 
         Parameters
         ----------
         x : torch.Tensor
+        return_features : bool
 
         Returns
         -------
@@ -319,8 +376,38 @@ class EEGResNetMTS(MTSModuleBase):
         >>> my_model = EEGResNetMTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps)
         >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps))).size()
         torch.Size([10, 3])
+        >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps)), return_features=True).size()
+        torch.Size([10, 18])
         """
-        return self._model(x)
+        # If predictions are to be made, just run forward method of the braindecode method
+        if not return_features:
+            return self._model(x)
+
+        activations_name = "latent_features"
+        activation = dict()
+
+        # noinspection PyUnusedLocal
+        def hook(model, inputs):
+            if len(inputs) != 1:
+                raise ValueError(f"Expected only one input, but received {len(inputs)}")
+            activation[activations_name] = inputs[0].detach()
+
+        self._model.final_layer.register_forward_pre_hook(hook)
+
+        # Run forward method, but we are interested the latent features
+        _ = self._model(x)
+        latent_features = activation[activations_name]
+
+        # Remove redundant dimensions. Currently, shape=(batch, features, 1, 1)
+        return torch.squeeze(latent_features)
+
+    # ----------------
+    # Properties
+    # ----------------
+    @property
+    def latent_features_dim(self) -> int:
+        # The latent features dimension is inferred from the dimension of their 'classifier_conv'
+        return self._model.final_layer.conv_classifier.in_channels
 
 
 class ShallowFBCSPNetMTS(MTSModuleBase):
