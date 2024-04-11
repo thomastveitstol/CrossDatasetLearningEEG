@@ -15,7 +15,7 @@ def test_multi_ms_mean_forward():
     num_regions = (4, 7, 3)
 
     # Define model
-    model = MultiMSMean()
+    model = MultiMSMean(num_regions=num_regions)
 
     # ---------------
     # Prepare inputs to forward method
