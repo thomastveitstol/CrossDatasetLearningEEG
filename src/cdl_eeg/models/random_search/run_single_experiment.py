@@ -503,7 +503,7 @@ class Experiment:
         # Compute the pre-computed features
         if model.supports_precomputing:
             train_pre_computed, val_pre_computed = self._get_pre_computed_features(model=model, train_data=train_data,
-                                                                               val_data=val_data)
+                                                                                   val_data=val_data)
         else:
             train_pre_computed, val_pre_computed = None, None
 
