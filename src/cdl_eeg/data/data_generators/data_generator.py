@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy
 import torch
 from torch.utils.data import Dataset
@@ -174,13 +176,18 @@ class DownstreamDataGenerator(Dataset):  # type: ignore[type-arg]
 
         # TODO: quite hard coded?
         if self._pre_computed is None:
-            return data, targets, item
+            return data, torch.tensor(float("nan")), targets, item
         else:
             # assert False, {type(pre_comp) for pre_comp in self._pre_computed}
             pre_computed = []
             for pre_comp in self._pre_computed:
-                my_dict = {data_name: torch.ones(tensor.size()[2:]) * (-1) for data_name, tensor in pre_comp.items()}
-                my_dict[dataset_name] = pre_comp[dataset_name][subject_idx][epoch_idx]
+                if pre_comp is None:
+                    my_dict = {data_name: torch.tensor(float("nan")) for data_name in self.dataset_names}
+                else:
+                    my_dict = {data_name: torch.ones(tensor.size()[2:]) * (-1)
+                               for data_name, tensor in pre_comp.items()}
+                    my_dict[dataset_name] = pre_comp[dataset_name][subject_idx][epoch_idx]
+
                 pre_computed.append(my_dict)
 
             # TODO: must fix return, as KeyError is raised when collating
@@ -513,7 +520,34 @@ def strip_tensors(tensors, fill_val=-1):
     >>> all(torch.equal(new_tensor, old_tensor) for new_tensor, old_tensor  # type: ignore[attr-defined]
     ...     in zip(my_stripped_tensors.values(), my_tensors.values()))
     True
+
+    If all tensors only contain nan values, None is returned
+
+    >>> strip_tensors({"d1": torch.tensor([float("nan"), float("nan"), float("nan"), float("nan")]),
+    ...                "d2": torch.tensor([float("nan"), float("nan")])}) is None
+    True
     """
+    # -------------
+    # Maybe ignore all tensors
+    # -------------
+    is_nan: List[bool] = []
+    for tensor in tensors.values():
+        # assert False, torch.isnan(tensor)
+        if torch.all(torch.isnan(tensor)):
+            is_nan.append(True)
+        elif torch.any(torch.isnan(tensor)):
+            raise ValueError("Expected all all or none of the values in the tensor to be 'nan', but found both")
+        else:
+            is_nan.append(False)
+
+    if all(is_nan):
+        return None
+    elif any(is_nan):
+        ValueError("Expected all all or none of the tensor to be 'nan', but found both")
+
+    # -------------
+    # Remove ghost tensors
+    # -------------
     # Loop through all datasets. Changing values while iterating is ok, inserting/deleting is not. Thanks, James
     # 'mCoding' Murphy (Sec. 13): https://www.youtube.com/watch?v=E8NijUYfyus
     to_delete = set()

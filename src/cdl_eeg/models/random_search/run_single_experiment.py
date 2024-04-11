@@ -501,8 +501,11 @@ class Experiment:
         )
 
         # Compute the pre-computed features
-        train_pre_computed, val_pre_computed = self._get_pre_computed_features(model=model, train_data=train_data,
+        if model.supports_precomputing:
+            train_pre_computed, val_pre_computed = self._get_pre_computed_features(model=model, train_data=train_data,
                                                                                val_data=val_data)
+        else:
+            train_pre_computed, val_pre_computed = None, None
 
         # Create data generators
         train_gen = DownstreamDataGenerator(data=train_data, targets=train_targets, pre_computed=train_pre_computed,
@@ -525,11 +528,14 @@ class Experiment:
         test_targets = target_scaler.transform(test_targets)
 
         # Compute the pre-computed features
-        test_pre_computed = model.pre_compute(
-            input_tensors={dataset_name: torch.tensor(data, dtype=torch.float).to(self._device)
-                           for dataset_name, data in test_data.items()})
-        test_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=torch.device("cpu"))
-                                  for pre_comp in test_pre_computed)
+        if model.supports_precomputing:
+            test_pre_computed = model.pre_compute(
+                input_tensors={dataset_name: torch.tensor(data, dtype=torch.float).to(self._device)
+                               for dataset_name, data in test_data.items()})
+            test_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=torch.device("cpu"))
+                                      for pre_comp in test_pre_computed)
+        else:
+            test_pre_computed = None
 
         # Create data generators
         test_gen = DownstreamDataGenerator(data=test_data, targets=test_targets, pre_computed=test_pre_computed,

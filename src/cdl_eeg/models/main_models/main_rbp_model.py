@@ -264,7 +264,10 @@ class MainRBPModel(nn.Module):
                 # Strip the dictionaries for 'ghost tensors'
                 x_train = strip_tensors(x_train)
                 y_train = strip_tensors(y_train)
-                train_pre_computed = [strip_tensors(pre_comp) for pre_comp in train_pre_computed]
+                if isinstance(train_pre_computed, torch.Tensor) and torch.all(torch.isnan(train_pre_computed)):
+                    train_pre_computed = None
+                else:
+                    train_pre_computed = [strip_tensors(pre_comp) for pre_comp in train_pre_computed]
 
                 # Extract subjects and correct the ordering
                 subjects = reorder_subjects(order=tuple(x_train.keys()),
@@ -273,8 +276,9 @@ class MainRBPModel(nn.Module):
                 # Send data to correct device
                 x_train = tensor_dict_to_device(x_train, device=device)
                 y_train = flatten_targets(y_train).to(device)
-                train_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
-                                           for pre_comp in train_pre_computed)
+                if train_pre_computed is not None:
+                    train_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                               for pre_comp in train_pre_computed)
 
                 # Forward pass
                 classifier_output, discriminator_output = self(x_train, pre_computed=train_pre_computed,
@@ -328,7 +332,10 @@ class MainRBPModel(nn.Module):
                     # Strip the dictionaries for 'ghost tensors'
                     x_val = strip_tensors(x_val)
                     y_val = strip_tensors(y_val)
-                    val_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in val_pre_computed)
+                    if isinstance(val_pre_computed, torch.Tensor) and torch.all(torch.isnan(val_pre_computed)):
+                        val_pre_computed = None
+                    else:
+                        val_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in val_pre_computed)
 
                     # Extract subjects and correct the ordering
                     val_subjects = reorder_subjects(
@@ -339,8 +346,9 @@ class MainRBPModel(nn.Module):
                     # Send data to correct device
                     x_val = tensor_dict_to_device(x_val, device=device)
                     y_val = flatten_targets(y_val).to(device)
-                    val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
-                                             for pre_comp in val_pre_computed)
+                    if val_pre_computed is not None:
+                        val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                                 for pre_comp in val_pre_computed)
 
                     # Forward pass, getting both classifier and domain discriminator outputs
                     y_pred, discriminator_output = self(x_val, pre_computed=val_pre_computed,
@@ -378,7 +386,10 @@ class MainRBPModel(nn.Module):
                         # Strip the dictionaries for 'ghost tensors'
                         x_test = strip_tensors(x_test)
                         y_test = strip_tensors(y_test)
-                        test_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in test_pre_computed)
+                        if isinstance(test_pre_computed, torch.Tensor) and torch.all(torch.isnan(test_pre_computed)):
+                            test_pre_computed = None
+                        else:
+                            test_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in test_pre_computed)
 
                         # Extract subjects and correct the ordering
                         test_subjects = reorder_subjects(
@@ -389,8 +400,9 @@ class MainRBPModel(nn.Module):
                         # Send data to correct device
                         x_test = tensor_dict_to_device(x_test, device=device)
                         y_test = flatten_targets(y_test).to(device)
-                        test_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
-                                                  for pre_comp in test_pre_computed)
+                        if test_pre_computed is not None:
+                            test_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                                      for pre_comp in test_pre_computed)
 
                         # Forward pass
                         y_pred = self(x_test, pre_computed=test_pre_computed,
@@ -482,7 +494,11 @@ class MainRBPModel(nn.Module):
                 # Strip the dictionaries for 'ghost tensors'
                 x_train = strip_tensors(x_train)
                 y_train = strip_tensors(y_train)
-                train_pre_computed = [strip_tensors(pre_comp) for pre_comp in train_pre_computed]
+
+                if isinstance(train_pre_computed, torch.Tensor) and torch.all(torch.isnan(train_pre_computed)):
+                    train_pre_computed = None
+                else:
+                    train_pre_computed = [strip_tensors(pre_comp) for pre_comp in train_pre_computed]
 
                 # Extract subjects and correct the ordering
                 subjects = reorder_subjects(order=tuple(x_train.keys()),
@@ -491,8 +507,9 @@ class MainRBPModel(nn.Module):
                 # Send data to correct device
                 x_train = tensor_dict_to_device(x_train, device=device)
                 y_train = flatten_targets(y_train).to(device)
-                train_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
-                                           for pre_comp in train_pre_computed)
+                if train_pre_computed is not None:
+                    train_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                               for pre_comp in train_pre_computed)
 
                 # Forward pass
                 output = self(x_train, pre_computed=train_pre_computed, channel_name_to_index=channel_name_to_index)
@@ -531,7 +548,10 @@ class MainRBPModel(nn.Module):
                     # Strip the dictionaries for 'ghost tensors'
                     x_val = strip_tensors(x_val)
                     y_val = strip_tensors(y_val)
-                    val_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in val_pre_computed)
+                    if isinstance(val_pre_computed, torch.Tensor) and torch.all(torch.isnan(val_pre_computed)):
+                        val_pre_computed = None
+                    else:
+                        val_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in val_pre_computed)
 
                     # Extract subjects and correct the ordering
                     val_subjects = reorder_subjects(
@@ -542,8 +562,9 @@ class MainRBPModel(nn.Module):
                     # Send data to correct device
                     x_val = tensor_dict_to_device(x_val, device=device)
                     y_val = flatten_targets(y_val).to(device)
-                    val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
-                                             for pre_comp in val_pre_computed)
+                    if val_pre_computed is not None:
+                        val_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                                 for pre_comp in val_pre_computed)
 
                     # Forward pass
                     y_pred = self(x_val, pre_computed=val_pre_computed, channel_name_to_index=channel_name_to_index)
@@ -570,7 +591,10 @@ class MainRBPModel(nn.Module):
                         # Strip the dictionaries for 'ghost tensors'
                         x_test = strip_tensors(x_test)
                         y_test = strip_tensors(y_test)
-                        test_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in test_pre_computed)
+                        if isinstance(test_pre_computed, torch.Tensor) and torch.all(torch.isnan(test_pre_computed)):
+                            test_pre_computed = None
+                        else:
+                            test_pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in test_pre_computed)
 
                         # Extract subjects and correct the ordering
                         test_subjects = reorder_subjects(
@@ -581,8 +605,9 @@ class MainRBPModel(nn.Module):
                         # Send data to correct device
                         x_test = tensor_dict_to_device(x_test, device=device)
                         y_test = flatten_targets(y_test).to(device)
-                        test_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
-                                                  for pre_comp in test_pre_computed)
+                        if test_pre_computed is not None:
+                            test_pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device)
+                                                      for pre_comp in test_pre_computed)
 
                         # Forward pass
                         y_pred = self(x_test, pre_computed=test_pre_computed,
@@ -633,12 +658,16 @@ class MainRBPModel(nn.Module):
                 # Strip the dictionaries for 'ghost tensors'
                 x = strip_tensors(x)
                 y = strip_tensors(y)
-                pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in pre_computed)
+                if isinstance(pre_computed, torch.Tensor) and torch.all(torch.isnan(pre_computed)):
+                    pre_computed = None
+                else:
+                    pre_computed = tuple(strip_tensors(pre_comp) for pre_comp in pre_computed)
 
                 # Send data to correct device
                 x = tensor_dict_to_device(x, device=device)
                 y = flatten_targets(y).to(device)
-                pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device) for pre_comp in pre_computed)
+                if pre_computed is not None:
+                    pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device) for pre_comp in pre_computed)
 
                 # Forward pass
                 y_pred = self(x, pre_computed=pre_computed, channel_name_to_index=channel_name_to_index)

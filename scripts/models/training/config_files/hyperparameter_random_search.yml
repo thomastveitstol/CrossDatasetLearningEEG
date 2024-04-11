@@ -24,27 +24,27 @@ LatentFeatureDistribution:
 
 Datasets:
   TDBrain:
-    num_subjects: 1273
+    num_subjects: 10  # 1273
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ sex ]
   Miltiadous:
-    num_subjects: 88
+    num_subjects: 10  # 88
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
   HatlestadHall:
-    num_subjects: 111
+    num_subjects: 10  # 111
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
   YulinWang:
-    num_subjects: 60
+    num_subjects: 10  # 60
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
   MPILemon:
-    num_subjects: 203
+    num_subjects: 10  # 203
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
@@ -205,6 +205,8 @@ max_receptive_field: &max_receptive_field
     a: 2
     b: 2.5
 
+MultiMSMean: &MultiMSMean {}
+
 MultiCSSharedRocket: &MultiCSSharedRocket
   num_kernels: *num_kernels
   max_receptive_field: *max_receptive_field
@@ -222,6 +224,7 @@ MultiMSSharedRocketHeadRegion: &MultiMSSharedRocketHeadRegion
   bias: false
 
 PoolingModules: &PoolingModules
+  MultiMSMean: *MultiMSMean
   MultiCSSharedRocket: *MultiCSSharedRocket
   MultiMSSharedRocketHeadRegion: *MultiMSSharedRocketHeadRegion
 

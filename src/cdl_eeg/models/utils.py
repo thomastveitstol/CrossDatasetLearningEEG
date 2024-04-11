@@ -35,13 +35,17 @@ def tensor_dict_to_device(tensors, device):
 
     Parameters
     ----------
-    tensors : dict[str, torch.Tensor]
+    tensors : dict[str, torch.Tensor] | None
     device : torch.device
 
     Returns
     -------
     dict[str, torch.Tensor]
     """
+    # If the tensor is None, then None is returned
+    if tensors is None:
+        return None
+
     # Input check
     if not all(isinstance(tensor, torch.Tensor) for tensor in tensors.values()):
         raise TypeError(f"Expected all values in the dictionary to be torch tensors, but found "
