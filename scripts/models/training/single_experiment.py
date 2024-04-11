@@ -57,7 +57,7 @@ def main():
     # ---------------
     # Make selection. We will use the same for all datasets
     # todo: Not sure how I feel about this hard-coding
-    preprocessed_folder = "preprocessed_2024-04-05_114614"
+    preprocessed_folder = "preprocessed_2024-04-10_103043"
     available_versions = os.listdir(os.path.join(get_numpy_data_storage_path(), preprocessed_folder))
     available_versions = tuple(version for version in available_versions if version[:5] == "data_")
     pre_processed_folder = random.choice(available_versions)
