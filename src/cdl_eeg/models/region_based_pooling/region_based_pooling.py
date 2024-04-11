@@ -471,7 +471,7 @@ class RegionBasedPooling(nn.Module):
 
         Returns
         -------
-        tuple[dict[str, torch.Tensor], ...]
+        tuple[dict[str, torch.Tensor] | None, ...]
             A tuple of pre-computed tensors (one pr. RBP module). The element will be None if the corresponding
             pooling module does not support pre-computing
         """
