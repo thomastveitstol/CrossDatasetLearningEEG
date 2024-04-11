@@ -665,6 +665,10 @@ class MainRBPModel(nn.Module):
     # Properties
     # ----------------
     @property
+    def supports_precomputing(self):
+        return self._region_based_pooling.supports_precomputing
+
+    @property
     def has_domain_discriminator(self) -> bool:
         """Indicates if the model has a domain discriminator for domain adversarial learning (True) or not (False)"""
         return self._domain_discriminator is not None
