@@ -294,7 +294,7 @@ class MultiMSSharedRocketHeadRegion(MultiMontageSplitsPoolingBase):
         ----------
         input_tensors : dict[str, torch.Tensor]
         pre_computed : dict[str, torch.Tensor]
-        channel_splits : dict[str, tuple[cdl_eeg.models.region_based_pooling.utils.ChannelsInRegionSplit, ...]]
+        channel_splits : dict[str, tuple[cdl_eeg.models.region_based_pooling.utils.CHANNELS_IN_MONTAGE_SPLIT, ...]]
         channel_name_to_index : dict[str, dict[str, int]]
 
         Returns
