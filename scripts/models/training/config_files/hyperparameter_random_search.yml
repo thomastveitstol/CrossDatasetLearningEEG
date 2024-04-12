@@ -219,7 +219,7 @@ MultiMSSharedRocketHeadRegion: &MultiMSSharedRocketHeadRegion
     kwargs:
       base: 2
       a: 3  # 2^3 = 8
-      b: 7  # 2^8 = 256
+      b: 7  # 2^7 = 128
   share_search_receiver_modules: [ true, false]
   bias: false
 
@@ -307,17 +307,22 @@ Varied Numbers of Channels:
 # TODO: I have to check the hyperparameters, of the braindecode models in particular
 # -----------------
 InceptionNetwork: &InceptionNetwork
-  num_classes: 1
-  cnn_units:
-    dist: log_uniform_int
-    kwargs:
-      base: 2
-      a: 3
-      b: 6
-  depth:  # todo
-    dist: uniform_discrete
-    kwargs:
-      domain: [ 6, 12, 24, 48, 60, 75, 87 ]
+  general:
+    num_classes: 1
+  sample:
+    cnn_units:
+      dist: log_uniform_int
+      kwargs:
+        base: 2
+        a: 3
+        b: 6
+    depth:
+      dist: n_log_uniform_int
+      kwargs:
+        n: 3
+        base: 3
+        a: 0
+        b: 3
 
 EEGNetv4MTS: &EEGNetv4MTS
   num_classes: 1
@@ -342,47 +347,51 @@ EEGResNetMTS: &EEGResNetMTS
       domain: [ 3, 5, 7 ]
 
 ShallowFBCSPNetMTS: &ShallowFBCSPNetMTS
-  num_classes: 1
-  num_time_steps: *num_time_steps
-  n_filters:
-    dist: uniform_int
-    kwargs:
-      a: 30
-      b: 51
-  filter_time_length:
-    dist: uniform_int
-    kwargs:
-      a: 15
-      b: 36
-  pool_time_stride:
-    dist: uniform_int
-    kwargs:
-      a: 10
-      b: 20
-  drop_prob:
-    dist: uniform
-    kwargs:
-      a: 0
-      b: 0.5
+  general:
+    num_classes: 1
+    num_time_steps: *num_time_steps
+  sample:
+    n_filters:
+      dist: uniform_int
+      kwargs:
+        a: 30
+        b: 51
+    filter_time_length:
+      dist: uniform_int
+      kwargs:
+        a: 15
+        b: 36
+    pool_time_stride:
+      dist: uniform_int
+      kwargs:
+        a: 10
+        b: 20
+    drop_prob:
+      dist: uniform
+      kwargs:
+        a: 0
+        b: 0.5
 
 Deep4NetMTS: &Deep4NetMTS
-  num_classes: 1
-  num_time_steps: *num_time_steps
-  n_first_filters:
-    dist: uniform_int
-    kwargs:
-      a: 15
-      b: 36
-  filter_length:
-    dist: uniform_int
-    kwargs:
-      a: 5
-      b: 16
-  drop_prob:
-    dist: uniform
-    kwargs:
-      a: 0
-      b: 0.5
+  general:
+    num_classes: 1
+    num_time_steps: *num_time_steps
+  sample:
+    n_first_filters:
+      dist: uniform_int
+      kwargs:
+        a: 15
+        b: 36
+    filter_length:
+      dist: uniform_int
+      kwargs:
+        a: 5
+        b: 16
+    drop_prob:
+      dist: uniform
+      kwargs:
+        a: 0
+        b: 0.5
 
 MTS Module:
   InceptionNetwork: *InceptionNetwork

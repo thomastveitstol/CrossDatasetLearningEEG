@@ -122,9 +122,10 @@ def generate_config_file(config):
     mts_module_name = random.choice(tuple(config["MTS Module"].keys()))
 
     # Set hyperparameters
-    mts_module_hyperparameters = get_mts_module_type(mts_module_name).sample_hyperparameters(
-        config["MTS Module"][mts_module_name]
-    )
+    mts_module_hyperparameters = {
+        **config["MTS Module"][mts_module_name]["general"],
+        **get_mts_module_type(mts_module_name).sample_hyperparameters(config["MTS Module"][mts_module_name]["sample"])
+    }
 
     # Combine architecture name and hyperparameters in a dict
     dl_model = {"model": mts_module_name, "kwargs": mts_module_hyperparameters}
