@@ -40,3 +40,18 @@ def get_mts_module(mts_module_name, **kwargs):
     # If no match, an error is raised
     raise ValueError(f"The MTS module '{mts_module_name}' was not recognised. Please select among the following: "
                      f"{tuple(mts_module.__name__ for mts_module in available_mts_modules)}")
+
+
+def get_mts_module_type(mts_module_name):
+    """Function for getting a specified MTS module class"""
+    # All available MTS modules must be included here
+    available_mts_modules = (InceptionNetwork, EEGNetv4MTS, EEGResNetMTS, ShallowFBCSPNetMTS, Deep4NetMTS)
+
+    # Loop through and select the correct one
+    for mts_module in available_mts_modules:
+        if mts_module_name == mts_module.__name__:
+            return mts_module
+
+    # If no match, an error is raised
+    raise ValueError(f"The MTS module '{mts_module_name}' was not recognised. Please select among the following: "
+                     f"{tuple(mts_module.__name__ for mts_module in available_mts_modules)}")

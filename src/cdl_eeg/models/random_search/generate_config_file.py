@@ -1,6 +1,7 @@
 import random
 from typing import Any, Dict, Optional
 
+from cdl_eeg.models.mts_modules.getter import get_mts_module_type
 from cdl_eeg.models.region_based_pooling.hyperparameter_sampling import sample_rbp_designs
 from cdl_eeg.models.random_search.sampling_distributions import sample_hyperparameter
 
@@ -121,12 +122,9 @@ def generate_config_file(config):
     mts_module_name = random.choice(tuple(config["MTS Module"].keys()))
 
     # Set hyperparameters
-    mts_module_hyperparameters = dict()
-    for param, domain in config["MTS Module"][mts_module_name].items():
-        if isinstance(domain, dict) and "dist" in domain:
-            mts_module_hyperparameters[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
-        else:
-            mts_module_hyperparameters[param] = domain
+    mts_module_hyperparameters = get_mts_module_type(mts_module_name).sample_hyperparameters(
+        config["MTS Module"][mts_module_name]
+    )
 
     # Combine architecture name and hyperparameters in a dict
     dl_model = {"model": mts_module_name, "kwargs": mts_module_hyperparameters}

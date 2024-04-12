@@ -341,79 +341,52 @@ EEGResNetMTS: &EEGResNetMTS
     kwargs:
       domain: [ 3, 5, 7 ]
 
-ShallowFBCSPNetMTS: &ShallowFBCSPNetMTS  # todo: output dimension have ndim=3
+ShallowFBCSPNetMTS: &ShallowFBCSPNetMTS
   num_classes: 1
   num_time_steps: *num_time_steps
-  n_filters_time:
+  n_filters:
     dist: uniform_int
     kwargs:
-      a: 15
-      b: 36  # not including 36
-  n_filters_spat:
-    dist: uniform_int
-    kwargs:
-      a: 15
-      b: 36  # not including 36
-
-Deep4NetMTS: &Deep4NetMTS
-  num_classes: 1
-  num_time_steps: *num_time_steps
-  n_filters_time:
-    dist: uniform_int
-    kwargs:
-      a: 20
-      b: 60
+      a: 30
+      b: 51
   filter_time_length:
     dist: uniform_int
     kwargs:
       a: 15
       b: 36
-  n_filters_spat:
+  pool_time_stride:
     dist: uniform_int
     kwargs:
-      a: 20
-      b: 60
-  split_first_layer: true  # AttributeError of set to False
-  batch_norm: [ true, false ]
+      a: 10
+      b: 20
   drop_prob:
     dist: uniform
     kwargs:
       a: 0
-      b: 0.8
-  n_filters_2:
+      b: 0.5
+
+Deep4NetMTS: &Deep4NetMTS
+  num_classes: 1
+  num_time_steps: *num_time_steps
+  n_first_filters:
     dist: uniform_int
     kwargs:
-      a: 50
-      b: 150
-  n_filters_3:
-    dist: uniform_int
-    kwargs:
-      a: 50
-      b: 150
-  n_filters_4:
-    dist: uniform_int
-    kwargs:
-      a: 50
-      b: 150
-  filter_length_2:
+      a: 15
+      b: 36
+  filter_length:
     dist: uniform_int
     kwargs:
       a: 5
-      b: 15
-  filter_length_3:
-    dist: uniform_int
+      b: 16
+  drop_prob:
+    dist: uniform
     kwargs:
-      a: 5
-      b: 15
-  filter_length_4:
-    dist: uniform_int
-    kwargs:
-      a: 5
-      b: 15
+      a: 0
+      b: 0.5
 
 MTS Module:
   InceptionNetwork: *InceptionNetwork
-  EEGNetv4MTS: *EEGNetv4MTS
-  EEGResNetMTS: *EEGResNetMTS
+  # EEGNetv4MTS: *EEGNetv4MTS
+  # EEGResNetMTS: *EEGResNetMTS
   ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
   Deep4NetMTS: *Deep4NetMTS

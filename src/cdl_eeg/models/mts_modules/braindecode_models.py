@@ -3,8 +3,6 @@ Models provided by Braindecode are implemented here
 
 todo: cite
 """
-from typing import Dict, Any
-
 import torch
 from braindecode.models import EEGNetv4, EEGResNet, ShallowFBCSPNet, Deep4Net
 
