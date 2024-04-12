@@ -14,6 +14,7 @@ import torch
 import torch.nn as nn
 
 from cdl_eeg.models.mts_modules.mts_module_base import MTSModuleBase
+from cdl_eeg.models.random_search.sampling_distributions import sample_hyperparameter
 
 
 # ---------------------------
@@ -401,6 +402,39 @@ class InceptionNetwork(MTSModuleBase):
 
         # Pass through FC layer and return. No activation function used
         return self._fc_layer(x)
+
+    # ----------------
+    # Hyperparameter sampling
+    # ----------------
+    @staticmethod
+    def sample_hyperparameters(config):
+        """
+        Method for sampling hyperparameters
+
+        Parameters
+        ----------
+        config : dict[str, typing.Any]
+
+        Returns
+        -------
+        dict[str, typing.Any]
+
+        Examples
+        --------
+        >>> my_cnn_units = {"dist": "log_uniform_int", "kwargs": {"base": 2, "a": 3, "b": 6}}
+        >>> my_depth = {"dist": "log_uniform_int", "kwargs": {"base": 3, "a": 1, "b": 3}}
+        >>> import numpy
+        >>> numpy.random.seed(3)
+        >>> InceptionNetwork.sample_hyperparameters({"cnn_units": my_cnn_units, "depth": my_depth})
+        {'cnn_units': 25, 'depth': 14}
+        """
+        # Sample CNN units
+        cnn_units = sample_hyperparameter(config["cnn_units"]["dist"], **config["cnn_units"]["kwargs"])
+
+        # Sample depth
+        depth = sample_hyperparameter(config["depth"]["dist"], **config["depth"]["kwargs"])
+
+        return {"cnn_units": cnn_units, "depth": depth}
 
     # ----------------
     # Properties

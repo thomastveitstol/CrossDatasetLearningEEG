@@ -3,6 +3,8 @@ Models provided by Braindecode are implemented here
 
 todo: cite
 """
+from typing import Dict, Any
+
 import torch
 from braindecode.models import EEGNetv4, EEGResNet, ShallowFBCSPNet, Deep4Net
 
@@ -164,6 +166,13 @@ class EEGNetv4MTS(MTSModuleBase):
         latent_features = torch.squeeze(latent_features, dim=2)  # Removing redundant dimension
         latent_features = torch.reshape(latent_features, shape=(latent_features.size()[0], -1))
         return latent_features
+
+    # ----------------
+    # Hyperparameter sampling
+    # ----------------
+    @staticmethod
+    def sample_hyperparameters(config):
+        raise NotImplementedError
 
     # ----------------
     # Properties
@@ -401,6 +410,13 @@ class EEGResNetMTS(MTSModuleBase):
 
         # Remove redundant dimensions. Currently, shape=(batch, features, 1, 1)
         return torch.squeeze(latent_features)
+
+    # ----------------
+    # Hyperparameter sampling
+    # ----------------
+    @staticmethod
+    def sample_hyperparameters(config):
+        raise NotImplementedError
 
     # ----------------
     # Properties
