@@ -1,10 +1,15 @@
 import abc
-from typing import List
+from typing import List, Any, Dict
 
 import torch.nn as nn
 
 
 class MTSModuleBase(nn.Module, abc.ABC):
+
+    @staticmethod
+    @abc.abstractmethod
+    def sample_hyperparameters(config: Dict[str, Any]) -> Dict[str, Any]:
+        """Method for sampling hyperparameters from a config file containing distributions of which to sample from"""
 
     @classmethod
     def supports_latent_feature_extraction(cls):

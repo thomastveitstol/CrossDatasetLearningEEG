@@ -7,6 +7,7 @@ import torch
 from braindecode.models import EEGNetv4, EEGResNet, ShallowFBCSPNet, Deep4Net
 
 from cdl_eeg.models.mts_modules.mts_module_base import MTSModuleBase
+from cdl_eeg.models.random_search.sampling_distributions import sample_hyperparameter
 
 
 class EEGNetv4MTS(MTSModuleBase):
@@ -437,7 +438,7 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
         (pool_nonlin_exp): Expression(expression=safe_log)
         (drop): Dropout(p=0.5, inplace=False)
         (final_layer): Sequential(
-          (conv_classifier): Conv2d(40, 7, kernel_size=(30, 1), stride=(1, 1))
+          (conv_classifier): Conv2d(40, 7, kernel_size=(7, 1), stride=(1, 1))
           (squeeze): Expression(expression=squeeze_final_output)
         )
       )
@@ -451,15 +452,52 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
         # Initialise the model
         # ----------------
         self._model = ShallowFBCSPNet(n_chans=in_channels, n_outputs=num_classes, n_times=num_time_steps,
-                                      add_log_softmax=False, **kwargs)
+                                      final_conv_length="auto", add_log_softmax=False, **kwargs)
 
-    def forward(self, x):
+    def extract_latent_features(self, input_tensor):
+        return self(input_tensor, return_features=True)
+
+    def classify_latent_features(self, input_tensor):
+        """
+        Method for classifying the latent features
+
+        Parameters
+        ----------
+        input_tensor : torch.Tensor
+
+        Returns
+        -------
+        torch.Tensor
+
+        Examples
+        --------
+        >>> my_batch, my_channels, my_time_steps = 10, 103, 600*3
+        >>> my_model = ShallowFBCSPNetMTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps)
+        >>> my_model.classify_latent_features(torch.rand(size=(10, 4560))).size()
+        torch.Size([10, 3])
+
+        Running (1) feature extraction and (2) classifying is the excact same as just running forward
+
+        >>> my_model = ShallowFBCSPNetMTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps)
+        >>> _ = my_model.eval()
+        >>> my_input = torch.rand(size=(my_batch, my_channels, my_time_steps))
+        >>> my_output_1 = my_model.classify_latent_features(my_model.extract_latent_features(my_input))
+        >>> my_output_2 = my_model(my_input)
+        >>> torch.equal(my_output_1, my_output_2)
+        True
+        """
+        shape = (input_tensor.size()[0], self._model.final_layer.conv_classifier.in_channels,
+                 self._model.final_conv_length, 1)
+        return self._model.final_layer(torch.reshape(input_tensor, shape=shape))
+
+    def forward(self, x, return_features=False):
         """
         Forward method
 
         Parameters
         ----------
         x : torch.Tensor
+        return_features : bool
 
         Returns
         -------
@@ -472,9 +510,87 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
         >>> my_model = ShallowFBCSPNetMTS(in_channels=my_channels, num_classes=3, num_time_steps=my_time_steps)
         >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps))).size()
         torch.Size([10, 3])
+        >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps)), return_features=True).size()
+        torch.Size([10, 4560])
         """
-        # todo: is it correct to aggregate the outputs by averaging here? Prior to activation function?
-        return torch.mean(self._model(x), dim=-1)
+        # If predictions are to be made, just run forward method of the braindecode method
+        if not return_features:
+            return self._model(x)
+
+        activations_name = "latent_features"
+        activation = dict()
+
+        # noinspection PyUnusedLocal
+        def hook(model, inputs):
+            if len(inputs) != 1:
+                raise ValueError(f"Expected only one input, but received {len(inputs)}")
+            activation[activations_name] = inputs[0].detach()
+
+        self._model.final_layer.register_forward_pre_hook(hook)
+
+        # Run forward method, but we are interested the latent features
+        _ = self._model(x)
+        latent_features = activation[activations_name]
+
+        # Fix dimensions
+        latent_features = torch.squeeze(latent_features, dim=-1)  # Removing redundant dimension
+        latent_features = torch.reshape(latent_features, shape=(latent_features.size()[0], -1))
+        return latent_features
+
+    # ----------------
+    # Hyperparameter sampling
+    # ----------------
+    @staticmethod
+    def sample_hyperparameters(config):
+        """
+        Method for sampling hyperparameters
+
+        Parameters
+        ----------
+        config : dict[str, typing.Any]
+
+        Returns
+        -------
+        dict[str, typing.Any]
+
+        Examples
+        --------
+        >>> my_num_filters = {"dist": "uniform_int", "kwargs": {"a": 5, "b": 8}}
+        >>> my_filter_lengths = {"dist": "uniform_int", "kwargs": {"a": 9, "b": 14}}
+        >>> my_pool_time_stride = {"dist": "uniform_int", "kwargs": {"a": 10, "b": 20}}
+        >>> my_drop_out = {"dist": "uniform", "kwargs": {"a": 0.0, "b": 0.5}}
+        >>> import numpy
+        >>> numpy.random.seed(3)
+        >>> ShallowFBCSPNetMTS.sample_hyperparameters(
+        ...     {"n_filters": my_num_filters, "filter_time_length": my_filter_lengths,
+        ...      "pool_time_stride": my_pool_time_stride, "drop_prob": my_drop_out}
+        ... )  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
+        {'n_filters_time': 7, 'n_filters_spat': 7, 'filter_time_length': 9, 'pool_time_stride': 19,
+         'pool_time_length': 95, 'drop_prob': 0.419...}
+        """
+        # Sample number of filters. Will be the same for temporal and spatial
+        n_filters = sample_hyperparameter(config["n_filters"]["dist"], **config["n_filters"]["kwargs"])
+
+        # Sample length of temporal filter
+        filter_time_length = sample_hyperparameter(config["filter_time_length"]["dist"],
+                                                   **config["filter_time_length"]["kwargs"])
+
+        # Sample length of temporal filter
+        pool_time_stride = sample_hyperparameter(config["pool_time_stride"]["dist"],
+                                                 **config["pool_time_stride"]["kwargs"])
+
+        # We set the ratio of length/stride to the same as in the original paper
+        pool_time_length = 5 * pool_time_stride
+
+        # Sample drop out
+        drop_prob = sample_hyperparameter(config["drop_prob"]["dist"], **config["drop_prob"]["kwargs"])
+
+        return {"n_filters_time":  n_filters,
+                "n_filters_spat": n_filters,
+                "filter_time_length": filter_time_length,
+                "pool_time_stride": pool_time_stride,
+                "pool_time_length": pool_time_length,
+                "drop_prob": drop_prob}
 
 
 class Deep4NetMTS(MTSModuleBase):
@@ -653,6 +769,59 @@ class Deep4NetMTS(MTSModuleBase):
         latent_features = torch.squeeze(latent_features, dim=-1)  # Removing redundant dimension
         latent_features = torch.reshape(latent_features, shape=(latent_features.size()[0], -1))
         return latent_features
+
+    # ----------------
+    # Hyperparameter sampling
+    # ----------------
+    @staticmethod
+    def sample_hyperparameters(config):
+        """
+        The ratio between the number of filters will be maintained as in the original work
+
+        Parameters
+        ----------
+        config : dict[str, typing.Any]
+
+        Returns
+        -------
+        dict[str, typing.Any]
+
+        Examples
+        --------
+        >>> my_num_filters = {"dist": "uniform_int", "kwargs": {"a": 5, "b": 8}}
+        >>> my_filter_lengths = {"dist": "uniform_int", "kwargs": {"a": 9, "b": 14}}
+        >>> my_drop_out = {"dist": "uniform", "kwargs": {"a": 0.0, "b": 0.5}}
+        >>> import numpy
+        >>> numpy.random.seed(3)
+        >>> Deep4NetMTS.sample_hyperparameters({"n_first_filters": my_num_filters, "filter_length": my_filter_lengths,
+        ...                                     "drop_prob": my_drop_out})  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
+        {'n_filters_time': 7, 'n_filters_spat': 7, 'n_filters_2': 14, 'n_filters_3': 28, 'n_filters_4': 56,
+         'filter_time_length': 9, 'filter_length_2': 9, 'filter_length_3': 9, 'filter_length_4': 9,
+         'drop_prob': 0.3540...}
+
+        """
+        # Get the number of filters for the first conv block
+        num_first_filters = sample_hyperparameter(config["n_first_filters"]["dist"],
+                                                  **config["n_first_filters"]["kwargs"])
+
+        num_filters_hyperparameters = {"n_filters_time": num_first_filters,
+                                       "n_filters_spat": num_first_filters,
+                                       "n_filters_2": 2 * num_first_filters,
+                                       "n_filters_3": 4 * num_first_filters,
+                                       "n_filters_4": 8 * num_first_filters}
+
+        # Get the filter lengths
+        filter_length = sample_hyperparameter(config["filter_length"]["dist"], **config["filter_length"]["kwargs"])
+
+        # Compute the length of the filters for the conv blocks
+        filter_lengths_hyperparameters = {"filter_time_length": filter_length,
+                                          "filter_length_2": filter_length,
+                                          "filter_length_3": filter_length,
+                                          "filter_length_4": filter_length}
+        # Get the drop out
+        drop_prob = sample_hyperparameter(config["drop_prob"]["dist"], **config["drop_prob"]["kwargs"])
+
+        return {**num_filters_hyperparameters, **filter_lengths_hyperparameters, **{"drop_prob": drop_prob}}
 
     # ----------------
     # Properties
