@@ -435,6 +435,11 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
     --------
     >>> _ = ShallowFBCSPNetMTS(4, 7, 200)
 
+    Latent features
+
+    >>> ShallowFBCSPNetMTS(4, 7, 200).latent_features_dim
+    280
+
     How the model looks like (the softmax/LogSoftmax activation function has been removed)
 
     >>> ShallowFBCSPNetMTS(4, 7, 200)  # doctest: +NORMALIZE_WHITESPACE
@@ -605,6 +610,14 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
                 "pool_time_stride": pool_time_stride,
                 "pool_time_length": pool_time_length,
                 "drop_prob": drop_prob}
+
+    # ----------------
+    # Properties
+    # ----------------
+    @property
+    def latent_features_dim(self):
+        # The latent features dimension is inferred from the dimension of their 'classifier_conv'
+        return self._model.final_layer.conv_classifier.in_channels * self._model.final_conv_length
 
 
 class Deep4NetMTS(MTSModuleBase):
