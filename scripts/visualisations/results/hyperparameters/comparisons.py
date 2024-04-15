@@ -324,7 +324,8 @@ PRETTY_NAME = {"auc": "AUC",
                "HatlestadHall": "HatlestadHall",
                "Miltiadous": "Miltiadous",
                "YulinWang": "YulinWang",
-               "MPILemon": "MPI Lemon"}
+               "MPILemon": "MPI Lemon",
+               "TDBrain": "TDBRAIN"}
 
 # Cosmetics
 FONTSIZE = 17
@@ -335,12 +336,12 @@ FIGSIZE = (16, 9)
 # Main functions
 # --------------
 def main_lodo():
-    folder_name = "april_8"  # "debug_results_1"
+    folder_name = "weekend"  # "april_8"  # "debug_results_1"
 
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Domain Adaptation"
+    hyperparameter_name = "Band-pass filter"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
     dataset = "MPILemon"
@@ -409,16 +410,16 @@ def main_lodo():
 
 
 def main_inverted_lodo():
-    folder_name = "april_8"  # "easter_runs"
+    folder_name = ("weekend", "april_8", "easter_runs")[1]
 
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "DL Architecture"
+    hyperparameter_name = "Domain Adaptation"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
     # Datasets
-    source_dataset = "YulinWang"
+    source_dataset = "MPILemon"
     performance_metric = "auc"
     jitter = 0.1  # None
 
@@ -504,7 +505,7 @@ def main_inverted_lodo():
 
 
 def main():
-    main_lodo()
+    main_inverted_lodo()
 
 
 if __name__ == "__main__":
