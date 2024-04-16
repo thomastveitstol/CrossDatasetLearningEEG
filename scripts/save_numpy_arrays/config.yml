@@ -12,21 +12,25 @@ Datasets:
     excluded_channels: [ Photic, EKG ]
   TDBrain:
     derivatives: false
+    excluded_channels: null
   HatlestadHall:
     session: "t1"
     derivatives: true
+    excluded_channels: null
   MPILemon:
     interpolation_method: MNE
     derivatives: false
+    excluded_channels: null
   YulinWang:
     visit: 1
     recording: EC
     derivatives: true
+    excluded_channels: null
   Miltiadous:
     derivatives: true
+    excluded_channels: null
 general:
   notch_filter: null
-  excluded_channels: null
   main_band_pass: [1, 45]
   num_epochs: 5
   epoch_duration: 5
