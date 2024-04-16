@@ -301,8 +301,8 @@ Interpolation: &Interpolation
   method: [ MNE, spline ]
 
 Varied Numbers of Channels:
-  #- name: RegionBasedPooling
-  #  kwargs: *RegionBasedPooling
+  - name: RegionBasedPooling
+    kwargs: *RegionBasedPooling
   - name: Interpolation
     kwargs: *Interpolation
 
