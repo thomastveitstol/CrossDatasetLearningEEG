@@ -7,6 +7,39 @@ import numpy
 from cdl_eeg.data.datasets.dataset_base import EEGDatasetBase, target_method
 
 
+def _conversion_mapping():
+    return {"Fp1-AVG": "Fp1", "F3-AVG": "F3", "C3-AVG": "C3", "P3-AVG": "P3", "O1-AVG": "O1", "Fp2-AVG": "Fp2",
+            "F4-AVG": "F4", "C4-AVG": "C4", "P4-AVG": "P4", "O2-AVG": "O2", "F7-AVG": "F7", "T3-AVG": "T3",
+            "T5-AVG": "T5", "F8-AVG": "F8", "T4-AVG": "T4", "T6-AVG": "T6", "FZ-AVG": "Fz", "CZ-AVG": "Cz",
+            "PZ-AVG": "Pz"}
+
+
+def _cau_name_to_standard(ch_name):
+    """
+    Convert from CAUEEG channel name to standard MNE channel name
+
+    Parameters
+    ----------
+    ch_name : str
+
+    Returns
+    -------
+    str
+
+    Examples
+    --------
+    >>> _cau_name_to_standard("PZ-AVG")
+    'Pz'
+    >>> _cau_name_to_standard("NotAnElectrode")
+    'NotAnElectrode'
+    """
+    # Convert channel name to MNE readable and return
+    try:
+        return _conversion_mapping()[ch_name]
+    except KeyError:
+        return ch_name
+
+
 class CAUEEG(EEGDatasetBase):
     """
     This is a dataset where you need to apply for access.
@@ -14,17 +47,23 @@ class CAUEEG(EEGDatasetBase):
     Examples:
     ----------
     >>> CAUEEG().name
-    'cau_eeg'
+    'CAUEEG'
     >>> CAUEEG.get_available_targets()
-    ('age',)
+    ('age', 'alzheimers', 'dementia', 'mci', 'normal')
     >>> len(CAUEEG().get_subject_ids())
     1379
+    >>> CAUEEG._channel_names
+    ('Fp1', 'F3', 'C3', 'P3', 'O1', 'Fp2', 'F4', 'C4', 'P4', 'O2', 'F7', 'T3', 'T5', 'F8', 'T4', 'T6', 'Fz', 'Cz', 'Pz')
     """
 
     __slots__ = ()
-    _channel_names = ("Fp1-AVG", "F3-AVG", "C3-AVG", "P3-AVG", "O1-AVG", "Fp2-AVG", "F4-AVG", "C4-AVG", "P4-AVG",
-                      "O2-AVG", "F7-AVG", "T3-AVG", "T5-AVG", "F8-AVG", "T4-AVG", "T6-AVG", "FZ-AVG", "CZ-AVG",
-                      "PZ-AVG")  # todo: make tests
+    _channel_names = tuple(_cau_name_to_standard(name) for name in ("Fp1-AVG", "F3-AVG", "C3-AVG", "P3-AVG", "O1-AVG",
+                                                                    "Fp2-AVG", "F4-AVG", "C4-AVG", "P4-AVG", "O2-AVG",
+                                                                    "F7-AVG", "T3-AVG", "T5-AVG", "F8-AVG", "T4-AVG",
+                                                                    "T6-AVG", "FZ-AVG", "CZ-AVG", "PZ-AVG"))
+    # todo: make tests
+
+    _montage_name = "standard_1020"  # todo: check
 
     # ----------------
     # Loading methods
@@ -38,6 +77,9 @@ class CAUEEG(EEGDatasetBase):
 
         # Drop non-eeg channels
         raw.drop_channels(("Photic", "EKG"))
+
+        # Rename channels
+        raw.rename_channels(_conversion_mapping())
 
         return raw
 
@@ -163,7 +205,7 @@ class CAUEEG(EEGDatasetBase):
     # ----------------
     def _get_template_electrode_positions(self):
         # Following the international 10-20 system  todo: where is this documented?
-        montage = mne.channels.make_standard_montage("standard_1020")
+        montage = mne.channels.make_standard_montage(self._montage_name)
         channel_positions = montage.get_positions()["ch_pos"]
 
         # Return dict with channel positions, keeping only the ones in the data
@@ -177,39 +219,6 @@ class CAUEEG(EEGDatasetBase):
 # ---------------
 # Functions
 # ---------------
-def _conversion_mapping():
-    return {"Fp1-AVG": "Fp1", "F3-AVG": "F3", "C3-AVG": "C3", "P3-AVG": "P3", "O1-AVG": "O1", "Fp2-AVG": "Fp2",
-            "F4-AVG": "F4", "C4-AVG": "C4", "P4-AVG": "P4", "O2-AVG": "O2", "F7-AVG": "F7", "T3-AVG": "T3",
-            "T5-AVG": "T5", "F8-AVG": "F8", "T4-AVG": "T4", "T6-AVG": "T6", "FZ-AVG": "Fz", "CZ-AVG": "Cz",
-            "PZ-AVG": "Pz"}
-
-
-def _cau_name_to_standard(ch_name):
-    """
-    Convert from CAUEEG channel name to standard MNE channel name
-
-    Parameters
-    ----------
-    ch_name : str
-
-    Returns
-    -------
-    str
-
-    Examples
-    --------
-    >>> _cau_name_to_standard("PZ-AVG")
-    'Pz'
-    >>> _cau_name_to_standard("NotAnElectrode")
-    'NotAnElectrode'
-    """
-    # Convert channel name to MNE readable and return
-    try:
-        return _conversion_mapping()[ch_name]
-    except KeyError:
-        return ch_name
-
-
 def _standard_name_to_cau(ch_name):
     """
     Convert from standard channel name to CAUEEG version
