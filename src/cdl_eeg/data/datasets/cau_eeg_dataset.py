@@ -26,9 +26,6 @@ class CAUEEG(EEGDatasetBase):
                       "O2-AVG", "F7-AVG", "T3-AVG", "T5-AVG", "F8-AVG", "T4-AVG", "T6-AVG", "FZ-AVG", "CZ-AVG",
                       "PZ-AVG")  # todo: make tests
 
-    def __init__(self):
-        super().__init__(name="cau_eeg")
-
     # ----------------
     # Loading methods
     # ----------------
@@ -99,6 +96,62 @@ class CAUEEG(EEGDatasetBase):
 
         # Extract the ages of the subjects, in the same order as the input argument
         return numpy.array([participant_info[sub_id]["age"] for sub_id in subject_ids])
+
+    @target_method
+    def mci(self, subject_ids):
+        """
+        Examples
+        --------
+        >>> CAUEEG().mci(("00001", "00847", "00977", "01189", "00188"))
+        [True, False, False, True, True]
+        """
+        # Get participant info
+        participant_info = self._get_participant_info()
+
+        # Extract the ages of the subjects, in the same order as the input argument
+        return ["mci" in participant_info[sub_id]["symptom"] for sub_id in subject_ids]
+
+    @target_method
+    def dementia(self, subject_ids):
+        """
+        Examples
+        --------
+        >>> CAUEEG().dementia(("00001", "00847", "00977", "01189", "00188"))
+        [False, False, False, False, False]
+        """
+        # Get participant info
+        participant_info = self._get_participant_info()
+
+        # Extract the ages of the subjects, in the same order as the input argument
+        return ["dementia" in participant_info[sub_id]["symptom"] for sub_id in subject_ids]
+
+    @target_method
+    def alzheimers(self, subject_ids):
+        """
+        Examples
+        --------
+        >>> CAUEEG().alzheimers(("00001", "00847", "00977", "01189", "00188"))
+        [False, False, False, False, False]
+        """
+        # Get participant info
+        participant_info = self._get_participant_info()
+
+        # Extract the ages of the subjects, in the same order as the input argument
+        return ["ad" in participant_info[sub_id]["symptom"] for sub_id in subject_ids]
+
+    @target_method
+    def normal(self, subject_ids):
+        """
+        Examples
+        --------
+        >>> CAUEEG().normal(("00001", "00847", "00977", "01189", "00188"))
+        [False, False, False, False, False]
+        """
+        # Get participant info
+        participant_info = self._get_participant_info()
+
+        # Extract the ages of the subjects, in the same order as the input argument
+        return ["normal" in participant_info[sub_id]["symptom"] for sub_id in subject_ids]
 
     # ----------------
     # Channel system
