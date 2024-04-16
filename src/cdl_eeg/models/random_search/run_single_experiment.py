@@ -61,7 +61,8 @@ class Experiment:
         """Method for loading data"""
         return CombinedDatasets.from_config(config=self.datasets_config, target=self.train_config["target"],
                                             interpolation_config=self.interpolation_config,
-                                            sampling_freq=self.shared_pre_processing_config["resample"])
+                                            sampling_freq=self.shared_pre_processing_config["resample"],
+                                            required_target=self.train_config["target"])
 
     @staticmethod
     def _extract_dataset_details(combined_dataset: CombinedDatasets):

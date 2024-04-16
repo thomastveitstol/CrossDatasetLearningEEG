@@ -96,6 +96,28 @@ class TDBrain(EEGDatasetBase):
         # Select the ones passed in the subjects list, and return as numpy array
         return numpy.array([sex[sub_id] for sub_id in subject_ids])
 
+    @target_method
+    def age(self, subject_ids):
+        """
+        Examples
+        --------
+        >>> TDBrain().age(("sub-19681349", "sub-19681385", "sub-19684666"))
+        array([51.59, 49.96, 47.05])
+        >>> my_subjects = TDBrain().get_subject_ids()
+        >>> all(isinstance(age, float) for age in TDBrain().age(my_subjects))  # type: ignore[attr-defined]
+        True
+        >>> sum(tuple(numpy.isnan(age) for age in TDBrain().age(my_subjects)))  # type: ignore[attr-defined]
+        """
+        # Read the .tsv file
+        df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
+
+        # Convert to age dict
+        age_mapping = {sub_id: float(age.replace(",", ".")) if isinstance(age, str) else age for sub_id, age in
+                       zip(df["participants_ID"], df["age"]) if isinstance(sub_id, str)}
+
+        # Select the ones passed in the subjects list, and return as numpy array
+        return numpy.array([age_mapping[sub_id] for sub_id in subject_ids])
+
     # ----------------
     # Channel system
     # ----------------

@@ -185,6 +185,9 @@ class MainFixedChannelsModel(nn.Module):
         if isinstance(x, dict):
             x = torch.cat(tuple(x.values()), dim=0)
 
+        # Normalise  todo: make optional
+        x = (x - torch.mean(x, dim=-1, keepdim=True)) / (torch.std(x, dim=-1, keepdim=True) + 1e-8)
+
         # If no domain discriminator is used, just run the normal forward method
         if not use_domain_discriminator:
             return self._mts_module(x)

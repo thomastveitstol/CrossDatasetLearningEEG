@@ -410,18 +410,18 @@ def main_lodo():
 
 
 def main_inverted_lodo():
-    folder_name = ("weekend", "april_8", "easter_runs")[1]
+    folder_name = ("weekend", "april_8", "easter_runs")[0]
 
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Domain Adaptation"
+    hyperparameter_name = "Sampling freq (multiple of fmax)"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
     # Datasets
     source_dataset = "MPILemon"
     performance_metric = "auc"
-    jitter = 0.1  # None
+    jitter = 0.1  # None  # 0.1  # None
 
     alpha = 0.2
 
@@ -505,7 +505,7 @@ def main_inverted_lodo():
 
 
 def main():
-    main_inverted_lodo()
+    main_lodo()
 
 
 if __name__ == "__main__":

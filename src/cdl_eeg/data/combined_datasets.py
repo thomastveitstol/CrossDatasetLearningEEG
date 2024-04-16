@@ -33,7 +33,7 @@ class CombinedDatasets:
     __slots__ = "_subject_ids", "_data", "_targets", "_datasets"
 
     def __init__(self, datasets, load_details=None, target=None, interpolation_method=None, main_channel_system=None,
-                 sampling_freq=None):
+                 sampling_freq=None, required_target=None):
         """
         Initialise
 
@@ -50,6 +50,7 @@ class CombinedDatasets:
             The channel system to interpolate to. If interpolation_method is None, this argument is ignored
         sampling_freq : float, optional
             Sampling frequency. Ignored if interpolation_method is None
+        required_target : str, optional
         """
         # If no loading details are provided, use default
         load_details = tuple(LoadDetails(dataset.get_subject_ids()) for dataset in datasets) \
@@ -66,9 +67,25 @@ class CombinedDatasets:
         # --------------
         # Store subject IDs. Organised as {dataset_name: {subject_name: row-number in data matrix}}
         subject_ids: Dict[str, Dict[str, int]] = dict()
+        new_details = []
         for dataset, details in zip(datasets, load_details):
-            subject_ids[dataset.name] = {sub_id: i for i, sub_id in enumerate(details.subject_ids)}
+            _accepted_subject_ids: List[str] = []
+            _subjects = details.subject_ids
+            _targets = dataset.load_targets(target=required_target, subject_ids=_subjects)
+            for sub_id, _target in zip(_subjects, _targets):
+                if not numpy.isnan(_target):
+                    _accepted_subject_ids.append(sub_id)
+                else:
+                    f"Excluded {sub_id}"
+            subject_ids[dataset.name] = {sub_id: i for i, sub_id in enumerate(_accepted_subject_ids)}
 
+            new_details.append(LoadDetails(subject_ids=tuple(_accepted_subject_ids),
+                                           time_series_start=details.time_series_start,
+                                           num_time_steps=details.num_time_steps,
+                                           channels=details.channels,
+                                           pre_processed_version=details.pre_processed_version))
+
+        load_details = tuple(new_details)
         self._subject_ids = subject_ids
 
         # Load and store data  todo: can this be made faster be asyncio?
@@ -77,7 +94,8 @@ class CombinedDatasets:
                                                                   pre_processed_version=details.pre_processed_version,
                                                                   time_series_start=details.time_series_start,
                                                                   num_time_steps=details.num_time_steps,
-                                                                  channels=details.channels)
+                                                                  channels=details.channels,
+                                                                  required_target=required_target)
                           for dataset, details in zip(datasets, load_details)}
         else:
             non_interpolated: Dict[str, Dict[str, Union[numpy.ndarray, ChannelSystem]]] = (  # type: ignore[type-arg]
@@ -88,7 +106,7 @@ class CombinedDatasets:
                     "data": dataset.load_numpy_arrays(
                         subject_ids=details.subject_ids, pre_processed_version=details.pre_processed_version,
                         time_series_start=details.time_series_start, num_time_steps=details.num_time_steps,
-                        channels=details.channels
+                        channels=details.channels, required_target=required_target
                     ),
                     "channel_system": dataset.channel_system
                 }
@@ -107,7 +125,7 @@ class CombinedDatasets:
         self._datasets: Tuple[EEGDatasetBase, ...] = datasets
 
     @classmethod
-    def from_config(cls, config, interpolation_config, target=None, sampling_freq=None):
+    def from_config(cls, config, interpolation_config, target=None, sampling_freq=None, required_target=None):
         """
         Method for initialising directly from a config file
 
@@ -117,6 +135,7 @@ class CombinedDatasets:
         interpolation_config : dict[str, typing.Any] | None
         target : str, optional
         sampling_freq : float
+        required_target : str, optional
 
         Returns
         -------
@@ -150,7 +169,7 @@ class CombinedDatasets:
         # Load all data and return object
         return cls(datasets=tuple(datasets), load_details=tuple(load_details), target=target,
                    interpolation_method=interpolation_method, main_channel_system=main_channel_system,
-                   sampling_freq=sampling_freq)
+                   sampling_freq=sampling_freq, required_target=required_target)
 
     def get_data(self, subjects):
         """

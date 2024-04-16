@@ -536,7 +536,8 @@ def strip_tensors(tensors, fill_val=-1):
         if torch.all(torch.isnan(tensor)):
             is_nan.append(True)
         elif torch.any(torch.isnan(tensor)):
-            raise ValueError("Expected all all or none of the values in the tensor to be 'nan', but found both")
+            _dict = {name: tensor for name, tensor in tensors.items()}
+            raise ValueError(f"Expected all  or none of the values in the tensor to be 'nan', but found both. {_dict}")
         else:
             is_nan.append(False)
 

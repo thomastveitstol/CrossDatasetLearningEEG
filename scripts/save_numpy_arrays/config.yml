@@ -4,6 +4,7 @@ frequency_bands:
   - [ 8, 12 ]
   - [ 12, 30 ]
   - [ 30, 45 ]
+  - [ 0.5, 45 ]
 resample_fmax_multiples: [ 2, 4, 8 ]
 Datasets:
   TDBrain:
@@ -25,7 +26,7 @@ general:
   excluded_channels: null
   main_band_pass: [1, 45]
   num_epochs: 5
-  epoch_duration: 10
+  epoch_duration: 5
   epoch_overlap: 0
   time_series_start_secs: 10
   autoreject_resample: 180  # todo
