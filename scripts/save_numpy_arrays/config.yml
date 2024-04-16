@@ -28,6 +28,6 @@ general:
   num_epochs: 5
   epoch_duration: 5
   epoch_overlap: 0
-  time_series_start_secs: 10
+  time_series_start_secs: 30
   autoreject_resample: 180  # todo
   subject_ids: null
