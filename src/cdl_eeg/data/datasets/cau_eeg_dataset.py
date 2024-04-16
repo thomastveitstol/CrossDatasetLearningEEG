@@ -33,8 +33,13 @@ class CAUEEG(EEGDatasetBase):
         # Create path
         path = os.path.join(self.get_mne_path(), "signal", "edf", f"{subject_id}.edf")
 
-        # Create MNE raw object and return
-        return mne.io.read_raw_edf(path, preload=True, verbose=False)
+        # Create MNE raw object
+        raw = mne.io.read_raw_edf(path, preload=True, verbose=False)
+
+        # Drop non-eeg channels
+        raw.drop_channels(("Photic", "EKG"))
+
+        return raw
 
     def get_subject_ids(self):
         """
