@@ -7,6 +7,9 @@ frequency_bands:
   - [ 0.5, 45 ]
 resample_fmax_multiples: [ 2, 4, 8 ]
 Datasets:
+  CAUEEG:
+    derivatives: false
+    excluded_channels: [ Photic, EKG ]
   TDBrain:
     derivatives: false
   HatlestadHall:
