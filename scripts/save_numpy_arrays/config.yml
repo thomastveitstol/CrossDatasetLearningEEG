@@ -11,7 +11,6 @@ Datasets:
     derivatives: false
   TDBrain:
     derivatives: false
-    excluded_channels: null
   HatlestadHall:
     session: "t1"
     derivatives: true
