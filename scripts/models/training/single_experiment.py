@@ -4,10 +4,8 @@ Script for running both leave-one-dataset-out cross validation and k-fold cross 
 import copy
 import os
 import random
-import shutil
 from datetime import datetime, date
 
-import torch
 import yaml
 
 from cdl_eeg.data.paths import get_results_dir, get_numpy_data_storage_path
@@ -104,10 +102,7 @@ def main():
     print(f"\n{' Leave-one-dataset-out cross validation ':=^50}\n")
     leave_one_dataset_out_experiment = Experiment(config=lodo_config, pre_processing_config=pre_processed_config,
                                                   results_path=os.path.join(results_path, "leave_one_dataset_out"))
-    try:
-        leave_one_dataset_out_experiment.run_experiment()
-    except (NotImplementedError, torch.cuda.OutOfMemoryError):
-        shutil.rmtree(results_path)  # todo: exit the program as well
+    leave_one_dataset_out_experiment.run_experiment()
 
     if config["run_baseline"]:
         # k-fold CV
