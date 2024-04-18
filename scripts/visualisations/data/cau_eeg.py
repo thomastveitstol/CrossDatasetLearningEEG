@@ -1,6 +1,7 @@
 from matplotlib import pyplot
 
 from cdl_eeg.data.datasets.cau_eeg_dataset import CAUEEG
+from cdl_eeg.data.preprocessing import save_preprocessed_epochs
 
 
 def main():
@@ -12,11 +13,17 @@ def main():
     derivatives = False
 
     # Pre-processing
-    filtering = (1, 40)
-    resampling_freq = None
+    excluded_channels = None
+    main_band_pass = (1, 45)
+    frequency_bands = ((1, 45),)
     notch_filter = None
-    avg_reference = False
-    excluded_channels = ("Photic", "EKG")
+    num_epochs = 5
+    epoch_duration = 4
+    epoch_overlap = 0
+    time_series_start_secs = 30
+    resample_fmax_multiples = (4, None)
+    autoreject_resample = None
+    seed = 42
 
     # -----------------
     # Load data
@@ -24,9 +31,14 @@ def main():
     subject_id = CAUEEG().get_subject_ids()[subject_number]
     eeg = CAUEEG().load_single_mne_object(subject_id=subject_id, derivatives=derivatives)
 
-    # Pre-process
-    eeg = CAUEEG.pre_process(eeg, filtering=filtering, notch_filter=notch_filter, avg_reference=avg_reference,
-                             resample=resampling_freq, excluded_channels=excluded_channels)
+    # Pre-process without saving
+    save_preprocessed_epochs(
+        eeg, excluded_channels=excluded_channels, main_band_pass=main_band_pass, frequency_bands=frequency_bands,
+        notch_filter=notch_filter, num_epochs=num_epochs, epoch_duration=epoch_duration, epoch_overlap=epoch_overlap,
+        time_series_start_secs=time_series_start_secs, resample_fmax_multiples=resample_fmax_multiples,
+        autoreject_resample=autoreject_resample, dataset_name=None, path=None, subject_id=None, save_data=False,
+        plot_data=True, seed=seed
+    )
 
     # -----------------
     # Plot data
