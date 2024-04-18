@@ -404,3 +404,4 @@ MTS Module:
   # EEGResNetMTS: *EEGResNetMTS
   # ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
   # Deep4NetMTS: *Deep4NetMTS
+NormaliseInputs: [ true, false ]

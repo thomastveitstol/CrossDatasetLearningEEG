@@ -83,7 +83,7 @@ class MainFixedChannelsModel(nn.Module):
     """
 
     def __init__(self, mts_module, mts_module_kwargs, domain_discriminator, domain_discriminator_kwargs, use_cmmn_layer,
-                 cmmn_kwargs):
+                 cmmn_kwargs, normalise):
         """
         Initialise
 
@@ -95,6 +95,7 @@ class MainFixedChannelsModel(nn.Module):
         domain_discriminator_kwargs: dict[str, typing.Any] | None
         use_cmmn_layer : bool
         cmmn_kwargs : dict[str, typing.Any] | None
+        normalise : bool
         """
         super().__init__()
 
@@ -106,6 +107,7 @@ class MainFixedChannelsModel(nn.Module):
         # ----------------
         # Create MTS module
         # ----------------
+        self._normalise = normalise
         self._mts_module = get_mts_module(mts_module_name=mts_module, **mts_module_kwargs)
 
         # ----------------
@@ -142,7 +144,8 @@ class MainFixedChannelsModel(nn.Module):
                    domain_discriminator=None if discriminator_config is None else discriminator_config["name"],
                    domain_discriminator_kwargs=None if discriminator_config is None else discriminator_config["kwargs"],
                    use_cmmn_layer=cmmn_config["use_cmmn_layer"],
-                   cmmn_kwargs=None if not use_cmmn_layer else cmmn_config["kwargs"])
+                   cmmn_kwargs=None if not use_cmmn_layer else cmmn_config["kwargs"],
+                   normalise=mts_config["normalise"])
 
     # ---------------
     # Methods for forward propagation
@@ -180,13 +183,18 @@ class MainFixedChannelsModel(nn.Module):
         >>> my_outs[0].shape, my_outs[1].shape
         (torch.Size([10, 11]), torch.Size([10, 3]))
         """
-        # (Maybe) concatenate all tensors. This should be possible, as this class should ony be used with a fixed number
+        # Maybe run CMMN
+        if self._cmmn_layer is not None:
+            x = self._cmmn_layer(x)
+
+        # Concatenate all tensors. This should be possible, as this class should ony be used with a fixed number
         # of input channels
         if isinstance(x, dict):
             x = torch.cat(tuple(x.values()), dim=0)
 
         # Normalise  todo: make optional
-        x = (x - torch.mean(x, dim=-1, keepdim=True)) / (torch.std(x, dim=-1, keepdim=True) + 1e-8)
+        if self._normalise:
+            x = (x - torch.mean(x, dim=-1, keepdim=True)) / (torch.std(x, dim=-1, keepdim=True) + 1e-8)
 
         # If no domain discriminator is used, just run the normal forward method
         if not use_domain_discriminator:

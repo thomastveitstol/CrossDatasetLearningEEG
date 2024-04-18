@@ -130,8 +130,10 @@ def generate_config_file(config):
     # Combine architecture name and hyperparameters in a dict
     dl_model = {"model": mts_module_name, "kwargs": mts_module_hyperparameters}
 
-    # Maybe add CMMN to DL architecture
+    # Maybe add CMMN and normalisation to DL architecture
     if spatial_dimension_method == "Interpolation":
+        dl_model["normalise"] = random.choice(config["NormaliseInputs"])
+
         dl_model["CMMN"] = {"use_cmmn_layer": random.choice(config["CMMN"]["use_cmmn_layer"]),
                             "kwargs": {}}
         for param, domain in config["CMMN"]["kwargs"].items():
