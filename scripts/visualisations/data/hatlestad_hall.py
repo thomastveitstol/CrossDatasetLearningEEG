@@ -22,6 +22,7 @@ def main():
     time_series_start_secs = 30
     resample_fmax_multiples = (4, None)
     autoreject_resample = None
+    seed = 42
 
     # -----------------
     # Load data
@@ -35,7 +36,7 @@ def main():
         notch_filter=notch_filter, num_epochs=num_epochs, epoch_duration=epoch_duration, epoch_overlap=epoch_overlap,
         time_series_start_secs=time_series_start_secs, resample_fmax_multiples=resample_fmax_multiples,
         autoreject_resample=autoreject_resample, dataset_name=None, path=None, subject_id=None, save_data=False,
-        plot_data=True
+        plot_data=True, seed=seed
     )
 
 

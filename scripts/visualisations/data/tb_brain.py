@@ -7,7 +7,7 @@ def main():
     # Hyperparameters
     # -----------------
     # Data
-    subject_number = 28
+    subject_number = 854
     derivatives = False
 
     # Pre-processing
@@ -16,11 +16,12 @@ def main():
     frequency_bands = ((1, 45),)
     notch_filter = None
     num_epochs = 5
-    epoch_duration = 4
+    epoch_duration = 5
     epoch_overlap = 0
     time_series_start_secs = 30
     resample_fmax_multiples = (8,)
-    autoreject_resample = None
+    autoreject_resample = 180
+    seed = 42
 
     # -----------------
     # Load data
@@ -36,7 +37,7 @@ def main():
         notch_filter=notch_filter, num_epochs=num_epochs, epoch_duration=epoch_duration, epoch_overlap=epoch_overlap,
         time_series_start_secs=time_series_start_secs, resample_fmax_multiples=resample_fmax_multiples,
         autoreject_resample=autoreject_resample, dataset_name=None, path=None, subject_id=None, save_data=False,
-        plot_data=True
+        plot_data=True, seed=seed
     )
 
 

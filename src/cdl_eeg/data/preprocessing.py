@@ -10,10 +10,10 @@ def create_folder_name(*, l_freq, h_freq, is_autorejected, resample_multiple):
     return f"data_band_pass_{l_freq}-{h_freq}_autoreject_{is_autorejected}_sampling_multiple_{resample_multiple}"
 
 
-def _run_autoreject(epochs, autoreject_resample):
+def _run_autoreject(epochs, autoreject_resample, seed):
     if autoreject_resample is not None:
         epochs.resample(autoreject_resample, verbose=False)
-    reject = autoreject.AutoReject(verbose=False)  # todo: hyperparameters
+    reject = autoreject.AutoReject(verbose=False, random_state=seed)  # todo: hyperparameters
     return reject.fit_transform(epochs, return_log=True)
 
 
@@ -62,7 +62,8 @@ def _save_eeg_with_resampling_and_average_referencing(epochs: mne.Epochs, l_freq
 
 def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_band_pass, frequency_bands, notch_filter,
                              num_epochs, epoch_duration, epoch_overlap, time_series_start_secs, autoreject_resample,
-                             resample_fmax_multiples, subject_id, path, dataset_name, plot_data=False, save_data=True):
+                             resample_fmax_multiples, subject_id, path, dataset_name, seed, plot_data=False,
+                             save_data=True):
     # ---------------
     # Input checks
     # ---------------
@@ -95,7 +96,7 @@ def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_ban
     assert num_epochs <= len(epochs), f"Cannot make {num_epochs} epochs when only {len(epochs)} are available"
 
     # Run autoreject
-    autoreject_epochs, log = _run_autoreject(epochs.copy(), autoreject_resample=autoreject_resample)
+    autoreject_epochs, log = _run_autoreject(epochs.copy(), autoreject_resample=autoreject_resample, seed=seed)
 
     assert num_epochs <= len(autoreject_epochs), (f"Cannot make {num_epochs} epochs when only {len(autoreject_epochs)} "
                                                   f"are available after running autoreject")

@@ -282,7 +282,7 @@ class EEGDatasetBase(abc.ABC):
 
     def save_epochs_as_numpy_arrays(self, path, *, subject_ids, derivatives, excluded_channels, main_band_pass,
                                     frequency_bands, notch_filter, num_epochs, epoch_duration, epoch_overlap,
-                                    time_series_start_secs, autoreject_resample, resample_fmax_multiples,
+                                    time_series_start_secs, autoreject_resample, resample_fmax_multiples, seed,
                                     plot_data=False, **kwargs):
         subject_ids = self.get_subject_ids() if subject_ids is None else subject_ids
 
@@ -316,7 +316,7 @@ class EEGDatasetBase(abc.ABC):
                 epoch_duration=epoch_duration, epoch_overlap=epoch_overlap,
                 time_series_start_secs=time_series_start_secs, autoreject_resample=autoreject_resample,
                 resample_fmax_multiples=resample_fmax_multiples, subject_id=sub_id, path=path,
-                plot_data=plot_data, dataset_name=type(self).__name__
+                plot_data=plot_data, dataset_name=type(self).__name__, seed=seed
             )
 
             # Update progress bar
