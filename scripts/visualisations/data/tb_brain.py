@@ -7,13 +7,13 @@ def main():
     # Hyperparameters
     # -----------------
     # Data
-    subject_number = 2
+    subject_number = 854
     derivatives = False
 
     # Pre-processing
     excluded_channels = None
     main_band_pass = (1, 45)
-    frequency_bands = ((1, 45),)
+    frequency_bands = ((4, 8), (1, 45))
     notch_filter = None
     num_epochs = 5
     epoch_duration = 5
@@ -21,7 +21,7 @@ def main():
     time_series_start_secs = 30
     resample_fmax_multiples = (8,)
     autoreject_resample = 180
-    seed = 42
+    seed = 1
 
     # -----------------
     # Load data

@@ -33,4 +33,4 @@ general:
   time_series_start_secs: 30
   autoreject_resample: 180  # todo
   subject_ids: null
-seed: 42
+seed: 1

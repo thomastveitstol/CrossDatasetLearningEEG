@@ -9,7 +9,7 @@ def main():
     # Hyperparameters
     # -----------------
     # Data
-    subject_number = 2
+    subject_number = 33
     derivatives = False
 
     # Pre-processing
@@ -23,7 +23,7 @@ def main():
     time_series_start_secs = 30
     resample_fmax_multiples = (4, None)
     autoreject_resample = None
-    seed = 42
+    seed = 1
 
     # -----------------
     # Load data
@@ -39,14 +39,6 @@ def main():
         autoreject_resample=autoreject_resample, dataset_name=None, path=None, subject_id=None, save_data=False,
         plot_data=True, seed=seed
     )
-
-    # -----------------
-    # Plot data
-    # -----------------
-    eeg.plot()
-    eeg.compute_psd().plot()
-
-    pyplot.show()
 
 
 if __name__ == "__main__":
