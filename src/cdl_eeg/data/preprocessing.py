@@ -93,7 +93,7 @@ def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_ban
     epochs: mne.Epochs = mne.make_fixed_length_epochs(raw, duration=epoch_duration, preload=True, overlap=epoch_overlap,
                                                       verbose=False)
 
-    if num_epochs <= len(epochs):
+    if num_epochs > len(epochs):
         # Skipping subject if insufficient number of epochs
         return None
 
@@ -102,7 +102,7 @@ def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_ban
 
     # Select epochs
     epochs = epochs[:num_epochs]
-    if num_epochs <= len(autoreject_epochs):
+    if num_epochs > len(autoreject_epochs):
         # Skipping autorejected epochs if insufficient amount
         autoreject_epochs = None
     else:
