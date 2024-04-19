@@ -18,7 +18,7 @@ def main():
     frequency_bands = ((1, 45),)
     notch_filter = None
     num_epochs = 5
-    epoch_duration = 4
+    epoch_duration = 5
     epoch_overlap = 0
     time_series_start_secs = 30
     resample_fmax_multiples = (4, None)

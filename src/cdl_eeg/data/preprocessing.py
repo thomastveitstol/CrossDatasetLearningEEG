@@ -93,17 +93,20 @@ def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_ban
     epochs: mne.Epochs = mne.make_fixed_length_epochs(raw, duration=epoch_duration, preload=True, overlap=epoch_overlap,
                                                       verbose=False)
 
-    assert num_epochs <= len(epochs), f"Cannot make {num_epochs} epochs when only {len(epochs)} are available"
+    if num_epochs <= len(epochs):
+        # Skipping subject if insufficient number of epochs
+        return None
 
     # Run autoreject
     autoreject_epochs, log = _run_autoreject(epochs.copy(), autoreject_resample=autoreject_resample, seed=seed)
 
-    assert num_epochs <= len(autoreject_epochs), (f"Cannot make {num_epochs} epochs when only {len(autoreject_epochs)} "
-                                                  f"are available after running autoreject")
-
     # Select epochs
     epochs = epochs[:num_epochs]
-    autoreject_epochs = autoreject_epochs[:num_epochs]
+    if num_epochs <= len(autoreject_epochs):
+        # Skipping autorejected epochs if insufficient amount
+        autoreject_epochs = None
+    else:
+        autoreject_epochs = autoreject_epochs[:num_epochs]
 
     # Loop though and save EEG data for all frequency bands
     # todo: no need to loop through autoreject if nothing was changed
@@ -117,9 +120,10 @@ def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_ban
             save_data=save_data
         )
 
-        # Save with autoreject
-        _save_eeg_with_resampling_and_average_referencing(
-            epochs=autoreject_epochs.copy(), l_freq=l_freq, h_freq=h_freq,
-            resample_fmax_multiples=resample_fmax_multiples, subject_id=subject_id, is_autorejected=True, path=path,
-            plot_data=plot_data, dataset_name=dataset_name, save_data=save_data
-        )
+        # (Maybe) save with autoreject
+        if autoreject_epochs is not None:
+            _save_eeg_with_resampling_and_average_referencing(
+                epochs=autoreject_epochs.copy(), l_freq=l_freq, h_freq=h_freq,
+                resample_fmax_multiples=resample_fmax_multiples, subject_id=subject_id, is_autorejected=True, path=path,
+                plot_data=plot_data, dataset_name=dataset_name, save_data=save_data
+            )
