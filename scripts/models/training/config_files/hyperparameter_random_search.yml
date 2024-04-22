@@ -24,7 +24,7 @@ LatentFeatureDistribution:
 
 Datasets:
   TDBrain:
-    num_subjects: 127
+    num_subjects: 1273
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
@@ -49,7 +49,7 @@ Datasets:
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
   CAUEEG:
-    num_subjects: 137
+    num_subjects: 1379
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, alzheimers ]
