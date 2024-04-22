@@ -44,7 +44,7 @@ class MPILemon(EEGDatasetBase):
         # todo: the method name says tsv, but it is a csv file...
         return os.path.join(self.get_mne_path(), "Participants_MPILMBB_LEMON.csv")
 
-    def get_subject_ids(self) -> Tuple[str, ...]:
+    def _get_subject_ids(self) -> Tuple[str, ...]:
         # Get the subject IDs from participants file
         participants = pandas.read_csv(self.get_participants_tsv_path())["ID"]
 

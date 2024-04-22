@@ -284,7 +284,7 @@ class EEGDatasetBase(abc.ABC):
                                     frequency_bands, notch_filter, num_epochs, epoch_duration, epoch_overlap,
                                     time_series_start_secs, autoreject_resample, resample_fmax_multiples, seed,
                                     plot_data=False, **kwargs):
-        subject_ids = self.get_subject_ids() if subject_ids is None else subject_ids
+        subject_ids = self.get_subject_ids(preprocessed_version=None) if subject_ids is None else subject_ids
 
         # ------------------
         # Input checks
@@ -296,7 +296,7 @@ class EEGDatasetBase(abc.ABC):
                              f"subject IDs which were passed more than once")
 
         # Check if all subjects are actually available
-        available_subjects = self.get_subject_ids()
+        available_subjects = self.get_subject_ids(preprocessed_version=None)
         if not all(sub_id in available_subjects for sub_id in subject_ids):
             _unexpected_subjects = tuple(sub_id for sub_id in self.get_subject_ids() if sub_id not in subject_ids)
             raise ValueError(f"Unexpected subject IDs (N={len(_unexpected_subjects)}): {_unexpected_subjects}")
@@ -322,7 +322,24 @@ class EEGDatasetBase(abc.ABC):
             # Update progress bar
             pbar.update()
 
-    def get_subject_ids(self) -> Tuple[str, ...]:
+    def get_subject_ids(self, preprocessed_version=None) -> Tuple[str, ...]:
+        """Get the subject IDs available. If a preprocessed version is specified (not None), it only returns the IDs
+        which are present in that preprocessed version"""
+        # Return all available ones if preprocessed version is not specified
+        if preprocessed_version is None:
+            return self._get_subject_ids()
+
+        # ----------------
+        # Remove all subjects which are not contained in the specified preprocessed version
+        # ----------------
+        subjects = self._get_subject_ids()
+        path = os.path.join(get_numpy_data_storage_path(), preprocessed_version, self.name)
+
+        # Need to remove .npy. Can't use .removesuffix(".npy") for Python 3.8 compatibility reasons
+        _available_subjects = tuple(subject_npy[:-4] for subject_npy in os.listdir(path))
+        return tuple(subject for subject in subjects if subject in _available_subjects)
+
+    def _get_subject_ids(self) -> Tuple[str, ...]:
         """Get the subject IDs available. Unless this method is overridden, it will collect the IDs from the
         participants.tsv file"""
         return tuple(pandas.read_csv(self.get_participants_tsv_path(), sep="\t")["participant_id"])

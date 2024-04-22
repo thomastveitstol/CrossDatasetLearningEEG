@@ -83,7 +83,7 @@ class CAUEEG(EEGDatasetBase):
 
         return raw
 
-    def get_subject_ids(self):
+    def _get_subject_ids(self):
         """
         Get the subject IDs available. The names are derived from the available .edf files
 

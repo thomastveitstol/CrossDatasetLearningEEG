@@ -41,7 +41,7 @@ class TDBrain(EEGDatasetBase):
                       "CP3", "CPz", "CP4", "P7", "P3", "Pz", "P4", "P8", "O1", "Oz", "O2")
     _montage_name = "standard_1020"  # 10-10 according to the paper
 
-    def get_subject_ids(self) -> Tuple[str, ...]:
+    def _get_subject_ids(self) -> Tuple[str, ...]:
         """Get the subject IDs available. Have to override due to (1) a minor variation in column name, and (2) repeated
         subject IDs"""
         # Get the subject IDs from participants file
