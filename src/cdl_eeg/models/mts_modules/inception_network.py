@@ -391,6 +391,7 @@ class InceptionNetwork(MTSModuleBase):
             if shortcut_layers is not None and i % 3 == 2:
                 shortcut_layer = next(shortcut_layers)
                 x = shortcut_layer(input_tensor=input_tensor, output_tensor=x)
+                input_tensor = x
 
         # Global Average Pooling in time dimension. Note that this operation allows a varied numer of time steps to be
         # used
