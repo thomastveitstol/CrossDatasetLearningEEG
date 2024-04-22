@@ -152,7 +152,7 @@ class CombinedDatasets:
             dataset = get_dataset(dataset_name)
             datasets.append(dataset)
             dataset_subjects = dataset.get_subject_ids(
-                preprocessed_version=config["pre_processed_version"]
+                preprocessed_version=dataset_details["pre_processed_version"]
             )[:dataset_details["num_subjects"]]
             subjects[dataset_name] = dataset_subjects
             channel_name_to_index[dataset_name] = dataset.channel_name_to_index()
