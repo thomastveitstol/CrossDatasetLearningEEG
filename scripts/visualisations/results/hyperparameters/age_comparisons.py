@@ -340,15 +340,15 @@ FIGSIZE = (16, 9)
 # Main functions
 # --------------
 def main_lodo():
-    folder_name = "ages_april18"  # "april_8"  # "debug_results_1"
+    folder_name = "april_19"  # "april_8"  # "debug_results_1"
 
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Band-pass filter"
+    hyperparameter_name = "Learning rate"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
-    dataset = "MPILemon"
+    dataset = "TDBrain"
     performance_metric = "pearson_r"
     balance_validation_performance = True
 
@@ -414,7 +414,7 @@ def main_lodo():
 
 
 def main_inverted_lodo():
-    folder_name = "ages_april18"
+    folder_name = "april_19"
 
     # --------------
     # Hyperparameters
@@ -424,7 +424,7 @@ def main_inverted_lodo():
 
     # Datasets
     source_dataset = "TDBrain"
-    performance_metric = "r2_score"
+    performance_metric = "pearson_r"
     jitter = 0.1  # None  # 0.1  # None
 
     alpha = 0.2
@@ -511,7 +511,7 @@ def main_inverted_lodo():
 
 
 def main():
-    main_inverted_lodo()
+    main_lodo()
 
 
 if __name__ == "__main__":
