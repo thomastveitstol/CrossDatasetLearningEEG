@@ -440,6 +440,16 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
     >>> ShallowFBCSPNetMTS(4, 7, 200).latent_features_dim
     280
 
+    Number of time steps must be above 98
+
+    >>> _ = ShallowFBCSPNetMTS(4, 7, 98)  # doctest: +NORMALIZE_WHITESPACE
+    Traceback (most recent call last):
+    ...
+    ValueError: During model prediction RuntimeError was thrown showing that at some layer ` Output size is too small`
+    (see above in the stacktrace). This could be caused by providing too small `n_times`/`input_window_seconds`.
+    Model may require longer chunks of signal in the input than (1, 4, 98).
+
+
     How the model looks like (the softmax/LogSoftmax activation function has been removed)
 
     >>> ShallowFBCSPNetMTS(4, 7, 200)  # doctest: +NORMALIZE_WHITESPACE
