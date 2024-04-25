@@ -1,9 +1,22 @@
+import os
 import random
 from typing import Any, Dict, Optional
 
+import yaml
+
+from cdl_eeg.data.paths import get_numpy_data_storage_path
 from cdl_eeg.models.mts_modules.getter import get_mts_module_type
 from cdl_eeg.models.region_based_pooling.hyperparameter_sampling import sample_rbp_designs
 from cdl_eeg.models.random_search.sampling_distributions import sample_hyperparameter
+
+
+def _str_to_bool(s):
+    if s == "True":
+        return True
+    elif s == "False":
+        return False
+    else:
+        raise ValueError(f"Unexpected string: {s}")
 
 
 def generate_config_file(config):
@@ -173,16 +186,78 @@ def generate_config_file(config):
         else "downstream_training"
 
     # -----------------
-    # Create final dictionary
+    # Select data pre-processing version
     # -----------------
-    return {"SubjectSplit": subjects_split_hyperparameters,
-            "SubGroups": sub_groups_hyperparameters,
-            "Datasets": dataset_hyperparameters,
-            "Scalers": scaler_hyperparameters,
-            "Training": train_hyperparameters,
-            "Varied Numbers of Channels": varied_numbers_of_channels,
-            "DL Architecture": dl_model,
-            "DomainDiscriminator": discriminator,
-            "run_baseline": config["run_baseline"],
-            "cv_method": config["cv_method"],
-            "LatentFeatureDistribution": config["LatentFeatureDistribution"]}
+    # Select from the desired folder
+    preprocessed_folder = config["PreprocessedFolder"]
+
+    # Make selection
+    available_versions = os.listdir(os.path.join(get_numpy_data_storage_path(), preprocessed_folder))
+    available_versions = tuple(version for version in available_versions if version[:5] == "data_")
+    selected_version = random.choice(available_versions)
+
+    # -----------------
+    # Adjust the sampling frequency if required by the DL architecture
+    # -----------------
+    # Extract preprocessing config
+    with open(os.path.join(get_numpy_data_storage_path(), preprocessed_folder, "config.yml"), "r") as file:
+        pre_processed_config = yaml.safe_load(file)
+
+    while True:
+        # If the selected version does not exist, raise an error
+        if selected_version not in available_versions:
+            raise FailedModelInitialisationError(f"No attempted preprocessing version yielded a successful model "
+                                                 f"initialisation ({mts_module_name})")
+
+        # Compute number of time steps
+        filtering = selected_version.split("_")[3].split(sep="-")
+        l_freq, h_freq = float(filtering[0]), float(filtering[1])
+        s_freq = float(selected_version.split("_")[-1]) * h_freq
+
+        num_time_steps = int(s_freq * pre_processed_config["general"]["epoch_duration"])
+
+        if "num_time_steps" in dl_model["kwargs"]:
+            dl_model["kwargs"]["num_time_steps"] = num_time_steps
+
+        # If the number of time steps is too short for the architecture to handle, try doubling the sampling frequency.
+        # If not possible, an error is raised upon the next iteration
+        # (We just need to check if the inputs work, 'in_channels' argument is not really important)
+        if get_mts_module_type(mts_module_name).successful_initialisation(in_channels=19, **dl_model["kwargs"]):
+            break
+
+        old_sampling_freq_multiple = selected_version.split("_")[-1]  # this will be a string
+        new_sampling_freq_multiple = float(selected_version.split("_")[-1]) * 2
+        selected_version = f"{selected_version[:len(old_sampling_freq_multiple)]}{new_sampling_freq_multiple}"
+
+    # Add details
+    pre_processed_config["general"]["filtering"] = [l_freq, h_freq]
+    pre_processed_config["general"]["autoreject"] = _str_to_bool(selected_version.split("_")[5])
+    pre_processed_config["general"]["resample"] = float(selected_version.split("_")[-1]) * h_freq
+    pre_processed_config["general"]["num_time_steps"] = int(s_freq * pre_processed_config["general"]["epoch_duration"])
+    del pre_processed_config["frequency_bands"]
+    del pre_processed_config["resample_fmax_multiples"]
+
+    # Add preprocessing version to the datasets
+    datasets = tuple(config["Datasets"])  # Maybe this is not needed, but it feels safe
+    for dataset in datasets:
+        config["Datasets"][dataset]["pre_processed_version"] = os.path.join(preprocessed_folder, selected_version)
+
+    # -----------------
+    # Create final dictionaries
+    # -----------------
+    return ({"SubjectSplit": subjects_split_hyperparameters,
+             "SubGroups": sub_groups_hyperparameters,
+             "Datasets": dataset_hyperparameters,
+             "Scalers": scaler_hyperparameters,
+             "Training": train_hyperparameters,
+             "Varied Numbers of Channels": varied_numbers_of_channels,
+             "DL Architecture": dl_model,
+             "DomainDiscriminator": discriminator,
+             "run_baseline": config["run_baseline"],
+             "cv_method": config["cv_method"],
+             "LatentFeatureDistribution": config["LatentFeatureDistribution"]},
+            pre_processed_config)
+
+
+class FailedModelInitialisationError(Exception):
+    ...
