@@ -79,6 +79,18 @@ class MTSModuleBase(nn.Module, abc.ABC):
         """
         raise NotImplementedError
 
+    @classmethod
+    def successful_initialisation(cls, *args, **kwargs):
+        """Method which returns True if the provided hyperparameters will give a successful initialisation, False if a
+        ValueError is raised. This was implemented as the braindecode models raises are not always able to handle the
+        input dimensionality, and tends to raise a ValueError if the input time series is too short for the architecture
+        to handle"""
+        try:
+            cls(*args, **kwargs)
+        except ValueError:  # todo: consider raising some other error, a more specific one
+            return False
+        return True
+
     # ----------------
     # Properties
     # ----------------
