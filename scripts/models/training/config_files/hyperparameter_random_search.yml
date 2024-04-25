@@ -112,8 +112,8 @@ Targets:
 
 Training:
   # Fixed hyperparameters
-  batch_size: 16
-  num_epochs: 50
+  batch_size: 128
+  num_epochs: 5
   verbose: true
   ValSplit:
     name: DatasetBalancedTrainValSplit
@@ -154,7 +154,7 @@ FCModule: &FCModule
     dist: uniform_discrete
     kwargs:
       # domain: [ [], [32], [64], [32, 32], [64, 64], [64, 32] ]  # todo
-      domain: [ [4], [8], [4, 8], [4, 4], [8, 8] ]
+      domain: [ [4], [8], [8, 4], [4, 4], [8, 8] ]
 
 DomainDiscriminator:
   discriminators:
@@ -277,7 +277,7 @@ RegionBasedPooling: &RegionBasedPooling
   normalise_region_representations:
     dist: uniform_discrete
     kwargs:
-      domain: [ true, false ]
+      domain: [ true ]
   share_all_pooling_modules:
     dist: uniform_discrete
     kwargs:
@@ -329,28 +329,6 @@ InceptionNetwork: &InceptionNetwork
         a: 0
         b: 3
 
-EEGNetv4MTS: &EEGNetv4MTS
-  num_classes: 1
-  num_time_steps: *num_time_steps
-  kernel_length:
-    dist: log_uniform_int
-    kwargs:
-      base: 2
-      a: 3
-      b: 6
-
-EEGResNetMTS: &EEGResNetMTS
-  num_classes: 1
-  num_time_steps: *num_time_steps
-  n_layers_per_block:
-    dist: uniform_discrete
-    kwargs:
-      domain: [ 2, 3, 4 ]
-  first_filter_length:
-    dist: uniform_discrete
-    kwargs:
-      domain: [ 3, 5, 7 ]
-
 ShallowFBCSPNetMTS: &ShallowFBCSPNetMTS
   general:
     num_classes: 1
@@ -400,8 +378,8 @@ Deep4NetMTS: &Deep4NetMTS
 
 MTS Module:
   InceptionNetwork: *InceptionNetwork
-  # EEGNetv4MTS: *EEGNetv4MTS
-  # EEGResNetMTS: *EEGResNetMTS
-  # ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
-  # Deep4NetMTS: *Deep4NetMTS
+  ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
+  Deep4NetMTS: *Deep4NetMTS
 NormaliseInputs: [ true, false ]
+
+PreprocessedFolder: preprocessed_2024-04-19_151355
