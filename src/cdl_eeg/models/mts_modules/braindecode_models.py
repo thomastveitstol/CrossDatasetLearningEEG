@@ -630,25 +630,23 @@ class Deep4NetMTS(MTSModuleBase):
     --------
     >>> _ = Deep4NetMTS(19, 3, 1000)
 
-    The number of input time samples must be greater than 440
+    Since padding on the conv layers was added, 160 time steps are allowed (the minimum is 81)
 
-    >>> _ = Deep4NetMTS(19, 3, 440)  # doctest: +NORMALIZE_WHITESPACE
+    >>> _ = Deep4NetMTS(19, 3, 160)
+    >>> _ = Deep4NetMTS(19, 3, 80, filter_time_length=10)  # doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
     ...
-    ValueError: During model prediction RuntimeError was thrown showing that at some layer ` Output size is too small`
-    (see above in the stacktrace). This could be caused by providing too small `n_times`/`input_window_seconds`. Model
-    may require longer chunks of signal in the input than (1, 19, 440).
+    ZeroDivisionError: float division by zero
 
+    How the model looks like
 
-    How the model looks like (the softmax/LogSoftmax activation function has been removed)
-
-    >>> Deep4NetMTS(19, 3, 1800)  # doctest: +NORMALIZE_WHITESPACE
+    >>> Deep4NetMTS(19, 3, 180)  # doctest: +NORMALIZE_WHITESPACE
     Deep4NetMTS(
       (_model): Deep4Net(
         (ensuredims): Ensure4d()
         (dimshuffle): Rearrange('batch C T 1 -> batch 1 T C')
         (conv_time_spat): CombinedConv(
-          (conv_time): Conv2d(1, 25, kernel_size=(10, 1), stride=(1, 1))
+          (conv_time): Conv2d(1, 25, kernel_size=(10, 1), stride=(1, 1), padding=same)
           (conv_spat): Conv2d(25, 25, kernel_size=(1, 19), stride=(1, 1), bias=False)
         )
         (bnorm): BatchNorm2d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
@@ -656,25 +654,25 @@ class Deep4NetMTS(MTSModuleBase):
         (pool): MaxPool2d(kernel_size=(3, 1), stride=(3, 1), padding=0, dilation=1, ceil_mode=False)
         (pool_nonlin): Expression(expression=identity)
         (drop_2): Dropout(p=0.5, inplace=False)
-        (conv_2): Conv2d(25, 50, kernel_size=(10, 1), stride=(1, 1), bias=False)
+        (conv_2): Conv2d(25, 50, kernel_size=(10, 1), stride=(1, 1), padding=same, bias=False)
         (bnorm_2): BatchNorm2d(50, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         (nonlin_2): Expression(expression=elu)
         (pool_2): MaxPool2d(kernel_size=(3, 1), stride=(3, 1), padding=0, dilation=1, ceil_mode=False)
         (pool_nonlin_2): Expression(expression=identity)
         (drop_3): Dropout(p=0.5, inplace=False)
-        (conv_3): Conv2d(50, 100, kernel_size=(10, 1), stride=(1, 1), bias=False)
+        (conv_3): Conv2d(50, 100, kernel_size=(10, 1), stride=(1, 1), padding=same, bias=False)
         (bnorm_3): BatchNorm2d(100, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         (nonlin_3): Expression(expression=elu)
         (pool_3): MaxPool2d(kernel_size=(3, 1), stride=(3, 1), padding=0, dilation=1, ceil_mode=False)
         (pool_nonlin_3): Expression(expression=identity)
         (drop_4): Dropout(p=0.5, inplace=False)
-        (conv_4): Conv2d(100, 200, kernel_size=(10, 1), stride=(1, 1), bias=False)
+        (conv_4): Conv2d(100, 200, kernel_size=(10, 1), stride=(1, 1), padding=same, bias=False)
         (bnorm_4): BatchNorm2d(200, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         (nonlin_4): Expression(expression=elu)
         (pool_4): MaxPool2d(kernel_size=(3, 1), stride=(3, 1), padding=0, dilation=1, ceil_mode=False)
         (pool_nonlin_4): Expression(expression=identity)
         (final_layer): Sequential(
-          (conv_classifier): Conv2d(200, 3, kernel_size=(17, 1), stride=(1, 1))
+          (conv_classifier): Conv2d(200, 3, kernel_size=(2, 1), stride=(1, 1))
           (squeeze): Expression(expression=squeeze_final_output)
         )
       )
@@ -688,14 +686,24 @@ class Deep4NetMTS(MTSModuleBase):
     AttributeError: 'Deep4Net' object has no attribute 'conv_time_spat'
     """
 
-    def __init__(self, in_channels, num_classes, num_time_steps, final_conv_length="auto", **kwargs):
+    def __init__(self, in_channels, num_classes, num_time_steps, **kwargs):
         super().__init__()
 
         # ----------------
-        # Initialise the model
+        # Build the model
         # ----------------
-        self._model = Deep4Net(n_chans=in_channels, n_outputs=num_classes, n_times=num_time_steps,
-                               final_conv_length=final_conv_length, add_log_softmax=False, **kwargs)
+        # Initialise from Braindecode
+        model = Deep4Net(n_chans=in_channels, n_outputs=num_classes, n_times=num_time_steps,
+                         final_conv_length=num_time_steps//3//3//3//3, add_log_softmax=False, **kwargs)
+
+        # Set padding
+        model.conv_time_spat.conv_time.padding = "same"
+        model.conv_2.padding = "same"
+        model.conv_3.padding = "same"
+        model.conv_4.padding = "same"
+
+        # Set attribute
+        self._model = model
 
     def extract_latent_features(self, input_tensor):
         """
@@ -714,7 +722,7 @@ class Deep4NetMTS(MTSModuleBase):
         >>> my_model = Deep4NetMTS(in_channels=4, num_classes=3, num_time_steps=1800,
         ...                        n_filters_4=206)
         >>> my_model.extract_latent_features(torch.rand(size=(10, 4, 1800))).size()
-        torch.Size([10, 3502])
+        torch.Size([10, 4532])
         """
         return self(input_tensor, return_features=True)
 
@@ -733,7 +741,7 @@ class Deep4NetMTS(MTSModuleBase):
         Examples
         --------
         >>> my_model = Deep4NetMTS(in_channels=4, num_classes=8, num_time_steps=1800, n_filters_4=206)
-        >>> my_model.classify_latent_features(torch.rand(size=(10, 3502))).size()
+        >>> my_model.classify_latent_features(torch.rand(size=(10, 4532))).size()
         torch.Size([10, 8])
 
         Running (1) feature extraction and (2) classifying is the excact same as just running forward
@@ -771,7 +779,7 @@ class Deep4NetMTS(MTSModuleBase):
         >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps))).size()
         torch.Size([10, 3])
         >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps)), return_features=True).size()
-        torch.Size([10, 3502])
+        torch.Size([10, 4532])
         """
         # If predictions are to be made, just run forward method of the braindecode method
         if not return_features:
