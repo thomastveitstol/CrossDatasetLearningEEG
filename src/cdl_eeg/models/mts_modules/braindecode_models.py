@@ -26,6 +26,18 @@ class EEGNetv4MTS(MTSModuleBase):
     >>> EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=3000).latent_features_dim
     1488
 
+    Number of input time steps must be greater than 26
+
+    >>> _ = EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=40)
+    >>> _ = EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=27)
+    >>> _ = EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=26)  # doctest: +NORMALIZE_WHITESPACE
+    Traceback (most recent call last):
+    ...
+    ValueError: During model prediction RuntimeError was thrown showing that at some layer ` Output size is too small`
+    (see above in the stacktrace). This could be caused by providing too small `n_times`/`input_window_seconds`. Model
+    may require longer chunks of signal in the input than (1, 4, 26).
+
+
     How the model looks like (the softmax/LogSoftmax activation function has been removed)
 
     >>> EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=3000)  # doctest: +NORMALIZE_WHITESPACE
@@ -442,13 +454,13 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
 
     Number of time steps must be above 98
 
+    >>> _ = ShallowFBCSPNetMTS(4, 7, 99)
     >>> _ = ShallowFBCSPNetMTS(4, 7, 98)  # doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
     ...
     ValueError: During model prediction RuntimeError was thrown showing that at some layer ` Output size is too small`
     (see above in the stacktrace). This could be caused by providing too small `n_times`/`input_window_seconds`.
     Model may require longer chunks of signal in the input than (1, 4, 98).
-
 
     How the model looks like (the softmax/LogSoftmax activation function has been removed)
 
@@ -643,6 +655,7 @@ class Deep4NetMTS(MTSModuleBase):
     Since padding on the conv layers was added, 160 time steps are allowed (the minimum is 81)
 
     >>> _ = Deep4NetMTS(19, 3, 160)
+    >>> _ = Deep4NetMTS(19, 3, 81)
     >>> _ = Deep4NetMTS(19, 3, 80, filter_time_length=10)  # doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
     ...
