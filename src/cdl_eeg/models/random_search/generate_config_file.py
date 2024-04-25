@@ -2,7 +2,7 @@ import os
 import random
 from typing import Any, Dict, Optional
 
-import yaml
+import yaml  # type: ignore[import]
 
 from cdl_eeg.data.paths import get_numpy_data_storage_path
 from cdl_eeg.models.mts_modules.getter import get_mts_module_type
@@ -192,8 +192,8 @@ def generate_config_file(config):
     preprocessed_folder = config["PreprocessedFolder"]
 
     # Make selection
-    available_versions = os.listdir(os.path.join(get_numpy_data_storage_path(), preprocessed_folder))
-    available_versions = tuple(version for version in available_versions if version[:5] == "data_")
+    _available_versions = os.listdir(os.path.join(get_numpy_data_storage_path(), preprocessed_folder))
+    available_versions = tuple(version for version in _available_versions if version[:5] == "data_")
     selected_version = random.choice(available_versions)
 
     # -----------------
