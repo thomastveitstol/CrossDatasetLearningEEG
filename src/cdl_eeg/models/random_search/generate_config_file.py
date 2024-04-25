@@ -207,7 +207,8 @@ def generate_config_file(config):
         # If the selected version does not exist, raise an error
         if selected_version not in available_versions:
             raise FailedModelInitialisationError(f"No attempted preprocessing version yielded a successful model "
-                                                 f"initialisation ({mts_module_name})")
+                                                 f"initialisation ({mts_module_name}). Last attempt: "
+                                                 f"{selected_version}")
 
         # Compute number of time steps
         filtering = selected_version.split("_")[3].split(sep="-")
@@ -226,8 +227,9 @@ def generate_config_file(config):
             break
 
         old_sampling_freq_multiple = selected_version.split("_")[-1]  # this will be a string
-        new_sampling_freq_multiple = float(selected_version.split("_")[-1]) * 2
-        selected_version = f"{selected_version[:len(old_sampling_freq_multiple)]}{new_sampling_freq_multiple}"
+        new_sampling_freq_multiple = int(selected_version.split("_")[-1]) * 2
+        print(f"Changing sampling rate from a multiple of {old_sampling_freq_multiple} to {new_sampling_freq_multiple}")
+        selected_version = f"{selected_version[:-len(old_sampling_freq_multiple)]}{new_sampling_freq_multiple}"
 
     # Add details
     pre_processed_config["general"]["filtering"] = [l_freq, h_freq]
