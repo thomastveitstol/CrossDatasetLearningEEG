@@ -2,6 +2,7 @@ import copy
 import itertools
 import os
 import random
+import traceback
 import warnings
 from typing import Any, Dict, Optional, List
 
@@ -49,10 +50,30 @@ class Experiment:
         results_path : str
             The path of where to store the results
         """
+        # Create path
+        os.mkdir(results_path)
+
+        # Store attributes
         self._config = config
         self._pre_processing_config = pre_processing_config
         self._results_path = results_path
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if device is None else device
+
+    # -------------
+    # Dunder methods for context manager (using the 'with' statement)
+    # -------------
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # If everything was as it should, just exit
+        if exc_val is None:
+            return None
+
+        # Otherwise, document the error received in a text file
+        with open(os.path.join(self._results_path, f"{exc_type.__name__}.txt"), "w") as file:
+            traceback.print_tb(exc_tb, file=file)
+            file.write(f"{exc_type.__name__}: {exc_val}")
 
     # -------------
     # Methods for preparing for cross validation
@@ -686,11 +707,6 @@ class Experiment:
         subjects = dataset_details["subjects"]
         channel_systems = dataset_details["channel_systems"]
         channel_name_to_index = dataset_details["channel_name_to_index"]
-
-        # -----------------
-        # Create folder for storing results, config file etc.
-        # -----------------
-        os.mkdir(self._results_path)
 
         # -----------------
         # Make subject split
