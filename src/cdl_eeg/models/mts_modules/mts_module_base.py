@@ -80,7 +80,7 @@ class MTSModuleBase(nn.Module, abc.ABC):
         raise NotImplementedError
 
     @classmethod
-    def successful_initialisation(cls, *args, **kwargs):
+    def successful_initialisation(cls, *args, **kwargs):  # type: ignore[call-arg]
         """Method which returns True if the provided hyperparameters will give a successful initialisation, False if a
         ValueError or ZeroDivisionError is raised. This was implemented as the braindecode models raises are not always
         able to handle the input dimensionality, and tends to raise a ValueError or ZeroDivisionError if the input time
