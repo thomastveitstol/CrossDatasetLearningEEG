@@ -652,11 +652,11 @@ class Deep4NetMTS(MTSModuleBase):
     --------
     >>> _ = Deep4NetMTS(19, 3, 1000)
 
-    Since padding on the conv layers was added, 160 time steps are allowed (the minimum is 81)
+    Since padding on the conv layers was added, 160 time steps are allowed (the minimum is 89)
 
     >>> _ = Deep4NetMTS(19, 3, 160)
-    >>> _ = Deep4NetMTS(19, 3, 81)
-    >>> _ = Deep4NetMTS(19, 3, 80, filter_time_length=10)  # doctest: +NORMALIZE_WHITESPACE
+    >>> _ = Deep4NetMTS(19, 3, 90)
+    >>> _ = Deep4NetMTS(19, 3, 89, filter_time_length=10)  # doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
     ...
     ZeroDivisionError: float division by zero
@@ -669,7 +669,7 @@ class Deep4NetMTS(MTSModuleBase):
         (ensuredims): Ensure4d()
         (dimshuffle): Rearrange('batch C T 1 -> batch 1 T C')
         (conv_time_spat): CombinedConv(
-          (conv_time): Conv2d(1, 25, kernel_size=(10, 1), stride=(1, 1), padding=same)
+          (conv_time): Conv2d(1, 25, kernel_size=(10, 1), stride=(1, 1))
           (conv_spat): Conv2d(25, 25, kernel_size=(1, 19), stride=(1, 1), bias=False)
         )
         (bnorm): BatchNorm2d(25, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
@@ -715,12 +715,14 @@ class Deep4NetMTS(MTSModuleBase):
         # ----------------
         # Build the model
         # ----------------
+        # Compute length of the final conv layer
+        _final_conv_length = (num_time_steps - kwargs.get("filter_time_length", 10) + 1) // 3 // 3 // 3 // 3
+
         # Initialise from Braindecode
         model = Deep4Net(n_chans=in_channels, n_outputs=num_classes, n_times=num_time_steps,
-                         final_conv_length=num_time_steps//3//3//3//3, add_log_softmax=False, **kwargs)
+                         final_conv_length=_final_conv_length, add_log_softmax=False, **kwargs)
 
-        # Set padding
-        model.conv_time_spat.conv_time.padding = "same"
+        # Set padding. It was such a horror with the first one, so I just gave it up...
         model.conv_2.padding = "same"
         model.conv_3.padding = "same"
         model.conv_4.padding = "same"
@@ -803,6 +805,15 @@ class Deep4NetMTS(MTSModuleBase):
         torch.Size([10, 3])
         >>> my_model(torch.rand(size=(my_batch, my_channels, my_time_steps)), return_features=True).size()
         torch.Size([10, 4532])
+
+        New example t(his one didn't work in a previous implementation)
+
+        >>> my_model = Deep4NetMTS(filter_time_length=11, filter_length_2=11, filter_length_3=11, filter_length_4=11,
+        ...                        n_filters_2=56, n_filters_3=112, n_filters_4=224, n_filters_spat=28,
+        ...                        n_filters_time=28, num_time_steps=900, drop_prob=0.075167, num_classes=1,
+        ...                        in_channels=19)
+        >>> my_model(torch.rand(16, 19, 900)).size()
+        torch.Size([16, 1])
         """
         # If predictions are to be made, just run forward method of the braindecode method
         if not return_features:
