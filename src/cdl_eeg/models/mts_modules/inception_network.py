@@ -199,8 +199,7 @@ class InceptionNetwork(MTSModuleBase):
 
     Examples
     --------
-    >>> InceptionNetwork(64, 5).supports_latent_feature_extraction()
-    True
+    >>> _ = InceptionNetwork(64, 5)
 
     How it looks like (but note that the ordering does not reflect the forward pass, as this is not a Sequential model)
 
@@ -231,8 +230,12 @@ class InceptionNetwork(MTSModuleBase):
         )
       )
       (_shortcut_layers): ModuleList(
-        (0-1): 2 x _ShortcutLayer(
+        (0): _ShortcutLayer(
           (_conv): Conv1d(64, 128, kernel_size=(1,), stride=(1,), padding=same)
+          (_batch_norm): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        )
+        (1): _ShortcutLayer(
+          (_conv): Conv1d(128, 128, kernel_size=(1,), stride=(1,), padding=same)
           (_batch_norm): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
         )
       )
@@ -286,9 +289,10 @@ class InceptionNetwork(MTSModuleBase):
         self._shortcut_layers: Optional[nn.ModuleList]
         if use_residual:
             # A shortcut layer should be used for every third inception module
-            self._shortcut_layers = nn.ModuleList([_ShortcutLayer(in_channels=in_channels,
-                                                                  out_channels=output_channels)
-                                                   for _ in range(len(self._inception_modules) // 3)])
+            self._shortcut_layers = nn.ModuleList(
+                [_ShortcutLayer(in_channels=in_channels if i == 0 else output_channels, out_channels=output_channels)
+                 for i in range(len(self._inception_modules) // 3)]
+            )
         else:
             self._shortcut_layers = None
 
@@ -316,8 +320,6 @@ class InceptionNetwork(MTSModuleBase):
         Examples
         --------
         >>> my_model = InceptionNetwork(in_channels=43, num_classes=3, cnn_units=23, depth=30)
-        >>> my_model.default_latent_feature_extraction(torch.rand(size=(10, 43, 500))).size()
-        torch.Size([10, 92])
         >>> my_model.extract_latent_features(torch.rand(size=(10, 43, 500))).size()
         torch.Size([10, 92])
         """
