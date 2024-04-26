@@ -72,6 +72,7 @@ class Experiment:
 
         # Otherwise, document the error received in a text file
         with open(os.path.join(self._results_path, f"{exc_type.__name__}.txt"), "w") as file:
+            file.write("Traceback (most recent call last):")
             traceback.print_tb(exc_tb, file=file)
             file.write(f"{exc_type.__name__}: {exc_val}")
 
