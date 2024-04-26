@@ -25,7 +25,7 @@ class _SampleDistribution:
     Examples
     --------
     >>> _SampleDistribution.get_available_distribution()
-    ('log_uniform', 'normal', 'uniform', 'uniform_discrete')
+    ('log_uniform', 'log_uniform_int', 'n_log_uniform_int', 'normal', 'uniform', 'uniform_discrete', 'uniform_int')
     >>> numpy.random.seed(1)
     >>> round(_SampleDistribution.sample("log_uniform", base=10, a=0, b=3), 3)  # 10^x, x ~ U[a, b]
     17.826
