@@ -348,7 +348,7 @@ ShallowFBCSPNetMTS: &ShallowFBCSPNetMTS
       dist: uniform_int
       kwargs:
         a: 10
-        b: 20
+        b: 21
     drop_prob:
       dist: uniform
       kwargs:
