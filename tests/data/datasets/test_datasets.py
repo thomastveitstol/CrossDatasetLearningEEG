@@ -55,7 +55,7 @@ def test_channel_names_ordering_mpi_lemon():
     for subject_id in dataset.get_subject_ids():
         # Load the EEG object
         raw = dataset.load_single_mne_object(subject_id=subject_id, interpolation_method="MNE", derivatives=False,
-                                             preload=False)
+                                             preload=True)  # It relies on .get_data() anyway
 
         # Test if the channel names are as expected
         assert tuple(raw.ch_names) == expected_channel_names, \
