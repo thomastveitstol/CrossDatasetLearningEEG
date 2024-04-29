@@ -82,7 +82,7 @@ class YulinWang(EEGDatasetBase):
 
         return raw
 
-    def _load_single_cleaned_mne_object(self, subject_id, *, visit, recording):
+    def _load_single_cleaned_mne_object(self, subject_id, *, visit, recording, preload=True):
         # Create path
         path_to_cleaned = "derivatives/preprocessed data/preprocessed_data"
         subject_path = pathlib.Path(f"{str(subject_id).zfill(2).replace('-', '')}_{str(visit).zfill(2)}_{recording}")
@@ -90,7 +90,7 @@ class YulinWang(EEGDatasetBase):
         path = os.path.join(self.get_mne_path(), path_to_cleaned, subject_path)
 
         # Make MNE raw object
-        raw = mne.io.read_raw_eeglab(input_fname=path, preload=True, verbose=False)
+        raw = mne.io.read_raw_eeglab(input_fname=path, preload=preload, verbose=False)
 
         # Maybe rename channels
         if "Cpz" in raw.info["ch_names"]:
