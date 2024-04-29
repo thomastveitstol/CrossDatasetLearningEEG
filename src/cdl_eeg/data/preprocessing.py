@@ -10,10 +10,10 @@ def create_folder_name(*, l_freq, h_freq, is_autorejected, resample_multiple):
     return f"data_band_pass_{l_freq}-{h_freq}_autoreject_{is_autorejected}_sampling_multiple_{resample_multiple}"
 
 
-def _run_autoreject(epochs, autoreject_resample, seed):
+def _run_autoreject(epochs, autoreject_resample, seed, num_splits):
     if autoreject_resample is not None:
         epochs.resample(autoreject_resample, verbose=False)
-    reject = autoreject.AutoReject(verbose=False, random_state=seed)  # todo: hyperparameters
+    reject = autoreject.AutoReject(verbose=False, random_state=seed, cv=num_splits)  # todo: hyperparameters
     return reject.fit_transform(epochs, return_log=True)
 
 
@@ -98,7 +98,8 @@ def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_ban
         return None
 
     # Run autoreject
-    autoreject_epochs, log = _run_autoreject(epochs.copy(), autoreject_resample=autoreject_resample, seed=seed)
+    autoreject_epochs, log = _run_autoreject(epochs.copy(), autoreject_resample=autoreject_resample, seed=seed,
+                                             num_splits=min(10, len(epochs)))
 
     # Select epochs
     epochs = epochs[:num_epochs]
