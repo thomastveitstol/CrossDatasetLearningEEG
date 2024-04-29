@@ -15,7 +15,7 @@ SubGroups:
   verbose: true
   sub_groups:
     dataset_name:  # todo: don't hardcode like this
-      [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain, CAUEEG ]
+      [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain ]
 
 LatentFeatureDistribution:
   make_initial_distribution_exploration: true
@@ -48,11 +48,6 @@ Datasets:
     num_time_steps: *num_time_steps
     time_series_start: *time_series_start
     target_availability: [ age, sex ]
-  CAUEEG:
-    num_subjects: 1379
-    num_time_steps: *num_time_steps
-    time_series_start: *time_series_start
-    target_availability: [ age, alzheimers ]
 
 Targets:
   age:
@@ -238,7 +233,7 @@ VoronoiSplit:  # &VoronoiSplit
   channel_systems:
     dist: uniform_discrete
     kwargs:
-      domain: [ [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain, CAUEEG ] ]
+      domain: [ [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain ] ]
   min_nodes: 1  # todo: other values must be implemented
   num_initial_centroids:
     dist: log_uniform_int
@@ -297,7 +292,7 @@ RegionBasedPooling: &RegionBasedPooling
 
 # Interpolation
 Interpolation: &Interpolation
-  main_channel_system: [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain, CAUEEG ]
+  main_channel_system: [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain ]
   method: [ MNE, spline ]
 
 Varied Numbers of Channels:
