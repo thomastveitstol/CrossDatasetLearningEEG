@@ -1,14 +1,12 @@
 frequency_bands:
-  - [ 0.5, 4 ]
+  - [ 1, 4 ]
   - [ 4, 8 ]
   - [ 8, 12 ]
   - [ 12, 30 ]
   - [ 30, 45 ]
-  - [ 0.5, 45 ]
+  - [ 1, 45 ]
 resample_fmax_multiples: [ 2, 4, 8 ]
 Datasets:
-  CAUEEG:
-    derivatives: false
   TDBrain:
     derivatives: false
   HatlestadHall:
