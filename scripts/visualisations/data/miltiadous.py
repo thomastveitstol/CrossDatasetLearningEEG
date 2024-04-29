@@ -4,6 +4,8 @@ Script for plotting the preprocessed version of the Miltiadous
 Conclusion:
     Looks quite good, although not sure if all is resting state (see e.g. subject 56).
 """
+from matplotlib import pyplot
+
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.preprocessing import save_preprocessed_epochs
 
@@ -13,8 +15,10 @@ def main():
     # Hyperparameters
     # -----------------
     # Data
-    subject_number = 7
+    subject_number = 1
     derivatives = True
+
+    plot_raw = True
 
     # Pre-processing
     excluded_channels = None
@@ -35,14 +39,18 @@ def main():
     subject_id = Miltiadous().get_subject_ids()[subject_number]
     eeg = Miltiadous().load_single_mne_object(subject_id=subject_id, derivatives=derivatives)
 
-    # Pre-process without saving
-    save_preprocessed_epochs(
-        eeg, excluded_channels=excluded_channels, main_band_pass=main_band_pass, frequency_bands=frequency_bands,
-        notch_filter=notch_filter, num_epochs=num_epochs, epoch_duration=epoch_duration, epoch_overlap=epoch_overlap,
-        time_series_start_secs=time_series_start_secs, resample_fmax_multiples=resample_fmax_multiples,
-        autoreject_resample=autoreject_resample, dataset_name=None, path=None, subject_id=None, save_data=False,
-        plot_data=True, seed=seed
-    )
+    if plot_raw:
+        eeg.plot()
+        pyplot.show()
+    else:
+        # Pre-process without saving
+        save_preprocessed_epochs(
+            eeg, excluded_channels=excluded_channels, main_band_pass=main_band_pass, frequency_bands=frequency_bands,
+            notch_filter=notch_filter, num_epochs=num_epochs, epoch_duration=epoch_duration,
+            epoch_overlap=epoch_overlap, time_series_start_secs=time_series_start_secs,
+            resample_fmax_multiples=resample_fmax_multiples, autoreject_resample=autoreject_resample, dataset_name=None,
+            path=None, subject_id=None, save_data=False, plot_data=True, seed=seed
+        )
 
 
 if __name__ == "__main__":
