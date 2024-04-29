@@ -44,7 +44,10 @@ def test_channel_names_ordering_mpi_lemon():
     dataset = MPILemon()
 
     # Get the channel names
-    expected_channel_names = dataset._channel_names
+    expected_channel_names = get_channel_name_order(dataset.channel_name_to_index())
+    assert expected_channel_names == dataset._channel_names, \
+        (f"Two different methods for getting the channel names ordering gave different results:\nMethod 1: "
+         f"{expected_channel_names}\nMethod 2: {dataset._channel_names}")
 
     # Loop through all subjects
     for subject_id in dataset.get_subject_ids():
