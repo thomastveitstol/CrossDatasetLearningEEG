@@ -107,6 +107,15 @@ def _get_weight_loss_lambda(config, hparam: HParam):
         else config["Training"]["Loss"]["weighter_kwargs"]["weight_power"]
 
 
+def _get_normalisation(config):
+    if config["Varied Numbers of Channels"]["name"] == "Interpolation":
+        return str(config["DL Architecture"]["normalise"])
+    elif config["Varied Numbers of Channels"]["name"] == "RegionBasedPooling":
+        return str(config["Varied Numbers of Channels"]["kwargs"]["normalise_region_representations"])
+    else:
+        raise ValueError
+
+
 def _get_hyperparameter(config, hparam: HParam):
     if hparam.key_path == "num_montage_splits":
         return _get_num_montage_splits(config=config, hparam=hparam)
@@ -120,6 +129,8 @@ def _get_hyperparameter(config, hparam: HParam):
         return config["general"]["resample"] / config["general"]["filtering"][-1]
     elif hparam.key_path == "num_seconds":
         return config["general"]["num_time_steps"] / config["general"]["resample"]
+    elif hparam.key_path == "normalisation":
+        return _get_normalisation(config)
 
     hyperparameter = config
     for key in hparam.key_path:
@@ -311,7 +322,9 @@ HYPERPARAMETERS = {
     "Remove above STD": HParam(key_path=("general", "remove_above_std"), default=NotImplemented, preprocessing=True,
                                variable_type=VariableType.CATEGORICAL),
     "Time series length (s)": HParam(key_path="num_seconds", default=NotImplemented, preprocessing=True,
-                                     variable_type=VariableType.NUMERICAL)
+                                     variable_type=VariableType.NUMERICAL),
+    "Normalisation": HParam(key_path="normalisation", preprocessing=False, default=NotImplemented,
+                            variable_type=VariableType.CATEGORICAL)
 }
 
 PRETTY_NAME = {"pearson_r": "Pearson's r",
@@ -329,7 +342,8 @@ PRETTY_NAME = {"pearson_r": "Pearson's r",
                "Miltiadous": "Miltiadous",
                "YulinWang": "YulinWang",
                "MPILemon": "MPI Lemon",
-               "TDBrain": "TDBRAIN"}
+               "TDBrain": "TDBRAIN",
+               "CAUEEG": "CAUEEG"}
 
 # Cosmetics
 FONTSIZE = 17
@@ -340,15 +354,15 @@ FIGSIZE = (16, 9)
 # Main functions
 # --------------
 def main_lodo():
-    folder_name = "april_19"  # "april_8"  # "debug_results_1"
+    folder_name = "weekend_april_26"
 
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Learning rate"
+    hyperparameter_name = "Normalisation"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
-    dataset = "TDBrain"
+    dataset = "HatlestadHall"
     performance_metric = "pearson_r"
     balance_validation_performance = True
 
@@ -373,8 +387,11 @@ def main_lodo():
         path = _get_lodo_path(run=run, results_dir=results_dir, dataset=dataset)
 
         # Get performance
-        val, test = _get_val_test_lodo_performance(path=path, metric=performance_metric,
-                                                   balance_validation_performance=balance_validation_performance)
+        try: # If e.g. all values are nan (can happen for correlation metrics), just skip for now
+            val, test = _get_val_test_lodo_performance(path=path, metric=performance_metric,
+                                                       balance_validation_performance=balance_validation_performance)
+        except KeyError:
+            continue
         val_performance.append(val)
         test_performance.append(test)
         hyperparameter.append(_get_hyperparameter(
@@ -414,18 +431,18 @@ def main_lodo():
 
 
 def main_inverted_lodo():
-    folder_name = "april_19"
+    folder_name = "weekend_april_26"
 
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Band-pass filter"
+    hyperparameter_name = "Normalisation"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
     # Datasets
     source_dataset = "TDBrain"
     performance_metric = "pearson_r"
-    jitter = 0.1  # None  # 0.1  # None
+    jitter = None  # 0.1  # None  # 0.1  # None
 
     alpha = 0.2
 
@@ -449,14 +466,17 @@ def main_inverted_lodo():
         path = _get_inverted_lodo_path(run=run, results_dir=results_dir, source_dataset=source_dataset)
 
         # Get performance
-        test = _get_val_test_inverted_lodo_performance(path=path, metric=performance_metric)
+        try:  # If e.g. all values are nan (can happen for correlation metrics), just skip for now
+            test = _get_val_test_inverted_lodo_performance(path=path, metric=performance_metric)
+        except KeyError:
+            continue
 
         # Store performance
         for dataset_name, performance in test.items():
-            if i == 0:
-                test_performances[dataset_name] = [performance]
-            else:
+            if dataset_name in test_performances:
                 test_performances[dataset_name].append(performance)
+            else:
+                test_performances[dataset_name] = [performance]
 
         hyperparameter.append(_get_hyperparameter(
             config=_get_config_file(results_folder=os.path.dirname(os.path.dirname(path)),
@@ -511,7 +531,7 @@ def main_inverted_lodo():
 
 
 def main():
-    main_lodo()
+    main_inverted_lodo()
 
 
 if __name__ == "__main__":
