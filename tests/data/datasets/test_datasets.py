@@ -13,6 +13,7 @@ from cdl_eeg.data.paths import get_raw_data_storage_path
 
 
 @pytest.mark.skipif(not os.path.isdir(get_raw_data_storage_path()), reason="Required datasets not available")
+@pytest.mark.skipif("TOX_ENV_NAME" in os.environ, reason="Too time consuming to run this test")
 def test_channel_names_ordering():
     """Test if the channel names are always the same per dataset (equal and correctly ordered). MPI Lemon is tested
     separately, as interpolation must be performed"""
@@ -39,6 +40,7 @@ def test_channel_names_ordering():
 
 
 @pytest.mark.skipif(not os.path.isdir(get_raw_data_storage_path()), reason="Required datasets not available")
+@pytest.mark.skipif("TOX_ENV_NAME" in os.environ, reason="Too time consuming to run this test")
 def test_channel_names_ordering_mpi_lemon():
     """Test if the channel names are always the for MPI Lemon (note that this is quite slow)"""
     dataset = MPILemon()
