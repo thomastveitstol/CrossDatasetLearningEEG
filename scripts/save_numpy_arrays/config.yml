@@ -26,7 +26,7 @@ general:
   excluded_channels: null
   main_band_pass: [1, 45]
   num_epochs: 5
-  epoch_duration: 30
+  epoch_duration: 10
   epoch_overlap: 0
   time_series_start_secs: 30
   autoreject_resample: 180  # todo
