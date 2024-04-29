@@ -52,6 +52,8 @@ class CAUEEG(EEGDatasetBase):
     ('age', 'alzheimers', 'dementia', 'mci', 'normal')
     >>> len(CAUEEG().get_subject_ids())
     1379
+    >>> CAUEEG().get_subject_ids()[:4]
+    ('00363', '00726', '00001', '00002')
     >>> CAUEEG._channel_names
     ('Fp1', 'F3', 'C3', 'P3', 'O1', 'Fp2', 'F4', 'C4', 'P4', 'O2', 'F7', 'T3', 'T5', 'F8', 'T4', 'T6', 'Fz', 'Cz', 'Pz')
     """
