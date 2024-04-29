@@ -55,7 +55,7 @@ class YulinWang(EEGDatasetBase):
     # ----------------
     # Methods for loading
     # ----------------
-    def _load_single_raw_mne_object(self, subject_id, *, visit, recording):
+    def _load_single_raw_mne_object(self, subject_id, *, visit, recording, preload=True):
         # Create path
         subject_path = pathlib.Path(f"{subject_id}/ses-session{visit}/eeg/"
                                     f"{subject_id}_ses-session{visit}_task-{recording}_eeg")
@@ -63,7 +63,7 @@ class YulinWang(EEGDatasetBase):
         path = os.path.join(self.get_mne_path(), subject_path)
 
         # Make MNE raw object
-        raw: mne.io.Raw = mne.io.read_raw_brainvision(vhdr_fname=path, preload=True, verbose=False)
+        raw: mne.io.Raw = mne.io.read_raw_brainvision(vhdr_fname=path, preload=preload, verbose=False)
 
         # Maybe rename channels
         if "Cpz" in raw.info["ch_names"]:

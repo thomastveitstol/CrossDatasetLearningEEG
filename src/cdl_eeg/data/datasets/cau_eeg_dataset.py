@@ -68,12 +68,12 @@ class CAUEEG(EEGDatasetBase):
     # ----------------
     # Loading methods
     # ----------------
-    def _load_single_raw_mne_object(self, subject_id):
+    def _load_single_raw_mne_object(self, subject_id, *, preload=True):
         # Create path
         path = os.path.join(self.get_mne_path(), "signal", "edf", f"{subject_id}.edf")
 
         # Create MNE raw object
-        raw = mne.io.read_raw_edf(path, preload=True, verbose=False)
+        raw = mne.io.read_raw_edf(path, preload=preload, verbose=False)
 
         # Drop non-eeg channels
         raw.drop_channels(("Photic", "EKG"))

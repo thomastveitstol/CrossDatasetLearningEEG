@@ -52,7 +52,7 @@ class MPILemon(EEGDatasetBase):
         _eeg_availables = os.listdir(self.get_mne_path())
         return tuple(participant for participant in participants if participant in _eeg_availables)
 
-    def _load_single_raw_mne_object(self, subject_id, *, interpolation_method):
+    def _load_single_raw_mne_object(self, subject_id, *, interpolation_method, preload=True):
         # -------------
         # Load object
         # -------------
@@ -62,7 +62,7 @@ class MPILemon(EEGDatasetBase):
         # Load MNE object
         with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", category=RuntimeWarning)
-            raw = mne.io.read_raw_eeglab(path, preload=True, verbose=False)
+            raw = mne.io.read_raw_eeglab(path, preload=preload, verbose=False)
 
         # If no interpolation method is used, just return the object
         if interpolation_method is None:

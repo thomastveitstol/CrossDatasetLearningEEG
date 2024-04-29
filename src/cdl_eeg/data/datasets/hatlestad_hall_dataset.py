@@ -40,7 +40,7 @@ class HatlestadHall(EEGDatasetBase):
     # ----------------
     # Loading methods
     # ----------------
-    def _load_single_raw_mne_object(self, subject_id, *, session):
+    def _load_single_raw_mne_object(self, subject_id, *, session, preload=True):
         # Session 't2' is not available for all subjects
         assert session in ("t1", "t2"), f"Expected session to be either 't1' or 't2', but found {session}"
 
@@ -50,7 +50,7 @@ class HatlestadHall(EEGDatasetBase):
         path = os.path.join(self.get_mne_path(), subject_path)
 
         # Make MNE raw object
-        return mne.io.read_raw_edf(path, preload=True, verbose=False)
+        return mne.io.read_raw_edf(path, preload=preload, verbose=False)
 
     def _load_single_cleaned_mne_object(self, subject_id, **kwargs):
         # Load Epochs object
