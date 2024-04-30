@@ -18,7 +18,7 @@ SubGroups:
       [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain ]
 
 LatentFeatureDistribution:
-  make_initial_distribution_exploration: true
+  make_initial_distribution_exploration: false
   colormap: viridis
   distance_measures: [ centroid_l2, average_l2_to_centroid ]
 
@@ -377,4 +377,4 @@ MTS Module:
   Deep4NetMTS: *Deep4NetMTS
 NormaliseInputs: [ true, false ]
 
-PreprocessedFolder: preprocessed_2024-04-19_151355
+PreprocessedFolder: [ preprocessed_2024-04-19_151355, preprocessed_2024-04-29_164550 ]

@@ -189,7 +189,7 @@ def generate_config_file(config):
     # Select data pre-processing version
     # -----------------
     # Select from the desired folder
-    preprocessed_folder = config["PreprocessedFolder"]
+    preprocessed_folder = random.choice(config["PreprocessedFolder"])
 
     # Make selection
     _available_versions = os.listdir(os.path.join(get_numpy_data_storage_path(), preprocessed_folder))
