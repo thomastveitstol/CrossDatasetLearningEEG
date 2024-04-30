@@ -22,7 +22,7 @@ def test_interpolate_datasets():
     method = "MNE"
 
     datasets = HatlestadHall(), MPILemon(), Miltiadous(), YulinWang()
-    preprocessed_version = "preprocessed_2024-04-05_114614/data_band_pass_12-30_autoreject_True_sampling_multiple_4"
+    preprocessed_version = "preprocessed_2024-04-19_151355/data_band_pass_12-30_autoreject_True_sampling_multiple_4"
 
     # ----------------
     # Load data
