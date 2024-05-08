@@ -15,12 +15,14 @@ from matplotlib import pyplot
 
 from cdl_eeg.data.paths import get_results_dir
 
-INV_FREQUENCY_BANDS = {(0.5, 4.0): "Delta",
+INV_FREQUENCY_BANDS = {(1.0, 4.0): "Delta",
+                       (0.5, 4.0): "Delta",
                        (4.0, 8.0): "Theta",
                        (8.0, 12.0): "Alpha",
                        (12.0, 30.0): "Beta",
                        (30.0, 45.0): "Gamma",
-                       (0.5, 45.0): "All"}
+                       (0.5, 45.0): "All",
+                       (1.0, 45.0): "All"}
 
 
 # --------------
@@ -354,12 +356,12 @@ FIGSIZE = (16, 9)
 # Main functions
 # --------------
 def main_lodo():
-    folder_name = "weekend_april_26"
+    folder_name = "paris"
 
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Normalisation"
+    hyperparameter_name = "Time series length (s)"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
     dataset = "HatlestadHall"
@@ -387,7 +389,7 @@ def main_lodo():
         path = _get_lodo_path(run=run, results_dir=results_dir, dataset=dataset)
 
         # Get performance
-        try: # If e.g. all values are nan (can happen for correlation metrics), just skip for now
+        try:  # If e.g. all values are nan (can happen for correlation metrics), just skip for now
             val, test = _get_val_test_lodo_performance(path=path, metric=performance_metric,
                                                        balance_validation_performance=balance_validation_performance)
         except KeyError:
@@ -531,7 +533,7 @@ def main_inverted_lodo():
 
 
 def main():
-    main_inverted_lodo()
+    main_lodo()
 
 
 if __name__ == "__main__":
