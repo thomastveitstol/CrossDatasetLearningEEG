@@ -5,7 +5,6 @@ import warnings
 from typing import Dict, Tuple, List, Optional
 
 import enlighten
-import mne
 import numpy
 import pandas
 from matplotlib import pyplot
