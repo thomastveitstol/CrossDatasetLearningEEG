@@ -26,8 +26,6 @@ class LoadDetails:
 class CombinedDatasets:
     """
     Class for storing multiple datasets
-
-    TODO: Make methods for introducing more data, and for removing from memory
     """
 
     __slots__ = "_subject_ids", "_data", "_targets", "_datasets"
@@ -76,7 +74,7 @@ class CombinedDatasets:
                 if not numpy.isnan(_target):
                     _accepted_subject_ids.append(sub_id)
                 else:
-                    f"Excluded {sub_id}"
+                    print(f"Excluded {sub_id}")
             subject_ids[dataset.name] = {sub_id: i for i, sub_id in enumerate(_accepted_subject_ids)}
 
             new_details.append(LoadDetails(subject_ids=tuple(_accepted_subject_ids),
@@ -188,7 +186,7 @@ class CombinedDatasets:
         -------
         dict[str, numpy.ndarray]
         """
-        # Loop through all subjects  todo: fix type hinting
+        # Loop through all subjects
         data: Dict[str, List[numpy.ndarray]] = dict()  # type: ignore[type-arg]
         for subject in subjects:
             dataset_name = subject.dataset_name
@@ -226,7 +224,7 @@ class CombinedDatasets:
         if self._targets is None:
             raise ValueError("Tried to extract targets, but no targets are available")
 
-        # Loop through all subjects  todo: fix type hinting
+        # Loop through all subjects
         data: Dict[str, List[numpy.ndarray]] = dict()  # type: ignore[type-arg]
         for subject in subjects:
             dataset_name = subject.dataset_name
