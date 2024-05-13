@@ -11,7 +11,7 @@ class RBPDataGenerator(Dataset):  # type: ignore[type-arg]
     """
     Pytorch dataset for downstream training of RBP models of type MainRBPModel
 
-    todo: should change the name to something with RBP
+
     """
 
     # Remember to remove the yielded -1 tensors!
@@ -48,8 +48,6 @@ class RBPDataGenerator(Dataset):  # type: ignore[type-arg]
         return sum(x.shape[0] * x.shape[1] for x in self._data.values())
 
     def __getitem__(self, item):
-        # TODO: copied from SelfSupervisedDataGenerator
-
         # Varying keys in the returned dictionary is not possible with the DataLoader of PyTorch. This solution to the
         # problem is to simply return a tensor of -1s for the datasets not used
         data = {dataset_name: torch.ones(size=x.shape[2:]) * (-1) for dataset_name, x in self._data.items()}
@@ -65,7 +63,7 @@ class RBPDataGenerator(Dataset):  # type: ignore[type-arg]
                                                              dtype=torch.float, requires_grad=False),
                                                 dim=-1)
 
-        # TODO: quite hard coded?
+        # Return
         if self._pre_computed is None:
             return data, torch.tensor(float("nan")), targets, item
         else:
@@ -81,7 +79,6 @@ class RBPDataGenerator(Dataset):  # type: ignore[type-arg]
 
                 pre_computed.append(my_dict)
 
-            # TODO: must fix return, as KeyError is raised when collating
             # Don't think I should convert pre_computed to tuple, as I must strip it anyway
             return data, pre_computed, targets, item
 
