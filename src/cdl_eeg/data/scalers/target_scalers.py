@@ -21,7 +21,9 @@ class ZNormalisation(TargetScalerBase):
         Parameters
         ----------
         mean : float, optional
+            Mean. If not provided, it needs to be fit prior to using the transform method
         std : float, optional
+            Standard deviation. If not provided, it needs to be fit prior to using the transform method
         """
         self._mean = mean
         self._std = std
@@ -71,8 +73,8 @@ class ZNormalisation(TargetScalerBase):
         Examples
         --------
         >>> my_fit_data = {"d1": numpy.expand_dims(numpy.array([61, 43, 9, 32]), axis=-1),
-        ...                 "d2": numpy.expand_dims(numpy.array([8, 3, 65, 2, 5, 6]), axis=-1),
-        ...                 "d3": numpy.expand_dims(numpy.array([7, 2]), axis=-1)}
+        ...                "d2": numpy.expand_dims(numpy.array([8, 3, 65, 2, 5, 6]), axis=-1),
+        ...                "d3": numpy.expand_dims(numpy.array([7, 2]), axis=-1)}
         >>> my_scaler = ZNormalisation()
         >>> my_scaler.fit(my_fit_data)
         >>> my_test_data = {"d4": numpy.expand_dims(numpy.array([20.25, 34, 3]), axis=-1),
