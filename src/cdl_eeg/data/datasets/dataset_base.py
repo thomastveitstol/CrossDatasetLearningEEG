@@ -1,10 +1,8 @@
 import abc
 import dataclasses
 import os
-import warnings
 from typing import Dict, Tuple, List, Optional
 
-import autoreject
 import enlighten
 import mne
 import numpy
