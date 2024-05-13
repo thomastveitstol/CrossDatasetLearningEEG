@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 from umap import UMAP
 
 from cdl_eeg.data.combined_datasets import CombinedDatasets
-from cdl_eeg.data.data_generators.data_generator import DownstreamDataGenerator, strip_tensors, \
+from cdl_eeg.data.data_generators.data_generator import RBPDataGenerator, strip_tensors, \
     InterpolationDataGenerator
 from cdl_eeg.data.datasets.getter import get_dataset
 from cdl_eeg.data.subject_split import get_data_split, leave_1_fold_out, TrainValBase
@@ -288,7 +288,7 @@ class Experiment:
             test_loader = None
 
         # Some type checks
-        _allowed_dataset_types = (DownstreamDataGenerator, InterpolationDataGenerator)
+        _allowed_dataset_types = (RBPDataGenerator, InterpolationDataGenerator)
         if not isinstance(train_loader.dataset, _allowed_dataset_types):
             raise TypeError(f"Expected training Pytorch datasets to inherit from "
                             f"{tuple(data_gen.__name__ for data_gen in _allowed_dataset_types)}, but found "
@@ -531,10 +531,10 @@ class Experiment:
             train_pre_computed, val_pre_computed = None, None
 
         # Create data generators
-        train_gen = DownstreamDataGenerator(data=train_data, targets=train_targets, pre_computed=train_pre_computed,
-                                            subjects=combined_dataset.get_subjects_dict(train_subjects))
-        val_gen = DownstreamDataGenerator(data=val_data, targets=val_targets, pre_computed=val_pre_computed,
-                                          subjects=combined_dataset.get_subjects_dict(val_subjects))
+        train_gen = RBPDataGenerator(data=train_data, targets=train_targets, pre_computed=train_pre_computed,
+                                     subjects=combined_dataset.get_subjects_dict(train_subjects))
+        val_gen = RBPDataGenerator(data=val_data, targets=val_targets, pre_computed=val_pre_computed,
+                                   subjects=combined_dataset.get_subjects_dict(val_subjects))
 
         # Create data loaders
         train_loader = DataLoader(dataset=train_gen, batch_size=self.train_config["batch_size"], shuffle=True)
@@ -561,8 +561,8 @@ class Experiment:
             test_pre_computed = None
 
         # Create data generators
-        test_gen = DownstreamDataGenerator(data=test_data, targets=test_targets, pre_computed=test_pre_computed,
-                                           subjects=combined_dataset.get_subjects_dict(test_subjects))
+        test_gen = RBPDataGenerator(data=test_data, targets=test_targets, pre_computed=test_pre_computed,
+                                    subjects=combined_dataset.get_subjects_dict(test_subjects))
 
         # Create data loader
         test_loader = DataLoader(dataset=test_gen, batch_size=self.train_config["batch_size"], shuffle=True)
