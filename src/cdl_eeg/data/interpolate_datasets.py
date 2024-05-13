@@ -122,8 +122,6 @@ def _mne_map_montage(source_data, target_montage, method):
     """
     Map EEG from one montage (source) to another (target).
 
-    todo: only tested with the same channel positional scheme
-
     The steps of this function is as follows:
         1) Create a channel system containing the channels of both the source and the target channel systems. The
             signal values of the channels of the source dataset is kept, while the target channels are zero-filled.
