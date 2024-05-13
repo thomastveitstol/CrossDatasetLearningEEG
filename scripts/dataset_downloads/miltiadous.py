@@ -14,7 +14,7 @@ import openneuro
 from cdl_eeg.data.paths import get_raw_data_storage_path
 
 
-def main() -> None:
+def main():
     # Make directory
     folder_name = "miltiadous"
     path = os.path.join(get_raw_data_storage_path(), folder_name)
