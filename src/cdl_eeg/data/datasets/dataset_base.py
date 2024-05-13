@@ -120,7 +120,7 @@ class EEGDatasetBase(abc.ABC):
         mne.io.base.BaseRaw
             MNE object of the subject
         """
-        raise NotImplementedError("A cleaned version is not available for this class.")
+        raise NotImplementedError(f"A cleaned version is not available for this class ({self.__class__.__name__}).")
 
     def load_numpy_arrays(self, subject_ids=None, pre_processed_version=None, *, time_series_start=None,
                           num_time_steps=None, channels=None, required_target=None):
