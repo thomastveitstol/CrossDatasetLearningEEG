@@ -203,6 +203,47 @@ class EEGDatasetBase(abc.ABC):
                                     frequency_bands, notch_filter, num_epochs, epoch_duration, epoch_overlap,
                                     time_series_start_secs, autoreject_resample, resample_fmax_multiples, seed,
                                     plot_data=False, **kwargs):
+        """
+        Method for saving data as numpy arrays
+
+        Parameters
+        ----------
+        path : str
+            Where to store the data
+        subject_ids : tuple[str, ...]
+            Subject IDs of which to save numpy arrays of
+        derivatives : bool
+            To use cleaned versions or not
+        excluded_channels : tuple[str, ...]
+            Channels to exclude
+        main_band_pass : tuple[float, float]
+            Band-pass filtering
+        frequency_bands : tuple[tuple[float, float], ...]
+            All frequency bands to save
+        notch_filter : float, optional
+            Frequency of notch filter. If None, no notch filter will be used
+        num_epochs : int
+            Number of epochs to use per subject
+        epoch_duration : float
+            Duration of each epoch in seconds
+        epoch_overlap : float
+            Duration of epoch overlap in seconds
+        time_series_start_secs : float
+            Start of the time series in seconds
+        autoreject_resample : tuple[float, float], optional
+            Sampling frqeuency before applying autoreject
+        resample_fmax_multiples : float
+            The resampling frequency will be this parameter multiplied with f_max
+        seed : int
+            Seed for reproducability
+        plot_data : bool
+            To plot the data or not (useful for debugging purposes)
+        kwargs
+
+        Returns
+        -------
+        None
+        """
         subject_ids = self.get_subject_ids(preprocessed_version=None) if subject_ids is None else subject_ids
 
         # ------------------
