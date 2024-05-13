@@ -1,6 +1,7 @@
 import abc
 import dataclasses
 import os
+import warnings
 from typing import Dict, Tuple, List, Optional
 
 import enlighten
@@ -406,7 +407,8 @@ class EEGDatasetBase(abc.ABC):
             try:
                 return self._get_electrode_positions(subject_id)
             except NotImplementedError:
-                # todo: consider raising a warning here
+                warnings.warn("Electrode positions are not available per subject. Trying template instead...",
+                              RuntimeWarning)
                 return self._get_template_electrode_positions()
 
     def _get_electrode_positions(self, subject_id=None):
@@ -464,14 +466,14 @@ class EEGDatasetBase(abc.ABC):
         None
         """
         # Get electrode positions
-        electrode_positions = self.get_electrode_positions(subject_id=subject_id)  # todo: mypy thinks this is a float
+        electrode_positions = self.get_electrode_positions(subject_id=subject_id)
 
         # Extract coordinates
         channel_names = []
         x_vals = []
         y_vals = []
         z_vals = []
-        for ch_name, (x, y, z) in electrode_positions.items():  # type: ignore
+        for ch_name, (x, y, z) in electrode_positions.items():
             channel_names.append(ch_name)
             x_vals.append(x)
             y_vals.append(y)
