@@ -221,6 +221,10 @@ class MainFixedChannelsModel(nn.Module):
         if isinstance(x, dict):
             x = torch.cat(tuple(x.values()), dim=0)
 
+        # Normalise
+        if self._normalise:
+            x = (x - torch.mean(x, dim=-1, keepdim=True)) / (torch.std(x, dim=-1, keepdim=True) + 1e-8)
+
         # Run through MTS module and return
         return self._mts_module.extract_latent_features(x)
 
