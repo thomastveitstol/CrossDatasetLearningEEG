@@ -200,8 +200,9 @@ def _mne_map_montage(source_data, target_montage, method):
     combined_eeg.drop_channels(tuple(ch_name for ch_name in combined_montage.ch_names
                                      if ch_name[-len(_remove_msg):] == _remove_msg))
 
-    # Interpolate
-    combined_eeg.interpolate_bads(method={"eeg": method}, verbose=False)  # Unnecessary interpolation may occur here
+    # Interpolate (unless there are no channels to interpolate)
+    if zero_channels:
+        combined_eeg.interpolate_bads(method={"eeg": method}, verbose=False)
 
     # -------------
     # Step 3: Remove source channels which are not in the target montage
