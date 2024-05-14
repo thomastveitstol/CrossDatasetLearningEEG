@@ -23,11 +23,6 @@ def target_method(func):
     return func
 
 
-def path_method(func):
-    setattr(func, "_is_path_method", True)
-    return func
-
-
 # --------------------
 # Classes
 # --------------------
@@ -366,18 +361,15 @@ class EEGDatasetBase(abc.ABC):
     # ----------------
     # Path methods
     # ----------------
-    @path_method
     def get_mne_path(self):
         return os.path.join(get_raw_data_storage_path(), self.name)
 
-    @path_method
     def get_numpy_arrays_path(self, pre_processed_version=None):
         if pre_processed_version is None:
             return os.path.join(get_numpy_data_storage_path(), self.name)
         else:
             return os.path.join(get_numpy_data_storage_path(), pre_processed_version, self.name)
 
-    @path_method
     def get_participants_tsv_path(self):
         """Get the path to the participants.tsv file"""
         return os.path.join(self.get_mne_path(), "participants.tsv")
