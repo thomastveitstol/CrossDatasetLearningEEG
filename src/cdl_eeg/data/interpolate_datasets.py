@@ -126,7 +126,7 @@ def _mne_map_montage(source_data, target_montage, method):
         1) Create a channel system containing the channels of both the source and the target channel systems. The
             signal values of the channels of the source dataset is kept, while the target channels are zero-filled.
         2) Set the target channels to 'bad', and interpolate them using MNE.
-        3) Remove the source channels
+        3) Remove the source channels (but only the ones which are not present in the target montage)
 
     Parameters
     ----------
@@ -175,28 +175,35 @@ def _mne_map_montage(source_data, target_montage, method):
     # -------------
     # Step 1: Create montage containing channels from source and target channel system
     # -------------
-    combined_montage = _combine_mne_montages(source_montage=source_montage, target_montage=target_montage)
+    combined_montage, zero_channels = _combine_mne_montages(source_montage=source_montage.copy(),
+                                                            target_montage=target_montage)
 
     # -------------
     # Step 2: Set target channels to bad and interpolate
     # -------------
     # Create info object, set bads and montage
     combined_info = mne.create_info(ch_names=combined_montage.ch_names, sfreq=source_data.info["sfreq"], ch_types="eeg")
-    combined_info["bads"] = target_montage.ch_names
+    combined_info["bads"] = zero_channels
     combined_info.set_montage(combined_montage)
 
-    # Create RawArray object and interpolate
-    num_target_channels = len(target_montage.ch_names)
+    # Create EpochsArray object
     num_time_steps = source_data.get_data().shape[-1]
     num_eeg_epochs = source_data.get_data().shape[0]
     combined_data = numpy.concatenate(
-        (source_data.get_data(), numpy.zeros(shape=(num_eeg_epochs, num_target_channels, num_time_steps))), axis=1
+        (source_data.get_data(), numpy.zeros(shape=(num_eeg_epochs, len(zero_channels), num_time_steps))), axis=1
     )
     combined_eeg = mne.EpochsArray(data=combined_data, info=combined_info, verbose=False)
-    combined_eeg.interpolate_bads(method={"eeg": method}, verbose=False)
+
+    # Remove duplicated target channels
+    _remove_msg = "_removed"  # A little hard-coded maybe?
+    combined_eeg.drop_channels(tuple(ch_name for ch_name in combined_montage.ch_names
+                                     if ch_name[-len(_remove_msg):] == _remove_msg))
+
+    # Interpolate
+    combined_eeg.interpolate_bads(method={"eeg": method}, verbose=False)  # Unnecessary interpolation may occur here
 
     # -------------
-    # Step 3: Remove source channels
+    # Step 3: Remove source channels which are not in the target montage
     # -------------
     # Create info object
     info = mne.create_info(ch_names=target_montage.ch_names, sfreq=source_data.info["sfreq"], ch_types="eeg")
@@ -211,9 +218,9 @@ def _mne_map_montage(source_data, target_montage, method):
 
 def _combine_mne_montages(source_montage, target_montage):
     """
-    Combine two montages
+    Combine two montages. The channel names will be source channels first, then target channels. If all overlapping
+    channels will be renamed in the target channel part to f"{ch_name}_removed" (see Examples)
 
-    todo: must make tests and plots
     Parameters
     ----------
     source_montage : mne.channels.DigMontage
@@ -221,11 +228,22 @@ def _combine_mne_montages(source_montage, target_montage):
 
     Returns
     -------
-    mne.channels.DigMontage
+    tuple[mne.channels.DigMontage, list[str]]
+
+    Examples
+    --------
+    >>> my_source_montage = mne.channels.make_standard_montage("standard_1020")
+    >>> my_target_montage = mne.channels.make_standard_montage("standard_1005")
+    >>> _combine_mne_montages(my_source_montage, my_target_montage)[0].ch_names
+    ... # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
+    ['Fp1', 'Fpz', 'Fp2', ..., 'T6', 'M1', 'M2', 'A1', 'A2', 'Fp1_removed', 'Fpz_removed', 'Fp2_removed',
+     'AF9_removed', ..., 'O2_removed', 'I1', 'Iz_removed', 'I2', 'AFp9h', 'AFp7h', 'AFp5h', ..., 'T3_removed',
+     'T5_removed', 'T4_removed', 'T6_removed', 'M1_removed', 'M2_removed', 'A1_removed', 'A2_removed']
     """
-    # When adding together two montages, MNE does not accept equal channel names. Therefore, renaming the channels of
-    # the source montage
-    source_montage.rename_channels({ch_name: f"{ch_name}_source" for ch_name in source_montage.ch_names})
+    # Rename the channels of the target montage which are already in the source montage. These will be removed later
+    target_montage = target_montage.copy()
+    target_montage.rename_channels({ch_name: f"{ch_name}_removed" for ch_name in target_montage.ch_names
+                                    if ch_name in source_montage.ch_names})
 
     # Add them together
-    return source_montage + target_montage
+    return source_montage + target_montage, target_montage.ch_names
