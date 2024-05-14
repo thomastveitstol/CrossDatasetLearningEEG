@@ -9,6 +9,9 @@ import numpy
 from matplotlib import pyplot
 
 
+# -------------
+# Private functions
+# -------------
 def create_folder_name(*, l_freq, h_freq, is_autorejected, resample_multiple):
     return f"data_band_pass_{l_freq}-{h_freq}_autoreject_{is_autorejected}_sampling_multiple_{resample_multiple}"
 
@@ -64,6 +67,9 @@ def _save_eeg_with_resampling_and_average_referencing(epochs: mne.Epochs, l_freq
             numpy.save(array_path, arr=data)
 
 
+# -------------
+# Public functions
+# -------------
 def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_band_pass, frequency_bands, notch_filter,
                              num_epochs, epoch_duration, epoch_overlap, time_series_start_secs, autoreject_resample,
                              resample_fmax_multiples, subject_id, path, dataset_name, seed, plot_data=False,
