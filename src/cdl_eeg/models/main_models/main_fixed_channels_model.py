@@ -37,7 +37,7 @@ class MainFixedChannelsModel(nn.Module):
     >>> my_cmmn_kwargs = {"kernel_size": 128}
     >>> MainFixedChannelsModel("InceptionNetwork", mts_module_kwargs=my_mts_kwargs, domain_discriminator="FCModule",
     ...                        domain_discriminator_kwargs=my_dd_kwargs, use_cmmn_layer=True,
-    ...                        cmmn_kwargs=my_cmmn_kwargs)
+    ...                        cmmn_kwargs=my_cmmn_kwargs, normalise=True)
     MainFixedChannelsModel(
       (_mts_module): InceptionNetwork(
         (_inception_modules): ModuleList(
@@ -173,13 +173,16 @@ class MainFixedChannelsModel(nn.Module):
         >>> my_cmmn_kwargs = {"kernel_size": 64}
         >>> my_model = MainFixedChannelsModel("InceptionNetwork", mts_module_kwargs=my_mts_kwargs,
         ...                                   domain_discriminator="FCModule", domain_discriminator_kwargs=my_dd_kwargs,
-        ...                                   use_cmmn_layer=True, cmmn_kwargs=my_cmmn_kwargs)
-        >>> my_model(torch.rand(size=(10, 23, 300))).size()
+        ...                                   use_cmmn_layer=True, cmmn_kwargs=my_cmmn_kwargs, normalise=True)
+        >>> my_data = {"d1": torch.rand(size=(10, 23, 300))}
+        >>> my_model.fit_psd_barycenters(my_data, sampling_freq=50)
+        >>> my_model.fit_monge_filters(my_data)
+        >>> my_model(my_data).size()
         torch.Size([10, 11])
 
         If the domain discriminator is used, its output will be the last of two in a tuple of torch tensors
 
-        >>> my_outs = my_model(torch.rand(size=(10, 23, 300)), use_domain_discriminator=True)
+        >>> my_outs = my_model(my_data, use_domain_discriminator=True)
         >>> my_outs[0].shape, my_outs[1].shape
         (torch.Size([10, 11]), torch.Size([10, 3]))
         """
