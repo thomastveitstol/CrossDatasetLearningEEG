@@ -661,7 +661,8 @@ class MainFixedChannelsModel(nn.Module):
                     y = target_scaler.inv_transform(scaled_data=y)
                 history.store_batch_evaluation(
                     y_pred=y_pred, y_true=y,
-                    subjects=data_loader.dataset.get_subjects_from_indices(subject_indices)
+                    subjects=reorder_subjects(order=tuple(x.keys()),
+                                              subjects=data_loader.dataset.get_subjects_from_indices(subject_indices))
                 )
 
             # Finalise epoch for validation history object
