@@ -17,11 +17,9 @@ from cdl_eeg.models.utils import tensor_dict_to_device, flatten_targets, Reverse
 
 class MainRBPModel(nn.Module):
     """
-    (In early stages of development)
-
     Main model supporting use of RBP. That is, this class uses RBP as a first layer, followed by an MTS module
 
-    PS: Merges channel splits by concatenation
+    PS: Merges montage splits by concatenation
     """
 
     def __init__(self, *, mts_module, mts_module_kwargs, rbp_designs, normalise_region_representations=True,
@@ -177,7 +175,6 @@ class MainRBPModel(nn.Module):
         # Pass through both the classifier and domain discriminator
         # ----------------
         # Adding a gradient reversal layer to the features passed to domain discriminator
-        # todo: I think alpha can be set to 1 without loss of generality, as long as the weighing in the loss is varied
         gradient_reversed_x = ReverseLayerF.apply(x, 1.)
 
         return (self._mts_module.classify_latent_features(x),
@@ -300,7 +297,6 @@ class MainRBPModel(nn.Module):
                 optimiser.step()
 
                 # Update train histories
-                # todo: see if you can optimise more here
                 with torch.no_grad():
                     y_pred = torch.clone(classifier_output)
                     if prediction_activation_function is not None:
@@ -469,8 +465,6 @@ class MainRBPModel(nn.Module):
         tuple[Histories, Histories, Histories | None]
             Training and validation histories
         """
-        # todo: may want to think more on memory usage
-
         # Defining histories objects
         train_history = Histories(metrics=metrics, splits=sub_group_splits)
         val_history = Histories(metrics=metrics, name="val", splits=sub_group_splits)
@@ -521,7 +515,6 @@ class MainRBPModel(nn.Module):
                 optimiser.step()
 
                 # Update train history
-                # todo: see if you can optimise more here
                 with torch.no_grad():
                     y_pred = torch.clone(output)
                     if prediction_activation_function is not None:
@@ -682,7 +675,8 @@ class MainRBPModel(nn.Module):
                     y = target_scaler.inv_transform(scaled_data=y)
                 history.store_batch_evaluation(
                     y_pred=y_pred, y_true=y,
-                    subjects=data_loader.dataset.get_subjects_from_indices(subject_indices)
+                    subjects=reorder_subjects(order=tuple(x.keys()),
+                                              subjects=data_loader.dataset.get_subjects_from_indices(subject_indices))
                 )
 
             # Finalise epoch for validation history object
