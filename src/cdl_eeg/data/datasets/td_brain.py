@@ -19,7 +19,7 @@ class TDBrain(EEGDatasetBase):
     Link: www.brainclinics.com/resources
 
     Participant 'sub-19703068' has an error in the .eeg file in the .vhdr file. The problem is using '=' instead of "-".
-    It was fixed manually. todo: contact providers
+    It was fixed manually.
 
     The .vhdr file of sub-19703550 was also fixed manually, as there were two instances where 3 was replaced by 6 in the
     ID
