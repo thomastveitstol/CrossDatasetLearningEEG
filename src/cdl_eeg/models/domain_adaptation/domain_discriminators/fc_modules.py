@@ -17,7 +17,19 @@ class FCModule(DomainDiscriminatorBase):
       )
     )
 
-    Example with hidden units (yes, it works when passed as a list)
+    Example with hidden units
+
+    >>> FCModule(77, 5, hidden_units=(4, 9, 6))
+    FCModule(
+      (_model): ModuleList(
+        (0): Linear(in_features=77, out_features=4, bias=True)
+        (1): Linear(in_features=4, out_features=9, bias=True)
+        (2): Linear(in_features=9, out_features=6, bias=True)
+        (3): Linear(in_features=6, out_features=5, bias=True)
+      )
+    )
+
+    It also works when passed as a list
 
     >>> FCModule(77, 5, hidden_units=[4, 9, 6])
     FCModule(
