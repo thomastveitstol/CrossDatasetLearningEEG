@@ -125,8 +125,9 @@ def _mne_map_montage(source_data, target_montage, method):
     The steps of this function is as follows:
         1) Create a channel system containing the channels of both the source and the target channel systems. The
             signal values of the channels of the source dataset is kept, while the target channels are zero-filled.
-        2) Set the target channels to 'bad', and interpolate them using MNE.
-        3) Remove the source channels (but only the ones which are not present in the target montage)
+        2) Set the target channels which are not present in the source dataset to 'bad', and drop the ones which are
+            present in the source montage. Then, interpolate the remaning 'bads' using MNE.
+        3) Remove all channels except for the target channels
 
     Parameters
     ----------
