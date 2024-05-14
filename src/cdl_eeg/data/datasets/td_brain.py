@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 
 import mne
 import numpy
@@ -104,16 +104,38 @@ class TDBrain(EEGDatasetBase):
         >>> TDBrain().age(("sub-19681349", "sub-19681385", "sub-19684666"))
         array([51.59, 49.96, 47.05])
         >>> my_subjects = TDBrain().get_subject_ids()
-        >>> all(isinstance(age, float) for age in TDBrain().age(my_subjects))  # type: ignore[attr-defined]
+        >>> all(isinstance(my_age, float) for my_age in TDBrain().age(my_subjects))  # type: ignore[attr-defined]
         True
-        >>> sum(tuple(numpy.isnan(age) for age in TDBrain().age(my_subjects)))  # type: ignore[attr-defined]
+
+        There are some missing data it seems...
+
+        >>> sum(tuple(numpy.isnan(my_age) for my_age in TDBrain().age(my_subjects)))  # type: ignore[attr-defined]
+        17
         """
         # Read the .tsv file
         df = pandas.read_csv(self.get_participants_tsv_path(), sep="\t")
 
-        # Convert to age dict
-        age_mapping = {sub_id: float(age.replace(",", ".")) if isinstance(age, str) else age for sub_id, age in
-                       zip(df["participants_ID"], df["age"]) if isinstance(sub_id, str)}
+        # Convert to age dict. Since we are using the first visit possible, we will use the same for age
+        age_mapping: Dict[str, float] = dict()
+        sess_ids: Dict[str, int] = dict()
+        for sub_id, age, session in zip(df["participants_ID"], df["age"], df["sessID"]):
+            # There are some nan values to ignore
+            if not isinstance(sub_id, str):
+                continue
+
+            # Add the age to the mapping
+            subject_age = float(age.replace(",", ".")) if isinstance(age, str) else age
+            if sub_id in age_mapping:
+                # If the current session is the newest, update the age. Otherwise, do nothing
+                if session < sess_ids[sub_id]:
+                    age_mapping[sub_id] = subject_age
+                elif session > sess_ids[sub_id]:
+                    pass
+                else:
+                    raise ValueError
+            else:
+                age_mapping[sub_id] = subject_age
+                sess_ids[sub_id] = session
 
         # Select the ones passed in the subjects list, and return as numpy array
         return numpy.array([age_mapping[sub_id] for sub_id in subject_ids])
