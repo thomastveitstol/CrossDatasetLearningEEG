@@ -1,3 +1,6 @@
+"""
+Functions for pre-processing and saving data as numpy arrays
+"""
 import os
 
 import autoreject
@@ -11,9 +14,10 @@ def create_folder_name(*, l_freq, h_freq, is_autorejected, resample_multiple):
 
 
 def _run_autoreject(epochs, autoreject_resample, seed, num_splits):
+    """Function for running autoreject"""
     if autoreject_resample is not None:
         epochs.resample(autoreject_resample, verbose=False)
-    reject = autoreject.AutoReject(verbose=False, random_state=seed, cv=num_splits)  # todo: hyperparameters
+    reject = autoreject.AutoReject(verbose=False, random_state=seed, cv=num_splits)
     return reject.fit_transform(epochs, return_log=True)
 
 
@@ -110,7 +114,6 @@ def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_ban
         autoreject_epochs = autoreject_epochs[:num_epochs]
 
     # Loop though and save EEG data for all frequency bands
-    # todo: no need to loop through autoreject if nothing was changed
     for frequency_band in frequency_bands:
         l_freq, h_freq = frequency_band
 
