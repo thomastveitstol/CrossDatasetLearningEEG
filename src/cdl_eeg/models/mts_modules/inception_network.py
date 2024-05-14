@@ -5,8 +5,7 @@ Paper: https://arxiv.org/pdf/1909.04939.pdf
 Original implementation in keras at https://github.com/hfawaz/InceptionTime
 
 This implementation was authored by Thomas Tveitstøl (Oslo University Hospital) in a different project of mine
-(https://github.com/thomastveitstol/RegionBasedPoolingEEG/), although some minor changes mainly in the documentation
-have been made
+(https://github.com/thomastveitstol/RegionBasedPoolingEEG/), although some minor changes have been made
 """
 from typing import Optional
 
