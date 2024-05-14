@@ -654,7 +654,7 @@ class RBPConvMMN:
 # ---------------
 # Functions for computing PSDs
 # ---------------
-def _compute_single_source_psd(x, *, sampling_freq, kernel_size):
+def _compute_single_source_psd(x, *, sampling_freq, nperseg):
     r"""
     Compute the PSDs for a single source domain. If averaged afterward, it will be \hat{\textbf{p}}_k in the
     original paper
@@ -664,7 +664,7 @@ def _compute_single_source_psd(x, *, sampling_freq, kernel_size):
     x : numpy.ndarray
         The EEG data of a single dataset. Should have shape=(num_subjects, channels, time_steps)
     sampling_freq : float
-    kernel_size : int
+    nperseg : int
         This is called 'filter_size' in the original implementation by the authors, and is the value 'F' in the
         original paper (at least, the pre-print which is the only currently available version)
 
@@ -676,19 +676,18 @@ def _compute_single_source_psd(x, *, sampling_freq, kernel_size):
     Examples
     --------
     >>> my_data = numpy.random.normal(0, 1, size=(10, 32, 2000))
-    >>> my_psds = _compute_single_source_psd(my_data, sampling_freq=10, kernel_size=128)
+    >>> my_psds = _compute_single_source_psd(my_data, sampling_freq=10, nperseg=128)
     >>> my_psds.shape
     (10, 32, 65)
     >>> my_data = numpy.random.normal(0, 1, size=(10, 5, 32, 2000))
-    >>> my_psds = _compute_single_source_psd(my_data, sampling_freq=10, kernel_size=128)
+    >>> my_psds = _compute_single_source_psd(my_data, sampling_freq=10, nperseg=128)
     >>> my_psds.shape
     (10, 5, 32, 65)
     """
-    # todo: I don't really understand nperseg
     if x.ndim not in (3, 4):
         raise ValueError(f"Expected input data to be 3D or 4D, but found {x.ndim} dimensions")
     # todo: i think nperseq should be adapted to sampling frequency. Could also tune nfft
-    return signal.welch(x=x, axis=-1, fs=sampling_freq, nperseg=kernel_size)[-1]
+    return signal.welch(x=x, axis=-1, fs=sampling_freq, nperseg=nperseg)[-1]
 
 
 def _aggregate_subject_psds(psds):
@@ -748,7 +747,7 @@ def _compute_representative_psd(x, *, sampling_freq, kernel_size):
     """
     # Compute PSDs and aggregate them
     return _aggregate_subject_psds(_compute_single_source_psd(x=x, sampling_freq=sampling_freq,
-                                                              kernel_size=kernel_size))
+                                                              nperseg=kernel_size))
 
 
 def _compute_representative_region_psd(x, *, sampling_freq, kernel_size):
@@ -778,7 +777,7 @@ def _compute_representative_region_psd(x, *, sampling_freq, kernel_size):
     (65,)
     """
     # Compute all PSDs. Will have shape=(subjects, channel, frequencies)
-    psds = _compute_single_source_psd(x, sampling_freq=sampling_freq, kernel_size=kernel_size)
+    psds = _compute_single_source_psd(x, sampling_freq=sampling_freq, nperseg=kernel_size)
 
     # Aggregate the PSDs and return
     return _aggregate_to_region_psd(psds)
