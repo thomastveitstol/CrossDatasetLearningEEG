@@ -201,7 +201,7 @@ def _mne_map_montage(source_data, target_montage, method):
                                      if ch_name[-len(_remove_msg):] == _remove_msg))
 
     # Interpolate (unless there are no channels to interpolate)
-    if zero_channels:
+    if combined_info["bads"]:
         combined_eeg.interpolate_bads(method={"eeg": method}, verbose=False)
 
     # -------------
