@@ -59,7 +59,7 @@ Targets:
         kwargs:
           domain: [ MSELoss, L1Loss ]
       loss_kwargs: { }  # reduction parameter will be set to 'none' or 'mean', depending on the sampled loss weighter
-      weighter: # todo: weighter and the kwargs must be sampled together
+      weighter: # weighter and the kwargs are sampled together
         dist: uniform_discrete
         kwargs:
           domain: [ null, SamplePowerWeighter ]
@@ -220,7 +220,10 @@ MultiMSSharedRocketHeadRegion: &MultiMSSharedRocketHeadRegion
       base: 2
       a: 3  # 2^3 = 8
       b: 7  # 2^7 = 128
-  share_search_receiver_modules: [ true, false]
+  share_search_receiver_modules:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ true, false ]
   bias: false
 
 PoolingModules: &PoolingModules
