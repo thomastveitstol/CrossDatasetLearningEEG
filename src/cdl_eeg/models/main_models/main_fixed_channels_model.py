@@ -192,7 +192,7 @@ class MainFixedChannelsModel(nn.Module):
         if isinstance(x, dict):
             x = torch.cat(tuple(x.values()), dim=0)
 
-        # Normalise  todo: make optional
+        # Normalise
         if self._normalise:
             x = (x - torch.mean(x, dim=-1, keepdim=True)) / (torch.std(x, dim=-1, keepdim=True) + 1e-8)
 
@@ -209,7 +209,6 @@ class MainFixedChannelsModel(nn.Module):
         # Pass through both the classifier and domain discriminator
         # ----------------
         # Adding a gradient reversal layer to the features passed to domain discriminator
-        # todo: I think alpha can be set to 1 without loss of generality, as long as the weighing in the loss is varied
         gradient_reversed_x = ReverseLayerF.apply(x, 1.)
 
         return (self._mts_module.classify_latent_features(x),
@@ -682,6 +681,6 @@ class MainFixedChannelsModel(nn.Module):
     @property
     def cmmn_fitted_channel_systems(self):
         if not self.has_cmmn_layer:
-            raise RuntimeError(f"{type(self).__name__} has not property 'cmmn_fitted_channel_systems' when no CMMN "
+            raise RuntimeError(f"{type(self).__name__} has no property 'cmmn_fitted_channel_systems' when no CMMN "
                                f"layer is used")
         return self._cmmn_layer.fitted_monge_filters  # type: ignore[union-attr]
