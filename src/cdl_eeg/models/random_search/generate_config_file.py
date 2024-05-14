@@ -181,7 +181,7 @@ def generate_config_file(config):
     else:
         discriminator = None
 
-    # Add method to train hyperparameters  todo: unelegant
+    # Add method to train hyperparameters
     train_hyperparameters["method"] = "domain_discriminator_training" if discriminator is not None \
         else "downstream_training"
 
