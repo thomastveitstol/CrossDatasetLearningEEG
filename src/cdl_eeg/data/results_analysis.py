@@ -51,7 +51,8 @@ def _get_lodo_dataset_name(path) -> str:
                          f"the case for the path {path}. Found {set(test_df['dataset'])}")
 
     # Return the dataset name
-    return test_df["dataset"][0]
+    dataset_name: str = test_df["dataset"][0]
+    return dataset_name
 
 
 def _get_lodo_val_test_metrics(path, *, main_metric, balance_validation_performance):
@@ -156,11 +157,11 @@ def get_best_lodo_performances(results_dir, *, main_metric, balance_validation_p
                     test_fold_performances[test_dataset][metric] = performance
 
             # If this is the best run (as evaluated on the validation set), store validation and test performances
-            avg_val_metrics: Dict[str, float] = {metric: numpy.mean(performances)
-                                                 for metric, performances in val_fold_performances.items()}
+            avg_val_metrics = {metric: numpy.mean(performances)
+                               for metric, performances in val_fold_performances.items()}
             if _is_better(metric=main_metric, old_metrics=best_val_metrics, new_metrics=avg_val_metrics):
                 best_run = run
-                best_val_metrics = avg_val_metrics
+                best_val_metrics = avg_val_metrics  # type: ignore[assignment]
                 best_test_fold_performances = test_fold_performances
         except KeyError:
             continue
