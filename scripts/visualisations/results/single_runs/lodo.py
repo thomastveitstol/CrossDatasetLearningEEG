@@ -47,10 +47,10 @@ PRETTY_NAME = {"pearson_r": "Pearson's r",
 
 def main():
     # Select run
-    run = "debug_age_cv_experiments_2024-04-30_033056"
+    run = "17th_of_may_holiday/debug_age_cv_experiments_2024-05-17_163732"
 
     # Select metric to plot
-    metric = "pearson_r"
+    metric = "r2_score"
 
     # --------------
     # Get performances
@@ -80,6 +80,9 @@ def main():
 
     pyplot.xticks(fontsize=FONTSIZE)
     pyplot.yticks(fontsize=FONTSIZE)
+
+    if metric == "r2_score":
+        pyplot.ylim(-2, 1)
 
     pyplot.show()
 
