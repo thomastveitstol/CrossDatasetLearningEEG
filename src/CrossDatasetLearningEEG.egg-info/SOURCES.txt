@@ -17,6 +17,7 @@ src/cdl_eeg/data/config_paths.json
 src/cdl_eeg/data/interpolate_datasets.py
 src/cdl_eeg/data/paths.py
 src/cdl_eeg/data/preprocessing.py
+src/cdl_eeg/data/results_analysis.py
 src/cdl_eeg/data/subject_split.py
 src/cdl_eeg/data/data_generators/__init__.py
 src/cdl_eeg/data/data_generators/data_generator.py
