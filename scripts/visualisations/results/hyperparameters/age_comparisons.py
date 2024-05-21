@@ -356,15 +356,15 @@ FIGSIZE = (16, 9)
 # Main functions
 # --------------
 def main_lodo():
-    folder_name = "paris"
+    folder_name = "17th_of_may_holiday"
 
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Time series length (s)"
+    hyperparameter_name = "Domain Adaptation"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
-    dataset = "HatlestadHall"
+    dataset = "TDBrain"
     performance_metric = "pearson_r"
     balance_validation_performance = True
 
@@ -433,7 +433,7 @@ def main_lodo():
 
 
 def main_inverted_lodo():
-    folder_name = "weekend_april_26"
+    folder_name = "17th_of_may_holiday"
 
     # --------------
     # Hyperparameters
