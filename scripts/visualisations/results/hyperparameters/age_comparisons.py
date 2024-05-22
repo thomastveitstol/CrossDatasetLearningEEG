@@ -340,7 +340,7 @@ PRETTY_NAME = {"pearson_r": "Pearson's r",
                "rockhill": "Rockhill",
                "mpi_lemon": "MPI Lemon",
                "miltiadous": "Miltiadous",
-               "HatlestadHall": "HatlestadHall",
+               "HatlestadHall": "SRM",
                "Miltiadous": "Miltiadous",
                "YulinWang": "YulinWang",
                "MPILemon": "MPI Lemon",
@@ -364,7 +364,7 @@ def main_lodo():
     hyperparameter_name = "Domain Adaptation"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
-    dataset = "TDBrain"
+    datasets = ("TDBrain", "MPILemon", "HatlestadHall", "Miltiadous", "YulinWang")
     performance_metric = "pearson_r"
     balance_validation_performance = True
 
@@ -373,34 +373,43 @@ def main_lodo():
     # --------------
     # Select runs
     # --------------
-    runs = (run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
-                                                                                  "leave_one_dataset_out",
-                                                                                  "finished_successfully.txt"))
-            and "inverted_cv" not in run)
+    runs = tuple(run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
+                                                                                       "leave_one_dataset_out",
+                                                                                       "finished_successfully.txt"))
+                 and "inverted_cv" not in run)
 
     # --------------
     # Get performances
     # --------------
     val_performance: List[float] = []
     test_performance: List[float] = []
+    run_datasets: List[str] = []
     hyperparameter: List[Any] = []
-    for run in runs:
-        # Get the path
-        path = _get_lodo_path(run=run, results_dir=results_dir, dataset=dataset)
 
-        # Get performance
-        try:  # If e.g. all values are nan (can happen for correlation metrics), just skip for now
-            val, test = _get_val_test_lodo_performance(path=path, metric=performance_metric,
-                                                       balance_validation_performance=balance_validation_performance)
-        except KeyError:
-            continue
-        val_performance.append(val)
-        test_performance.append(test)
-        hyperparameter.append(_get_hyperparameter(
-            config=_get_config_file(results_folder=os.path.dirname(os.path.dirname(path)),
-                                    preprocessing=hyperparam.preprocessing),
-            hparam=hyperparam
-        ))
+    print("Getting results from datasets...")
+    for i, dataset in enumerate(datasets):
+        print(f"\t{i+1}/{len(datasets)}: {dataset}")
+        for run in runs:
+            # Get the path
+            path = _get_lodo_path(run=run, results_dir=results_dir, dataset=dataset)
+
+            # Get performance
+            try:  # If e.g. all values are nan (can happen for correlation metrics), just skip for now
+                val, test = _get_val_test_lodo_performance(
+                    path=path, metric=performance_metric, balance_validation_performance=balance_validation_performance
+                )
+            except KeyError:
+                continue
+            val_performance.append(val)
+            test_performance.append(test)
+            hyperparameter.append(_get_hyperparameter(
+                config=_get_config_file(results_folder=os.path.dirname(os.path.dirname(path)),
+                                        preprocessing=hyperparam.preprocessing),
+                hparam=hyperparam
+            ))
+
+            # Add dataset
+            run_datasets.append(dataset)
 
     # --------------
     # Plotting
@@ -414,11 +423,23 @@ def main_lodo():
         pyplot.ylabel(f"Test ({PRETTY_NAME[performance_metric]})", fontsize=FONTSIZE)
 
     elif hyperparam.variable_type == VariableType.CATEGORICAL:
-        data = pandas.DataFrame.from_dict({hyperparameter_name: hyperparameter, "Performance": test_performance})
-        ax = seaborn.boxplot(data, y=hyperparameter_name, x="Performance", hue=hyperparameter_name)
+        data = pandas.DataFrame.from_dict({hyperparameter_name: hyperparameter,
+                                           PRETTY_NAME[performance_metric]: test_performance,
+                                           "Dataset": run_datasets})
 
+        # Maybe set hue order
+        hue_order = ("All", "Delta", "Theta", "Alpha", "Beta", "Gamma") if hyperparameter_name == "Band-pass filter" \
+            else None
+
+        # Plot
+        ax = seaborn.boxplot(data, y="Dataset", x=PRETTY_NAME[performance_metric], hue=hyperparameter_name,
+                             hue_order=hue_order)
+
+        # Plot cosmetics
         ax.xaxis.label.set_size(FONTSIZE)
         ax.yaxis.label.set_size(FONTSIZE)
+        ax.legend(fontsize=FONTSIZE)
+        ax.grid(axis="x")
     else:
         raise ValueError(f"Unexpected variable type: {hyperparam.variable_type}")
 
@@ -427,7 +448,7 @@ def main_lodo():
 
     pyplot.xticks(fontsize=FONTSIZE)
     pyplot.yticks(fontsize=FONTSIZE)
-    pyplot.title(f"{PRETTY_NAME[dataset]}", fontsize=FONTSIZE+3)
+    pyplot.title(hyperparameter_name, fontsize=FONTSIZE + 3)
 
     pyplot.show()
 
@@ -438,7 +459,7 @@ def main_inverted_lodo():
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Normalisation"
+    hyperparameter_name = "DL Architecture"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
     # Datasets
