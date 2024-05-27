@@ -47,10 +47,10 @@ PRETTY_NAME = {"pearson_r": "Pearson's r",
 
 def main():
     # Select run
-    run = "17th_of_may_holiday/debug_age_cv_experiments_2024-05-17_163732"
+    run = "17th_of_may_holiday/debug_age_cv_experiments_2024-05-25_185612"
 
     # Select metric to plot
-    metric = "r2_score"
+    metric = "pearson_r"
 
     # --------------
     # Get performances
