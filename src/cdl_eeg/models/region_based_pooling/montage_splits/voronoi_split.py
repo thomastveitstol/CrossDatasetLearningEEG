@@ -8,7 +8,7 @@ from shapely.geometry import Polygon, Point
 from cdl_eeg.data.datasets.getter import get_channel_system
 from cdl_eeg.models.region_based_pooling.montage_splits.montage_split_base import MontageSplitBase
 from cdl_eeg.models.region_based_pooling.utils import RegionID, project_to_2d
-from cdl_eeg.models.transformations.utils import UnivariateUniform
+from cdl_eeg.models.utils import UnivariateUniform
 
 
 class VoronoiSplit(MontageSplitBase):
