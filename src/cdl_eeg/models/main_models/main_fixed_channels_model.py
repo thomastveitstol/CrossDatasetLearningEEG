@@ -303,7 +303,7 @@ class MainFixedChannelsModel(nn.Module):
         Returns
         -------
         tuple[Histories, Histories, Histories | None]
-                    Training and validation histories
+                    Training, validation, and maybe test histories
         """
         # Defining histories objects
         train_history = Histories(metrics=metrics, splits=sub_group_splits)
