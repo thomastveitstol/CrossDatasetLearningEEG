@@ -15,8 +15,12 @@ from cdl_eeg.data.datasets.utils import sex_to_int
 
 class MPILemon(EEGDatasetBase):
     """
-    Original article:
-    https://www.nature.com/articles/sdata2018308
+    Dataset from 'A mind-brain-body dataset of MRI, EEG, cognition, emotion, and peripheral physiology in young and old
+    adults'
+
+    Paper:
+        Babayan, A., Erbey, M., Kumral, D. et al. A mind-brain-body dataset of MRI, EEG, cognition, emotion, and
+        peripheral physiology in young and old adults. Sci Data 6, 180308 (2019). https://doi.org/10.1038/sdata.2018.308
 
     Examples:
     ----------
@@ -34,14 +38,13 @@ class MPILemon(EEGDatasetBase):
                       "T8", "CP5", "CP1", "CP2", "CP6", "AFz", "P7", "P3", "Pz", "P4", "P8", "PO9", "O1", "Oz", "O2",
                       "PO10", "AF7", "AF3", "AF4", "AF8", "F5", "F1", "F2", "F6", "FT7", "FC3", "FC4", "FT8", "C5",
                       "C1", "C2", "C6", "TP7", "CP3", "CPz", "CP4", "TP8", "P5", "P1", "P2", "P6", "PO7", "PO3", "POz",
-                      "PO4", "PO8")  # TODO: This is inconsistent!!!
+                      "PO4", "PO8")
     _montage_name = "standard_1020"
 
     # ----------------
     # Loading methods
     # ----------------
     def get_participants_tsv_path(self):
-        # todo: the method name says tsv, but it is a csv file...
         return os.path.join(self.get_mne_path(), "Participants_MPILMBB_LEMON.csv")
 
     def _get_subject_ids(self) -> Tuple[str, ...]:
@@ -91,7 +94,7 @@ class MPILemon(EEGDatasetBase):
         raw.reorder_channels(list(self._channel_names))
 
         # Set the montage
-        with warnings.catch_warnings():  # todo
+        with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", category=RuntimeWarning)
 
             raw.set_montage(
@@ -109,6 +112,7 @@ class MPILemon(EEGDatasetBase):
         Method for downloading the MPI Lemon dataset, eyes closed EEG data only
 
         Created by Mats Tveter and Thomas Tveitstøl
+
         Parameters
         ----------
         to_path : str, optional
@@ -186,7 +190,6 @@ class MPILemon(EEGDatasetBase):
 
     def _get_template_electrode_positions(self):
         # Following the standard 10-20 system according to the original article
-        # TODO: channel present in the data is inconsistent!!!
         montage = mne.channels.make_standard_montage(self._montage_name)
         channel_positions = montage.get_positions()["ch_pos"]
 
@@ -194,8 +197,6 @@ class MPILemon(EEGDatasetBase):
         return {ch_name: tuple(pos) for ch_name, pos in channel_positions.items() if ch_name in self._channel_names}
 
     def channel_name_to_index(self):
-        # todo: make tests
-        # TODO: channel present in the data is inconsistent!!!
         return {ch_name: i for i, ch_name in enumerate(self._channel_names)}
 
     # ----------------
