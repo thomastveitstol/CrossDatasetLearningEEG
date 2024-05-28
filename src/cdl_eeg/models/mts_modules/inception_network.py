@@ -194,7 +194,11 @@ class _ShortcutLayer(nn.Module):
 # ---------------------------
 class InceptionNetwork(MTSModuleBase):
     """
-    Inception network
+    The Inception network architecture
+
+    Paper:
+        Ismail Fawaz, H., Lucas, B., Forestier, G. et al. InceptionTime: Finding AlexNet for time series classification.
+        Data Min Knowl Disc 34, 1936–1962 (2020). https://doi.org/10.1007/s10618-020-00710-y
 
     Examples
     --------
