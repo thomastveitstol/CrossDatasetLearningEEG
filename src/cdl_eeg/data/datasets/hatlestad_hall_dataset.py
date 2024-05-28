@@ -10,6 +10,17 @@ from cdl_eeg.data.datasets.utils import sex_to_int
 
 class HatlestadHall(EEGDatasetBase):
     """
+    The SRM dataset. I named it after the first author of the paper quite early in the programming, and I don't want to
+    take the risk in changing everywhere
+
+    Paper:
+        Hatlestad-Hall, C., Rygvold, T. W., & Andersson, S. (2022). BIDS-structured resting-state electroencephalography
+        (EEG) data extracted from an experimental paradigm. Data in Brief, 45, 108647.
+        https://doi.org/10.1016/j.dib.2022.108647
+    OpenNeuro:
+        Christoffer Hatlestad-Hall and Trine Waage Rygvold and Stein Andersson (2022). SRM Resting-state EEG. OpenNeuro.
+        [Dataset] doi: doi:10.18112/openneuro.ds003775.v1.2.1
+
     Examples:
     ----------
     >>> HatlestadHall().name
