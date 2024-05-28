@@ -269,7 +269,6 @@ class Experiment:
 
         # -----------------
         # Create data loaders (and target scaler)
-        # todo: must implement data loader for interpolated data
         # -----------------
         print("Creating data loaders...")
         # Create loaders for training and validation
