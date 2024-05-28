@@ -864,12 +864,12 @@ def _compute_psd_barycenters(psds):
 
     # Keys should be strings
     if not all(isinstance(dataset_name, str) for dataset_name in psds):
-        raise TypeError(f"Expected all keys to be 'str', but found {set(type(key for key in psds))}")
+        raise TypeError(f"Expected all keys to be 'str', but found {set(type(key) for key in psds)}")
 
     # Values should be numpy arrays
     psd_arrays = psds.values()
     if not all(isinstance(psd_array, numpy.ndarray) for psd_array in psd_arrays):
-        raise TypeError(f"Expected all values to be numpy arrays, but found {set(type(val for val in psd_arrays))}")
+        raise TypeError(f"Expected all values to be numpy arrays, but found {set(type(val) for val in psd_arrays)}")
 
     # All numpy arrays should have same two dimensions
     if not all(psd_array.ndim == 2 for psd_array in psd_arrays):
