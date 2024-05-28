@@ -15,11 +15,18 @@ from cdl_eeg.data.datasets.utils import sex_to_int
 
 class YulinWang(EEGDatasetBase):
     """
-    Original paper:
-    https://www.nature.com/articles/s41597-022-01607-9
+    The dataset from 'A test-retest resting, and cognitive state EEG dataset during multiple subject-driven states'
 
-    Examples:
-    ----------
+    Paper:
+        Wang, Y., Duan, W., Dong, D. et al. A test-retest resting, and cognitive state EEG dataset during multiple
+        subject-driven states. Sci Data 9, 566 (2022). https://doi.org/10.1038/s41597-022-01607-9
+    OpenNeuro:
+        Yulin Wang and Wei Duan and Debo Dong and Lihong Ding and Xu Lei (2022). A test-retest resting and cognitive
+        state EEG dataset. OpenNeuro. [Dataset] doi: doi:10.18112/openneuro.ds004148.v1.0.1
+
+
+    Examples
+    --------
     >>> YulinWang().name
     'YulinWang'
     >>> YulinWang.get_available_targets()
@@ -154,24 +161,6 @@ class YulinWang(EEGDatasetBase):
         # Make it a dict and return it
         return {ch_name: (x, y, z) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
 
-    def _deprecated_get_template_electrode_positions(self):
-        # Using the positions from the chanlocs62.mat file in derivatives folder
-        path = os.path.join(self.get_mne_path(), "derivatives", "preprocessed data", "chanlocs62.mat")
-
-        # Load the file
-        mat_file = read_mat(path)
-
-        # Extract positions
-        ch_positions = mat_file["chanlocs"]
-
-        ch_names = ch_positions["labels"]
-        x_vals = ch_positions["X"]
-        y_vals = ch_positions["Y"]
-        z_vals = ch_positions["Z"]
-
-        # Convert to dict and return
-        return {ch_name: (x, y, z) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
-
     def _get_template_electrode_positions(self):
         montage = mne.channels.make_standard_montage(self._montage_name)
         channel_positions = montage.get_positions()["ch_pos"]
@@ -196,5 +185,4 @@ class YulinWang(EEGDatasetBase):
         return {ch_name: channel_positions[ch_name] for ch_name in channel_names}
 
     def channel_name_to_index(self):
-        # todo: make tests
         return {ch_name: i for i, ch_name in enumerate(self._get_template_electrode_positions())}
