@@ -94,7 +94,7 @@ def generate_config_file(config):
     loss_hyperparameters["loss_kwargs"] = loss_config["loss_kwargs"]
     loss_hyperparameters["loss_kwargs"]["reduction"] = "mean" if loss_hyperparameters["weighter"] is None else "none"
 
-    weighter_kwargs = dict()  # todo: hard-coded :(
+    weighter_kwargs = dict()
     for param, domain in loss_config["weighter_kwargs"].items():
         if isinstance(domain, dict) and "dist" in domain:
             weighter_kwargs[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
