@@ -23,7 +23,7 @@ def get_pooling_module(pooling_method, **kwargs):
 
     Examples
     --------
-    >>> _ = get_pooling_module("MultiMSMean")
+    >>> _ = get_pooling_module("MultiMSMean", num_regions=6)
     >>> get_pooling_module("NotAPoolingModule")  # doctest: +NORMALIZE_WHITESPACE, +ELLIPSIS
     Traceback (most recent call last):
     ...
