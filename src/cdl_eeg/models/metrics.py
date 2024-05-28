@@ -41,12 +41,6 @@ def multiclass_classification_metric(func):
     return func
 
 
-def distance_metric(func):
-    """Methods labelled with this decorator should compute the distance between two distributions"""
-    setattr(func, "_is_distance_metric", True)
-    return func
-
-
 # ----------------
 # Convenient small classes
 # ----------------
