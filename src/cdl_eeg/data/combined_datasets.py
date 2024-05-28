@@ -25,7 +25,8 @@ class LoadDetails:
 # -----------------
 class CombinedDatasets:
     """
-    Class for storing multiple datasets
+    Class for storing multiple datasets. I find this convenient to avoid re-loading data all the time. Less memory
+    efficient, but more time efficient
     """
 
     __slots__ = "_subject_ids", "_data", "_targets", "_datasets"
