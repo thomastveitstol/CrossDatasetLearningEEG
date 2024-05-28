@@ -205,7 +205,7 @@ PoolingModules: &PoolingModules
   MultiMSSharedRocketHeadRegion: *MultiMSSharedRocketHeadRegion
 
 CentroidPolygons: &CentroidPolygons
-  channel_positions: Miltiadous  # todo
+  channel_positions: [ Miltiadous ]  # todo
   min_nodes:
     dist: uniform_int
     kwargs:
