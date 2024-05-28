@@ -2,7 +2,6 @@ import numpy.random
 import pytest
 import torch
 
-from cdl_eeg.data.datasets.cau_eeg_dataset import CAUEEG
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.mpi_lemon import MPILemon
@@ -82,7 +81,7 @@ def rbp_model_configs():
 
 @pytest.fixture
 def all_datasets():
-    return Miltiadous(), CAUEEG(), HatlestadHall(), TDBrain(), YulinWang(), MPILemon()
+    return Miltiadous(), HatlestadHall(), TDBrain(), YulinWang(), MPILemon()
 
 
 @pytest.fixture

@@ -2,7 +2,6 @@ import os
 
 import pytest
 
-from cdl_eeg.data.datasets.cau_eeg_dataset import CAUEEG
 from cdl_eeg.data.datasets.dataset_base import get_channel_name_order
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
@@ -20,7 +19,6 @@ def test_channel_names_ordering():
     datasets = {HatlestadHall(): {"derivatives": True, "session": "t1"},
                 YulinWang(): {"derivatives": True, "visit": 1, "recording": "EC"},
                 Miltiadous(): {"derivatives": True},
-                CAUEEG(): {"derivatives": False},
                 TDBrain(): {"derivatives": False}}
 
     # Loop through all datasets

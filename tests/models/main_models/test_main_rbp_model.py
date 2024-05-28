@@ -3,7 +3,6 @@ import os
 import pytest
 import torch
 
-from cdl_eeg.data.datasets.cau_eeg_dataset import CAUEEG
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 from cdl_eeg.data.datasets.mpi_lemon import MPILemon
 from cdl_eeg.data.datasets.td_brain import TDBrain
@@ -21,7 +20,7 @@ def test_fit_real_channel_systems(rbp_model_configs):
     # Create real channel systems
     # ------------------
     # Select datasets for testing
-    datasets = (Miltiadous(), CAUEEG(), HatlestadHall(), TDBrain(), YulinWang(), MPILemon())
+    datasets = (Miltiadous(), HatlestadHall(), TDBrain(), YulinWang(), MPILemon())
 
     # Get their channel systems
     channel_systems = tuple(dataset.channel_system for dataset in datasets)
