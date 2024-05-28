@@ -1,5 +1,5 @@
 run_baseline: false
-cv_method: [ inverted, normal ]
+cv_method: [ inverted, normal ]  # this will be sampled randomøy
 selected_target: &selected_target age
 
 Shared Dataset Details:
@@ -11,10 +11,10 @@ SubjectSplit:
   kwargs:
     seed: 42  # todo: should we fix the seed?
 
-SubGroups:
+SubGroups:  # This just relates to the subgroups we should store metrics of
   verbose: true
   sub_groups:
-    dataset_name:  # todo: don't hardcode like this
+    dataset_name:
       [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain ]
 
 LatentFeatureDistribution:
@@ -51,7 +51,7 @@ Datasets:
 
 Targets:
   age:
-    main_metric: [ mae, mse, pearson_r, spearman_rho, r2_score ]
+    main_metric: [ mae, mse, pearson_r, spearman_rho, r2_score ]  # This is actually not used with current settings
     prediction_activation_function: null
     Loss:
       loss:
@@ -76,33 +76,6 @@ Targets:
         kwargs:
           domain:
             - name: ZNormalisation
-              kwargs: { }
-  sex:
-    main_metric: [ auc ]
-    prediction_activation_function: sigmoid
-    Loss:
-      loss:
-        dist: uniform_discrete
-        kwargs:
-          domain: [ BCEWithLogitsLoss ]
-      loss_kwargs: { }  # reduction parameter will be set to 'none' or 'mean', depending on the sampled loss weighter
-      weighter: # todo: weighter and the kwargs must be sampled together
-        dist: uniform_discrete
-        kwargs:
-          domain: [ null, SamplePowerWeighter ]
-      weighter_kwargs: # Dataset sizes will be added during runtime
-        weight_power:
-          dist: uniform
-          kwargs:
-            a: 0
-            b: 1
-    metrics: classification
-    scaler:
-      target:
-        dist: uniform_discrete
-        kwargs:
-          domain:
-            - name: NoScaler
               kwargs: { }
 
 Training:
