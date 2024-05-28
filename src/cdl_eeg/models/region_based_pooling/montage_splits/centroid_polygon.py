@@ -857,7 +857,8 @@ class RegretRecursion(Exception):
 
 
 if __name__ == "__main__":
-    # todo: sometimes, it looks like it doesn't partition properly (e.g. splits into 5/6/7 instead of 6/6/6)
+    # Just a note to self: with some variations of hyperparameters it looks like the splitting is wrong. This, however,
+    # occurred because T4 and T8 has the same position. So no worries
     import random
 
     import mne
