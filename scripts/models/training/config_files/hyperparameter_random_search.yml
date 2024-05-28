@@ -231,26 +231,8 @@ PoolingModules: &PoolingModules
   MultiCSSharedRocket: *MultiCSSharedRocket
   MultiMSSharedRocketHeadRegion: *MultiMSSharedRocketHeadRegion
 
-# Montage splits  todo: update the kwargs
-VoronoiSplit:  # &VoronoiSplit
-  channel_systems:
-    dist: uniform_discrete
-    kwargs:
-      domain: [ [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain ] ]
-  min_nodes: 1  # todo: other values must be implemented
-  num_initial_centroids:
-    dist: log_uniform_int
-    kwargs:
-      base: 10
-      a: 2
-      b: 3
-  <<: *box
-
 CentroidPolygons: &CentroidPolygons
-  channel_positions:
-    dist: uniform_discrete
-    kwargs:
-      domain: [ [ Miltiadous ] ]  # todo
+  channel_positions: Miltiadous  # todo
   min_nodes:
     dist: uniform_int
     kwargs:
@@ -262,7 +244,6 @@ CentroidPolygons: &CentroidPolygons
       domain: [[2, 2, 2, 2, 2, 2, 2], [3, 3, 3, 3, 3, 3, 3, 3], [2, 3, 2, 3, 2, 3, 2, 3, 2], [4, 3, 2, 3, 4, 3, 2, 3, 4]]
 
 MontageSplits: &MontageSplits
-  # VoronoiSplit: *VoronoiSplit
   CentroidPolygons: *CentroidPolygons
 
 RegionBasedPooling: &RegionBasedPooling
@@ -270,8 +251,8 @@ RegionBasedPooling: &RegionBasedPooling
     dist: log_uniform_int
     kwargs:
       base: 2
-      a: 0  # 2^0 = 1
-      b: 4  # 2^5 = 32
+      a: 0
+      b: 4
   normalise_region_representations:
     dist: uniform_discrete
     kwargs:
