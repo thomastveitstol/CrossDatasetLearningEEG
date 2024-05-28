@@ -10,6 +10,19 @@ from cdl_eeg.data.datasets.utils import sex_to_int
 
 class Miltiadous(EEGDatasetBase):
     """
+    Dataset from 'A dataset of EEG recordings from: Alzheimer's disease, Frontotemporal dementia and Healthy subjects'
+
+    Paper:
+        Miltiadous A, Tzimourta KD, Afrantou T, Ioannidis P, Grigoriadis N, Tsalikakis DG, Angelidis P, Tsipouras MG,
+        Glavas E, Giannakeas N, et al. A Dataset of Scalp EEG Recordings of Alzheimer’s Disease, Frontotemporal Dementia
+        and Healthy Subjects from Routine EEG. Data. 2023; 8(6):95. https://doi.org/10.3390/data8060095
+
+    OpenNeuro:
+        Andreas Miltiadous and Katerina D. Tzimourta and Theodora Afrantou and Panagiotis Ioannidis and Nikolaos
+        Grigoriadis and Dimitrios G. Tsalikakis and Pantelis Angelidis and Markos G. Tsipouras and Evripidis Glavas and
+        Nikolaos Giannakeas and Alexandros T. Tzallas (2024). A dataset of EEG recordings from: Alzheimer's disease,
+        Frontotemporal dementia and Healthy subjects. OpenNeuro. [Dataset] doi: doi:10.18112/openneuro.ds004504.v1.0.7
+
     Examples:
     ----------
     >>> Miltiadous().name
@@ -94,5 +107,4 @@ class Miltiadous(EEGDatasetBase):
         return {ch_name: tuple(pos) for ch_name, pos in channel_positions.items() if ch_name in self._channel_names}
 
     def channel_name_to_index(self):
-        # todo: make tests based on .tsv files, as I only checked a single subject for channel names and ordering
         return {ch_name: i for i, ch_name in enumerate(self._channel_names)}
