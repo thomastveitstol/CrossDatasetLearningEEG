@@ -283,7 +283,7 @@ class ConvMMN:
                              "found")
 
         # -------------
-        # Compute or get the PSD barycenters
+        # Compute the PSD barycenters
         # -------------
         # Compute representative PSDs of all datasets, if not provided
         if psds is None:
@@ -325,7 +325,7 @@ class ConvMMN:
                 dataset_psd = _compute_representative_psd(x, sampling_freq=self._sampling_freq,
                                                           kernel_size=self._kernel_size)
 
-            # Compute the monge filter as in Eq. 5  todo: verify that the axes is correct
+            # Compute the monge filter as in Eq. 5
             monge_filter = fft.irfftn(numpy.sqrt(self._psd_barycenters) / numpy.sqrt(dataset_psd), axes=(-1,))
 
             # The original implementation does this, therefore I am doing it as well
@@ -845,6 +845,45 @@ def _compute_psd_barycenters(psds):
     Returns
     -------
     numpy.ndarray
+
+    Examples
+    --------
+    >>> my_psds = {"d1": numpy.array([[4, 5, 3, 7, 7, 3]]), "d2": numpy.array([[6, 7, 1, 0, 3, 8]]),
+    ...            "d3": numpy.array([[7, 5, 2, 1, 0, 4]])}
+    >>> my_sqrt = numpy.array([[4**0.5 + 6**0.5 + 7**0.5, 5**0.5 + 7**0.5 + 5**0.5, 3**0.5 + 1**0.5 + 2**0.5,
+    ...                         7**0.5 + 0**0.5 + 1**0.5, 7**0.5 + 3**0.5 + 0**0.5, 3**0.5 + 8**0.5 + 4**0.5]])
+    >>> numpy.array_equal(_compute_psd_barycenters(my_psds), (my_sqrt / 3) ** 2)
+    True
     """
-    # todo: in the future, other aggregation methods and weighting may be implemented
-    return numpy.mean(numpy.concatenate([numpy.expand_dims(psd, axis=0) for psd in psds.values()], axis=0), axis=0)
+    # --------------
+    # Input checks
+    # --------------
+    # Type should be dict
+    if not isinstance(psds, dict):
+        raise TypeError(f"Expected input to be dict, but found {type(psds)}")
+
+    # Keys should be strings
+    if not all(isinstance(dataset_name, str) for dataset_name in psds):
+        raise TypeError(f"Expected all keys to be 'str', but found {set(type(key for key in psds))}")
+
+    # Values should be numpy arrays
+    psd_arrays = psds.values()
+    if not all(isinstance(psd_array, numpy.ndarray) for psd_array in psd_arrays):
+        raise TypeError(f"Expected all values to be numpy arrays, but found {set(type(val for val in psd_arrays))}")
+
+    # All numpy arrays should have same two dimensions
+    if not all(psd_array.ndim == 2 for psd_array in psd_arrays):
+        raise ValueError(f"Expected all numpy arrays to be 2D, but found the dimensions "
+                         f"{set(psd_array.ndim for psd_array in psd_arrays)}")
+
+    # All shapes should be the same
+    if len(set(psd_array.shape for psd_array in psd_arrays)) != 1:
+        _unique_shapes = set(psd_array.shape for psd_array in psd_arrays)
+        raise ValueError(f"Expected all PSD arrays to have the same shape, but received the following "
+                         f"(N={len(_unique_shapes)}) {_unique_shapes}")
+
+    # --------------
+    # Compute PSD barycenters using Eq. 6 in the conference paper
+    # --------------
+    return numpy.mean(numpy.concatenate([numpy.expand_dims(psd ** 0.5, axis=0) for psd in psds.values()],
+                                        axis=0), axis=0) ** 2
