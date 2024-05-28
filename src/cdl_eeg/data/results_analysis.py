@@ -1,3 +1,6 @@
+"""
+Functions for analysing the results
+"""
 import os
 from typing import Dict, List
 
