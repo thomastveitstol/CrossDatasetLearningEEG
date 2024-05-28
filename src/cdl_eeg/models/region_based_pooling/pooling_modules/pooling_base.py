@@ -12,9 +12,9 @@ def precomputing_method(func):
 
 
 # --------------------
-# Base classes  todo: montage splits
+# Base classes
 # --------------------
-class PoolingModuleBase(nn.Module, abc.ABC):  # todo: not sure if inheriting from abc.ABC is important pr. now
+class PoolingModuleBase(nn.Module, abc.ABC):
     """
     Pooling module base
     """
@@ -28,27 +28,6 @@ class PoolingModuleBase(nn.Module, abc.ABC):  # todo: not sure if inheriting fro
 
         # Check if any of the methods are decorated as a precomputing_method
         return any(getattr(method, "_is_precomputing_method", False) for method in methods)
-
-
-class SingleRegionPoolingBase(PoolingModuleBase):
-    """
-    Base class for pooling modules operating on a single region. This offers great flexibility, but may come at a
-    computational cost (for-loops are slow)
-    """
-
-
-class MultiRegionPoolingBase(PoolingModuleBase):
-    """
-    Base class for pooling modules operating on a subset of regions in a single channel split. If the idea is to operate
-    on all regions in a region/channel split, inherit from SingleChannelSplitPoolingBase instead
-    """
-
-
-class SingleChannelSplitPoolingBase(PoolingModuleBase):
-    """
-    Base class for pooling modules operating on an entire channel split. This may be preferred to single regions, as it
-    allows for more time-efficient implementations
-    """
 
 
 class MultiMontageSplitsPoolingBase(PoolingModuleBase):
