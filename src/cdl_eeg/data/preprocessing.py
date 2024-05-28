@@ -13,6 +13,7 @@ from matplotlib import pyplot
 # Helpful functions
 # -------------
 def create_folder_name(*, l_freq, h_freq, is_autorejected, resample_multiple):
+    """Function for creating a string to be used as a folder name"""
     return f"data_band_pass_{l_freq}-{h_freq}_autoreject_{is_autorejected}_sampling_multiple_{resample_multiple}"
 
 
@@ -27,6 +28,7 @@ def _run_autoreject(epochs, autoreject_resample, seed, num_splits):
 def _save_eeg_with_resampling_and_average_referencing(epochs: mne.Epochs, l_freq, h_freq, resample_fmax_multiples, path,
                                                       subject_id, is_autorejected, dataset_name: str, plot_data,
                                                       save_data):
+    """Function for saving EEG data as numpy arrays, which has already been pre-processed to some extent"""
     # Perform band-pass filtering
     epochs.filter(l_freq=l_freq, h_freq=h_freq, verbose=False)
 
@@ -74,6 +76,7 @@ def save_preprocessed_epochs(raw: mne.io.BaseRaw, *, excluded_channels, main_ban
                              num_epochs, epoch_duration, epoch_overlap, time_series_start_secs, autoreject_resample,
                              resample_fmax_multiples, subject_id, path, dataset_name, seed, plot_data=False,
                              save_data=True):
+    """Main function for saving a range of different pre-processed versions of the same EEG data"""
     # ---------------
     # Input checks
     # ---------------
