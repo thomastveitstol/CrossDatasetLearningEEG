@@ -1,8 +1,5 @@
 """
-Script for plotting the preprocessed version of the Miltiadous
-
-Conclusion:
-    Looks quite good, although not sure if all is resting state (see e.g. subject 56).
+Script for plotting Miltiadous data
 """
 from matplotlib import pyplot
 
