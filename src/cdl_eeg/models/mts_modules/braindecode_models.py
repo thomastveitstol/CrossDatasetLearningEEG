@@ -1,7 +1,10 @@
 """
 Models provided by Braindecode are implemented here
 
-todo: cite
+Braindecode citation:
+    Schirrmeister, R.T., Springenberg, J.T., Fiederer, L.D.J., Glasstetter, M., Eggensperger, K., Tangermann, M.,
+    Hutter, F., Burgard, W. and Ball, T. (2017), Deep learning with convolutional neural networks for EEG decoding and
+    visualization. Hum. Brain Mapp., 38: 5391-5420. https://doi.org/10.1002/hbm.23730
 """
 import torch
 from braindecode.models import EEGNetv4, EEGResNet, ShallowFBCSPNet, Deep4Net
@@ -12,10 +15,11 @@ from cdl_eeg.models.random_search.sampling_distributions import sample_hyperpara
 
 class EEGNetv4MTS(MTSModuleBase):
     """
-    EEGNetv4
+    The EEGNetv4 architecture
 
-    Lawhern, V. J., Solon, A. J., Waytowich, N. R., Gordon, S. M., Hung, C. P., & Lance, B. J. (2018). EEGNet: A Compact
-    Convolutional Network for EEG-based Brain-Computer Interfaces. arXiv preprint arXiv:1611.08024.
+    Paper:
+        Lawhern, V. J., Solon, A. J., Waytowich, N. R., Gordon, S. M., Hung, C. P., & Lance, B. J. (2018). EEGNet: A
+        Compact Convolutional Network for EEG-based Brain-Computer Interfaces. arXiv preprint arXiv:1611.08024.
 
     Examples
     --------
@@ -439,9 +443,12 @@ class EEGResNetMTS(MTSModuleBase):
 
 class ShallowFBCSPNetMTS(MTSModuleBase):
     """
-    ShallowFBCSPNetMTS
+    The ShallowFBCSPNet architecture
 
-    This was used in Engemann et al. (2022).
+    Paper:
+        Schirrmeister, R.T., Springenberg, J.T., Fiederer, L.D.J., Glasstetter, M., Eggensperger, K., Tangermann, M.,
+        Hutter, F., Burgard, W. and Ball, T. (2017), Deep learning with convolutional neural networks for EEG decoding
+        and visualization. Hum. Brain Mapp., 38: 5391-5420. https://doi.org/10.1002/hbm.23730
 
     Examples
     --------
@@ -644,9 +651,12 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
 
 class Deep4NetMTS(MTSModuleBase):
     """
-    Deep4Net
+    The Deep4Net architecture
 
-    This was used in Engemann et al. (2022).
+    Paper:
+        Schirrmeister, R.T., Springenberg, J.T., Fiederer, L.D.J., Glasstetter, M., Eggensperger, K., Tangermann, M.,
+        Hutter, F., Burgard, W. and Ball, T. (2017), Deep learning with convolutional neural networks for EEG decoding
+        and visualization. Hum. Brain Mapp., 38: 5391-5420. https://doi.org/10.1002/hbm.23730
 
     Examples
     --------
