@@ -411,7 +411,7 @@ class CentroidPolygons(MontageSplitBase):
         # -----------------------
         # Get or define the polygon graph of the entire region, before splitting
         if _polygon == "auto":
-            # Design a box which usually capture the MNE default channel systems, but todo: verify this
+            # Design a box which usually capture the MNE default channel systems
             _x_min = -0.17
             _x_max = 0.17
             _y_min = -0.17
