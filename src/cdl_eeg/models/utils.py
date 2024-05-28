@@ -59,9 +59,8 @@ def tensor_dict_to_device(tensors, device):
 
 def flatten_targets(tensors):
     """
-    Flatten the targets
+    Flatten the targets. The sorting is determined from the ordering of the keys
 
-    TODO: Make tests on the sorting
     Parameters
     ----------
     tensors : dict[str, torch.Tensor | numpy.ndarray]
@@ -69,12 +68,29 @@ def flatten_targets(tensors):
     Returns
     -------
     torch.Tensor
+
+    Examples
+    --------
+    >>> my_targets = {"d1": torch.ones(size=(10, 1)), "d2": torch.ones(size=(11, 1)) * 2,
+    ...               "d3": torch.ones(size=(5, 1)) * 3}
+    >>> my_output = flatten_targets(my_targets)
+    >>> my_output.size()
+    torch.Size([26, 1])
+
+    The ordering is determined from the keys
+
+    >>> torch.equal(my_output[:10], torch.ones(size=(10, 1)))
+    True
+    >>> torch.equal(my_output[10:21], 2 * torch.ones(size=(11, 1)))
+    True
+    >>> torch.equal(my_output[21:], 3 * torch.ones(size=(5, 1)))
+    True
     """
     # Maybe convert to torch tensors
     if all(isinstance(tensor, numpy.ndarray) for tensor in tensors.values()):
         tensors = {dataset_name: torch.tensor(tensor, dtype=torch.float) for dataset_name, tensor in tensors.items()}
 
-    # Flatten  todo: why do we need to loop for converting to tuple??
+    # Flatten
     targets = torch.cat(tuple(tensor for tensor in tensors.values()), dim=0)
 
     return targets
