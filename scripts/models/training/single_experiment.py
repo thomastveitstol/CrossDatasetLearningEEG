@@ -1,5 +1,5 @@
 """
-Script for running both leave-one-dataset-out cross validation and k-fold cross validation using the same config file
+Script for running a single experiment, either leave-one-dataset-out cross validation, or its inverse
 """
 import copy
 import os
@@ -41,7 +41,7 @@ def main():
     else:
         raise ValueError
     results_path = os.path.join(get_results_dir(),
-                                f"debug_{config['selected_target']}_{_title_cv}_experiments_{date.today()}_"
+                                f"{config['selected_target']}_{_title_cv}_experiments_{date.today()}_"
                                 f"{datetime.now().strftime('%H%M%S')}")
     os.mkdir(results_path)
 
