@@ -1,4 +1,5 @@
 import dataclasses
+import itertools
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy
@@ -70,7 +71,10 @@ class CombinedDatasets:
         for dataset, details in zip(datasets, load_details):
             _accepted_subject_ids: List[str] = []
             _subjects = details.subject_ids
-            _targets = dataset.load_targets(target=required_target, subject_ids=_subjects)
+            if required_target is None:
+                _targets = itertools.cycle((1,))  # This avoids not accepting a subject
+            else:
+                _targets = dataset.load_targets(target=required_target, subject_ids=_subjects)
             for sub_id, _target in zip(_subjects, _targets):
                 if not numpy.isnan(_target):
                     _accepted_subject_ids.append(sub_id)
