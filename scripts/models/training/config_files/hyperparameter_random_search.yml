@@ -118,11 +118,30 @@ Training:
 # Domain discriminator
 # -----------------
 FCModule: &FCModule
-  hidden_units:
-    dist: uniform_discrete
-    kwargs:
-      # domain: [ [], [32], [64], [32, 32], [64, 64], [64, 32] ]  # todo
-      domain: [ [4], [8], [8, 4], [4, 4], [8, 8] ]
+
+  exponential_decay:
+    depth:
+      dist: uniform_int
+      kwargs:
+        a: 0
+        b: 5
+    first_layer_multiple:
+      dist: uniform
+      kwargs:
+        a: 0.5
+        b: 2
+    exponential_decrease:
+      dist: uniform_discrete
+      kwargs:
+        domain: [2, 3]
+    activation_function:
+      relu: {}
+      elu:
+        alpha:
+          dist: "uniform"
+          kwargs:
+            a: 0.2
+            b: 1.8
 
 DomainDiscriminator:
   discriminators:

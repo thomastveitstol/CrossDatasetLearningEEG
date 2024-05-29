@@ -52,9 +52,14 @@ class MTSModuleBase(nn.Module, abc.ABC):
             return False
         return True
 
+    @classmethod
+    def get_latent_features_dim(cls, *args, **kwargs):
+        """Get the expected latent feature dimension"""
+        return cls(*args, **kwargs).latent_features_dim
+
     # ----------------
     # Properties
     # ----------------
     @property
-    def latent_features_dim(self):
+    def latent_features_dim(self) -> int:
         raise NotImplementedError

@@ -204,6 +204,11 @@ class InceptionNetwork(MTSModuleBase):
     --------
     >>> _ = InceptionNetwork(64, 5)
 
+    Latent feature dimension does not depend on number of input channels
+
+    >>> InceptionNetwork.get_latent_features_dim(64, 15) == InceptionNetwork.get_latent_features_dim(3, 3)
+    True
+
     How it looks like (but note that the ordering does not reflect the forward pass, as this is not a Sequential model)
 
     >>> InceptionNetwork(64, 5)

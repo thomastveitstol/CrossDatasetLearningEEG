@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 import yaml  # type: ignore[import]
 
 from cdl_eeg.data.paths import get_numpy_data_storage_path
+from cdl_eeg.models.domain_adaptation.domain_discriminators.getter import get_domain_discriminator_type
 from cdl_eeg.models.mts_modules.getter import get_mts_module_type
 from cdl_eeg.models.region_based_pooling.hyperparameter_sampling import sample_rbp_designs
 from cdl_eeg.models.random_search.sampling_distributions import sample_hyperparameter
@@ -156,36 +157,6 @@ def generate_config_file(config):
                 dl_model["CMMN"]["kwargs"][param] = domain
 
     # -----------------
-    # Domain discriminator
-    # -----------------
-    # Choose architecture
-    discriminator_name = random.choice(tuple(config["DomainDiscriminator"]["discriminators"].keys()))
-
-    discriminator: Optional[Dict[str, Any]]
-    if discriminator_name != "NoDiscriminator" and config["cv_method"] != "inverted":
-        # Architecture hyperparameters
-        discriminator_architecture = {"name": discriminator_name, "kwargs": dict()}
-        for param, domain in config["DomainDiscriminator"]["discriminators"][discriminator_name].items():
-            if isinstance(domain, dict) and "dist" in domain:
-                discriminator_architecture["kwargs"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
-            else:
-                discriminator_architecture["kwargs"][param] = domain
-
-        # Training hyperparameters
-        discriminator = {"discriminator": discriminator_architecture, "training": dict()}
-        for param, domain in config["DomainDiscriminator"]["training"].items():
-            if isinstance(domain, dict) and "dist" in domain:
-                discriminator["training"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
-            else:
-                discriminator["training"][param] = domain
-    else:
-        discriminator = None
-
-    # Add method to train hyperparameters
-    train_hyperparameters["method"] = "domain_discriminator_training" if discriminator is not None \
-        else "downstream_training"
-
-    # -----------------
     # Select data pre-processing version
     # -----------------
     # Select from the desired folder
@@ -243,6 +214,42 @@ def generate_config_file(config):
     datasets = tuple(config["Datasets"])  # Maybe this is not needed, but it feels safe
     for dataset in datasets:
         config["Datasets"][dataset]["pre_processed_version"] = os.path.join(preprocessed_folder, selected_version)
+
+    # -----------------
+    # Domain discriminator
+    # -----------------
+    # Choose architecture
+    discriminator_name = random.choice(tuple(config["DomainDiscriminator"]["discriminators"].keys()))
+
+    discriminator: Optional[Dict[str, Any]]
+    if discriminator_name != "NoDiscriminator" and config["cv_method"] != "inverted":
+        # Architecture hyperparameters
+        dd_structure = random.choice(
+            tuple(config["DomainDiscriminator"]["discriminators"][discriminator_name].keys())
+        )
+        discriminator_architecture = {
+            "name": discriminator_name,
+            "kwargs": get_domain_discriminator_type(discriminator_name).sample_hyperparameters(
+                dd_structure, config=config["DomainDiscriminator"]["discriminators"][discriminator_name][dd_structure],
+                in_features=get_mts_module_type(mts_module_name).get_latent_features_dim(in_channels=19,
+                                                                                         **dl_model["kwargs"])
+            )}  # this will only work if the number of features is independent of number of input channels, otherwise an
+        # error message will be raised during the experiment. Doctests have shown that number of input channels does
+        # not affect latent feature dimension
+
+        # Training hyperparameters
+        discriminator = {"discriminator": discriminator_architecture, "training": dict()}
+        for param, domain in config["DomainDiscriminator"]["training"].items():
+            if isinstance(domain, dict) and "dist" in domain:
+                discriminator["training"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
+            else:
+                discriminator["training"][param] = domain
+    else:
+        discriminator = None
+
+    # Add method to train hyperparameters
+    train_hyperparameters["method"] = "domain_discriminator_training" if discriminator is not None \
+        else "downstream_training"
 
     # -----------------
     # Create final dictionaries

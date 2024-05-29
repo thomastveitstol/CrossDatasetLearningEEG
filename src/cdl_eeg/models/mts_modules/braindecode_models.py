@@ -25,6 +25,11 @@ class EEGNetv4MTS(MTSModuleBase):
     --------
     >>> _ = EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=300)
 
+    Latent feature dimension does not depend on number of input channels
+
+    >>> EEGNetv4MTS.get_latent_features_dim(19, 3, 1000) == EEGNetv4MTS.get_latent_features_dim(64, 3, 1000)
+    True
+
     Latent features
 
     >>> EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=3000).latent_features_dim
@@ -206,6 +211,11 @@ class EEGResNetMTS(MTSModuleBase):
     Examples
     --------
     >>> _ = EEGResNetMTS(in_channels=4, num_classes=8, num_time_steps=300)
+
+    Latent feature dimension does not depend on number of input channels
+
+    >>> EEGResNetMTS.get_latent_features_dim(19, 3, 1000) == EEGResNetMTS.get_latent_features_dim(64, 3, 1000)
+    True
 
     Latent features dimension
 
@@ -454,6 +464,11 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
     --------
     >>> _ = ShallowFBCSPNetMTS(4, 7, 200)
 
+    Latent feature dimension does not depend on number of input channels
+
+    >>> ShallowFBCSPNetMTS.get_latent_features_dim(19, 3, 1000) == ShallowFBCSPNetMTS.get_latent_features_dim(64, 3, 1000)
+    True
+
     Latent features
 
     >>> ShallowFBCSPNetMTS(4, 7, 200).latent_features_dim
@@ -663,6 +678,11 @@ class Deep4NetMTS(MTSModuleBase):
     >>> _ = Deep4NetMTS(19, 3, 1000)
 
     Since padding on the conv layers was added, 160 time steps are allowed (the minimum is 89)
+
+    Latent feature dimension does not depend on number of input channels
+
+    >>> Deep4NetMTS.get_latent_features_dim(19, 3, 1000) == Deep4NetMTS.get_latent_features_dim(64, 3, 1000)
+    True
 
     >>> _ = Deep4NetMTS(19, 3, 160)
     >>> _ = Deep4NetMTS(19, 3, 90)
