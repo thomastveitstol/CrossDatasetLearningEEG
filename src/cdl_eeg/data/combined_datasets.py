@@ -214,7 +214,7 @@ class CombinedDatasets:
         """
         Method for getting targets
 
-        TODO: make tests
+        (unittest in test folder)
 
         Parameters
         ----------
