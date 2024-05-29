@@ -466,7 +466,7 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
 
     Latent feature dimension does not depend on number of input channels
 
-    >>> ShallowFBCSPNetMTS.get_latent_features_dim(19, 3, 1000) == ShallowFBCSPNetMTS.get_latent_features_dim(64, 3, 1000)
+    >>> ShallowFBCSPNetMTS.get_latent_features_dim(19, 3, 100) == ShallowFBCSPNetMTS.get_latent_features_dim(64, 3, 100)
     True
 
     Latent features
