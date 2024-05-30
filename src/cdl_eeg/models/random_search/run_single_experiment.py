@@ -639,7 +639,7 @@ class Experiment:
             self._fit_cmmn_layers(model=model, train_data=combined_dataset.get_data(train_subjects),
                                   channel_systems=channel_systems)
 
-            # Fit the test data as well (needed here if analysing the latent feature distributions)
+            # Fit the test data as well
             self._fit_cmmn_layers_test_data(model=model, test_data=combined_dataset.get_data(test_subjects),
                                             channel_systems=channel_systems)
 
