@@ -326,7 +326,9 @@ HYPERPARAMETERS = {
     "Time series length (s)": HParam(key_path="num_seconds", default=NotImplemented, preprocessing=True,
                                      variable_type=VariableType.NUMERICAL),
     "Normalisation": HParam(key_path="normalisation", preprocessing=False, default=NotImplemented,
-                            variable_type=VariableType.CATEGORICAL)
+                            variable_type=VariableType.CATEGORICAL),
+    "Autoreject": HParam(key_path=("general", "autoreject"), default=NotImplemented, preprocessing=True,
+                         variable_type=VariableType.CATEGORICAL)
 }
 
 PRETTY_NAME = {"pearson_r": "Pearson's r",
@@ -361,7 +363,7 @@ def main_lodo():
     # --------------
     # Hyperparameters
     # --------------
-    hyperparameter_name = "Domain Adaptation"
+    hyperparameter_name = "Autoreject"
     hyperparam = HYPERPARAMETERS[hyperparameter_name]
 
     datasets = ("TDBrain", "MPILemon", "HatlestadHall", "Miltiadous", "YulinWang")
