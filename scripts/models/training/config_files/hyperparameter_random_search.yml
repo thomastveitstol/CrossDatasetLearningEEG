@@ -1,5 +1,5 @@
 run_baseline: false
-cv_method: [ inverted, normal ]  # this will be sampled randomøy
+cv_method: [ inverted, normal ]  # this will be sampled randomly
 selected_target: &selected_target age
 
 Shared Dataset Details:
@@ -9,7 +9,7 @@ Shared Dataset Details:
 SubjectSplit:
   name: SplitOnDataset
   kwargs:
-    seed: 42  # todo: should we fix the seed?
+    seed: 42
 
 SubGroups:  # This just relates to the subgroups we should store metrics of
   verbose: true
@@ -152,7 +152,7 @@ DomainDiscriminator:
       loss: CrossEntropyLoss
       loss_kwargs:
         reduction: mean
-      weighter: null  # todo: add sample-wise weighting of loss function
+      weighter: null
       weighter_kwargs: { }
     metrics: multiclass_classification
     lambda:
@@ -175,14 +175,7 @@ CMMN:
 # -----------------
 # Methods for handling a varied number of channels
 # -----------------
-box: &box
-  x_min: -0.17
-  x_max: 0.17
-  y_min: -0.17
-  y_max: 0.17
-
 # Pooling methods
-
 num_kernels: &num_kernels
   dist: log_uniform_int
   kwargs:
@@ -190,7 +183,6 @@ num_kernels: &num_kernels
     a: 2
     b: 3
 
-# todo: consider computing this from the sampling frequency instead
 max_receptive_field: &max_receptive_field
   dist: log_uniform_int
   kwargs:
@@ -225,7 +217,8 @@ PoolingModules: &PoolingModules
   MultiMSSharedRocketHeadRegion: *MultiMSSharedRocketHeadRegion
 
 CentroidPolygons: &CentroidPolygons
-  channel_positions: [ Miltiadous ]  # todo
+  channel_positions: [ Miltiadous ]  # After experimentation, it works quite bad with multiple systems. So using the
+  # smallest one instead
   min_nodes:
     dist: uniform_int
     kwargs:
@@ -254,7 +247,7 @@ RegionBasedPooling: &RegionBasedPooling
     dist: uniform_discrete
     kwargs:
       domain: [ true, false ]
-  num_pooling_modules: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]  # todo
+  num_pooling_modules: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
   use_cmmn_layer : [ true, false ]
   RBPDesign:
     num_designs: 1
@@ -282,7 +275,6 @@ Varied Numbers of Channels:
 
 # -----------------
 # Deep learning architectures
-# TODO: I have to check the hyperparameters, of the braindecode models in particular
 # -----------------
 InceptionNetwork: &InceptionNetwork
   general:
