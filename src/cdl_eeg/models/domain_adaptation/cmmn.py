@@ -295,8 +295,9 @@ class ConvMMN:
 
     def fit_monge_filters(self, data, is_psds=False):
         """
-        Method for fitting the filter used for monge mapping (fitting h_k in the paper). With this implementation, a
-        monge filter is fit per dataset. This may change in the future.
+        Method for fitting the filter used for monge mapping (fitting h_k in the CMMN paper). With this implementation,
+        a monge filter is fit per dataset. An interesting idea though could be to have different monge filter for
+        different subgroups (not only fitting monge filters on 'dataset' level)
 
         Sampling frequency should be the same as was used during fitting, although no checks are made
 
