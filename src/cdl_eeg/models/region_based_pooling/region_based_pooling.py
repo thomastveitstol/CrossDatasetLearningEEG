@@ -311,7 +311,9 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         if self._cmmn_layer is None:
             raise RuntimeError("Cannot fit monge filters of the CMMN layers, when none is used")
 
-        # todo: update channel splits of CMMN?
+        # Update channel splits to what it is in this layer
+        self._cmmn_layer.update_channel_splits(self._channel_splits)
+
         # Fit monge filters
         self._cmmn_layer.fit_monge_filters(data, channel_systems=channel_systems)
 
