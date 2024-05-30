@@ -381,8 +381,10 @@ class RBPConvMMN:
         # Set attributes
         # ---------------
         # todo: would it be interesting to try different kernel sizes for different montage splits?
+        # There will be one ConvMMN per montage split
         self._cmmn_layers = tuple(ConvMMN(kernel_size=kernel_size, sampling_freq=sampling_freq)
                                   for _ in range(num_montage_splits))
+        # Keys are dataset names. Values have length=number of montage splits
         self._channel_splits: Dict[str, Tuple[CHANNELS_IN_MONTAGE_SPLIT, ...]] = dict()
 
     # ---------------
@@ -498,8 +500,6 @@ class RBPConvMMN:
                     )
 
                     # Store it
-                    # todo: are the input checks in __init__ enough to ensure that the montage splits are similarly
-                    #  ordered each time?
                     representative_psds[dataset_name][i][region_id] = region_psd
 
         return representative_psds
@@ -540,7 +540,6 @@ class RBPConvMMN:
         # ------------
         montage_psds: List[numpy.ndarray] = []  # type: ignore[type-arg]
         for montage_split_psds in psds.values():
-            # todo: consider more checks
             montage_psds.append(numpy.concatenate([numpy.expand_dims(region_psd, axis=0)
                                                    for region_psd in montage_split_psds.values()]))
 
@@ -645,7 +644,7 @@ class RBPConvMMN:
         for cmmn_layer in self._cmmn_layers:
             if fitted_channel_systems:
                 if fitted_channel_systems != cmmn_layer.fitted_monge_filters:
-                    raise RuntimeError("Expected all monge fitlers to be fit on the same channel systems, but this was "
+                    raise RuntimeError("Expected all monge filters to be fit on the same channel systems, but this was "
                                        "not the case")
             else:
                 fitted_channel_systems = cmmn_layer.fitted_monge_filters
@@ -687,7 +686,6 @@ def _compute_single_source_psd(x, *, sampling_freq, nperseg):
     """
     if x.ndim not in (3, 4):
         raise ValueError(f"Expected input data to be 3D or 4D, but found {x.ndim} dimensions")
-    # todo: i think nperseq should be adapted to sampling frequency. Could also tune nfft
     return signal.welch(x=x, axis=-1, fs=sampling_freq, nperseg=nperseg)[-1]
 
 
