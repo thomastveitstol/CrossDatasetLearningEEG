@@ -165,10 +165,11 @@ DomainDiscriminator:
 CMMN:
   use_cmmn_layer: [ true, false ]
   kwargs:
-      kernel_size:  # todo: what to use here?
-        dist: uniform_discrete
+      kernel_size_sfreq_multiple:
+        dist: uniform
         kwargs:
-          domain: [ 64, 128, 256, 512, 1024 ]
+          a: 0.5
+          b: 4.0
 
 
 # -----------------
@@ -261,10 +262,11 @@ RegionBasedPooling: &RegionBasedPooling
     pooling_module: *PoolingModules
     montage_split: *MontageSplits
     cmmn_kwargs:
-      kernel_size:  # todo: what to use here?
-        dist: uniform_discrete
+      kernel_size_sfreq_multiple:
+        dist: uniform
         kwargs:
-          domain: [ 64, 128, 256, 512, 1024 ]
+          a: 0.5
+          b: 4.0
 
 # Interpolation
 Interpolation: &Interpolation

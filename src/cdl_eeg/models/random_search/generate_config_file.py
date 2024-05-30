@@ -60,6 +60,95 @@ def generate_config_file(config):
         del dataset_hyperparameters[compatible_dataset]["target_availability"]
 
     # -----------------
+    # Select data pre-processing version
+    # -----------------
+    # Select from the desired folder
+    preprocessed_folder = random.choice(config["PreprocessedFolder"])
+
+    # Make selection
+    _available_versions = os.listdir(os.path.join(get_numpy_data_storage_path(), preprocessed_folder))
+    available_versions = tuple(version for version in _available_versions if version[:5] == "data_")
+    selected_version = random.choice(available_versions)
+
+    # -----------------
+    # Sample DL architecture and its hyperparameters
+    # -----------------
+    # Choose architecture
+    mts_module_name = random.choice(tuple(config["MTS Module"].keys()))
+
+    # Set hyperparameters
+    mts_module_hyperparameters = {
+        **config["MTS Module"][mts_module_name]["general"],
+        **get_mts_module_type(mts_module_name).sample_hyperparameters(config["MTS Module"][mts_module_name]["sample"])
+    }
+
+    # Combine architecture name and hyperparameters in a dict
+    dl_model = {"model": mts_module_name, "kwargs": mts_module_hyperparameters}
+
+    # -----------------
+    # Adjust the sampling frequency if required by the DL architecture
+    # -----------------
+    # Extract preprocessing config
+    with open(os.path.join(get_numpy_data_storage_path(), preprocessed_folder, "config.yml"), "r") as file:
+        pre_processed_config = yaml.safe_load(file)
+
+    while True:
+        # If the selected version does not exist, raise an error
+        if selected_version not in available_versions:
+            raise FailedModelInitialisationError(f"No attempted preprocessing version yielded a successful model "
+                                                 f"initialisation ({mts_module_name}). Last attempt: "
+                                                 f"{selected_version}")
+
+        # Compute number of time steps
+        filtering = selected_version.split("_")[3].split(sep="-")
+        l_freq, h_freq = float(filtering[0]), float(filtering[1])
+        s_freq = float(selected_version.split("_")[-1]) * h_freq
+
+        num_time_steps = int(s_freq * pre_processed_config["general"]["epoch_duration"])
+
+        if "num_time_steps" in dl_model["kwargs"]:
+            dl_model["kwargs"]["num_time_steps"] = num_time_steps
+
+        # If the number of time steps is too short for the architecture to handle, try doubling the sampling frequency.
+        # If not possible, an error is raised upon the next iteration
+        # (We just need to check if the inputs work, 'in_channels' argument is not really important)
+        if get_mts_module_type(mts_module_name).successful_initialisation(in_channels=19, **dl_model["kwargs"]):
+            break
+
+        old_sampling_freq_multiple = selected_version.split("_")[-1]  # this will be a string
+        new_sampling_freq_multiple = int(selected_version.split("_")[-1]) * 2
+        print(f"Changing sampling rate from a multiple of {old_sampling_freq_multiple} to {new_sampling_freq_multiple}")
+        selected_version = f"{selected_version[:-len(old_sampling_freq_multiple)]}{new_sampling_freq_multiple}"
+
+    # Add details
+    pre_processed_config["general"]["filtering"] = [l_freq, h_freq]
+    pre_processed_config["general"]["autoreject"] = _str_to_bool(selected_version.split("_")[5])
+    pre_processed_config["general"]["resample"] = float(selected_version.split("_")[-1]) * h_freq
+    pre_processed_config["general"]["num_time_steps"] = int(s_freq * pre_processed_config["general"]["epoch_duration"])
+    del pre_processed_config["frequency_bands"]
+    del pre_processed_config["resample_fmax_multiples"]
+
+    # Add preprocessing version to the datasets
+    datasets = tuple(config["Datasets"])  # Maybe this is not needed, but it feels safe
+    for dataset in datasets:
+        config["Datasets"][dataset]["pre_processed_version"] = os.path.join(preprocessed_folder, selected_version)
+
+    # -----------------
+    # Sample CMMN kernel size
+    # -----------------
+    cmmn_kernel_size = int(pre_processed_config["general"]["resample"] *
+                           sample_hyperparameter(config["CMMN"]["kwargs"]["kernel_size_sfreq_multiple"]["dist"],
+                                                 **config["CMMN"]["kwargs"]["kernel_size_sfreq_multiple"]["kwargs"]))
+
+    # Interpolation model
+    config["CMMN"]["kwargs"]["kernel_size"] = cmmn_kernel_size
+    del config["CMMN"]["kwargs"]["kernel_size_sfreq_multiple"]
+
+    # RBP model
+    config["RegionBasedPooling"]["RBPDesign"]["cmmn_kwargs"]["kernel_size"] = cmmn_kernel_size
+    del config["RegionBasedPooling"]["RBPDesign"]["cmmn_kwargs"]["kernel_size_sfreq_multiple"]
+
+    # -----------------
     # Sample target scaler
     # -----------------
     scaler_hyperparameters = dict()
@@ -130,21 +219,8 @@ def generate_config_file(config):
                          f"pooling or interpolation, but found {spatial_dimension_method}")
 
     # -----------------
-    # Sample DL architecture and its hyperparameters
-    # -----------------
-    # Choose architecture
-    mts_module_name = random.choice(tuple(config["MTS Module"].keys()))
-
-    # Set hyperparameters
-    mts_module_hyperparameters = {
-        **config["MTS Module"][mts_module_name]["general"],
-        **get_mts_module_type(mts_module_name).sample_hyperparameters(config["MTS Module"][mts_module_name]["sample"])
-    }
-
-    # Combine architecture name and hyperparameters in a dict
-    dl_model = {"model": mts_module_name, "kwargs": mts_module_hyperparameters}
-
     # Maybe add CMMN and normalisation to DL architecture
+    # -----------------
     if spatial_dimension_method == "Interpolation":
         dl_model["normalise"] = random.choice(config["NormaliseInputs"])
 
@@ -155,65 +231,6 @@ def generate_config_file(config):
                 dl_model["CMMN"]["kwargs"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
             else:
                 dl_model["CMMN"]["kwargs"][param] = domain
-
-    # -----------------
-    # Select data pre-processing version
-    # -----------------
-    # Select from the desired folder
-    preprocessed_folder = random.choice(config["PreprocessedFolder"])
-
-    # Make selection
-    _available_versions = os.listdir(os.path.join(get_numpy_data_storage_path(), preprocessed_folder))
-    available_versions = tuple(version for version in _available_versions if version[:5] == "data_")
-    selected_version = random.choice(available_versions)
-
-    # -----------------
-    # Adjust the sampling frequency if required by the DL architecture
-    # -----------------
-    # Extract preprocessing config
-    with open(os.path.join(get_numpy_data_storage_path(), preprocessed_folder, "config.yml"), "r") as file:
-        pre_processed_config = yaml.safe_load(file)
-
-    while True:
-        # If the selected version does not exist, raise an error
-        if selected_version not in available_versions:
-            raise FailedModelInitialisationError(f"No attempted preprocessing version yielded a successful model "
-                                                 f"initialisation ({mts_module_name}). Last attempt: "
-                                                 f"{selected_version}")
-
-        # Compute number of time steps
-        filtering = selected_version.split("_")[3].split(sep="-")
-        l_freq, h_freq = float(filtering[0]), float(filtering[1])
-        s_freq = float(selected_version.split("_")[-1]) * h_freq
-
-        num_time_steps = int(s_freq * pre_processed_config["general"]["epoch_duration"])
-
-        if "num_time_steps" in dl_model["kwargs"]:
-            dl_model["kwargs"]["num_time_steps"] = num_time_steps
-
-        # If the number of time steps is too short for the architecture to handle, try doubling the sampling frequency.
-        # If not possible, an error is raised upon the next iteration
-        # (We just need to check if the inputs work, 'in_channels' argument is not really important)
-        if get_mts_module_type(mts_module_name).successful_initialisation(in_channels=19, **dl_model["kwargs"]):
-            break
-
-        old_sampling_freq_multiple = selected_version.split("_")[-1]  # this will be a string
-        new_sampling_freq_multiple = int(selected_version.split("_")[-1]) * 2
-        print(f"Changing sampling rate from a multiple of {old_sampling_freq_multiple} to {new_sampling_freq_multiple}")
-        selected_version = f"{selected_version[:-len(old_sampling_freq_multiple)]}{new_sampling_freq_multiple}"
-
-    # Add details
-    pre_processed_config["general"]["filtering"] = [l_freq, h_freq]
-    pre_processed_config["general"]["autoreject"] = _str_to_bool(selected_version.split("_")[5])
-    pre_processed_config["general"]["resample"] = float(selected_version.split("_")[-1]) * h_freq
-    pre_processed_config["general"]["num_time_steps"] = int(s_freq * pre_processed_config["general"]["epoch_duration"])
-    del pre_processed_config["frequency_bands"]
-    del pre_processed_config["resample_fmax_multiples"]
-
-    # Add preprocessing version to the datasets
-    datasets = tuple(config["Datasets"])  # Maybe this is not needed, but it feels safe
-    for dataset in datasets:
-        config["Datasets"][dataset]["pre_processed_version"] = os.path.join(preprocessed_folder, selected_version)
 
     # -----------------
     # Domain discriminator
