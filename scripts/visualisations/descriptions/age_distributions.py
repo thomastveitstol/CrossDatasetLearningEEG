@@ -18,13 +18,15 @@ def main():
     # Load data
     # ----------------
     age_distributions = {"Age": [], "Dataset": []}
+    corrected_names = {"HatlestadHall": "SRM", "YulinWang": "YulinWang", "Miltiadous": "Miltiadous",
+                       "MPILemon": "Lemon", "TDBrain": "TDBRAIN"}
     for dataset in datasets:
         # Use all subjects
         subjects = dataset.get_subject_ids()
 
         # Add ages and dataset
         age_distributions["Age"].extend(dataset.age(subject_ids=subjects))
-        age_distributions["Dataset"].extend([type(dataset).__name__] * len(subjects))
+        age_distributions["Dataset"].extend([corrected_names[type(dataset).__name__]] * len(subjects))
 
     # ----------------
     # Plotting
