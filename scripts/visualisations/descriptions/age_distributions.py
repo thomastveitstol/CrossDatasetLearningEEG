@@ -22,10 +22,9 @@ def main():
         # Use all subjects
         subjects = dataset.get_subject_ids()
 
-        # Loop through all subjects
-        for subject in subjects:
-            age_distributions["Age"].append(dataset.age(subject_ids=(subject,))[0])
-            age_distributions["Dataset"].append(type(dataset).__name__)
+        # Add ages and dataset
+        age_distributions["Age"].extend(dataset.age(subject_ids=subjects))
+        age_distributions["Dataset"].extend([type(dataset).__name__] * len(subjects))
 
     # ----------------
     # Plotting
