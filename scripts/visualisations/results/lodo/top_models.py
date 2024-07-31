@@ -391,7 +391,7 @@ def _plot_top_configurations(*, k, results_dir, hyperparameters, main_metric, ba
 # Plot cosmetics
 STAT = "count"
 FIGSIZE = (7, 5)
-FONTSIZE = 15
+FONTSIZE = 16
 rcParams["legend.fontsize"] = FONTSIZE
 rcParams["legend.title_fontsize"] = FONTSIZE
 DATASET_ORDER = ("TDBrain", "MPILemon", "HatlestadHall")
