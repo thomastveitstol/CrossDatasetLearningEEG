@@ -200,12 +200,14 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
 
 def main():
     # Hyperparameters
-    main_metric = "pearson_r"
+    main_metrics = ("pearson_r", "r2_score", "mae")
     balance_validation_performance = False
 
     # Print results
-    _get_best_lodo_performances(results_dir=get_results_dir(), main_metric=main_metric,
-                                balance_validation_performance=balance_validation_performance)
+    for main_metric in main_metrics:
+        print(f"{f' Main metric: {main_metric} ':=^30}")
+        _get_best_lodo_performances(results_dir=get_results_dir(), main_metric=main_metric,
+                                    balance_validation_performance=balance_validation_performance)
 
 
 if __name__ == "__main__":
