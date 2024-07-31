@@ -213,7 +213,7 @@ def get_best_ilodo_performances(results_dir, *, main_metric, metrics_to_print):
 def main():
     # Hyperparameters
     main_metric = "pearson_r"
-    metrics_to_print = ("pearson_r", "spearman_rho", "mae", "r2_score")
+    metrics_to_print = ("pearson_r", "r2_score", "mae")
 
     # Print results
     get_best_ilodo_performances(results_dir=get_results_dir(), main_metric=main_metric,
