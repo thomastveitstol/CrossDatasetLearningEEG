@@ -7,6 +7,9 @@ the Histories class, which used check_array on y_pred, assert_all_finite_element
 
 The KeyboardInterrupt is expected because that's how I terminated the experiments after 2 months
 
+The RuntimeErrors seem to be a CUDA problem, I'm getting the following when calling loss.backward:
+'RuntimeError: GET was unable to find an engine to execute this computation'
+
 The following was printed:
 ---Number of runs---
 Total number of runs: 1088
