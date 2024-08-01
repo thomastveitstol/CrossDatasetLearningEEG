@@ -1,5 +1,38 @@
 """
-Script for counting the number of successful runs for LODO and iLODO
+Script for counting the number of successful runs for LODO and iLODO, and checking error messages
+
+There was one unexpected errors message, a ValueError obtained 6th of June: When using mean_absolute_error of sklearn by
+the Histories class, which used check_array on y_pred, assert_all_finite_element_wise raised the following:
+'ValueError: Input contains NaN.' Don't know how that happened, maybe numerical instability?
+
+The KeyboardInterrupt is expected because that's how I terminated the experiments after 2 months
+
+The following was printed:
+---Number of runs---
+Total number of runs: 1088
+Total number of LODO runs: 550
+Total number of iLODO runs: 538
+Total number of unsuccessful LODO runs: 77
+Total number of unsuccessful iLODO runs: 84
+Total number of successful LODO runs: 473
+Total number of successful iLODO runs: 454
+
+---Error messages---
+Unexpected message (ValueError): age_cv_experiments_2024-06-06_062551
+
+Messages LODO:
+finished_successfully: 473
+Nothing: 36
+OutOfMemoryError: 26
+RuntimeError: 13
+KeyboardInterrupt: 1
+ValueError: 1
+
+Messages iLODO:
+OutOfMemoryError: 40
+finished_successfully: 454
+Nothing: 33
+RuntimeError: 11
 """
 import os
 from typing import Dict
