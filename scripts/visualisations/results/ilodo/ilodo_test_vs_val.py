@@ -17,7 +17,7 @@ PRETTY_NAME = {"pearson_r": "Pearson's r",
                "mse": "MSE",
                "HatlestadHall": "SRM",
                "Miltiadous": "Miltiadous",
-               "YulinWang": "YulinWang",
+               "YulinWang": "Wang",
                "MPILemon": "LEMON",
                "TDBrain": "TDBRAIN",
                "Pooled": "Pooled"}
@@ -37,10 +37,10 @@ def _higher_is_better(metric):
 
 def _get_all_ilodo_runs(results_dir):
     """Function for getting all runs available for leave-one-dataset-out"""
-    return (run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
-                                                                                  "leave_one_dataset_out",
-                                                                                  "finished_successfully.txt"))
-            and "inverted_cv" in run)
+    return tuple(run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
+                                                                                       "leave_one_dataset_out",
+                                                                                       "finished_successfully.txt"))
+                 and "inverted_cv" in run)
 
 
 def _get_ilodo_val_dataset_name(path) -> str:
@@ -154,28 +154,35 @@ def plot_test_vs_val_ilodo(results_dir, *, main_metric, metrics_to_plot, dataset
     # --------------
     # Loop through all experiments
     # --------------
-    for run in runs:
-        try:
-            run_path = os.path.join(results_dir, run, "leave_one_dataset_out")
+    num_runs = len(runs)
+    skipped = {dataset: 0 for dataset in datasets}
+    for i, run in enumerate(runs):
+        if i % 10 == 0:
+            print(f"Run {i + 1}/{num_runs}")
 
-            # Get the performances per fold
-            folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")
-            for fold in folds:
-                # I need the validation performance and the dataset which was used. The test set performances is not
-                # acquired here to reduce runtime
-                try:
-                    val_metric, test_metrics, train_dataset = _get_test_val_metrics(
-                        path=os.path.join(run_path, fold), main_metric=main_metric, datasets=datasets
-                    )
-                except _SkipFold:
-                    continue
+        run_path = os.path.join(results_dir, run, "leave_one_dataset_out")
 
-                # Add the val and test performances
-                performances[train_dataset].append(ValTestPerformances(val=val_metric, test=test_metrics))
+        # Get the performances per fold
+        folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")
+        for fold in folds:
+            # I need the validation performance and the dataset which was used. The test set performances is not
+            # acquired here to reduce runtime
+            try:
+                val_metric, test_metrics, train_dataset = _get_test_val_metrics(
+                    path=os.path.join(run_path, fold), main_metric=main_metric, datasets=datasets
+                )
+            except _SkipFold:
+                continue
+            except KeyError:
+                # If the prediction model guessed that all subjects have the same age, for all folds, model selection
+                # 'fails'. We'll just skip them
+                skipped[_get_ilodo_val_dataset_name(os.path.join(run_path, fold))] += 1  # not my best piece of work...
+                continue
 
-        except KeyError:
-            continue
+            # Add the val and test performances
+            performances[train_dataset].append(ValTestPerformances(val=val_metric, test=test_metrics))
 
+    print(f"Skipped runs: {skipped}")
     # --------------
     # Plot the results
     # --------------
@@ -188,27 +195,30 @@ def plot_test_vs_val_ilodo(results_dir, *, main_metric, metrics_to_plot, dataset
 
         # The test performances must be plotted per metric
         for metric in metrics_to_plot:
-            pyplot.figure(figsize=(10, 7))
+            pyplot.figure(figsize=FIGSIZE)
 
             # Plot the test performance
             for dataset in test_performance[0]:
                 y = [performance[dataset][metric] for performance in test_performance]
 
-                pyplot.plot(x, y, ".", label=PRETTY_NAME[dataset], markersize=10)
+                pyplot.plot(x, y, ".", label=PRETTY_NAME[dataset])
 
             # Plot cosmetics
-            fontsize = 17
-
-            pyplot.title(f"Inverted LODO, Source dataset: {PRETTY_NAME[train_dataset]}", fontsize=fontsize + 5)
-            pyplot.ylabel(f"Test performance ({PRETTY_NAME[metric]})", fontsize=fontsize)
-            pyplot.xlabel(f"Validation performance ({PRETTY_NAME[main_metric]})", fontsize=fontsize)
-            pyplot.tick_params(labelsize=fontsize)
-            pyplot.xlim(-0.5, 1)
-            pyplot.ylim(-0.5, 1)
-            pyplot.legend(fontsize=fontsize)
+            pyplot.title(f"Source dataset: {PRETTY_NAME[train_dataset]}", fontsize=FONTSIZE + 5)
+            pyplot.ylabel(f"Test performance ({PRETTY_NAME[metric]})", fontsize=FONTSIZE)
+            pyplot.xlabel(f"Validation performance ({PRETTY_NAME[main_metric]})", fontsize=FONTSIZE)
+            pyplot.tick_params(labelsize=FONTSIZE)
+            pyplot.xlim(-0.6, 1)
+            pyplot.ylim(-0.6, 1)
+            pyplot.legend(fontsize=FONTSIZE)
             pyplot.grid()
+            pyplot.tight_layout()
 
     pyplot.show()
+
+
+FIGSIZE = (7, 5)
+FONTSIZE = 16
 
 
 def main():
