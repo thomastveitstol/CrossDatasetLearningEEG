@@ -7,21 +7,6 @@ from matplotlib import pyplot
 
 from cdl_eeg.data.paths import get_results_dir
 
-# ----------------
-# Globals
-# ----------------
-PRETTY_NAME = {"pearson_r": "Pearson's r",
-               "spearman_rho": "Spearman's rho",
-               "r2_score": r"$R^2$",
-               "mae": "MAE",
-               "mse": "MSE",
-               "HatlestadHall": "SRM",
-               "Miltiadous": "Miltiadous",
-               "YulinWang": "YulinWang",
-               "MPILemon": "LEMON",
-               "TDBrain": "TDBRAIN",
-               "Pooled": "Pooled"}
-
 
 # ----------------
 # Convenient small classes
@@ -49,10 +34,10 @@ def _higher_is_better(metric):
 
 def _get_all_lodo_runs(results_dir):
     """Function for getting all runs available for leave-one-dataset-out"""
-    return (run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
-                                                                                  "leave_one_dataset_out",
-                                                                                  "finished_successfully.txt"))
-            and "inverted_cv" not in run)
+    return tuple(run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
+                                                                                       "leave_one_dataset_out",
+                                                                                       "finished_successfully.txt"))
+                 and "inverted_cv" not in run)
 
 
 def _get_lodo_dataset_name(path) -> str:
@@ -134,7 +119,8 @@ def _get_test_val_metrics(path,  *, main_metric, datasets, balance_validation_pe
     return val_performance, test_performance, dataset_name
 
 
-def plot_test_vs_val_lodo(results_dir, *, main_metric, metrics_to_plot, datasets, balance_validation_performance):
+def plot_test_vs_val_lodo(results_dir, *, main_metric, metrics_to_plot, datasets, balance_validation_performance, x_lim,
+                          y_lims):
     # Get all runs for LODO
     runs = _get_all_lodo_runs(results_dir)
 
@@ -144,26 +130,34 @@ def plot_test_vs_val_lodo(results_dir, *, main_metric, metrics_to_plot, datasets
     # --------------
     # Loop through all experiments
     # --------------
-    for run in runs:
-        try:
-            run_path = os.path.join(results_dir, run, "leave_one_dataset_out")
+    num_runs = len(runs)
+    skipped = {dataset: 0 for dataset in datasets}
+    for i, run in enumerate(runs):
+        if i % 10 == 0:
+            print(f"Run {i + 1}/{num_runs}")
 
-            # Get the performances per fold
-            folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")
-            for fold in folds:
-                try:
-                    val_metric, test_metrics, test_dataset = _get_test_val_metrics(
-                        path=os.path.join(run_path, fold), main_metric=main_metric, datasets=datasets,
-                        balance_validation_performance=balance_validation_performance
-                    )
-                except _SkipFold:
-                    continue
+        run_path = os.path.join(results_dir, run, "leave_one_dataset_out")
 
-                # Add the val and test performances
-                performances[test_dataset].append(ValTestPerformances(val=val_metric, test=test_metrics))
+        # Get the performances per fold
+        folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")
+        for fold in folds:
+            try:
+                val_metric, test_metrics, test_dataset = _get_test_val_metrics(
+                    path=os.path.join(run_path, fold), main_metric=main_metric, datasets=datasets,
+                    balance_validation_performance=balance_validation_performance
+                )
+            except _SkipFold:
+                continue
+            except KeyError:
+                # If the prediction model guessed that all subjects have the same age, for all folds, model selection
+                # 'fails'. We'll just skip them
+                skipped[_get_lodo_dataset_name(os.path.join(run_path, fold))] += 1  # not my best piece of work...
+                continue
 
-        except KeyError:
-            continue
+            # Add the val and test performances
+            performances[test_dataset].append(ValTestPerformances(val=val_metric, test=test_metrics))
+
+    print(f"Skipped runs: {skipped}")
 
     # --------------
     # Plot the results
@@ -175,38 +169,59 @@ def plot_test_vs_val_lodo(results_dir, *, main_metric, metrics_to_plot, datasets
 
         # The test performances must be plotted per metric
         for metric in metrics_to_plot:
-            pyplot.figure(figsize=(10, 7))
+            pyplot.figure(figsize=FIGSIZE)
 
             y = [performance[metric] for performance in test_performance]
 
-            _label = "Balanced Validation" if balance_validation_performance else "Pooled"
-            pyplot.plot(x, y, ".", label=_label, markersize=10)
+            pyplot.plot(x, y, ".")
 
             # Plot cosmetics
-            fontsize = 17
-
-            pyplot.title(f"LODO, Target dataset: {PRETTY_NAME[test_dataset]}", fontsize=fontsize + 5)
-            pyplot.ylabel(f"Test performance ({PRETTY_NAME[metric]})", fontsize=fontsize)
-            pyplot.xlabel(f"Validation performance ({PRETTY_NAME[main_metric]})", fontsize=fontsize)
-            pyplot.tick_params(labelsize=fontsize)
-            pyplot.xlim(-0.2, 1)
-            pyplot.ylim(-0.5, 1)
-            pyplot.legend(fontsize=fontsize)
+            pyplot.title(f"Target dataset: {PRETTY_NAME[test_dataset]}", fontsize=FONTSIZE + 5)
+            pyplot.ylabel(f"Test performance ({PRETTY_NAME[metric]})", fontsize=FONTSIZE)
+            pyplot.xlabel(f"Validation performance ({PRETTY_NAME[main_metric]})", fontsize=FONTSIZE)
+            pyplot.tick_params(labelsize=FONTSIZE)
+            pyplot.xlim(x_lim)
+            pyplot.ylim(y_lims[metric])
             pyplot.grid()
+            pyplot.tight_layout()
 
     pyplot.show()
+
+
+# ----------------
+# Globals
+# ----------------
+FIGSIZE = (7, 5)
+FONTSIZE = 16
+
+PRETTY_NAME = {"pearson_r": "Pearson's r",
+               "spearman_rho": "Spearman's rho",
+               "r2_score": r"$R^2$",
+               "mae": "MAE",
+               "mse": "MSE",
+               "HatlestadHall": "SRM",
+               "Miltiadous": "Miltiadous",
+               "YulinWang": "Wang",
+               "MPILemon": "LEMON",
+               "TDBrain": "TDBRAIN",
+               "Pooled": "Pooled"}
 
 
 def main():
     # Hyperparameters
     main_metric = "pearson_r"
     metrics_to_plot = ("pearson_r",)
-    datasets = ("HatlestadHall", "MPILemon", "TDBrain", "YulinWang", "Miltiadous")
+    datasets = ("HatlestadHall", "MPILemon", "TDBrain", "Miltiadous", "YulinWang")
     balance_validation_performance = False
+
+    x_lims = {"pearson_r": (-0.25, 1), "mae": (0, None), "r2_score": (None, 1)}  # Limits selected post-hoc
+    y_lims = {"pearson_r": (-0.45, 1), "mae": (0, None), "r2_score": (None, 1)}  # Limits selected post-hoc
+    x_lim = x_lims[main_metric]
 
     # Plot results
     plot_test_vs_val_lodo(results_dir=get_results_dir(), main_metric=main_metric, metrics_to_plot=metrics_to_plot,
-                          datasets=datasets, balance_validation_performance=balance_validation_performance)
+                          datasets=datasets, balance_validation_performance=balance_validation_performance, x_lim=x_lim,
+                          y_lims=y_lims)
 
 
 if __name__ == "__main__":
