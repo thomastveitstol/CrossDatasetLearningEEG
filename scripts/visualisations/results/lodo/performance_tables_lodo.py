@@ -9,6 +9,7 @@ import numpy
 import pandas
 
 from cdl_eeg.data.paths import get_results_dir
+from cdl_eeg.data.results_analysis import is_better, higher_is_better, get_all_lodo_runs, get_lodo_dataset_name
 
 
 # ----------------
@@ -19,67 +20,6 @@ class _Model:
     path: str  # Path to the results
     test_dataset: str  # The dataset which was used for testing
     metrics: Dict[str, float]  # The metrics table (e.g., {"mse": 10.7, "mae": 3.3})
-
-
-# ----------------
-# Smaller convenient functions
-# ----------------
-def _higher_is_better(metric):
-    if metric in ("pearson_r", "spearman_rho", "r2_score"):
-        return True
-    elif metric in ("mae", "mse", "mape"):
-        return False
-    else:
-        raise ValueError(f"Metric {metric} not recognised")
-
-
-def _is_better(metric, *, old_metrics, new_metrics):
-    # Input checks
-    assert isinstance(metric, str), f"Expected metric to be string, but found {type(metric)}"
-    assert isinstance(old_metrics, dict), f"Expected 'old_metrics' to be dict, but found {type(old_metrics)}"
-    assert isinstance(new_metrics, dict), f"Expected 'new_metrics' to be dict, but found {type(new_metrics)}"
-
-    # If old metrics is and empty dict, the new ones are considered the best
-    if not old_metrics:
-        return True
-
-    # If the new metric is nan, we say that it is not better
-    if numpy.isnan(new_metrics[metric]):
-        return False
-
-    # If the old metric is nan and the new is not, then it is regarded as an improvement
-    if numpy.isnan(old_metrics[metric]) and not numpy.isnan(new_metrics[metric]):
-        return True
-
-    # Return
-    if _higher_is_better(metric=metric):
-        return new_metrics[metric] > old_metrics[metric]
-    else:
-        return new_metrics[metric] < old_metrics[metric]
-
-
-def _get_all_lodo_runs(results_dir):
-    """Function for getting all runs available for leave-one-dataset-out"""
-    return (run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
-                                                                                  "leave_one_dataset_out",
-                                                                                  "finished_successfully.txt"))
-            and "inverted_cv" not in run)
-
-
-def _get_lodo_dataset_name(path) -> str:
-    """Function for getting the name of the test dataset. A test is also made to ensure that the test set only contains
-    one dataset"""
-    # Load the test predictions
-    test_df = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
-
-    # Check the number of datasets in the test set
-    if len(set(test_df["dataset"])) != 1:
-        raise ValueError(f"Expected only one dataset to be present in the test set predictions, but that was not "
-                         f"the case for the path {path}. Found {set(test_df['dataset'])}")
-
-    # Return the dataset name
-    dataset_name: str = test_df["dataset"][0]
-    return dataset_name
 
 
 # ----------------
@@ -117,7 +57,7 @@ def _get_lodo_val_test_metrics(path, *, main_metric, balance_validation_performa
         val_performances = numpy.mean(val_df.values, axis=-1)
 
         # Get the best performance and its epoch
-        if _higher_is_better(metric=main_metric):
+        if higher_is_better(metric=main_metric):
             val_idx = numpy.argmax(val_performances)
         else:
             val_idx = numpy.argmin(val_performances)
@@ -130,7 +70,7 @@ def _get_lodo_val_test_metrics(path, *, main_metric, balance_validation_performa
         val_df = pandas.read_csv(os.path.join(path, "val_history_metrics.csv"))
 
         # Get the best performance and its epoch
-        if _higher_is_better(metric=main_metric):
+        if higher_is_better(metric=main_metric):
             val_idx = numpy.argmax(val_df[main_metric])
         else:
             val_idx = numpy.argmin(val_df[main_metric])
@@ -140,12 +80,12 @@ def _get_lodo_val_test_metrics(path, *, main_metric, balance_validation_performa
     test_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
 
     test_metrics = {metric: test_df[metric][val_idx] for metric in test_df.columns}
-    return val_metric, test_metrics, _get_lodo_dataset_name(path)
+    return val_metric, test_metrics, get_lodo_dataset_name(path)
 
 
 def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_performance):
     # Get all runs for LODO
-    runs = _get_all_lodo_runs(results_dir)
+    runs = get_all_lodo_runs(results_dir)
 
     # Initialisation
     best_val_metrics: Dict[str, float] = {}
@@ -159,19 +99,19 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
             run_path = os.path.join(results_dir, run, "leave_one_dataset_out")
 
             # Get the performances per fold
-            folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")
+            folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")  # type: ignore
             for fold in folds:
                 # I need to get the validation performance (for making model selection), test performance (in case the
                 # current run and fold is best for this dataset), and the dataset name (to know which dataset the
                 # metrics are for)
                 val_metric, test_metrics, test_dataset = _get_lodo_val_test_metrics(
-                    path=os.path.join(run_path, fold), main_metric=main_metric,
+                    path=os.path.join(run_path, fold), main_metric=main_metric,  # type: ignore
                     balance_validation_performance=balance_validation_performance
                 )
 
                 # If this is the best run (as evaluated on the validation), store it. (Not the nicest implementation but
                 # it'll do)
-                if test_dataset not in best_val_metrics or _is_better(
+                if test_dataset not in best_val_metrics or is_better(
                         metric=main_metric, old_metrics={main_metric: best_val_metrics[test_dataset]},
                         new_metrics={main_metric: val_metric}
                 ):
