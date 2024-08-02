@@ -6,6 +6,7 @@ import pandas
 from matplotlib import pyplot
 
 from cdl_eeg.data.paths import get_results_dir
+from cdl_eeg.data.results_analysis import get_all_ilodo_runs, higher_is_better, get_ilodo_val_dataset_name
 
 # ----------------
 # Globals
@@ -21,42 +22,6 @@ PRETTY_NAME = {"pearson_r": "Pearson's r",
                "MPILemon": "LEMON",
                "TDBrain": "TDBRAIN",
                "Pooled": "Pooled"}
-
-
-# ----------------
-# Smaller convenient functions
-# ----------------
-def _higher_is_better(metric):
-    if metric in ("pearson_r", "spearman_rho", "r2_score"):
-        return True
-    elif metric in ("mae", "mse", "mape"):
-        return False
-    else:
-        raise ValueError(f"Metric {metric} not recognised")
-
-
-def _get_all_ilodo_runs(results_dir):
-    """Function for getting all runs available for leave-one-dataset-out"""
-    return tuple(run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
-                                                                                       "leave_one_dataset_out",
-                                                                                       "finished_successfully.txt"))
-                 and "inverted_cv" in run)
-
-
-def _get_ilodo_val_dataset_name(path) -> str:
-    """Function for getting the name of the validation dataset. A test is also made to ensure that the validation set
-    only contains one dataset"""
-    # Load the validation predictions
-    val_df = pandas.read_csv(os.path.join(path, "val_history_predictions.csv"))
-
-    # Check the number of datasets in the validation set
-    if len(set(val_df["dataset"])) != 1:
-        raise ValueError(f"Expected only one dataset to be present in the validation set predictions, but that was not "
-                         f"the case for the path {path}. Found {set(val_df['dataset'])}")
-
-    # Return the dataset name
-    dataset_name: str = val_df["dataset"][0]
-    return dataset_name
 
 
 # ----------------
@@ -114,7 +79,7 @@ def _get_test_val_metrics(path, *, main_metric, datasets):
     # --------------
     # Get training dataset name
     # --------------
-    dataset_name = _get_ilodo_val_dataset_name(path)
+    dataset_name = get_ilodo_val_dataset_name(path)
     if dataset_name not in datasets:
         # If we are not interested, we will not waste time loading data for then to discard the results
         raise _SkipFold
@@ -126,7 +91,7 @@ def _get_test_val_metrics(path, *, main_metric, datasets):
     val_df = pandas.read_csv(os.path.join(path, "val_history_metrics.csv"))
 
     # Get the best performance and its epoch
-    if _higher_is_better(metric=main_metric):
+    if higher_is_better(metric=main_metric):
         best_epoch = numpy.argmax(val_df[main_metric])
     else:
         best_epoch = numpy.argmin(val_df[main_metric])
@@ -146,7 +111,7 @@ class ValTestPerformances(NamedTuple):
 
 def plot_test_vs_val_ilodo(results_dir, *, main_metric, metrics_to_plot, datasets):
     # Get all runs for inverted LODO
-    runs = _get_all_ilodo_runs(results_dir)
+    runs = get_all_ilodo_runs(results_dir)
 
     # Initialisation
     performances: Dict[str, List[ValTestPerformances]] = {dataset: [] for dataset in datasets}
@@ -163,20 +128,20 @@ def plot_test_vs_val_ilodo(results_dir, *, main_metric, metrics_to_plot, dataset
         run_path = os.path.join(results_dir, run, "leave_one_dataset_out")
 
         # Get the performances per fold
-        folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")
+        folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")  # type: ignore
         for fold in folds:
             # I need the validation performance and the dataset which was used. The test set performances is not
             # acquired here to reduce runtime
             try:
                 val_metric, test_metrics, train_dataset = _get_test_val_metrics(
-                    path=os.path.join(run_path, fold), main_metric=main_metric, datasets=datasets
+                    path=os.path.join(run_path, fold), main_metric=main_metric, datasets=datasets  # type: ignore
                 )
             except _SkipFold:
                 continue
             except KeyError:
                 # If the prediction model guessed that all subjects have the same age, for all folds, model selection
                 # 'fails'. We'll just skip them
-                skipped[_get_ilodo_val_dataset_name(os.path.join(run_path, fold))] += 1  # not my best piece of work...
+                skipped[get_ilodo_val_dataset_name(os.path.join(run_path, fold))] += 1  # type: ignore
                 continue
 
             # Add the val and test performances
