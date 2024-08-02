@@ -9,33 +9,33 @@ from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.mpi_lemon import MPILemon
 from cdl_eeg.data.datasets.td_brain import TDBrain
 from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
+from cdl_eeg.data.results_analysis import PRETTY_NAME
 
 
 def main():
-    datasets = (HatlestadHall(), YulinWang(), Miltiadous(), MPILemon(), TDBrain())
+    datasets = (TDBrain(), MPILemon(), HatlestadHall(), Miltiadous(), YulinWang())
 
     # ----------------
     # Load data
     # ----------------
     age_distributions = {"Age": [], "Dataset": []}
-    corrected_names = {"HatlestadHall": "SRM", "YulinWang": "YulinWang", "Miltiadous": "Miltiadous",
-                       "MPILemon": "Lemon", "TDBrain": "TDBRAIN"}
     for dataset in datasets:
         # Use all subjects
         subjects = dataset.get_subject_ids()
 
         # Add ages and dataset
         age_distributions["Age"].extend(dataset.age(subject_ids=subjects))
-        age_distributions["Dataset"].extend([corrected_names[type(dataset).__name__]] * len(subjects))
+        age_distributions["Dataset"].extend([PRETTY_NAME[type(dataset).__name__]] * len(subjects))
 
     # ----------------
     # Plotting
     # ----------------
+    pyplot.figure(figsize=(16, 5))
     ax = seaborn.kdeplot(age_distributions, hue="Dataset", x="Age", fill=True)
 
     # Cosmetics
     fontsize = 17
-    pyplot.title("Kernel density estimates of age distribution", fontsize=fontsize + 5)
+    pyplot.title("Age distributions", fontsize=fontsize + 5)
     pyplot.grid()
 
     pyplot.xticks(fontsize=fontsize)
@@ -45,6 +45,8 @@ def main():
 
     pyplot.setp(ax.get_legend().get_texts(), fontsize=fontsize)
     pyplot.setp(ax.get_legend().get_title(), fontsize=fontsize+2)
+
+    pyplot.tight_layout()
 
     pyplot.show()
 
