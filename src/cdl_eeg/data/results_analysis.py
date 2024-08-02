@@ -7,6 +7,29 @@ import pandas
 
 
 # ----------------
+# Globals
+# ----------------
+PRETTY_NAME = {"pearson_r": "Pearson's r",
+               "spearman_rho": "Spearman's rho",
+               "r2_score": r"$R^2$",
+               "mae": "MAE",
+               "mse": "MSE",
+               "HatlestadHall": "SRM",
+               "Miltiadous": "Miltiadous",
+               "YulinWang": "Wang",
+               "MPILemon": "LEMON",
+               "TDBrain": "TDBRAIN",
+               "Pooled": "Pooled"}
+
+
+# ----------------
+# Exceptions
+# ----------------
+class SkipFold(Exception):
+    """Can be used if you tried to get the results from a fold, but want to skip it instead"""
+
+
+# ----------------
 # Smaller convenient functions
 # ----------------
 def higher_is_better(metric):

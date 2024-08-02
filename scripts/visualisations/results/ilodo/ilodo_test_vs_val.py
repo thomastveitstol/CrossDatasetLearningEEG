@@ -6,22 +6,16 @@ import pandas
 from matplotlib import pyplot
 
 from cdl_eeg.data.paths import get_results_dir
-from cdl_eeg.data.results_analysis import get_all_ilodo_runs, higher_is_better, get_ilodo_val_dataset_name
+from cdl_eeg.data.results_analysis import (get_all_ilodo_runs, higher_is_better, get_ilodo_val_dataset_name,
+                                           PRETTY_NAME, SkipFold)
+
 
 # ----------------
-# Globals
+# Small convenient class
 # ----------------
-PRETTY_NAME = {"pearson_r": "Pearson's r",
-               "spearman_rho": "Spearman's rho",
-               "r2_score": r"$R^2$",
-               "mae": "MAE",
-               "mse": "MSE",
-               "HatlestadHall": "SRM",
-               "Miltiadous": "Miltiadous",
-               "YulinWang": "Wang",
-               "MPILemon": "LEMON",
-               "TDBrain": "TDBRAIN",
-               "Pooled": "Pooled"}
+class ValTestPerformances(NamedTuple):
+    val: float
+    test: Dict[str, Dict[str, float]]  # e.g., {"LEMON": {"mse": 10.3}}
 
 
 # ----------------
@@ -82,7 +76,7 @@ def _get_test_val_metrics(path, *, main_metric, datasets):
     dataset_name = get_ilodo_val_dataset_name(path)
     if dataset_name not in datasets:
         # If we are not interested, we will not waste time loading data for then to discard the results
-        raise _SkipFold
+        raise SkipFold
 
     # --------------
     # Get validation performance and optimal epoch
@@ -102,11 +96,6 @@ def _get_test_val_metrics(path, *, main_metric, datasets):
     # --------------
     test_metrics = _get_ilodo_test_metrics(path, epoch=best_epoch, datasets=datasets)
     return val_metric, test_metrics, dataset_name
-
-
-class ValTestPerformances(NamedTuple):
-    val: float
-    test: Dict[str, Dict[str, float]]  # e.g., {"LEMON": {"mse": 10.3}}
 
 
 def plot_test_vs_val_ilodo(results_dir, *, main_metric, metrics_to_plot, datasets):
@@ -136,7 +125,7 @@ def plot_test_vs_val_ilodo(results_dir, *, main_metric, metrics_to_plot, dataset
                 val_metric, test_metrics, train_dataset = _get_test_val_metrics(
                     path=os.path.join(run_path, fold), main_metric=main_metric, datasets=datasets  # type: ignore
                 )
-            except _SkipFold:
+            except SkipFold:
                 continue
             except KeyError:
                 # If the prediction model guessed that all subjects have the same age, for all folds, model selection
@@ -160,7 +149,7 @@ def plot_test_vs_val_ilodo(results_dir, *, main_metric, metrics_to_plot, dataset
 
         # The test performances must be plotted per metric
         for metric in metrics_to_plot:
-            pyplot.figure(figsize=FIGSIZE)
+            pyplot.figure(figsize=_FIGSIZE)
 
             # Plot the test performance
             for dataset in test_performance[0]:
@@ -169,21 +158,24 @@ def plot_test_vs_val_ilodo(results_dir, *, main_metric, metrics_to_plot, dataset
                 pyplot.plot(x, y, ".", label=PRETTY_NAME[dataset])
 
             # Plot cosmetics
-            pyplot.title(f"Source dataset: {PRETTY_NAME[train_dataset]}", fontsize=FONTSIZE + 5)
-            pyplot.ylabel(f"Test performance ({PRETTY_NAME[metric]})", fontsize=FONTSIZE)
-            pyplot.xlabel(f"Validation performance ({PRETTY_NAME[main_metric]})", fontsize=FONTSIZE)
-            pyplot.tick_params(labelsize=FONTSIZE)
+            pyplot.title(f"Source dataset: {PRETTY_NAME[train_dataset]}", fontsize=_FONTSIZE + 5)
+            pyplot.ylabel(f"Test performance ({PRETTY_NAME[metric]})", fontsize=_FONTSIZE)
+            pyplot.xlabel(f"Validation performance ({PRETTY_NAME[main_metric]})", fontsize=_FONTSIZE)
+            pyplot.tick_params(labelsize=_FONTSIZE)
             pyplot.xlim(-0.6, 1)
             pyplot.ylim(-0.6, 1)
-            pyplot.legend(fontsize=FONTSIZE)
+            pyplot.legend(fontsize=_FONTSIZE)
             pyplot.grid()
             pyplot.tight_layout()
 
     pyplot.show()
 
 
-FIGSIZE = (7, 5)
-FONTSIZE = 16
+# ----------------
+# Globals
+# ----------------
+_FIGSIZE = (7, 5)
+_FONTSIZE = 16
 
 
 def main():
@@ -195,10 +187,6 @@ def main():
     # Plot results
     plot_test_vs_val_ilodo(results_dir=get_results_dir(), main_metric=main_metric, metrics_to_plot=metrics_to_plot,
                            datasets=datasets)
-
-
-class _SkipFold(Exception):
-    ...
 
 
 if __name__ == "__main__":
