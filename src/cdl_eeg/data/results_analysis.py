@@ -130,3 +130,19 @@ def get_ilodo_val_dataset_name(path) -> str:
     # Return the dataset name
     dataset_name: str = val_df["dataset"][0]
     return dataset_name
+
+
+def get_lodo_dataset_name(path) -> str:
+    """Function for getting the name of the test dataset. A test is also made to ensure that the test set only contains
+    one dataset"""
+    # Load the test predictions
+    test_df = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
+
+    # Check the number of datasets in the test set
+    if len(set(test_df["dataset"])) != 1:
+        raise ValueError(f"Expected only one dataset to be present in the test set predictions, but that was not "
+                         f"the case for the path {path}. Found {set(test_df['dataset'])}")
+
+    # Return the dataset name
+    dataset_name: str = test_df["dataset"][0]
+    return dataset_name

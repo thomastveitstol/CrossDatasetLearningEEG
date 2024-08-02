@@ -6,54 +6,16 @@ import pandas
 from matplotlib import pyplot
 
 from cdl_eeg.data.paths import get_results_dir
+from cdl_eeg.data.results_analysis import higher_is_better, SkipFold, get_all_lodo_runs, PRETTY_NAME, \
+    get_lodo_dataset_name
 
 
 # ----------------
 # Convenient small classes
 # ----------------
-class _SkipFold(Exception):
-    ...
-
-
 class ValTestPerformances(NamedTuple):
     val: float
     test: Dict[str, float]
-
-
-# ----------------
-# Smaller convenient functions
-# ----------------
-def _higher_is_better(metric):
-    if metric in ("pearson_r", "spearman_rho", "r2_score"):
-        return True
-    elif metric in ("mae", "mse", "mape"):
-        return False
-    else:
-        raise ValueError(f"Metric {metric} not recognised")
-
-
-def _get_all_lodo_runs(results_dir):
-    """Function for getting all runs available for leave-one-dataset-out"""
-    return tuple(run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
-                                                                                       "leave_one_dataset_out",
-                                                                                       "finished_successfully.txt"))
-                 and "inverted_cv" not in run)
-
-
-def _get_lodo_dataset_name(path) -> str:
-    """Function for getting the name of the test dataset. A test is also made to ensure that the test set only contains
-    one dataset"""
-    # Load the test predictions
-    test_df = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
-
-    # Check the number of datasets in the test set
-    if len(set(test_df["dataset"])) != 1:
-        raise ValueError(f"Expected only one dataset to be present in the test set predictions, but that was not "
-                         f"the case for the path {path}. Found {set(test_df['dataset'])}")
-
-    # Return the dataset name
-    dataset_name: str = test_df["dataset"][0]
-    return dataset_name
 
 
 # ----------------
@@ -73,7 +35,7 @@ def _get_validation_performance(path, *, main_metric, balance_validation_perform
         val_performances = numpy.mean(val_df.values, axis=-1)
 
         # Get the best performance and its epoch
-        if _higher_is_better(metric=main_metric):
+        if higher_is_better(metric=main_metric):
             val_idx = numpy.argmax(val_performances)
         else:
             val_idx = numpy.argmin(val_performances)
@@ -86,7 +48,7 @@ def _get_validation_performance(path, *, main_metric, balance_validation_perform
         val_df = pandas.read_csv(os.path.join(path, "val_history_metrics.csv"))
 
         # Get the best performance and its epoch
-        if _higher_is_better(metric=main_metric):
+        if higher_is_better(metric=main_metric):
             val_idx = numpy.argmax(val_df[main_metric])
         else:
             val_idx = numpy.argmin(val_df[main_metric])
@@ -99,10 +61,10 @@ def _get_test_val_metrics(path,  *, main_metric, datasets, balance_validation_pe
     # --------------
     # Get test dataset name
     # --------------
-    dataset_name = _get_lodo_dataset_name(path)
+    dataset_name = get_lodo_dataset_name(path)
     if dataset_name not in datasets:
         # If we are not interested, we will not waste time loading data for then to discard the results
-        raise _SkipFold
+        raise SkipFold
 
     # --------------
     # Get validation performance and optimal epoch
@@ -122,7 +84,7 @@ def _get_test_val_metrics(path,  *, main_metric, datasets, balance_validation_pe
 def plot_test_vs_val_lodo(results_dir, *, main_metric, metrics_to_plot, datasets, balance_validation_performance, x_lim,
                           y_lims):
     # Get all runs for LODO
-    runs = _get_all_lodo_runs(results_dir)
+    runs = get_all_lodo_runs(results_dir)
 
     # Initialisation
     performances: Dict[str, List[ValTestPerformances]] = {dataset: [] for dataset in datasets}
@@ -139,19 +101,19 @@ def plot_test_vs_val_lodo(results_dir, *, main_metric, metrics_to_plot, datasets
         run_path = os.path.join(results_dir, run, "leave_one_dataset_out")
 
         # Get the performances per fold
-        folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")
+        folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")  # type: ignore
         for fold in folds:
             try:
                 val_metric, test_metrics, test_dataset = _get_test_val_metrics(
-                    path=os.path.join(run_path, fold), main_metric=main_metric, datasets=datasets,
+                    path=os.path.join(run_path, fold), main_metric=main_metric, datasets=datasets,  # type: ignore
                     balance_validation_performance=balance_validation_performance
                 )
-            except _SkipFold:
+            except SkipFold:
                 continue
             except KeyError:
                 # If the prediction model guessed that all subjects have the same age, for all folds, model selection
                 # 'fails'. We'll just skip them
-                skipped[_get_lodo_dataset_name(os.path.join(run_path, fold))] += 1  # not my best piece of work...
+                skipped[_get_lodo_dataset_name(os.path.join(run_path, fold))] += 1  # type: ignore
                 continue
 
             # Add the val and test performances
@@ -193,18 +155,6 @@ def plot_test_vs_val_lodo(results_dir, *, main_metric, metrics_to_plot, datasets
 # ----------------
 FIGSIZE = (7, 5)
 FONTSIZE = 16
-
-PRETTY_NAME = {"pearson_r": "Pearson's r",
-               "spearman_rho": "Spearman's rho",
-               "r2_score": r"$R^2$",
-               "mae": "MAE",
-               "mse": "MSE",
-               "HatlestadHall": "SRM",
-               "Miltiadous": "Miltiadous",
-               "YulinWang": "Wang",
-               "MPILemon": "LEMON",
-               "TDBrain": "TDBRAIN",
-               "Pooled": "Pooled"}
 
 
 def main():
