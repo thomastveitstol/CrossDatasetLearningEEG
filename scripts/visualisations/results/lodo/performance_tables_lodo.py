@@ -95,35 +95,35 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
     # Loop through all experiments
     # --------------
     for run in runs:
-        try:
-            run_path = os.path.join(results_dir, run, "leave_one_dataset_out")
+        run_path = os.path.join(results_dir, run, "leave_one_dataset_out")
 
-            # Get the performances per fold
-            folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")  # type: ignore
-            for fold in folds:
-                # I need to get the validation performance (for making model selection), test performance (in case the
-                # current run and fold is best for this dataset), and the dataset name (to know which dataset the
-                # metrics are for)
+        # Get the performances per fold
+        folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")  # type: ignore
+        for fold in folds:
+            # I need to get the validation performance (for making model selection), test performance (in case the
+            # current run and fold is best for this dataset), and the dataset name (to know which dataset the
+            # metrics are for)
+            try:
                 val_metric, test_metrics, test_dataset = _get_lodo_val_test_metrics(
                     path=os.path.join(run_path, fold), main_metric=main_metric,  # type: ignore
                     balance_validation_performance=balance_validation_performance
                 )
+            except KeyError:
+                continue
 
-                # If this is the best run (as evaluated on the validation), store it. (Not the nicest implementation but
-                # it'll do)
-                if test_dataset not in best_val_metrics or is_better(
-                        metric=main_metric, old_metrics={main_metric: best_val_metrics[test_dataset]},
-                        new_metrics={main_metric: val_metric}
-                ):
-                    # Update the best model selection
-                    best_models[test_dataset] = _Model(path=run, test_dataset=test_dataset, metrics=test_metrics)
+            # If this is the best run (as evaluated on the validation), store it. (Not the nicest implementation but
+            # it'll do)
+            if test_dataset not in best_val_metrics or is_better(
+                    metric=main_metric, old_metrics={main_metric: best_val_metrics[test_dataset]},
+                    new_metrics={main_metric: val_metric}
+            ):
+                # Update the best model selection
+                best_models[test_dataset] = _Model(path=run, test_dataset=test_dataset, metrics=test_metrics)
 
-                    # Update best metrics
-                    if test_dataset in best_val_metrics:
-                        print(f"{test_dataset}: {best_val_metrics[test_dataset]:.2f} < {val_metric:.2f}")
-                    best_val_metrics[test_dataset] = val_metric
-        except KeyError:
-            continue
+                # Update best metrics
+                if test_dataset in best_val_metrics:
+                    print(f"{test_dataset}: {best_val_metrics[test_dataset]:.2f} < {val_metric:.2f}")
+                best_val_metrics[test_dataset] = val_metric
 
     # --------------
     # Print results
