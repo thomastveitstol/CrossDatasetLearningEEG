@@ -3,7 +3,9 @@ Functions for analysing the results
 """
 import os
 
+import numpy
 import pandas
+import yaml  # type: ignore[import]
 
 
 # ----------------
@@ -19,7 +21,16 @@ PRETTY_NAME = {"pearson_r": "Pearson's r",
                "YulinWang": "Wang",
                "MPILemon": "LEMON",
                "TDBrain": "TDBRAIN",
-               "Pooled": "Pooled"}
+               "Pooled": "Pooled",
+               "MSELoss": "MSE",
+               "L1Loss": "MAE",
+               "ShallowFBCSPNetMTS": "ShallowFBCSPNet",
+               "Deep4NetMTS": "Deep4Net",
+               "spline": "Spline",
+               "2 * f max": r"$2 \cdot f_{max}$",
+               "4 * f max": r"$4 \cdot f_{max}$",
+               "8 * f max": r"$8 \cdot f_{max}$"
+               }
 
 
 # ----------------
@@ -51,11 +62,26 @@ def is_better(metric, *, old_metrics, new_metrics):
     if not old_metrics:
         return True
 
+    # If the new metric is nan, we say that it is not better
+    if numpy.isnan(new_metrics[metric]):
+        return False
+
+    # If the old metric is nan and the new is not, then it is regarded as an improvement
+    if numpy.isnan(old_metrics[metric]) and not numpy.isnan(new_metrics[metric]):
+        return True
+
     # Return
     if higher_is_better(metric=metric):
         return new_metrics[metric] > old_metrics[metric]
     else:
         return new_metrics[metric] < old_metrics[metric]
+
+
+def get_config_file(results_folder, preprocessing):
+    file_name = "preprocessing_config.yml" if preprocessing else "config.yml"
+    with open(os.path.join(results_folder, file_name)) as f:
+        config = yaml.safe_load(f)
+    return config
 
 
 # -------------------
