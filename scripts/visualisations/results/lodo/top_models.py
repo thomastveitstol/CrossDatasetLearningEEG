@@ -6,10 +6,11 @@ from typing import Any, Tuple, Union, Dict, List, Set, Optional
 import numpy
 import pandas
 import seaborn
-import yaml
 from matplotlib import pyplot, rcParams
 
 from cdl_eeg.data.paths import get_results_dir
+from cdl_eeg.data.results_analysis import is_better, get_lodo_dataset_name, SkipFold, higher_is_better, \
+    get_all_lodo_runs, get_config_file, PRETTY_NAME
 
 
 # ----------------
@@ -38,80 +39,8 @@ class _Run:
 
         # Evaluate if the other is better or worse
         _metric = self.metric
-        return not _is_better(metric=self.metric, old_metrics={_metric: self.test_performance},
-                              new_metrics={_metric: other.test_performance})
-
-
-class _SkipFold(Exception):
-    ...
-
-
-# ----------------
-# Small convenient functions
-# ----------------
-def _higher_is_better(metric):
-    if metric in ("pearson_r", "spearman_rho", "r2_score"):
-        return True
-    elif metric in ("mae", "mse", "mape"):
-        return False
-    else:
-        raise ValueError(f"Metric {metric} not recognised")
-
-
-def _is_better(metric, *, old_metrics, new_metrics):
-    # Input checks
-    assert isinstance(metric, str), f"Expected metric to be string, but found {type(metric)}"
-    assert isinstance(old_metrics, dict), f"Expected 'old_metrics' to be dict, but found {type(old_metrics)}"
-    assert isinstance(new_metrics, dict), f"Expected 'new_metrics' to be dict, but found {type(new_metrics)}"
-
-    # If old metrics is and empty dict, the new ones are considered the best
-    if not old_metrics:
-        return True
-
-    # If the new metric is nan, we say that it is not better
-    if numpy.isnan(new_metrics[metric]):
-        return False
-
-    # If the old metric is nan and the new is not, then it is regarded as an improvement
-    if numpy.isnan(old_metrics[metric]) and not numpy.isnan(new_metrics[metric]):
-        return True
-
-    # Return
-    if _higher_is_better(metric=metric):
-        return new_metrics[metric] > old_metrics[metric]
-    else:
-        return new_metrics[metric] < old_metrics[metric]
-
-
-def _get_lodo_dataset_name(path) -> str:
-    """Function for getting the name of the test dataset. A test is also made to ensure that the test set only contains
-    one dataset"""
-    # Load the test predictions
-    test_df = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
-
-    # Check the number of datasets in the test set
-    if len(set(test_df["dataset"])) != 1:
-        raise ValueError(f"Expected only one dataset to be present in the test set predictions, but that was not "
-                         f"the case for the path {path}. Found {set(test_df['dataset'])}")
-
-    # Return the dataset name
-    dataset_name: str = test_df["dataset"][0]
-    return dataset_name
-
-
-def _get_all_lodo_runs(results_dir):
-    """Function for getting all runs available for leave-one-dataset-out"""
-    return tuple(run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
-                                                                                       "leave_one_dataset_out",
-                                                                                       "finished_successfully.txt"))
-                 and "inverted_cv" not in run)
-
-
-def _get_config_file(results_folder, preprocessing):
-    file_name = "preprocessing_config.yml" if preprocessing else "config.yml"
-    with open(os.path.join(results_folder, file_name)) as f:
-        config = yaml.safe_load(f)
-    return config
+        return not is_better(metric=self.metric, old_metrics={_metric: self.test_performance},
+                             new_metrics={_metric: other.test_performance})
 
 
 # --------------
@@ -215,9 +144,9 @@ def _get_hyperparameter(config, hparam: HParam):
 # Functions for getting the best models
 # ----------------
 def _get_model_performance(path, *, main_metric, balance_validation_performance, datasets):
-    dataset_name = _get_lodo_dataset_name(path=path)
+    dataset_name = get_lodo_dataset_name(path=path)
     if datasets is not None and dataset_name not in datasets:
-        raise _SkipFold
+        raise SkipFold
 
     # --------------
     # Input check
@@ -236,7 +165,7 @@ def _get_model_performance(path, *, main_metric, balance_validation_performance,
         val_performances = numpy.mean(val_df.values, axis=-1)
 
         # Get the best epoch
-        if _higher_is_better(metric=main_metric):
+        if higher_is_better(metric=main_metric):
             val_idx = numpy.argmax(val_performances)
         else:
             val_idx = numpy.argmin(val_performances)
@@ -245,7 +174,7 @@ def _get_model_performance(path, *, main_metric, balance_validation_performance,
         val_df = pandas.read_csv(os.path.join(path, "val_history_metrics.csv"))
 
         # Get the best epoch
-        if _higher_is_better(metric=main_metric):
+        if higher_is_better(metric=main_metric):
             val_idx = numpy.argmax(val_df[main_metric])
         else:
             val_idx = numpy.argmin(val_df[main_metric])
@@ -276,7 +205,7 @@ def _get_all_model_performances(*, results_dir, runs, main_metric, balance_valid
                     path=fold_path, main_metric=main_metric, datasets=datasets,
                     balance_validation_performance=balance_validation_performance
                 )
-            except (KeyError, _SkipFold):
+            except (KeyError, SkipFold):
                 continue
 
             # Add performance to dict
@@ -291,7 +220,7 @@ def _get_all_model_performances(*, results_dir, runs, main_metric, balance_valid
 
 def _get_top_k_models(*, k, results_dir, main_metric, balance_validation_performance, datasets):
     # Get all runs for LODO
-    runs = _get_all_lodo_runs(results_dir)
+    runs = get_all_lodo_runs(results_dir)
 
     # --------------
     # Get a list of all model performances for each dataset
@@ -327,8 +256,8 @@ def _get_model_hyperparameters(run, hyperparameters: Dict[str, HParam]):
     hyp_values = {}
     for name, param in hyperparameters.items():
         # Get the hyperparameter values
-        config = _get_config_file(results_folder=os.path.dirname(os.path.dirname(run)),
-                                  preprocessing=param.preprocessing)
+        config = get_config_file(results_folder=os.path.dirname(os.path.dirname(run)),
+                                 preprocessing=param.preprocessing)
         value = _get_hyperparameter(config=config, hparam=param)
 
         # Add the value
@@ -395,17 +324,6 @@ FONTSIZE = 16
 rcParams["legend.fontsize"] = FONTSIZE
 rcParams["legend.title_fontsize"] = FONTSIZE
 DATASET_ORDER = ("TDBrain", "MPILemon", "HatlestadHall")
-PRETTY_NAME = {"HatlestadHall": "SRM",
-               "MPILemon": "LEMON",
-               "TDBrain": "TDBRAIN",
-               "MSELoss": "MSE",
-               "L1Loss": "MAE",
-               "ShallowFBCSPNetMTS": "ShallowFBCSPNet",
-               "Deep4NetMTS": "Deep4Net",
-               "spline": "Spline",
-               "2 * f max": r"$2 \cdot f_{max}$",
-               "4 * f max": r"$4 \cdot f_{max}$",
-               "8 * f max": r"$8 \cdot f_{max}$"}
 
 # Mapping to frequency band
 INV_FREQUENCY_BANDS = {(1.0, 4.0): "Delta",
