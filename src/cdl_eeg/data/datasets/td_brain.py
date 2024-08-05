@@ -33,6 +33,8 @@ class TDBrain(EEGDatasetBase):
     >>> # The discrepancy in sex with the .tsv file is due to differences in integer to sex mapping
     >>> TDBrain().sex(TDBrain().get_subject_ids()[:3])
     array([1, 0, 0])
+    >>> TDBrain().num_channels
+    26
     """
 
     # Extracting channel names from Table 3 in the paper
