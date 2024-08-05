@@ -320,7 +320,7 @@ def _plot_top_configurations(*, k, results_dir, hyperparameters, main_metric, ba
 # Plot cosmetics
 STAT = "count"
 FIGSIZE = (7, 5)
-FONTSIZE = 16
+FONTSIZE = 18
 rcParams["legend.fontsize"] = FONTSIZE
 rcParams["legend.title_fontsize"] = FONTSIZE
 DATASET_ORDER = ("TDBrain", "MPILemon", "HatlestadHall")
@@ -336,7 +336,7 @@ INV_FREQUENCY_BANDS = {(1.0, 4.0): "Delta",
 # Hyperparameters to check
 HYPERPARAMETERS = {
     "DL Architecture": HParam(key_path=("DL Architecture", "model"), default=NotImplemented, preprocessing=False,
-                              order=None),
+                              order=("InceptionNetwork", "Deep4Net", "ShallowFBCSPNet")),
     "Spatial Dimension Handling": HParam(key_path="spatial_dimension", default=NotImplemented, preprocessing=False,
                                          order=("Spline", "MNE", "RBP")),
     "Loss": HParam(key_path=("Training", "Loss", "loss"), default=NotImplemented, preprocessing=False,
