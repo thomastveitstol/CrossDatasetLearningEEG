@@ -10,9 +10,7 @@ from cdl_eeg.data.datasets.utils import sex_to_int
 
 class OUS(EEGDatasetBase):
     """
-    This is a private dataset provided by Oslo University Hospital
-
-    todo: add some details
+    This is a private dataset provided by Oslo University Hospital. It was not used in the paper.
 
     Examples:
     ----------
@@ -26,7 +24,7 @@ class OUS(EEGDatasetBase):
 
     __slots__ = ()
     _channel_names = ('Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'F7', 'F8', 'T7', 'T8', 'P7', 'P8',
-                      'Fz', 'Cz', 'Pz', 'F9', 'F10', 'T9', 'T10', 'P9', 'P10')  # todo: make test to verify this for all
+                      'Fz', 'Cz', 'Pz', 'F9', 'F10', 'T9', 'T10', 'P9', 'P10')
     _montage_name = "standard_1020"
 
     # ----------------
@@ -76,5 +74,4 @@ class OUS(EEGDatasetBase):
         return {ch_name: tuple(pos) for ch_name, pos in channel_positions.items() if ch_name in self._channel_names}
 
     def channel_name_to_index(self):
-        # todo: make tests
         return {ch_name: i for i, ch_name in enumerate(self._channel_names)}

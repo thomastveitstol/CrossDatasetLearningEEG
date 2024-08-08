@@ -1,5 +1,5 @@
 """
-Script for running both leave-one-dataset-out cross validation and k-fold cross validation using the same config file
+Script for running a single experiment, either leave-one-dataset-out cross validation, or its inverse
 """
 import copy
 import os
@@ -41,7 +41,7 @@ def main():
     else:
         raise ValueError
     results_path = os.path.join(get_results_dir(),
-                                f"debug_{config['selected_target']}_{_title_cv}_experiments_{date.today()}_"
+                                f"{config['selected_target']}_{_title_cv}_experiments_{date.today()}_"
                                 f"{datetime.now().strftime('%H%M%S')}")
     os.mkdir(results_path)
 
@@ -58,33 +58,18 @@ def main():
         yaml.safe_dump(pre_processed_config, file)
 
     # ---------------
-    # Run experiments
+    # Run experiment
     # ---------------
-    # Leave-one-dataset-out
-    lodo_config = copy.deepcopy(config)
-    lodo_config["SubjectSplit"] = {"kwargs": {"seed": 42}, "name": "SplitOnDataset"}  # todo
-    if lodo_config["DomainDiscriminator"] is not None:
-        num_train_datasets = len(lodo_config["Datasets"]) - 1
-        lodo_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
+    # LODO or inverted LODO
+    experiment_config = copy.deepcopy(config)
+    if experiment_config["DomainDiscriminator"] is not None:
+        num_train_datasets = len(experiment_config["Datasets"]) - 1
+        experiment_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
 
     print(f"\n{' Leave-one-dataset-out cross validation ':=^50}\n")
-    with Experiment(config=lodo_config, pre_processing_config=pre_processed_config,
+    with Experiment(config=experiment_config, pre_processing_config=pre_processed_config,
                     results_path=os.path.join(results_path, "leave_one_dataset_out")) as lodo_experiment:
         lodo_experiment.run_experiment()
-
-    if config["run_baseline"]:
-        # k-fold CV
-        k_fold_config = copy.deepcopy(config)
-        k_fold_config["SubjectSplit"] = {"kwargs": {"seed": 42, "num_folds": len(config["Datasets"])},
-                                         "name": "KFoldDataSplit"}  # todo
-        if k_fold_config["DomainDiscriminator"] is not None:
-            num_train_datasets = len(k_fold_config["Datasets"])
-            k_fold_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
-
-        print(f"\n{' Baseline experiment ':=^50}\n")
-        with Experiment(config=k_fold_config, pre_processing_config=pre_processed_config,
-                        results_path=os.path.join(results_path, "k_fold_cv")) as k_fold_experiment:
-            k_fold_experiment.run_experiment()
 
 
 if __name__ == "__main__":

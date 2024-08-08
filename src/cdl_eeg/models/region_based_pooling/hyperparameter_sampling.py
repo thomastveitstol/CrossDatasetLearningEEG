@@ -135,8 +135,10 @@ def _generate_partition_sizes(*, n, k):
 
     Parameters
     ----------
-    n : Number of montage splits
-    k : Number of partitions
+    n : int
+        Number of montage splits
+    k : int
+        Number of partitions
 
     Returns
     -------

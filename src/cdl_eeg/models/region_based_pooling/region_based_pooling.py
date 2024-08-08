@@ -4,6 +4,9 @@ Classes for Region Based Pooling
 There will likely be some overlap with a former project (where Region Based Pooling was first introduced) at
 https://github.com/thomastveitstol/RegionBasedPoolingEEG/blob/master/src/models/modules/bins/regions_to_bins.py
 
+Note that 'channel split' and 'region split' are occasionally wrongly used instead of 'montage split'. Some of the code
+was made before I settled on the term 'montage split'.
+
 Authored by:
     Thomas Tveitstøl (Oslo University Hospital)
 """
@@ -124,9 +127,9 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         self._input_checks(pooling_method_kwargs, split_methods, split_methods_kwargs)
 
         # -------------------
-        # Channel/Region splits  todo: montage splits
+        # Montage splits
         # -------------------
-        # Generate and store region splits
+        # Generate and store region/montage splits
         self._region_splits = tuple(get_montage_split(split_method, **kwargs)
                                     for split_method, kwargs in zip(split_methods, split_methods_kwargs))
 
@@ -191,7 +194,7 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         # ------------------
         # Pass through all channel splits
         # ------------------
-        # Pass pre_computed or not, depending on compatibility and if when pre-computing is not desired (value is None)
+        # Pass pre_computed or not, depending on compatibility and if pre-computing is not desired (value is None)
         if not self.supports_precomputing or pre_computed is None:
             region_representations = self._pooling_module(input_tensors, channel_splits=self._channel_splits,
                                                           channel_name_to_index=channel_name_to_index)
@@ -204,7 +207,6 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         # Maybe apply CMMN
         # ------------------
         if self.has_cmmn_layer:
-            # todo: verify if the dataset indices are correct
             _sizes = 0
             dataset_indices = dict()
             for name, tensor in input_tensors.items():
@@ -309,7 +311,9 @@ class MultiChannelSplitsRegionBasedPooling(RegionBasedPoolingBase):
         if self._cmmn_layer is None:
             raise RuntimeError("Cannot fit monge filters of the CMMN layers, when none is used")
 
-        # todo: update channel splits of CMMN?
+        # Update channel splits to what it is in this layer
+        self._cmmn_layer.update_channel_splits(self._channel_splits)
+
         # Fit monge filters
         self._cmmn_layer.fit_monge_filters(data, channel_systems=channel_systems)
 
@@ -502,6 +506,7 @@ class RegionBasedPooling(nn.Module):
         ----------
         channel_system : cdl_eeg.data.datasets.dataset_base.ChannelSystem
             The channel system to fit
+
         Returns
         -------
         None

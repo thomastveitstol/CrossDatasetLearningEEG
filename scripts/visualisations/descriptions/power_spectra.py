@@ -3,7 +3,6 @@ Script for plotting the PSDs for all datasets
 """
 from matplotlib import pyplot
 
-from cdl_eeg.data.datasets.cau_eeg_dataset import CAUEEG
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
@@ -13,12 +12,11 @@ def main():
     average_reference = True
     num_subjects_per_dataset = 5
 
-    datasets = (HatlestadHall(), YulinWang(), Miltiadous(), CAUEEG())
+    datasets = (HatlestadHall(), YulinWang(), Miltiadous())
     kwargs = {"HatlestadHall": {"derivatives": True, "session": "t1"},
               "YulinWang": {"derivatives": True, "visit": 1, "recording": "EC"},
               "Miltiadous": {},
-              "Rockhill": {"on": True, "excluded_channels": "EXG"},
-              "CAUEEG": {"excluded_channels": ["Photic", "EKG"]}}
+              "Rockhill": {"on": True, "excluded_channels": "EXG"}}
 
     for dataset in datasets:
         dataset_name = type(dataset).__name__

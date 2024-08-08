@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 import yaml  # type: ignore[import]
 
 from cdl_eeg.data.paths import get_numpy_data_storage_path
+from cdl_eeg.models.domain_adaptation.domain_discriminators.getter import get_domain_discriminator_type
 from cdl_eeg.models.mts_modules.getter import get_mts_module_type
 from cdl_eeg.models.region_based_pooling.hyperparameter_sampling import sample_rbp_designs
 from cdl_eeg.models.random_search.sampling_distributions import sample_hyperparameter
@@ -59,74 +60,15 @@ def generate_config_file(config):
         del dataset_hyperparameters[compatible_dataset]["target_availability"]
 
     # -----------------
-    # Sample target scaler
+    # Select data pre-processing version
     # -----------------
-    scaler_hyperparameters = dict()
-    for scaler, domain in config["Targets"][config["selected_target"]]["scaler"].items():
-        if isinstance(domain, dict) and "dist" in domain:
-            scaler_hyperparameters[scaler] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
-        else:
-            scaler_hyperparameters[scaler] = domain
+    # Select from the desired folder
+    preprocessed_folder = random.choice(config["PreprocessedFolder"])
 
-    # -----------------
-    # Sample training hyperparameters
-    # -----------------
-    train_hyperparameters = dict()
-    for param, domain in config["Training"].items():
-        if isinstance(domain, dict) and "dist" in domain:
-            train_hyperparameters[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
-        else:
-            train_hyperparameters[param] = domain
-    train_hyperparameters["metrics"] = config["Targets"][config["selected_target"]]["metrics"]
-    _activation_function = config["Targets"][config["selected_target"]]["prediction_activation_function"]
-    train_hyperparameters["prediction_activation_function"] = _activation_function
-    train_hyperparameters["main_metric"] = random.choice(config["Targets"][config["selected_target"]]["main_metric"])
-
-    # -----------------
-    # Sample loss
-    # -----------------
-    loss_config = config["Targets"][config["selected_target"]]["Loss"]
-    loss_hyperparameters = dict()
-
-    loss_hyperparameters["loss"] = sample_hyperparameter(loss_config["loss"]["dist"], **loss_config["loss"]["kwargs"])
-    loss_hyperparameters["weighter"] = sample_hyperparameter(loss_config["weighter"]["dist"],
-                                                             **loss_config["weighter"]["kwargs"])
-    loss_hyperparameters["loss_kwargs"] = loss_config["loss_kwargs"]
-    loss_hyperparameters["loss_kwargs"]["reduction"] = "mean" if loss_hyperparameters["weighter"] is None else "none"
-
-    weighter_kwargs = dict()  # todo: hard-coded :(
-    for param, domain in loss_config["weighter_kwargs"].items():
-        if isinstance(domain, dict) and "dist" in domain:
-            weighter_kwargs[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
-        else:
-            weighter_kwargs[param] = domain
-
-    # Add weighter kwargs to loss
-    loss_hyperparameters["weighter_kwargs"] = weighter_kwargs
-
-    # Add loss to training section in config file
-    train_hyperparameters["Loss"] = loss_hyperparameters
-
-    # -----------------
-    # Sample method for handling a varied
-    # number of channels
-    # -----------------
-    spatial_dimension_config = random.choice(config["Varied Numbers of Channels"])
-    spatial_dimension_method = spatial_dimension_config["name"]
-    if spatial_dimension_method == "RegionBasedPooling":
-        varied_numbers_of_channels = {"name": spatial_dimension_method,
-                                      "kwargs": sample_rbp_designs(spatial_dimension_config["kwargs"])}
-        # config["Varied Numbers of Channels"][method]
-    elif spatial_dimension_config["name"] == "Interpolation":
-        # Todo: Not very elegant to have this piece of code here...
-        varied_numbers_of_channels = {
-            "name": spatial_dimension_method,
-            "kwargs": {"method": random.choice(spatial_dimension_config["kwargs"]["method"]),
-                       "main_channel_system": random.choice(spatial_dimension_config["kwargs"]["main_channel_system"])},
-        }
-    else:
-        raise ValueError(f"Expected method for handling varied numbers of EEG channels to be either region based "
-                         f"pooling or interpolation, but found {spatial_dimension_method}")
+    # Make selection
+    _available_versions = os.listdir(os.path.join(get_numpy_data_storage_path(), preprocessed_folder))
+    available_versions = tuple(version for version in _available_versions if version[:5] == "data_")
+    selected_version = random.choice(available_versions)
 
     # -----------------
     # Sample DL architecture and its hyperparameters
@@ -142,59 +84,6 @@ def generate_config_file(config):
 
     # Combine architecture name and hyperparameters in a dict
     dl_model = {"model": mts_module_name, "kwargs": mts_module_hyperparameters}
-
-    # Maybe add CMMN and normalisation to DL architecture
-    if spatial_dimension_method == "Interpolation":
-        dl_model["normalise"] = random.choice(config["NormaliseInputs"])
-
-        dl_model["CMMN"] = {"use_cmmn_layer": random.choice(config["CMMN"]["use_cmmn_layer"]),
-                            "kwargs": {}}
-        for param, domain in config["CMMN"]["kwargs"].items():
-            if isinstance(domain, dict) and "dist" in domain:
-                dl_model["CMMN"]["kwargs"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
-            else:
-                dl_model["CMMN"]["kwargs"][param] = domain
-
-    # -----------------
-    # Domain discriminator
-    # -----------------
-    # Choose architecture
-    discriminator_name = random.choice(tuple(config["DomainDiscriminator"]["discriminators"].keys()))
-
-    discriminator: Optional[Dict[str, Any]]
-    if discriminator_name != "NoDiscriminator" and config["cv_method"] != "inverted":
-        # Architecture hyperparameters
-        discriminator_architecture = {"name": discriminator_name, "kwargs": dict()}
-        for param, domain in config["DomainDiscriminator"]["discriminators"][discriminator_name].items():
-            if isinstance(domain, dict) and "dist" in domain:
-                discriminator_architecture["kwargs"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
-            else:
-                discriminator_architecture["kwargs"][param] = domain
-
-        # Training hyperparameters
-        discriminator = {"discriminator": discriminator_architecture, "training": dict()}
-        for param, domain in config["DomainDiscriminator"]["training"].items():
-            if isinstance(domain, dict) and "dist" in domain:
-                discriminator["training"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
-            else:
-                discriminator["training"][param] = domain
-    else:
-        discriminator = None
-
-    # Add method to train hyperparameters
-    train_hyperparameters["method"] = "domain_discriminator_training" if discriminator is not None \
-        else "downstream_training"
-
-    # -----------------
-    # Select data pre-processing version
-    # -----------------
-    # Select from the desired folder
-    preprocessed_folder = random.choice(config["PreprocessedFolder"])
-
-    # Make selection
-    _available_versions = os.listdir(os.path.join(get_numpy_data_storage_path(), preprocessed_folder))
-    available_versions = tuple(version for version in _available_versions if version[:5] == "data_")
-    selected_version = random.choice(available_versions)
 
     # -----------------
     # Adjust the sampling frequency if required by the DL architecture
@@ -243,6 +132,141 @@ def generate_config_file(config):
     datasets = tuple(config["Datasets"])  # Maybe this is not needed, but it feels safe
     for dataset in datasets:
         config["Datasets"][dataset]["pre_processed_version"] = os.path.join(preprocessed_folder, selected_version)
+
+    # -----------------
+    # Sample CMMN kernel size
+    # -----------------
+    cmmn_kernel_size = int(pre_processed_config["general"]["resample"] *
+                           sample_hyperparameter(config["CMMN"]["kwargs"]["kernel_size_sfreq_multiple"]["dist"],
+                                                 **config["CMMN"]["kwargs"]["kernel_size_sfreq_multiple"]["kwargs"]))
+
+    # Interpolation model
+    config["CMMN"]["kwargs"]["kernel_size"] = cmmn_kernel_size
+    del config["CMMN"]["kwargs"]["kernel_size_sfreq_multiple"]
+
+    # RBP model
+    config["RegionBasedPooling"]["RBPDesign"]["cmmn_kwargs"]["kernel_size"] = cmmn_kernel_size
+    del config["RegionBasedPooling"]["RBPDesign"]["cmmn_kwargs"]["kernel_size_sfreq_multiple"]
+
+    # -----------------
+    # Sample target scaler
+    # -----------------
+    scaler_hyperparameters = dict()
+    for scaler, domain in config["Targets"][config["selected_target"]]["scaler"].items():
+        if isinstance(domain, dict) and "dist" in domain:
+            scaler_hyperparameters[scaler] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
+        else:
+            scaler_hyperparameters[scaler] = domain
+
+    # -----------------
+    # Sample training hyperparameters
+    # -----------------
+    train_hyperparameters = dict()
+    for param, domain in config["Training"].items():
+        if isinstance(domain, dict) and "dist" in domain:
+            train_hyperparameters[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
+        else:
+            train_hyperparameters[param] = domain
+    train_hyperparameters["metrics"] = config["Targets"][config["selected_target"]]["metrics"]
+    _activation_function = config["Targets"][config["selected_target"]]["prediction_activation_function"]
+    train_hyperparameters["prediction_activation_function"] = _activation_function
+    train_hyperparameters["main_metric"] = random.choice(config["Targets"][config["selected_target"]]["main_metric"])
+
+    # -----------------
+    # Sample loss
+    # -----------------
+    loss_config = config["Targets"][config["selected_target"]]["Loss"]
+    loss_hyperparameters = dict()
+
+    loss_hyperparameters["loss"] = sample_hyperparameter(loss_config["loss"]["dist"], **loss_config["loss"]["kwargs"])
+    loss_hyperparameters["weighter"] = sample_hyperparameter(loss_config["weighter"]["dist"],
+                                                             **loss_config["weighter"]["kwargs"])
+    loss_hyperparameters["loss_kwargs"] = loss_config["loss_kwargs"]
+    loss_hyperparameters["loss_kwargs"]["reduction"] = "mean" if loss_hyperparameters["weighter"] is None else "none"
+
+    weighter_kwargs = dict()
+    for param, domain in loss_config["weighter_kwargs"].items():
+        if isinstance(domain, dict) and "dist" in domain:
+            weighter_kwargs[param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
+        else:
+            weighter_kwargs[param] = domain
+
+    # Add weighter kwargs to loss
+    loss_hyperparameters["weighter_kwargs"] = weighter_kwargs
+
+    # Add loss to training section in config file
+    train_hyperparameters["Loss"] = loss_hyperparameters
+
+    # -----------------
+    # Sample method for handling a varied
+    # number of channels
+    # -----------------
+    spatial_dimension_config = random.choice(config["Varied Numbers of Channels"])
+    spatial_dimension_method = spatial_dimension_config["name"]
+    if spatial_dimension_method == "RegionBasedPooling":
+        varied_numbers_of_channels = {"name": spatial_dimension_method,
+                                      "kwargs": sample_rbp_designs(spatial_dimension_config["kwargs"])}
+        # config["Varied Numbers of Channels"][method]
+    elif spatial_dimension_config["name"] == "Interpolation":
+        # Todo: Not very elegant to have this piece of code here...
+        varied_numbers_of_channels = {
+            "name": spatial_dimension_method,
+            "kwargs": {"method": random.choice(spatial_dimension_config["kwargs"]["method"]),
+                       "main_channel_system": random.choice(spatial_dimension_config["kwargs"]["main_channel_system"])},
+        }
+    else:
+        raise ValueError(f"Expected method for handling varied numbers of EEG channels to be either region based "
+                         f"pooling or interpolation, but found {spatial_dimension_method}")
+
+    # -----------------
+    # Maybe add CMMN and normalisation to DL architecture
+    # -----------------
+    if spatial_dimension_method == "Interpolation":
+        dl_model["normalise"] = random.choice(config["NormaliseInputs"])
+
+        dl_model["CMMN"] = {"use_cmmn_layer": random.choice(config["CMMN"]["use_cmmn_layer"]),
+                            "kwargs": {}}
+        for param, domain in config["CMMN"]["kwargs"].items():
+            if isinstance(domain, dict) and "dist" in domain:
+                dl_model["CMMN"]["kwargs"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
+            else:
+                dl_model["CMMN"]["kwargs"][param] = domain
+
+    # -----------------
+    # Domain discriminator
+    # -----------------
+    # Choose architecture
+    discriminator_name = random.choice(tuple(config["DomainDiscriminator"]["discriminators"].keys()))
+
+    discriminator: Optional[Dict[str, Any]]
+    if discriminator_name != "NoDiscriminator" and config["cv_method"] != "inverted":
+        # Architecture hyperparameters
+        dd_structure = random.choice(
+            tuple(config["DomainDiscriminator"]["discriminators"][discriminator_name].keys())
+        )
+        discriminator_architecture = {
+            "name": discriminator_name,
+            "kwargs": get_domain_discriminator_type(discriminator_name).sample_hyperparameters(
+                dd_structure, config=config["DomainDiscriminator"]["discriminators"][discriminator_name][dd_structure],
+                in_features=get_mts_module_type(mts_module_name).get_latent_features_dim(in_channels=19,
+                                                                                         **dl_model["kwargs"])
+            )}  # this will only work if the number of features is independent of number of input channels, otherwise an
+        # error message will be raised during the experiment. Doctests have shown that number of input channels does
+        # not affect latent feature dimension
+
+        # Training hyperparameters
+        discriminator = {"discriminator": discriminator_architecture, "training": dict()}
+        for param, domain in config["DomainDiscriminator"]["training"].items():
+            if isinstance(domain, dict) and "dist" in domain:
+                discriminator["training"][param] = sample_hyperparameter(domain["dist"], **domain["kwargs"])
+            else:
+                discriminator["training"][param] = domain
+    else:
+        discriminator = None
+
+    # Add method to train hyperparameters
+    train_hyperparameters["method"] = "domain_discriminator_training" if discriminator is not None \
+        else "downstream_training"
 
     # -----------------
     # Create final dictionaries

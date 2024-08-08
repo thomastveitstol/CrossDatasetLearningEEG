@@ -10,6 +10,19 @@ from cdl_eeg.data.datasets.utils import sex_to_int
 
 class Miltiadous(EEGDatasetBase):
     """
+    Dataset from 'A dataset of EEG recordings from: Alzheimer's disease, Frontotemporal dementia and Healthy subjects'
+
+    Paper:
+        Miltiadous A, Tzimourta KD, Afrantou T, Ioannidis P, Grigoriadis N, Tsalikakis DG, Angelidis P, Tsipouras MG,
+        Glavas E, Giannakeas N, et al. A Dataset of Scalp EEG Recordings of Alzheimer’s Disease, Frontotemporal Dementia
+        and Healthy Subjects from Routine EEG. Data. 2023; 8(6):95. https://doi.org/10.3390/data8060095
+
+    OpenNeuro:
+        Andreas Miltiadous and Katerina D. Tzimourta and Theodora Afrantou and Panagiotis Ioannidis and Nikolaos
+        Grigoriadis and Dimitrios G. Tsalikakis and Pantelis Angelidis and Markos G. Tsipouras and Evripidis Glavas and
+        Nikolaos Giannakeas and Alexandros T. Tzallas (2024). A dataset of EEG recordings from: Alzheimer's disease,
+        Frontotemporal dementia and Healthy subjects. OpenNeuro. [Dataset] doi: doi:10.18112/openneuro.ds004504.v1.0.7
+
     Examples:
     ----------
     >>> Miltiadous().name
@@ -94,76 +107,4 @@ class Miltiadous(EEGDatasetBase):
         return {ch_name: tuple(pos) for ch_name, pos in channel_positions.items() if ch_name in self._channel_names}
 
     def channel_name_to_index(self):
-        # todo: make tests based on .tsv files, as I only checked a single subject for channel names and ordering
         return {ch_name: i for i, ch_name in enumerate(self._channel_names)}
-
-
-# -------------
-# Functions
-#
-# I stopped with the implementation as I don't think I want to use it
-# -------------
-def _merge_time_segments(_):
-    raise NotImplementedError
-
-
-def _get_longest_segment(onsets, durations, additional_duration, full_duration):
-    """
-    Function for getting the t_min and t_max for the longest segment without boundary events
-
-    Parameters
-    ----------
-    onsets : numpy.ndarray
-        In seconds
-    durations : numpy.ndarray
-        In seconds
-    additional_duration : float
-        Add longer time duration in seconds to all boundary events
-
-    Returns
-    -------
-    tuple[float, float]
-        t_max and t_min
-
-    Examples
-    --------
-    >>> my_onsets = [6, 21, 40, 47]
-    >>> my_durations = [4, 6, 2, 8]
-    >>> _get_longest_segment(onsets=numpy.array(my_onsets), durations=numpy.array(my_durations), additional_duration=3,
-    ...                      full_duration=60)
-    """
-    # -------------
-    # Input checks
-    # -------------
-    if onsets.ndim != 1:
-        raise ValueError(f"Expected onsets to be 1D array, but found {onsets.ndim}D")
-    if not numpy.all(onsets[:-1] < onsets[1:]):
-        raise ValueError(f"Expected onsets to be sorted, but found {onsets}")
-    if durations.ndim != 1:
-        raise ValueError(f"Expected durations to be 1D array, but found {durations.ndim}D")
-
-    # -------------
-    # Find longest time segment
-    # -------------
-    # If no boundary events, all data can be used
-    if onsets.shape[0] == 0:
-        return 0, full_duration
-
-    # Create time segments of boundary events
-    illegal_time_segments = [(onset, min(onset + dur + additional_duration, full_duration)) for onset, dur
-                             in zip(onsets, durations)]
-
-    # This does not work, must merge illegal time segments here if proceeding with this...
-
-    # Create legal time segments
-    legal_time_segments = []
-    curr_start = 0
-    for illegal in illegal_time_segments:
-        legal_time_segments.append((curr_start, illegal[0]))
-        curr_start = illegal[1]
-
-    # Maybe add the edge
-    if illegal_time_segments[-1][1] < full_duration:
-        legal_time_segments.append((illegal_time_segments[-1][1], full_duration))
-
-    return legal_time_segments, illegal_time_segments

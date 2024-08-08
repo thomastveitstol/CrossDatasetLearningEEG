@@ -22,7 +22,6 @@ src/cdl_eeg/data/subject_split.py
 src/cdl_eeg/data/data_generators/__init__.py
 src/cdl_eeg/data/data_generators/data_generator.py
 src/cdl_eeg/data/datasets/__init__.py
-src/cdl_eeg/data/datasets/cau_eeg_dataset.py
 src/cdl_eeg/data/datasets/dataset_base.py
 src/cdl_eeg/data/datasets/getter.py
 src/cdl_eeg/data/datasets/hatlestad_hall_dataset.py
@@ -73,9 +72,3 @@ src/cdl_eeg/models/region_based_pooling/pooling_modules/head_region.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/mean.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/pooling_base.py
 src/cdl_eeg/models/region_based_pooling/pooling_modules/univariate_rocket.py
-src/cdl_eeg/models/transformations/__init__.py
-src/cdl_eeg/models/transformations/amplitude_envelope.py
-src/cdl_eeg/models/transformations/base.py
-src/cdl_eeg/models/transformations/frequency_slowing.py
-src/cdl_eeg/models/transformations/phase_consistency.py
-src/cdl_eeg/models/transformations/utils.py

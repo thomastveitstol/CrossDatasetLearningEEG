@@ -136,7 +136,7 @@ class CustomWeightedLoss:
 
     Examples
     --------
-    >>> from cdl_eeg.data.data_split import Subject
+    >>> from cdl_eeg.data.subject_split import Subject
     >>> my_dataset_sizes = {"Mercedes": 170000, "RedBull": 17848, "Ferrari": 5000}
     >>> my_weight_power = 0.7
     >>> my_criterion = CustomWeightedLoss("L1Loss", {"reduction": "none"}, "SamplePowerWeighter",

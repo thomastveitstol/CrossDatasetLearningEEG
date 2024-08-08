@@ -2,7 +2,8 @@
 All ROCKET-based pooling modules are implemented here.
 
 Original paper:
-https://link.springer.com/article/10.1007/s10618-020-00701-z
+    Dempster, A., Petitjean, F. & Webb, G.I. ROCKET: exceptionally fast and accurate time series classification using
+    random convolutional kernels. Data Min Knowl Disc 34, 1454–1495 (2020). https://doi.org/10.1007/s10618-020-00701-z
 
 This code is likely to have overlap with a former implementation of mine (Thomas Tveitstøl):
 https://github.com/thomastveitstol/RegionBasedPoolingEEG/
@@ -192,8 +193,8 @@ class MultiCSSharedRocket(MultiMontageSplitsPoolingBase):
     # -------------
     @property
     def num_channel_splits(self):
-        """Get the number of channel/region splits the instance is operating on"""
-        # todo: channel split or region splits? RBP paper says channel split, but I kinda regret it...
+        """Get the number of montage splits the instance is operating on. Sorry about the name 'channel splits', it is
+        old terminology (changed it to montage split after review of the RBP paper)"""
         return len(self._fc_modules)
 
 
@@ -283,7 +284,6 @@ class RocketConv1d(nn.Module):
 
         Examples
         --------
-        # todo: Test if changing one channel affects the output of the others (should not be the case)
         >>> my_model = RocketConv1d(num_kernels=321, max_receptive_field=123)
         >>> my_model(torch.rand(size=(10, 64, 500))).size()
         torch.Size([10, 64, 642])
@@ -294,6 +294,20 @@ class RocketConv1d(nn.Module):
 
         >>> my_input = torch.rand(size=(10, 64, 500))
         >>> torch.equal(my_model(my_input), torch.squeeze(my_model(torch.unsqueeze(my_input, dim=1)), dim=1))
+        True
+
+        Changing one channel does not affect the output of the others
+
+        >>> my_input_1 = torch.rand(size=(10, 64, 500))
+        >>> my_input_2 = torch.clone(my_input_1)
+        >>> my_input_2[:, 7] *= 11
+        >>> my_output_1 = my_model(my_input_1)
+        >>> my_output_2 = my_model(my_input_2)
+        >>> torch.equal(my_output_1[:, 7], my_output_2[:, 7])
+        False
+        >>> torch.equal(my_output_1[:, :7], my_output_2[:, :7])
+        True
+        >>> torch.equal(my_output_1[:, 8:], my_output_2[:, 8:])
         True
         """
         # Initialise tensor. The features will be stored to this tensor

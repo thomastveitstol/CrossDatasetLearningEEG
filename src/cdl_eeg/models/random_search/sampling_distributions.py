@@ -33,6 +33,12 @@ class _SampleDistribution:
 
     @classmethod
     def sample(cls, distribution, **kwargs):
+        # Input check
+        if distribution not in cls.get_available_distribution():
+            raise ValueError(f"The distribution {distribution} was not recognised. The available ones are: "
+                             f"{cls.get_available_distribution()}")
+
+        # Sample from the provided distribution
         return getattr(cls, distribution)(**kwargs)
 
     @classmethod

@@ -1,7 +1,10 @@
 """
 Models provided by Braindecode are implemented here
 
-todo: cite
+Braindecode citation:
+    Schirrmeister, R.T., Springenberg, J.T., Fiederer, L.D.J., Glasstetter, M., Eggensperger, K., Tangermann, M.,
+    Hutter, F., Burgard, W. and Ball, T. (2017), Deep learning with convolutional neural networks for EEG decoding and
+    visualization. Hum. Brain Mapp., 38: 5391-5420. https://doi.org/10.1002/hbm.23730
 """
 import torch
 from braindecode.models import EEGNetv4, EEGResNet, ShallowFBCSPNet, Deep4Net
@@ -12,14 +15,20 @@ from cdl_eeg.models.random_search.sampling_distributions import sample_hyperpara
 
 class EEGNetv4MTS(MTSModuleBase):
     """
-    EEGNetv4
+    The EEGNetv4 architecture
 
-    Lawhern, V. J., Solon, A. J., Waytowich, N. R., Gordon, S. M., Hung, C. P., & Lance, B. J. (2018). EEGNet: A Compact
-    Convolutional Network for EEG-based Brain-Computer Interfaces. arXiv preprint arXiv:1611.08024.
+    Paper:
+        Lawhern, V. J., Solon, A. J., Waytowich, N. R., Gordon, S. M., Hung, C. P., & Lance, B. J. (2018). EEGNet: A
+        Compact Convolutional Network for EEG-based Brain-Computer Interfaces. arXiv preprint arXiv:1611.08024.
 
     Examples
     --------
     >>> _ = EEGNetv4MTS(in_channels=4, num_classes=8, num_time_steps=300)
+
+    Latent feature dimension does not depend on number of input channels
+
+    >>> EEGNetv4MTS.get_latent_features_dim(19, 3, 1000) == EEGNetv4MTS.get_latent_features_dim(64, 3, 1000)
+    True
 
     Latent features
 
@@ -202,6 +211,11 @@ class EEGResNetMTS(MTSModuleBase):
     Examples
     --------
     >>> _ = EEGResNetMTS(in_channels=4, num_classes=8, num_time_steps=300)
+
+    Latent feature dimension does not depend on number of input channels
+
+    >>> EEGResNetMTS.get_latent_features_dim(19, 3, 1000) == EEGResNetMTS.get_latent_features_dim(64, 3, 1000)
+    True
 
     Latent features dimension
 
@@ -439,13 +453,21 @@ class EEGResNetMTS(MTSModuleBase):
 
 class ShallowFBCSPNetMTS(MTSModuleBase):
     """
-    ShallowFBCSPNetMTS
+    The ShallowFBCSPNet architecture
 
-    This was used in Engemann et al. (2022).
+    Paper:
+        Schirrmeister, R.T., Springenberg, J.T., Fiederer, L.D.J., Glasstetter, M., Eggensperger, K., Tangermann, M.,
+        Hutter, F., Burgard, W. and Ball, T. (2017), Deep learning with convolutional neural networks for EEG decoding
+        and visualization. Hum. Brain Mapp., 38: 5391-5420. https://doi.org/10.1002/hbm.23730
 
     Examples
     --------
     >>> _ = ShallowFBCSPNetMTS(4, 7, 200)
+
+    Latent feature dimension does not depend on number of input channels
+
+    >>> ShallowFBCSPNetMTS.get_latent_features_dim(19, 3, 100) == ShallowFBCSPNetMTS.get_latent_features_dim(64, 3, 100)
+    True
 
     Latent features
 
@@ -644,15 +666,23 @@ class ShallowFBCSPNetMTS(MTSModuleBase):
 
 class Deep4NetMTS(MTSModuleBase):
     """
-    Deep4Net
+    The Deep4Net architecture
 
-    This was used in Engemann et al. (2022).
+    Paper:
+        Schirrmeister, R.T., Springenberg, J.T., Fiederer, L.D.J., Glasstetter, M., Eggensperger, K., Tangermann, M.,
+        Hutter, F., Burgard, W. and Ball, T. (2017), Deep learning with convolutional neural networks for EEG decoding
+        and visualization. Hum. Brain Mapp., 38: 5391-5420. https://doi.org/10.1002/hbm.23730
 
     Examples
     --------
     >>> _ = Deep4NetMTS(19, 3, 1000)
 
     Since padding on the conv layers was added, 160 time steps are allowed (the minimum is 89)
+
+    Latent feature dimension does not depend on number of input channels
+
+    >>> Deep4NetMTS.get_latent_features_dim(19, 3, 1000) == Deep4NetMTS.get_latent_features_dim(64, 3, 1000)
+    True
 
     >>> _ = Deep4NetMTS(19, 3, 160)
     >>> _ = Deep4NetMTS(19, 3, 90)

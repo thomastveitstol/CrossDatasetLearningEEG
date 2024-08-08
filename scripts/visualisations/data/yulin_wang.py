@@ -1,5 +1,5 @@
 """
-Script for plotting the preprocessed version of the Yulin Wang dataset, using tools from MNE.
+Script for plotting the data from of the Yulin Wang dataset, using tools from MNE.
 """
 from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
 from cdl_eeg.data.preprocessing import save_preprocessed_epochs

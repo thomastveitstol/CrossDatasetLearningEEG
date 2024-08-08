@@ -9,13 +9,11 @@ from cdl_eeg.data.subject_split import Subject
 
 class RBPDataGenerator(Dataset):  # type: ignore[type-arg]
     """
-    Pytorch dataset for downstream training of RBP models of type MainRBPModel
-
-
+    Pytorch dataset class for downstream training and testing of RBP models of type MainRBPModel
     """
 
     # Remember to remove the yielded -1 tensors!
-    strip_outputs = True
+    strip_outputs = True  # I don't think this is actually used anywhere?
 
     # --------------
     # Magic/dunder methods

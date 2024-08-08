@@ -10,6 +10,17 @@ from cdl_eeg.data.datasets.utils import sex_to_int
 
 class HatlestadHall(EEGDatasetBase):
     """
+    The SRM dataset. I named it after the first author of the paper quite early in the programming, and I don't want to
+    take the risk in changing everywhere
+
+    Paper:
+        Hatlestad-Hall, C., Rygvold, T. W., & Andersson, S. (2022). BIDS-structured resting-state electroencephalography
+        (EEG) data extracted from an experimental paradigm. Data in Brief, 45, 108647.
+        https://doi.org/10.1016/j.dib.2022.108647
+    OpenNeuro:
+        Christoffer Hatlestad-Hall and Trine Waage Rygvold and Stein Andersson (2022). SRM Resting-state EEG. OpenNeuro.
+        [Dataset] doi: doi:10.18112/openneuro.ds003775.v1.2.1
+
     Examples:
     ----------
     >>> HatlestadHall().name
@@ -22,11 +33,11 @@ class HatlestadHall(EEGDatasetBase):
     64
     >>> HatlestadHall().channel_name_to_index()  # doctest: +NORMALIZE_WHITESPACE
     {'Fp1': 0, 'AF7': 1, 'AF3': 2, 'F1': 3, 'F3': 4, 'F5': 5, 'F7': 6, 'FT7': 7, 'FC5': 8, 'FC3': 9, 'FC1': 10,
-    'C1': 11, 'C3': 12, 'C5': 13, 'T7': 14, 'TP7': 15, 'CP5': 16, 'CP3': 17, 'CP1': 18, 'P1': 19, 'P3': 20, 'P5': 21,
-    'P7': 22, 'P9': 23, 'PO7': 24, 'PO3': 25, 'O1': 26, 'Iz': 27, 'Oz': 28, 'POz': 29, 'Pz': 30, 'CPz': 31, 'Fpz': 32,
-    'Fp2': 33, 'AF8': 34, 'AF4': 35, 'AFz': 36, 'Fz': 37, 'F2': 38, 'F4': 39, 'F6': 40, 'F8': 41, 'FT8': 42, 'FC6': 43,
-    'FC4': 44, 'FC2': 45, 'FCz': 46, 'Cz': 47, 'C2': 48, 'C4': 49, 'C6': 50, 'T8': 51, 'TP8': 52, 'CP6': 53, 'CP4': 54,
-    'CP2': 55, 'P2': 56, 'P4': 57, 'P6': 58, 'P8': 59, 'P10': 60, 'PO8': 61, 'PO4': 62, 'O2': 63}
+     'C1': 11, 'C3': 12, 'C5': 13, 'T7': 14, 'TP7': 15, 'CP5': 16, 'CP3': 17, 'CP1': 18, 'P1': 19, 'P3': 20, 'P5': 21,
+     'P7': 22, 'P9': 23, 'PO7': 24, 'PO3': 25, 'O1': 26, 'Iz': 27, 'Oz': 28, 'POz': 29, 'Pz': 30, 'CPz': 31, 'Fpz': 32,
+     'Fp2': 33, 'AF8': 34, 'AF4': 35, 'AFz': 36, 'Fz': 37, 'F2': 38, 'F4': 39, 'F6': 40, 'F8': 41, 'FT8': 42, 'FC6': 43,
+     'FC4': 44, 'FC2': 45, 'FCz': 46, 'Cz': 47, 'C2': 48, 'C4': 49, 'C6': 50, 'T8': 51, 'TP8': 52, 'CP6': 53, 'CP4': 54,
+     'CP2': 55, 'P2': 56, 'P4': 57, 'P6': 58, 'P8': 59, 'P10': 60, 'PO8': 61, 'PO4': 62, 'O2': 63}
     >>> set(type(idx) for idx in HatlestadHall().channel_name_to_index().values())  # type: ignore[attr-defined]
     {<class 'int'>}
     >>> HatlestadHall().channel_system.montage_name
@@ -35,7 +46,7 @@ class HatlestadHall(EEGDatasetBase):
 
     __slots__ = ()
 
-    _montage_name = "standard_1020"  # todo: it might be biosemi
+    _montage_name = "standard_1020"
 
     # ----------------
     # Loading methods
@@ -57,7 +68,6 @@ class HatlestadHall(EEGDatasetBase):
         epochs = self.load_single_cleaned_epochs_object(subject_id, session=kwargs["session"])
 
         # Concatenate in time
-        # todo: check with Christoffer if there may be discontinuities
         data = epochs.get_data()
         num_epochs, channels, timesteps = data.shape
         data = numpy.reshape(numpy.transpose(data, (1, 0, 2)), (channels, num_epochs * timesteps))
@@ -156,28 +166,9 @@ class HatlestadHall(EEGDatasetBase):
     # ----------------
     # Channel system
     # ----------------
-    def _deprecated_get_template_electrode_positions(self):
-        # Create path
-        path = os.path.join(self.get_mne_path(), "code", "bidsify-srm-restingstate", "chanlocs",
-                            "BioSemi_SRM_template_64_locs.xyz")
-
-        # Make pandas dataframe
-        df = pandas.read_table(path, header=None, delim_whitespace=True).rename(columns={1: "x", 2: "y", 3: "z",
-                                                                                         4: "ch_name"})
-
-        # Extract the needed values
-        x_vals = df["x"].to_numpy()
-        y_vals = df["y"].to_numpy()
-        z_vals = df["z"].to_numpy()
-
-        ch_names = tuple(df["ch_name"])
-
-        # Convert to dict and return
-        return {ch_name: (x, y, z) for ch_name, x, y, z in zip(ch_names, x_vals, y_vals, z_vals)}
-
     def _get_template_electrode_positions(self):
         # Following the international 10-20 system according to the documentation at open neuro. Thus using MNE default
-        montage = mne.channels.make_standard_montage(self._montage_name)  # todo: is it 1020 or biosemi??
+        montage = mne.channels.make_standard_montage(self._montage_name)
         channel_positions = montage.get_positions()["ch_pos"]
 
         # ---------------

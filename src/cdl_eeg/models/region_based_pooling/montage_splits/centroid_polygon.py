@@ -411,7 +411,7 @@ class CentroidPolygons(MontageSplitBase):
         # -----------------------
         # Get or define the polygon graph of the entire region, before splitting
         if _polygon == "auto":
-            # Design a box which usually capture the MNE default channel systems, but todo: verify this
+            # Design a box which usually capture the MNE default channel systems
             _x_min = -0.17
             _x_max = 0.17
             _y_min = -0.17
@@ -857,7 +857,8 @@ class RegretRecursion(Exception):
 
 
 if __name__ == "__main__":
-    # todo: sometimes, it looks like it doesn't partition properly (e.g. splits into 5/6/7 instead of 6/6/6)
+    # Just a note to self: with some variations of hyperparameters it looks like the splitting is wrong. This, however,
+    # occurred because T4 and T8 has the same position. So no worries
     import random
 
     import mne

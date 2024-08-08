@@ -10,7 +10,6 @@ from mne.time_frequency import Spectrum
 from scipy import integrate
 from sklearn.linear_model import LinearRegression
 
-from cdl_eeg.data.datasets.cau_eeg_dataset import CAUEEG
 from cdl_eeg.data.datasets.hatlestad_hall_dataset import HatlestadHall
 from cdl_eeg.data.datasets.mpi_lemon import MPILemon
 
@@ -60,7 +59,6 @@ def main():
     kwargs = {"HatlestadHall": {"derivatives": True, "session": "t1"},
               "YulinWang": {"derivatives": True, "visit": 1, "recording": "EC"},
               "Miltiadous": {},
-              "CAUEEG": {"excluded_channels": ["Photic", "EKG"]},
               "MPILemon": {"interpolation_method": "MNE"}}
 
     # Some printing an

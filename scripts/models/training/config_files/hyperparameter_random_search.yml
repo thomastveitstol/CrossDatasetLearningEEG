@@ -1,5 +1,5 @@
 run_baseline: false
-cv_method: [ inverted, normal ]
+cv_method: [ inverted, normal ]  # this will be sampled randomly
 selected_target: &selected_target age
 
 Shared Dataset Details:
@@ -9,12 +9,12 @@ Shared Dataset Details:
 SubjectSplit:
   name: SplitOnDataset
   kwargs:
-    seed: 42  # todo: should we fix the seed?
+    seed: 42
 
-SubGroups:
+SubGroups:  # This just relates to the subgroups we should store metrics of
   verbose: true
   sub_groups:
-    dataset_name:  # todo: don't hardcode like this
+    dataset_name:
       [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain ]
 
 LatentFeatureDistribution:
@@ -51,7 +51,7 @@ Datasets:
 
 Targets:
   age:
-    main_metric: [ mae, mse, pearson_r, spearman_rho, r2_score ]
+    main_metric: [ mae, mse, pearson_r, spearman_rho, r2_score ]  # This is actually not used with current settings
     prediction_activation_function: null
     Loss:
       loss:
@@ -76,33 +76,6 @@ Targets:
         kwargs:
           domain:
             - name: ZNormalisation
-              kwargs: { }
-  sex:
-    main_metric: [ auc ]
-    prediction_activation_function: sigmoid
-    Loss:
-      loss:
-        dist: uniform_discrete
-        kwargs:
-          domain: [ BCEWithLogitsLoss ]
-      loss_kwargs: { }  # reduction parameter will be set to 'none' or 'mean', depending on the sampled loss weighter
-      weighter: # todo: weighter and the kwargs must be sampled together
-        dist: uniform_discrete
-        kwargs:
-          domain: [ null, SamplePowerWeighter ]
-      weighter_kwargs: # Dataset sizes will be added during runtime
-        weight_power:
-          dist: uniform
-          kwargs:
-            a: 0
-            b: 1
-    metrics: classification
-    scaler:
-      target:
-        dist: uniform_discrete
-        kwargs:
-          domain:
-            - name: NoScaler
               kwargs: { }
 
 Training:
@@ -145,11 +118,30 @@ Training:
 # Domain discriminator
 # -----------------
 FCModule: &FCModule
-  hidden_units:
-    dist: uniform_discrete
-    kwargs:
-      # domain: [ [], [32], [64], [32, 32], [64, 64], [64, 32] ]  # todo
-      domain: [ [4], [8], [8, 4], [4, 4], [8, 8] ]
+
+  exponential_decay:
+    depth:
+      dist: uniform_int
+      kwargs:
+        a: 0
+        b: 5
+    first_layer_multiple:
+      dist: uniform
+      kwargs:
+        a: 0.5
+        b: 2
+    exponential_decrease:
+      dist: uniform_discrete
+      kwargs:
+        domain: [2, 3]
+    activation_function:
+      relu: {}
+      elu:
+        alpha:
+          dist: "uniform"
+          kwargs:
+            a: 0.2
+            b: 1.8
 
 DomainDiscriminator:
   discriminators:
@@ -160,7 +152,7 @@ DomainDiscriminator:
       loss: CrossEntropyLoss
       loss_kwargs:
         reduction: mean
-      weighter: null  # todo: add sample-wise weighting of loss function
+      weighter: null
       weighter_kwargs: { }
     metrics: multiclass_classification
     lambda:
@@ -173,23 +165,17 @@ DomainDiscriminator:
 CMMN:
   use_cmmn_layer: [ true, false ]
   kwargs:
-      kernel_size:  # todo: what to use here?
-        dist: uniform_discrete
+      kernel_size_sfreq_multiple:
+        dist: uniform
         kwargs:
-          domain: [ 64, 128, 256, 512, 1024 ]
+          a: 0.5
+          b: 4.0
 
 
 # -----------------
 # Methods for handling a varied number of channels
 # -----------------
-box: &box
-  x_min: -0.17
-  x_max: 0.17
-  y_min: -0.17
-  y_max: 0.17
-
 # Pooling methods
-
 num_kernels: &num_kernels
   dist: log_uniform_int
   kwargs:
@@ -197,7 +183,6 @@ num_kernels: &num_kernels
     a: 2
     b: 3
 
-# todo: consider computing this from the sampling frequency instead
 max_receptive_field: &max_receptive_field
   dist: log_uniform_int
   kwargs:
@@ -231,26 +216,9 @@ PoolingModules: &PoolingModules
   MultiCSSharedRocket: *MultiCSSharedRocket
   MultiMSSharedRocketHeadRegion: *MultiMSSharedRocketHeadRegion
 
-# Montage splits  todo: update the kwargs
-VoronoiSplit:  # &VoronoiSplit
-  channel_systems:
-    dist: uniform_discrete
-    kwargs:
-      domain: [ [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain ] ]
-  min_nodes: 1  # todo: other values must be implemented
-  num_initial_centroids:
-    dist: log_uniform_int
-    kwargs:
-      base: 10
-      a: 2
-      b: 3
-  <<: *box
-
 CentroidPolygons: &CentroidPolygons
-  channel_positions:
-    dist: uniform_discrete
-    kwargs:
-      domain: [ [ Miltiadous ] ]  # todo
+  channel_positions: [ Miltiadous ]  # After experimentation, it works quite bad with multiple systems. So using the
+  # smallest one instead
   min_nodes:
     dist: uniform_int
     kwargs:
@@ -262,7 +230,6 @@ CentroidPolygons: &CentroidPolygons
       domain: [[2, 2, 2, 2, 2, 2, 2], [3, 3, 3, 3, 3, 3, 3, 3], [2, 3, 2, 3, 2, 3, 2, 3, 2], [4, 3, 2, 3, 4, 3, 2, 3, 4]]
 
 MontageSplits: &MontageSplits
-  # VoronoiSplit: *VoronoiSplit
   CentroidPolygons: *CentroidPolygons
 
 RegionBasedPooling: &RegionBasedPooling
@@ -270,8 +237,8 @@ RegionBasedPooling: &RegionBasedPooling
     dist: log_uniform_int
     kwargs:
       base: 2
-      a: 0  # 2^0 = 1
-      b: 4  # 2^5 = 32
+      a: 0
+      b: 4
   normalise_region_representations:
     dist: uniform_discrete
     kwargs:
@@ -280,7 +247,7 @@ RegionBasedPooling: &RegionBasedPooling
     dist: uniform_discrete
     kwargs:
       domain: [ true, false ]
-  num_pooling_modules: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]  # todo
+  num_pooling_modules: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
   use_cmmn_layer : [ true, false ]
   RBPDesign:
     num_designs: 1
@@ -288,10 +255,11 @@ RegionBasedPooling: &RegionBasedPooling
     pooling_module: *PoolingModules
     montage_split: *MontageSplits
     cmmn_kwargs:
-      kernel_size:  # todo: what to use here?
-        dist: uniform_discrete
+      kernel_size_sfreq_multiple:
+        dist: uniform
         kwargs:
-          domain: [ 64, 128, 256, 512, 1024 ]
+          a: 0.5
+          b: 4.0
 
 # Interpolation
 Interpolation: &Interpolation
@@ -307,7 +275,6 @@ Varied Numbers of Channels:
 
 # -----------------
 # Deep learning architectures
-# TODO: I have to check the hyperparameters, of the braindecode models in particular
 # -----------------
 InceptionNetwork: &InceptionNetwork
   general:

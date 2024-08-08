@@ -41,12 +41,6 @@ def multiclass_classification_metric(func):
     return func
 
 
-def distance_metric(func):
-    """Methods labelled with this decorator should compute the distance between two distributions"""
-    setattr(func, "_is_distance_metric", True)
-    return func
-
-
 # ----------------
 # Convenient small classes
 # ----------------
@@ -681,68 +675,6 @@ class Histories:
         return float(performance)
 
 
-class DistanceMetrics:
-    """
-    Class for computing distances between two distributions
-
-    Examples
-    --------
-    >>> DistanceMetrics.get_available_distance_metrics()
-    ('average_l2_to_centroid', 'centroid_l2')
-    >>> my_x1 = torch.tensor([[0, 1], [2, 1], [2, -1], [0, -1]], dtype=torch.float)
-    >>> my_x2 = torch.tensor([[1, 0], [3, 0], [3, -2], [1, -2]], dtype=torch.float)
-    >>> DistanceMetrics.compute_distance(metric="centroid_l2", x1=my_x1, x2=my_x2)  # doctest: +ELLIPSIS
-    1.414...
-    >>> DistanceMetrics.compute_distance(metric="average_l2_to_centroid", x1=my_x1, x2=my_x2)  # doctest: +ELLIPSIS
-    1.707...
-    """
-
-    __slots__ = ()
-
-    @classmethod
-    def get_available_distance_metrics(cls):
-        """Get all distance metrics available for the class. The distance metric must be a method decorated by
-        @distance_metric to be properly registered"""
-        # Get all metrics
-        metrics: List[str] = []
-        for method in dir(cls):
-            attribute = getattr(cls, method)
-
-            # Append (as type 'str') if it is a distance metric
-            if callable(attribute) and getattr(attribute, "_is_distance_metric", False):
-                metrics.append(method)
-
-        # Convert to tuple and return
-        return tuple(metrics)
-
-    @classmethod
-    def compute_distance(cls, metric, *, x1, x2):
-        """Main method for computing distances"""
-        # Input check
-        if metric not in cls.get_available_distance_metrics():
-            raise ValueError(f"The metric {metric} was not recognised. The available metrics for this class are: "
-                             f"{cls.get_available_distance_metrics()}")
-
-        # Return distance
-        return getattr(cls, metric)(x1=x1, x2=x2)
-
-    # -------------
-    # Distance measures
-    # -------------
-    @staticmethod
-    @distance_metric
-    def centroid_l2(x1, x2):
-        """Compute the L2 distance between the centroids of the distribution"""
-        return numpy.linalg.norm(numpy.array(torch.mean(x1, dim=0) - torch.mean(x2, dim=0)), ord=2)
-
-    @staticmethod
-    @distance_metric
-    def average_l2_to_centroid(x1, x2):
-        """Measures the average distance from the points of x2 to the centroid of x1. This is not actually a valid
-        distance metric"""
-        return numpy.mean(numpy.linalg.norm(numpy.array(torch.mean(x1, dim=0, keepdim=True) - x2), ord=2, axis=-1))
-
-
 # ----------------
 # Functions
 # ----------------
@@ -783,11 +715,6 @@ def _aggregate_predictions_and_ground_truths(*, subjects, y_pred, y_true):
     return all_y_pred, all_y_true
 
 
-def compute_distribution_distance(metric: str, *, x1: torch.Tensor, x2: torch.Tensor):
-    """Function for computing the distance between two distributions"""
-    return DistanceMetrics.compute_distance(metric=metric, x1=x1, x2=x2)
-
-
 def save_discriminator_histories_plots(path, histories):
     """
     Function for saving domain discriminator histories plots
@@ -801,9 +728,14 @@ def save_discriminator_histories_plots(path, histories):
     -------
     None
     """
-    # Maybe just convert to tuple  todo: check that it is Histories obejct
+    # Maybe just convert to tuple
     if not isinstance(histories, tuple):
         histories = (histories,)
+
+    # Quick input check
+    if not all(isinstance(history, Histories) for history in histories):
+        raise TypeError(f"Expected all histories to be of type 'Histories', but found "
+                        f"{set(history for history in histories)}")
 
     # ----------------
     # Loop through all metrics

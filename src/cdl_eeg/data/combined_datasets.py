@@ -1,4 +1,5 @@
 import dataclasses
+import itertools
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy
@@ -25,7 +26,8 @@ class LoadDetails:
 # -----------------
 class CombinedDatasets:
     """
-    Class for storing multiple datasets
+    Class for storing multiple datasets. I find this convenient to avoid re-loading data all the time. Less memory
+    efficient, but more time efficient
     """
 
     __slots__ = "_subject_ids", "_data", "_targets", "_datasets"
@@ -69,7 +71,10 @@ class CombinedDatasets:
         for dataset, details in zip(datasets, load_details):
             _accepted_subject_ids: List[str] = []
             _subjects = details.subject_ids
-            _targets = dataset.load_targets(target=required_target, subject_ids=_subjects)
+            if required_target is None:
+                _targets = itertools.cycle((1,))  # This avoids not accepting a subject
+            else:
+                _targets = dataset.load_targets(target=required_target, subject_ids=_subjects)
             for sub_id, _target in zip(_subjects, _targets):
                 if not numpy.isnan(_target):
                     _accepted_subject_ids.append(sub_id)
@@ -209,7 +214,7 @@ class CombinedDatasets:
         """
         Method for getting targets
 
-        TODO: make tests
+        (unittest in test folder)
 
         Parameters
         ----------

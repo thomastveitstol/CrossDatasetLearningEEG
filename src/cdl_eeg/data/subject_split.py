@@ -238,7 +238,7 @@ class DatasetBalancedTrainValSplit(TrainValBase):
     No problem if there is only one dataset
 
     >>> DatasetBalancedTrainValSplit({"d1": tuple(f"s{i}" for i in range(10))},  # type: ignore[attr-defined]
-    ...                              val_split=0.2, seed=2).folds
+    ...                              val_split=0.2, seed=2).folds  # doctest: +NORMALIZE_WHITESPACE
     ((Subject(subject_id='s5', dataset_name='d1'), Subject(subject_id='s9', dataset_name='d1'),
       Subject(subject_id='s3', dataset_name='d1'), Subject(subject_id='s4', dataset_name='d1'),
       Subject(subject_id='s6', dataset_name='d1'), Subject(subject_id='s7', dataset_name='d1'),

@@ -1,24 +1,16 @@
 import copy
-import itertools
 import os
 import random
 import traceback
 import warnings
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional
 
-import matplotlib
-import numpy
-import pandas
-import seaborn
 import torch
-from matplotlib import pyplot
 from torch import optim
 from torch.utils.data import DataLoader
-from umap import UMAP
 
 from cdl_eeg.data.combined_datasets import CombinedDatasets
-from cdl_eeg.data.data_generators.data_generator import RBPDataGenerator, strip_tensors, \
-    InterpolationDataGenerator
+from cdl_eeg.data.data_generators.data_generator import RBPDataGenerator, InterpolationDataGenerator
 from cdl_eeg.data.datasets.getter import get_dataset
 from cdl_eeg.data.subject_split import get_data_split, leave_1_fold_out, TrainValBase
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
@@ -26,13 +18,16 @@ from cdl_eeg.models.losses import CustomWeightedLoss, get_activation_function
 from cdl_eeg.models.main_models.main_fixed_channels_model import MainFixedChannelsModel
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
 from cdl_eeg.models.metrics import save_discriminator_histories_plots, save_histories_plots, Histories, \
-    save_test_histories_plots, compute_distribution_distance
+    save_test_histories_plots
 from cdl_eeg.models.utils import tensor_dict_to_device
 
 
 class Experiment:
     """
     Class for running a single cross validation experiment
+
+    The class is a little messy, but if you want to read it, I'd suggest to start from the 'run_experiment' method and
+    keep clicking further down the methods/functions as they are used in the pipeline
     """
 
     __slots__ = "_config", "_pre_processing_config", "_results_path", "_device"
@@ -60,12 +55,15 @@ class Experiment:
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if device is None else device
 
     # -------------
-    # Dunder methods for context manager (using the 'with' statement)
+    # Dunder methods for context manager (using the 'with' statement). See this video from mCoding for more information
+    # on context managers https://www.youtube.com/watch?v=LBJlGwJ899Y&t=640s
     # -------------
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """This will execute when exiting the with statement. It will NOT execute if the run was killed by the operating
+        system, which can happen if too much data is loaded into memory"""
         # If everything was as it should, just exit
         if exc_val is None:
             return None
@@ -102,7 +100,7 @@ class Experiment:
         return data_split.folds
 
     # -------------
-    # Methods to be used inside cross validation
+    # Methods for cross validation
     # -------------
     def run_inverted_cross_validation(self, *, folds, channel_systems, channel_name_to_index, combined_dataset):
         test_histories: Dict[str, Histories] = dict()
@@ -254,22 +252,7 @@ class Experiment:
                              f"{self.spatial_dimension_handling_config['name']}")
 
         # -----------------
-        # Maybe make plots of latent feature distribution distances
-        # -----------------
-        if self.latent_feature_distributions_config["make_initial_distribution_exploration"]:
-            print("Analysing latent feature distributions...")
-
-            # Make folder
-            latent_path = os.path.join(results_path, "latent_features")
-            os.mkdir(latent_path)
-
-            # Do analysis
-            self._save_initial_latent_feature_distributions(model=model, channel_name_to_index=channel_name_to_index,
-                                                            combined_dataset=combined_dataset, results_path=latent_path)
-
-        # -----------------
         # Create data loaders (and target scaler)
-        # todo: must implement data loader for interpolated data
         # -----------------
         print("Creating data loaders...")
         # Create loaders for training and validation
@@ -628,7 +611,7 @@ class Experiment:
         if model.has_cmmn_layer:
             self._fit_cmmn_layers(model=model, train_data=combined_dataset.get_data(train_subjects))
 
-            # Fit the test data as well (needed here if analysing the latent feature distributions)
+            # Fit the test data as well (just the monge filters)
             self._fit_cmmn_layers_test_data(model=model, test_data=combined_dataset.get_data(test_subjects))
 
         return model
@@ -656,7 +639,7 @@ class Experiment:
             self._fit_cmmn_layers(model=model, train_data=combined_dataset.get_data(train_subjects),
                                   channel_systems=channel_systems)
 
-            # Fit the test data as well (needed here if analysing the latent feature distributions)
+            # Fit the test data as well
             self._fit_cmmn_layers_test_data(model=model, test_data=combined_dataset.get_data(test_subjects),
                                             channel_systems=channel_systems)
 
@@ -735,306 +718,6 @@ class Experiment:
         # -----------------
         with open(os.path.join(self._results_path, "finished_successfully.txt"), "w"):
             pass
-
-    # -------------
-    # Methods for exploration of why cross dataset DL is difficult
-    # -------------
-    def initial_hidden_layer_distributions(self):
-        """Method which investigates the distribution of a hidden layer of the various EEG datasets"""
-        print(f"Running on device: {self._device}")
-
-        # -----------------
-        # Load data and extract some details
-        # -----------------
-        combined_dataset = self._load_data()
-
-        # Get some dataset details
-        dataset_details = self._extract_dataset_details(combined_dataset)
-
-        dataset_subjects = dataset_details["subjects"]
-        channel_systems = dataset_details["channel_systems"]
-        channel_name_to_index = dataset_details["channel_name_to_index"]
-
-        # -----------------
-        # Define model
-        # -----------------
-        print("Defining model...")
-        # Filter some warnings from Voronoi split
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=RuntimeWarning)
-
-            # todo: must fix or remove method
-            model = self._make_rbp_model()  # type: ignore[call-arg]
-
-        # Fit channel systems
-        self._fit_channel_systems(model=model, channel_systems=channel_systems)
-
-        # -----------------
-        # Split on dataset level
-        # -----------------
-        folds = get_data_split(split="SplitOnDataset", dataset_subjects=dataset_subjects).folds
-
-        # (Maybe) fit the CMMN layers of RBP  todo: must check with and without CMMN
-        if model.any_rbp_cmmn_layers:
-            self._fit_cmmn_layers(model=model, train_data=combined_dataset.get_data(tuple(itertools.chain(*folds))),
-                                  channel_systems=channel_systems)
-
-        # Get the data loaders (the targets are not important, may change a little here in a future refactoring)
-        data_loaders = {fold[0].dataset_name:  # todo
-                        self._load_test_data_loader(
-                            model=model, test_subjects=fold, combined_dataset=combined_dataset,
-                            target_scaler=get_target_scaler(scaler="NoScaler")
-                        ) for fold in folds}
-
-        # -----------------
-        # Compute features
-        # -----------------
-        latent_features = dict(sorted({
-            dataset_name: self._extract_all_latent_features(model=model, data_loader=data_loader, device=self._device,
-                                                            channel_name_to_index=channel_name_to_index)
-            for dataset_name, data_loader in data_loaders.items()
-        }.items()))
-
-        # Compute distances between the latent distributions
-        distances = self._compute_distribution_distances(data=latent_features,
-                                                         distance_measures=self._config["distance_measures"])
-
-        # Convert to dataframe
-        features_df = self._latent_dict_features_to_dataframe(latent_features)
-
-        # -----------------
-        # Compute UMAP plots
-        # -----------------
-        umap = UMAP(n_components=2)
-        umap_data = umap.fit_transform(features_df[[col_name for col_name in features_df.columns
-                                                    if col_name != "dataset_name"]]).T
-
-        # Selecting colors
-        colormap = matplotlib.colormaps.get_cmap(self._config["colormap"])
-        colors = colormap(numpy.linspace(start=0, stop=1, num=len(latent_features)))
-
-        # Loop through all datasets
-        pyplot.figure(figsize=(16, 9))
-        for col, dataset_name in zip(colors, latent_features):
-            indices = features_df["dataset_name"] == dataset_name
-            pyplot.scatter(umap_data[0][indices], umap_data[1][indices], marker='o', label=dataset_name, color=col)
-
-        # Plot cosmetics
-        fontsize = 17
-        pyplot.xlabel("Dimension 1", fontsize=fontsize)
-        pyplot.ylabel("Dimension 2", fontsize=fontsize)
-        pyplot.xticks(fontsize=fontsize)
-        pyplot.yticks(fontsize=fontsize)
-        pyplot.title("UMAP", fontsize=fontsize+5)
-        pyplot.legend(fontsize=fontsize)
-
-        # -----------------
-        # Plot distances
-        # -----------------
-        for metric, distance_matrix in distances.items():
-            fig, ax = pyplot.subplots(figsize=(16, 9))
-            seaborn.heatmap(distance_matrix, annot=True, fmt=".3f", annot_kws={"size": fontsize}, ax=ax)
-
-            # Set the font size of the color bar labels
-            cbar = ax.collections[0].colorbar
-            cbar.ax.tick_params(labelsize=fontsize)
-            cbar.ax.set_ylabel("Distance", fontsize=fontsize)
-
-            ax.tick_params(labelsize=fontsize)
-            ax.tick_params(axis="x", labelrotation=20)
-            ax.tick_params(axis="y", labelrotation=70)
-            ax.set_title(metric, fontsize=fontsize)
-
-        pyplot.show()
-
-    def _save_initial_latent_feature_distributions(self, model, channel_name_to_index, combined_dataset, results_path):
-        # Get the data loaders (the targets are not important, may change a little here in a future refactoring)
-        # todo
-        _folds = get_data_split(split="SplitOnDataset", dataset_subjects=combined_dataset.dataset_subjects).folds
-        data_loaders = {fold[0].dataset_name: self._load_test_data_loader(
-            model=model, test_subjects=fold, combined_dataset=combined_dataset,
-            target_scaler=get_target_scaler(scaler="NoScaler")
-        ) for fold in _folds}
-
-        # -----------------
-        # Compute features
-        # -----------------
-        # Compute and sort by key (just sorting in alphabetical order)
-        latent_features = dict(sorted({
-            dataset_name: self._extract_all_latent_features(model=model, data_loader=data_loader, device=self._device,
-                                                            channel_name_to_index=channel_name_to_index)
-            for dataset_name, data_loader in data_loaders.items()
-        }.items()))
-
-        # Compute distances between the latent distributions
-        distances = self._compute_distribution_distances(
-            data=latent_features, distance_measures=self.latent_feature_distributions_config["distance_measures"]
-        )
-
-        # Convert to dataframe
-        features_df = self._latent_dict_features_to_dataframe(latent_features)
-
-        # -----------------
-        # Compute UMAP plots
-        # -----------------
-        umap = UMAP(n_components=2)
-        umap_data = umap.fit_transform(features_df[[col_name for col_name in features_df.columns
-                                                    if col_name != "dataset_name"]]).T
-
-        # Selecting colors
-        colormap = matplotlib.colormaps.get_cmap(self.latent_feature_distributions_config["colormap"])
-        colors = colormap(numpy.linspace(start=0, stop=1, num=len(latent_features)))
-
-        # Loop through all datasets
-        pyplot.figure(figsize=(16, 9))
-        for col, dataset_name in zip(colors, latent_features):
-            indices = features_df["dataset_name"] == dataset_name
-            pyplot.scatter(umap_data[0][indices], umap_data[1][indices], marker='o', label=dataset_name,
-                           color=col)
-
-        # Plot cosmetics
-        fontsize = 17
-        pyplot.xlabel("Dimension 1", fontsize=fontsize)
-        pyplot.ylabel("Dimension 2", fontsize=fontsize)
-        pyplot.xticks(fontsize=fontsize)
-        pyplot.yticks(fontsize=fontsize)
-        pyplot.title("UMAP", fontsize=fontsize + 5)
-        pyplot.legend(fontsize=fontsize)
-
-        pyplot.savefig(os.path.join(results_path, "umap.png"))
-        pyplot.close("all")
-
-        # -----------------
-        # Plot distances
-        # -----------------
-        for metric, distance_matrix in distances.items():
-            fig, ax = pyplot.subplots(figsize=(16, 9))
-            seaborn.heatmap(distance_matrix, annot=True, fmt=".3f", annot_kws={"size": fontsize}, ax=ax)
-
-            # Set the font size of the color bar labels
-            cbar = ax.collections[0].colorbar
-            cbar.ax.tick_params(labelsize=fontsize)
-            cbar.ax.set_ylabel("Distance", fontsize=fontsize)
-
-            ax.tick_params(labelsize=fontsize)
-            ax.tick_params(axis="x", labelrotation=20)
-            ax.tick_params(axis="y", labelrotation=70)
-            ax.set_title(metric, fontsize=fontsize)
-
-            fig.savefig(os.path.join(results_path, f"{metric}.png"))
-            pyplot.close("all")
-
-            # Save as a .csv file
-            distance_matrix.to_csv(os.path.join(results_path, f"{metric}.csv"))
-
-    @staticmethod
-    def _compute_distribution_distances(data, distance_measures):
-        """
-        Examples
-        --------
-        >>> my_x1 = torch.tensor([[0, 1], [2, 1], [2, -1], [0, -1]], dtype=torch.float)
-        >>> my_x2 = torch.tensor([[1, 0], [3, 0], [3, -2], [1, -2], [2, -1]], dtype=torch.float)
-        >>> my_distances = Experiment._compute_distribution_distances({"d1": my_x1, "d2": my_x2},
-        ...                                                           ("centroid_l2", "average_l2_to_centroid"))
-        >>> my_distances["centroid_l2"]
-                  d1        d2
-        d1  0.000000  1.414214
-        d2  1.414214  0.000000
-        >>> my_distances["average_l2_to_centroid"]
-                  d1        d2
-        d1  1.414214  1.707107
-        d2  1.648528  1.131371
-        """
-        distances = dict()
-        for distance_measure in distance_measures:
-            distances_single_metric: Dict[str, List[float]] = {dataset: [] for dataset in data}
-            for features_j in data.values():
-                for dataset_i, features_i in data.items():
-                    distances_single_metric[dataset_i].append(
-                        compute_distribution_distance(metric=distance_measure, x1=features_i, x2=features_j)
-                    )
-
-            df = pandas.DataFrame.from_dict(distances_single_metric)
-            df["dataset"] = tuple(data.keys())
-            df.set_index("dataset", inplace=True)
-            df.index.name = None
-            distances[distance_measure] = df
-        return distances
-
-    @staticmethod
-    def _latent_dict_features_to_dataframe(latent_features):
-        """
-        Examples
-        --------
-        >>> _ = torch.manual_seed(2)
-        >>> my_features = {"d1": torch.rand((2, 64)), "d3": torch.rand((3, 64)), "d2": torch.rand((1, 64))}
-        >>> Experiment._latent_dict_features_to_dataframe(my_features)  # doctest: +NORMALIZE_WHITESPACE
-            dataset_name        v0        v1  ...       v61       v62       v63
-        0           d1  0.614695  0.381013  ...  0.072670  0.646266  0.980437
-        1           d1  0.944122  0.492143  ...  0.141569  0.321714  0.840315
-        2           d3  0.013947  0.061767  ...  0.722807  0.688880  0.075720
-        3           d3  0.823534  0.679069  ...  0.031638  0.116090  0.781444
-        4           d3  0.564110  0.829796  ...  0.206841  0.694941  0.774273
-        5           d2  0.324212  0.210616  ...  0.162639  0.147315  0.668140
-        <BLANKLINE>
-        [6 rows x 65 columns]
-        """
-
-        features = numpy.array(torch.cat(tuple(latent_features.values()), dim=0))
-        _dataset_names = tuple([dataset_name]*feature.shape[0] for dataset_name, feature in latent_features.items())
-        dataset_names = tuple(itertools.chain(*_dataset_names))
-
-        # Create dataframe
-        features_dict: Dict[str, Any] = {f"v{i}": feature for i, feature in enumerate(numpy.transpose(features))}
-        return pandas.DataFrame.from_dict({"dataset_name": dataset_names, **features_dict})
-
-    def _extract_all_latent_features(self, model, data_loader, device, channel_name_to_index=None):
-        if self.spatial_dimension_handling_config["name"] == "RegionBasedPooling":
-            return self._extract_all_latent_features_rbp(model=model, data_loader=data_loader, device=device,
-                                                         channel_name_to_index=channel_name_to_index)
-        elif self.spatial_dimension_handling_config["name"] == "Interpolation":
-            return self._extract_all_latent_features_interpolation(model=model, data_loader=data_loader, device=device)
-        else:
-            raise ValueError
-
-    @staticmethod
-    def _extract_all_latent_features_rbp(*, model, data_loader, device, channel_name_to_index):
-        outputs: List[torch.Tensor] = []
-        with torch.no_grad():
-            for x, pre_computed, _, _ in data_loader:
-                # Strip the dictionaries for 'ghost tensors'
-                x = strip_tensors(x)
-                pre_computed = [strip_tensors(pre_comp) for pre_comp in pre_computed]
-
-                # Send data to correct device
-                x = tensor_dict_to_device(x, device=device)
-                pre_computed = tuple(tensor_dict_to_device(pre_comp, device=device) for pre_comp in pre_computed)
-
-                # Feature extraction
-                outputs.append(
-                    model.extract_latent_features(x, pre_computed=pre_computed,
-                                                  channel_name_to_index=channel_name_to_index).to("cpu")
-                )
-
-        return torch.cat(outputs, dim=0)
-
-    @staticmethod
-    def _extract_all_latent_features_interpolation(*, model, data_loader, device):
-        outputs: List[torch.Tensor] = []
-        with torch.no_grad():
-            for x, *_ in data_loader:
-                # Strip the dictionaries for 'ghost tensors'
-                x = strip_tensors(x)
-
-                # Send data to correct device
-                x = tensor_dict_to_device(x, device=device)
-
-                # Feature extraction
-                outputs.append(
-                    model.extract_latent_features(x).to("cpu")
-                )
-
-        return torch.cat(outputs, dim=0)
 
     # -------------
     # Properties

@@ -194,11 +194,20 @@ class _ShortcutLayer(nn.Module):
 # ---------------------------
 class InceptionNetwork(MTSModuleBase):
     """
-    Inception network
+    The Inception network architecture
+
+    Paper:
+        Ismail Fawaz, H., Lucas, B., Forestier, G. et al. InceptionTime: Finding AlexNet for time series classification.
+        Data Min Knowl Disc 34, 1936–1962 (2020). https://doi.org/10.1007/s10618-020-00710-y
 
     Examples
     --------
     >>> _ = InceptionNetwork(64, 5)
+
+    Latent feature dimension does not depend on number of input channels
+
+    >>> InceptionNetwork.get_latent_features_dim(64, 15) == InceptionNetwork.get_latent_features_dim(3, 3)
+    True
 
     How it looks like (but note that the ordering does not reflect the forward pass, as this is not a Sequential model)
 
