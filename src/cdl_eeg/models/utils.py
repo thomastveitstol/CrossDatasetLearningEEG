@@ -13,7 +13,7 @@ class ReverseLayerF(Function):
     Gradient reversal layer. This is simply copypasted (with added '# noqa') from the implementation at
     https://github.com/wogong/pytorch-dann/blob/master/models/functions.py
 
-    TODO: Make proper citation
+    See LICENSE.txt for their original copyright notice and disclaimer
     """
 
     @staticmethod
