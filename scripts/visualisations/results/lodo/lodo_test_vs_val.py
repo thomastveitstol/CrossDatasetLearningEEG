@@ -113,7 +113,7 @@ def plot_test_vs_val_lodo(results_dir, *, main_metric, metrics_to_plot, datasets
             except KeyError:
                 # If the prediction model guessed that all subjects have the same age, for all folds, model selection
                 # 'fails'. We'll just skip them
-                skipped[_get_lodo_dataset_name(os.path.join(run_path, fold))] += 1  # type: ignore
+                skipped[get_lodo_dataset_name(os.path.join(run_path, fold))] += 1  # type: ignore
                 continue
 
             # Add the val and test performances
