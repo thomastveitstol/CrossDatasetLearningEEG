@@ -7,9 +7,12 @@ from typing import Dict
 
 import numpy
 import pandas
+import torch
 
+from cdl_eeg.data.datasets.getter import get_dataset
 from cdl_eeg.data.paths import get_results_dir
 from cdl_eeg.data.results_analysis import is_better, higher_is_better, get_all_lodo_runs, get_lodo_dataset_name
+from cdl_eeg.models.metrics import Histories
 
 
 # ----------------
@@ -19,13 +22,62 @@ from cdl_eeg.data.results_analysis import is_better, higher_is_better, get_all_l
 class _Model:
     path: str  # Path to the results
     test_dataset: str  # The dataset which was used for testing
-    metrics: Dict[str, float]  # The metrics table (e.g., {"mse": 10.7, "mae": 3.3})
+    val_epoch: int  # The best epoch as estimated on validation set
 
+# -----------
+# Test performance estimation
+# -----------
+def _estimate_intercept(df: pandas.DataFrame):
+    # Intercept is calculated as sum(y_i - x_i) / n
+    return (df["ground_truth"] - df["pred"]).mean()
+
+
+def _get_average_prediction(df: pandas.DataFrame, epoch):
+    new_df = {"dataset": df["dataset"], "sub_id": df["sub_id"],
+              "pred": df.iloc[:, (5 * epoch + 2):(5 * epoch + 7)].mean(axis=1)}
+    return pandas.DataFrame.from_dict(data=new_df)
+
+
+def _get_lodo_test_performance(path, refit_intercept, epoch, target, metrics):
+    if not refit_intercept:
+        test_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
+        test_metrics = {metric: test_df[metric][epoch] for metric in test_df.columns}
+        return test_metrics
+
+    test_predictions = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
+
+    # Check the number of datasets in the test set
+    datasets = set(test_predictions["dataset"])
+    if len(datasets) != 1:
+        raise ValueError(f"Expected only one dataset to be present in the test set predictions, but that was not "
+                         f"the case for the path {path}. Found {set(test_predictions['dataset'])}")
+    dataset_name = tuple(datasets)[0]
+
+    # Average the predictions per EEG epoch
+    df = _get_average_prediction(test_predictions, epoch=epoch)
+
+    # Add the targets
+    df["ground_truth"] = get_dataset(dataset_name).load_targets(target=target, subject_ids=test_predictions["sub_id"])
+
+    # Estimate the intercept  todo: now we are leaking the mean, should we allow this or just the mean of a subset?
+    new_intercept = _estimate_intercept(df=df)
+    df["adjusted_pred"] = df["pred"] + new_intercept
+
+    # Add the performance
+    test_metrics = dict()
+    for metric in metrics:
+        # Normally, I'd add a 'compute_metric' method to Histories, but I don't like to change the code too much after
+        # getting the results from a scientific paper, even when it makes sense. So, violating some best practice
+        # instead
+        test_metrics[metric] = Histories._compute_metric(
+            metric=metric, y_pred=torch.tensor(df["adjusted_pred"]), y_true=torch.tensor(df["ground_truth"])
+        )
+    return test_metrics
 
 # ----------------
 # Functions for getting the results
 # ----------------
-def _get_lodo_val_test_metrics(path, *, main_metric, balance_validation_performance):
+def _get_lodo_val_metrics_and_epoch(path, *, main_metric, balance_validation_performance):
     """
     Function for getting the validation and test metrics from a single fold. The epoch is selected based on validation
     set performance
@@ -76,16 +128,13 @@ def _get_lodo_val_test_metrics(path, *, main_metric, balance_validation_performa
             val_idx = numpy.argmin(val_df[main_metric])
         val_metric = val_df[main_metric][val_idx]
 
-    # Return the validation and test performances from the same epoch, as well as the name of the test dataset
-    test_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
-
-    test_metrics = {metric: test_df[metric][val_idx] for metric in test_df.columns}
-    return val_metric, test_metrics, get_lodo_dataset_name(path)
+    return val_metric, val_idx, get_lodo_dataset_name(path)
 
 
-def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_performance):
+def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_performance, refit_intercept, target,
+                                metrics):
     # Get all runs for LODO
-    runs = get_all_lodo_runs(results_dir)
+    runs = get_all_lodo_runs(results_dir, successful_only=True)
 
     # Initialisation
     best_val_metrics: Dict[str, float] = {}
@@ -100,12 +149,13 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
         # Get the performances per fold
         folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")  # type: ignore
         for fold in folds:
-            # I need to get the validation performance (for making model selection), test performance (in case the
+            # I need to get the validation performance (for making model selection), the best epoch (in case the
             # current run and fold is best for this dataset), and the dataset name (to know which dataset the
             # metrics are for)
+            fold_path = os.path.join(run_path, fold)  # type: ignore
             try:
-                val_metric, test_metrics, test_dataset = _get_lodo_val_test_metrics(
-                    path=os.path.join(run_path, fold), main_metric=main_metric,  # type: ignore
+                val_metric, best_epoch, test_dataset = _get_lodo_val_metrics_and_epoch(
+                    path=fold_path, main_metric=main_metric,  # type: ignore
                     balance_validation_performance=balance_validation_performance
                 )
             except KeyError:
@@ -118,7 +168,9 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
                     new_metrics={main_metric: val_metric}
             ):
                 # Update the best model selection
-                best_models[test_dataset] = _Model(path=run, test_dataset=test_dataset, metrics=test_metrics)
+                best_models[test_dataset] = _Model(
+                    path=fold_path, test_dataset=test_dataset, val_epoch=best_epoch  # type: ignore
+                )
 
                 # Update best metrics
                 if test_dataset in best_val_metrics:
@@ -134,7 +186,10 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
 
         print(f"{f' {dataset} ':-^20}")
         print(f"Best run: {model.path}")
-        for metric, performance in model.metrics.items():
+        test_performance = _get_lodo_test_performance(
+            path=model.path, refit_intercept=refit_intercept, epoch=model.val_epoch, target=target, metrics=metrics
+        )
+        for metric, performance in test_performance.items():
             print(f"\t{metric}: {performance:.2f}")
 
 
@@ -142,12 +197,16 @@ def main():
     # Hyperparameters
     main_metrics = ("pearson_r", "r2_score", "mae")
     balance_validation_performance = False
+    refit_intercept = True
+    target = "age"
 
     # Print results
     for main_metric in main_metrics:
         print(f"{f' Main metric: {main_metric} ':=^30}")
-        _get_best_lodo_performances(results_dir=get_results_dir(), main_metric=main_metric,
-                                    balance_validation_performance=balance_validation_performance)
+        _get_best_lodo_performances(
+            results_dir=get_results_dir(), main_metric=main_metric, refit_intercept=refit_intercept,
+            balance_validation_performance=balance_validation_performance, target=target, metrics=main_metrics
+        )
 
 
 if __name__ == "__main__":
