@@ -1,0 +1,350 @@
+run_baseline: false
+cv_method: [ inverted, normal ]  # this will be sampled randomly
+selected_target: &selected_target age
+
+Shared Dataset Details:
+  num_time_steps: &num_time_steps null
+  time_series_start: &time_series_start null
+
+SubjectSplit:
+  name: SplitOnDataset
+  kwargs:
+    seed: 42
+
+SubGroups:  # This just relates to the subgroups we should store metrics of
+  verbose: true
+  sub_groups:
+    dataset_name:
+      [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain ]
+
+LatentFeatureDistribution:
+  make_initial_distribution_exploration: false
+  colormap: viridis
+  distance_measures: [ centroid_l2, average_l2_to_centroid ]
+
+Datasets:
+  TDBrain:
+    num_subjects: 1273
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+    target_availability: [ age, sex ]
+  Miltiadous:
+    num_subjects: 88
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+    target_availability: [ age, sex ]
+  HatlestadHall:
+    num_subjects: 111
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+    target_availability: [ age, sex ]
+  YulinWang:
+    num_subjects: 60
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+    target_availability: [ age, sex ]
+  MPILemon:
+    num_subjects: 203
+    num_time_steps: *num_time_steps
+    time_series_start: *time_series_start
+    target_availability: [ age, sex ]
+
+Targets:
+  age:
+    main_metric: [ mae, mse, pearson_r, spearman_rho, r2_score ]  # This is actually not used with current settings
+    prediction_activation_function: null
+    Loss:
+      loss:
+        dist: uniform_discrete
+        kwargs:
+          domain: [ MSELoss, L1Loss ]
+      loss_kwargs: { }  # reduction parameter will be set to 'none' or 'mean', depending on the sampled loss weighter
+      weighter: # weighter and the kwargs are sampled together
+        dist: uniform_discrete
+        kwargs:
+          domain: [ null, SamplePowerWeighter ]
+      weighter_kwargs: # Dataset sizes will be added during runtime
+        weight_power:
+          dist: uniform
+          kwargs:
+            a: 0
+            b: 1
+    metrics: regression
+    scaler:
+      target:
+        dist: uniform_discrete
+        kwargs:
+          domain:
+            - name: ZNormalisation
+              kwargs: { }
+
+Training:
+  # Fixed hyperparameters
+  batch_size: 128
+  num_epochs: 100
+  verbose: true
+  ValSplit:
+    name: DatasetBalancedTrainValSplit
+    kwargs:
+      val_split: 0.2
+  target: *selected_target
+  continuous_testing: true
+  # metrics: regression
+  # Varied hyperparameters
+  learning_rate:
+    dist: log_uniform
+    kwargs:
+      base: 10
+      a: -5
+      b: -3
+  beta_1:
+    dist: uniform
+    kwargs:
+      a: 0.8
+      b: 1.0
+  beta_2:
+    dist: uniform
+    kwargs:
+      a: 0.9
+      b: 1.0
+  eps:
+    dist: log_uniform
+    kwargs:
+      base: 10
+      a: -10
+      b: -6
+
+# -----------------
+# Domain discriminator
+# -----------------
+FCModule: &FCModule
+
+  exponential_decay:
+    depth:
+      dist: uniform_int
+      kwargs:
+        a: 0
+        b: 5
+    first_layer_multiple:
+      dist: uniform
+      kwargs:
+        a: 0.5
+        b: 2
+    exponential_decrease:
+      dist: uniform_discrete
+      kwargs:
+        domain: [2, 3]
+    activation_function:
+      relu: {}
+      elu:
+        alpha:
+          dist: "uniform"
+          kwargs:
+            a: 0.2
+            b: 1.8
+
+DomainDiscriminator:
+  discriminators:
+    NoDiscriminator: null
+    FCModule: *FCModule
+  training:
+    Loss:
+      loss: CrossEntropyLoss
+      loss_kwargs:
+        reduction: mean
+      weighter: null
+      weighter_kwargs: { }
+    metrics: multiclass_classification
+    lambda:
+      dist: log_uniform
+      kwargs:
+        base: 10
+        a: -6
+        b: -1
+
+CMMN:
+  use_cmmn_layer: [ true, false ]
+  kwargs:
+      kernel_size_sfreq_multiple:
+        dist: uniform
+        kwargs:
+          a: 0.5
+          b: 4.0
+
+
+# -----------------
+# Methods for handling a varied number of channels
+# -----------------
+# Pooling methods
+num_kernels: &num_kernels
+  dist: log_uniform_int
+  kwargs:
+    base: 10
+    a: 2
+    b: 3
+
+max_receptive_field: &max_receptive_field
+  dist: log_uniform_int
+  kwargs:
+    base: 10
+    a: 2
+    b: 2.5
+
+MultiMSMean: &MultiMSMean {}
+
+MultiCSSharedRocket: &MultiCSSharedRocket
+  num_kernels: *num_kernels
+  max_receptive_field: *max_receptive_field
+
+MultiMSSharedRocketHeadRegion: &MultiMSSharedRocketHeadRegion
+  num_kernels: *num_kernels
+  max_receptive_field: *max_receptive_field
+  latent_search_features:
+    dist: log_uniform_int
+    kwargs:
+      base: 2
+      a: 3  # 2^3 = 8
+      b: 7  # 2^7 = 128
+  share_search_receiver_modules:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ true, false ]
+  bias: false
+
+PoolingModules: &PoolingModules
+  MultiMSMean: *MultiMSMean
+  MultiCSSharedRocket: *MultiCSSharedRocket
+  MultiMSSharedRocketHeadRegion: *MultiMSSharedRocketHeadRegion
+
+CentroidPolygons: &CentroidPolygons
+  channel_positions: [ Miltiadous ]  # After experimentation, it works quite bad with multiple systems. So using the
+  # smallest one instead
+  min_nodes:
+    dist: uniform_int
+    kwargs:
+      a: 1
+      b: 6  # not including 6
+  k:
+    dist: uniform_discrete
+    kwargs:
+      domain: [[2, 2, 2, 2, 2, 2, 2], [3, 3, 3, 3, 3, 3, 3, 3], [2, 3, 2, 3, 2, 3, 2, 3, 2], [4, 3, 2, 3, 4, 3, 2, 3, 4]]
+
+MontageSplits: &MontageSplits
+  CentroidPolygons: *CentroidPolygons
+
+RegionBasedPooling: &RegionBasedPooling
+  num_montage_splits:
+    dist: log_uniform_int
+    kwargs:
+      base: 2
+      a: 0
+      b: 4
+  normalise_region_representations:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ true ]
+  share_all_pooling_modules:
+    dist: uniform_discrete
+    kwargs:
+      domain: [ true, false ]
+  num_pooling_modules: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+  use_cmmn_layer : [ true, false ]
+  RBPDesign:
+    num_designs: 1
+    pooling_type: multi_cs
+    pooling_module: *PoolingModules
+    montage_split: *MontageSplits
+    cmmn_kwargs:
+      kernel_size_sfreq_multiple:
+        dist: uniform
+        kwargs:
+          a: 0.5
+          b: 4.0
+
+# Interpolation
+Interpolation: &Interpolation
+  main_channel_system: [ Miltiadous, HatlestadHall, YulinWang, MPILemon, TDBrain ]
+  method: [ MNE, spline ]
+
+Varied Numbers of Channels:
+  - name: RegionBasedPooling
+    kwargs: *RegionBasedPooling
+  - name: Interpolation
+    kwargs: *Interpolation
+
+
+# -----------------
+# Deep learning architectures
+# -----------------
+InceptionNetwork: &InceptionNetwork
+  general:
+    num_classes: 1
+  sample:
+    cnn_units:
+      dist: log_uniform_int
+      kwargs:
+        base: 2
+        a: 3
+        b: 6
+    depth:
+      dist: n_log_uniform_int
+      kwargs:
+        n: 3
+        base: 3
+        a: 0
+        b: 3
+
+ShallowFBCSPNetMTS: &ShallowFBCSPNetMTS
+  general:
+    num_classes: 1
+    num_time_steps: *num_time_steps
+  sample:
+    n_filters:
+      dist: uniform_int
+      kwargs:
+        a: 30
+        b: 51
+    filter_time_length:
+      dist: uniform_int
+      kwargs:
+        a: 15
+        b: 36
+    pool_time_stride:
+      dist: uniform_int
+      kwargs:
+        a: 10
+        b: 21
+    drop_prob:
+      dist: uniform
+      kwargs:
+        a: 0
+        b: 0.5
+
+Deep4NetMTS: &Deep4NetMTS
+  general:
+    num_classes: 1
+    num_time_steps: *num_time_steps
+  sample:
+    n_first_filters:
+      dist: uniform_int
+      kwargs:
+        a: 15
+        b: 36
+    filter_length:
+      dist: uniform_int
+      kwargs:
+        a: 5
+        b: 16
+    drop_prob:
+      dist: uniform
+      kwargs:
+        a: 0
+        b: 0.5
+
+MTS Module:
+  InceptionNetwork: *InceptionNetwork
+  ShallowFBCSPNetMTS: *ShallowFBCSPNetMTS
+  Deep4NetMTS: *Deep4NetMTS
+NormaliseInputs: [ true, false ]
+
+PreprocessedFolder: [ preprocessed_2024-05-13_173548, preprocessed_2024-04-29_164550 ]
