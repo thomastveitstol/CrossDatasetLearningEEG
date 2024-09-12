@@ -1,3 +1,4 @@
+LICENSE
 README.md
 pyproject.toml
 setup.cfg
@@ -17,8 +18,10 @@ src/cdl_eeg/data/config_paths.json
 src/cdl_eeg/data/interpolate_datasets.py
 src/cdl_eeg/data/paths.py
 src/cdl_eeg/data/preprocessing.py
-src/cdl_eeg/data/results_analysis.py
 src/cdl_eeg/data/subject_split.py
+src/cdl_eeg/data/analysis/__init__.py
+src/cdl_eeg/data/analysis/hyperparameter_importance.py
+src/cdl_eeg/data/analysis/results_analysis.py
 src/cdl_eeg/data/data_generators/__init__.py
 src/cdl_eeg/data/data_generators/data_generator.py
 src/cdl_eeg/data/datasets/__init__.py
