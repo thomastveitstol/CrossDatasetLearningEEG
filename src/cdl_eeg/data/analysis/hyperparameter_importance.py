@@ -30,6 +30,7 @@ def _create_trial(parameters, distributions, score):
     )
     return trial
 
+
 def _get_optuna_distributions():
     """Function for getting the distributions spaces of the HPs, compatible with Optuna"""
     raise NotImplementedError
