@@ -41,7 +41,7 @@ import os
 from typing import Dict
 
 from cdl_eeg.data.paths import get_results_dir
-from cdl_eeg.data.results_analysis import get_all_lodo_runs, get_all_ilodo_runs
+from cdl_eeg.data.analysis.results_analysis import get_all_lodo_runs, get_all_ilodo_runs
 
 
 def _count_finalised_messages(runs, results_dir, expected_messages):

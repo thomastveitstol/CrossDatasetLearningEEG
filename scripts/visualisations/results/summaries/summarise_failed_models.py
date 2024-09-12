@@ -10,7 +10,7 @@ import seaborn
 from matplotlib import rcParams, pyplot
 
 from cdl_eeg.data.paths import get_results_dir
-from cdl_eeg.data.results_analysis import get_all_lodo_runs, get_all_ilodo_runs, get_config_file, PRETTY_NAME
+from cdl_eeg.data.analysis.results_analysis import get_all_lodo_runs, get_all_ilodo_runs, get_config_file, PRETTY_NAME
 
 
 # ----------------

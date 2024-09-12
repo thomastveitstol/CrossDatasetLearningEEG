@@ -9,7 +9,7 @@ from cdl_eeg.data.datasets.miltiadous_dataset import Miltiadous
 from cdl_eeg.data.datasets.mpi_lemon import MPILemon
 from cdl_eeg.data.datasets.td_brain import TDBrain
 from cdl_eeg.data.datasets.yulin_wang_dataset import YulinWang
-from cdl_eeg.data.results_analysis import PRETTY_NAME
+from cdl_eeg.data.analysis.results_analysis import PRETTY_NAME
 
 
 def main():

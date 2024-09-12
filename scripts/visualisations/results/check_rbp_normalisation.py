@@ -11,7 +11,7 @@ Number of interpolation models without normalisation: 282
 import os
 
 from cdl_eeg.data.paths import get_results_dir
-from cdl_eeg.data.results_analysis import get_all_ilodo_runs, get_all_lodo_runs, get_config_file
+from cdl_eeg.data.analysis.results_analysis import get_all_ilodo_runs, get_all_lodo_runs, get_config_file
 
 
 def main():

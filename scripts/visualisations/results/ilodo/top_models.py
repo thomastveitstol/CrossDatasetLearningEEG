@@ -10,7 +10,7 @@ from matplotlib import pyplot, rcParams
 from matplotlib.ticker import MultipleLocator
 
 from cdl_eeg.data.paths import get_results_dir
-from cdl_eeg.data.results_analysis import SkipFold, is_better, higher_is_better, get_ilodo_val_dataset_name, \
+from cdl_eeg.data.analysis.results_analysis import SkipFold, is_better, higher_is_better, get_ilodo_val_dataset_name, \
     get_all_ilodo_runs, get_config_file, PRETTY_NAME
 
 

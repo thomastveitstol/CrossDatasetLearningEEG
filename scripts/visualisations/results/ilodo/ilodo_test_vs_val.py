@@ -6,8 +6,8 @@ import pandas
 from matplotlib import pyplot
 
 from cdl_eeg.data.paths import get_results_dir
-from cdl_eeg.data.results_analysis import (get_all_ilodo_runs, higher_is_better, get_ilodo_val_dataset_name,
-                                           PRETTY_NAME, SkipFold)
+from cdl_eeg.data.analysis.results_analysis import (get_all_ilodo_runs, higher_is_better, get_ilodo_val_dataset_name,
+                                                    PRETTY_NAME, SkipFold)
 
 
 # ----------------

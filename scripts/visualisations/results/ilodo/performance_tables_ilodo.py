@@ -6,7 +6,7 @@ import numpy
 import pandas
 
 from cdl_eeg.data.paths import get_results_dir
-from cdl_eeg.data.results_analysis import get_all_ilodo_runs, higher_is_better, is_better, get_ilodo_val_dataset_name
+from cdl_eeg.data.analysis.results_analysis import get_all_ilodo_runs, higher_is_better, is_better, get_ilodo_val_dataset_name
 
 
 # ----------------

@@ -9,7 +9,7 @@ import seaborn
 from matplotlib import pyplot, rcParams
 
 from cdl_eeg.data.paths import get_results_dir
-from cdl_eeg.data.results_analysis import is_better, get_lodo_dataset_name, SkipFold, higher_is_better, \
+from cdl_eeg.data.analysis.results_analysis import is_better, get_lodo_dataset_name, SkipFold, higher_is_better, \
     get_all_lodo_runs, get_config_file, PRETTY_NAME
 
 

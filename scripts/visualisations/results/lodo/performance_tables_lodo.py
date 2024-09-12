@@ -11,7 +11,7 @@ import torch
 
 from cdl_eeg.data.datasets.getter import get_dataset
 from cdl_eeg.data.paths import get_results_dir
-from cdl_eeg.data.results_analysis import is_better, higher_is_better, get_all_lodo_runs, get_lodo_dataset_name
+from cdl_eeg.data.analysis.results_analysis import is_better, higher_is_better, get_all_lodo_runs, get_lodo_dataset_name
 from cdl_eeg.models.metrics import Histories
 
 
@@ -23,6 +23,7 @@ class _Model:
     path: str  # Path to the results
     test_dataset: str  # The dataset which was used for testing
     val_epoch: int  # The best epoch as estimated on validation set
+
 
 # -----------
 # Test performance estimation
