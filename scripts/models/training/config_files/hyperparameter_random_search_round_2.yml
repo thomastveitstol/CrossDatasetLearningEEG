@@ -242,7 +242,7 @@ RegionBasedPooling: &RegionBasedPooling
   normalise_region_representations:
     dist: uniform_discrete
     kwargs:
-      domain: [ true ]
+      domain: [ false ]
   share_all_pooling_modules:
     dist: uniform_discrete
     kwargs:
