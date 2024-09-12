@@ -1,5 +1,8 @@
 """
 Script for running a single experiment, either leave-one-dataset-out cross validation, or its inverse
+
+This script was made as I discovered a mistake in the sampling distribution of 'normalisation' in RBP. To make up for
+this, a 'round 2' is made
 """
 import copy
 import os
@@ -26,7 +29,7 @@ def main():
     # ---------------
     # Load domains of design choices/hyperparameters (.yml file)
     # ---------------
-    config_path = "hyperparameter_random_search.yml"
+    config_path = "hyperparameter_random_search_round_2.yml"
     path = os.path.join(os.path.dirname(__file__), "config_files", config_path)
     with open(path, "r") as f:
         config = yaml.safe_load(f)
