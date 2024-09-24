@@ -134,7 +134,7 @@ def _config_dist_to_optuna_dist(distribution):
     elif dist_name == "log_uniform":
         low = distribution["kwargs"]["a"]
         high = distribution["kwargs"]["b"]
-        return FloatDistribution(low=low, high=high, log=True)  # todo: the base must be specified?
+        return FloatDistribution(low=low, high=high, log=True)
     else:
         raise ValueError(f"Unrecognised distribution: {dist_name}")
 
