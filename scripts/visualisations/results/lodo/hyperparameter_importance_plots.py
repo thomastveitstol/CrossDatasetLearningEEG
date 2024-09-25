@@ -5,14 +5,18 @@ I think the best way is to define a 'Study' object
 """
 import dataclasses
 import os
+import random
 from typing import Dict, Tuple, Union, Optional, Set
 
 import numpy
 import optuna
 import pandas
+import seaborn
 import yaml
+from matplotlib import pyplot, rcParams
 from optuna import Study
 from optuna.distributions import BaseDistribution, FloatDistribution, CategoricalDistribution, IntDistribution
+from optuna.importance import get_param_importances, FanovaImportanceEvaluator
 
 from cdl_eeg.data.analysis.results_analysis import get_config_file, get_lodo_dataset_name, SkipFold, higher_is_better, \
     get_all_lodo_runs, PRETTY_NAME
@@ -92,6 +96,13 @@ def _get_normalisation(config):
         raise ValueError
 
 
+def _get_weighted_loss(config):
+    loss_config = config["Training"]["Loss"]  # tau in the paper (as per now, at least)
+
+    # Not using weighted loss is equivalent to tau = 0
+    return 0 if loss_config["weighter"] is None else loss_config["weighter_kwargs"]["weight_power"]
+
+
 def _get_hyperparameter(config, hparam: _HP, dist):
     if hparam.key_path == "domain_adaptation" and not dist:
         return _get_domain_adaptation(config)
@@ -103,6 +114,10 @@ def _get_hyperparameter(config, hparam: _HP, dist):
         return f"{int(config['general']['resample'] // config['general']['filtering'][-1])} * f max"
     elif hparam.key_path == "normalisation":
         return _get_normalisation(config)
+    elif hparam.key_path == "num_seconds":
+        return f"{int(config['general']['num_time_steps'] // config['general']['resample'])}s"
+    elif hparam.key_path == "weighted_loss":
+        return _get_weighted_loss(config)
 
     hyperparameter = config.copy()
     keys = hparam.dist_path if dist and hparam.dist_path is not None else hparam.key_path
@@ -240,6 +255,23 @@ def _get_normalisation_dist():
     return CategoricalDistribution(choices=(True, False))
 
 
+def _get_input_length_dist():
+    return CategoricalDistribution(choices=("5s", "10s"))
+
+
+def _get_loss_dist():
+    return CategoricalDistribution(choices=("L1Loss", "MSELoss"))
+
+
+def _get_weighted_loss_dist():
+    # Although it is not uniform distribution, it is still a float distribution
+    return FloatDistribution(low=0, high=1)
+
+
+def _get_autoreject_dist():
+    return CategoricalDistribution(choices=(True, False))
+
+
 def _config_dist_to_optuna_dist(distribution, hp_name):
     """Convert from how the distributions are specified in the sampling config file to Optuna compatible instances"""
     if hp_name == "DL Architecture":
@@ -254,6 +286,14 @@ def _config_dist_to_optuna_dist(distribution, hp_name):
         return _get_sampling_freq_dist()
     elif hp_name == "Normalisation":
         return _get_normalisation_dist()
+    elif hp_name == "Input length":
+        return _get_input_length_dist()
+    elif hp_name == "Loss":
+        return _get_loss_dist()
+    elif hp_name == r"Weighted loss ($\tau$)":
+        return _get_weighted_loss_dist()
+    elif hp_name == "Autoreject":
+        return _get_autoreject_dist()
 
     # Not a very elegant function... should preferably use the sampling distribution functions
     dist_name = distribution["dist"]
@@ -388,10 +428,10 @@ INV_FREQUENCY_BANDS = {(1.0, 4.0): "Delta",
 
 _HYPERPARAMETERS = {
     # Training HPs
-    "learning_rate": _HP(key_path=("Training", "learning_rate"), preprocessing=False),
-    "beta_1": _HP(key_path=("Training", "beta_1"), preprocessing=False),
-    "beta_2": _HP(key_path=("Training", "beta_2"), preprocessing=False),
-    "eps": _HP(key_path=("Training", "eps"), preprocessing=False),
+    "Learning rate": _HP(key_path=("Training", "learning_rate"), preprocessing=False),
+    r"$\beta_1$": _HP(key_path=("Training", "beta_1"), preprocessing=False),
+    r"$\beta_2$": _HP(key_path=("Training", "beta_2"), preprocessing=False),
+    r"$\epsilon$": _HP(key_path=("Training", "eps"), preprocessing=False),
     # DL architecture
     "DL Architecture": _HP(key_path=("DL Architecture", "model"), dist_path=("MTS Module",), preprocessing=False),
     #"IN:depth": _HP(key_path=("DL Architecture", "kwargs", "depth"), dist_path=("InceptionNetwork", "sample", "depth"),
@@ -409,15 +449,38 @@ _HYPERPARAMETERS = {
     # Pre-processing / feature extraction
     "Band pass": _HP(key_path="band_pass", preprocessing=True, in_dist_config=False),
     "Sampling frequency": _HP(key_path="sampling_freq_multiple", preprocessing=True, in_dist_config=False),
-    "Normalisation": _HP(key_path="normalisation", preprocessing=False, in_dist_config=False)
+    "Normalisation": _HP(key_path="normalisation", preprocessing=False, in_dist_config=False),
+    "Input length": _HP(key_path="num_seconds", preprocessing=True, in_dist_config=False),
+    "Autoreject": _HP(key_path=("general", "autoreject"), preprocessing=True, in_dist_config=False),
+    # Loss
+    "Loss": _HP(key_path=("Training", "Loss", "loss"), preprocessing=False, in_dist_config=False),
+    r"Weighted loss ($\tau$)": _HP(key_path="weighted_loss", preprocessing=False, in_dist_config=False)
 }
 
 
+EVALUATORS = {"fanova": FanovaImportanceEvaluator()}
+FONTSIZE = 18
+FIGSIZE = (20, 17)
+Y_ROTATION = None
+ERRORBAR = "sd"
+rcParams["legend.fontsize"] = FONTSIZE
+rcParams["legend.title_fontsize"] = FONTSIZE
+rcParams["axes.labelsize"] = FONTSIZE + 2
+
+
 def main():
+    meaning_of_life = 42
+
+    random.seed(meaning_of_life)
+    numpy.random.seed(meaning_of_life)
+
     # ----------------
     # A few design choices for the analysis
     # ----------------
+    num_evaluations = 5  # Running fANOVA does not always yield the same results. This determines the number of times to
+    # run HP importance
     datasets = ("TDBrain", "MPILemon", "HatlestadHall")
+    evaluator = "fanova"
     results_dir = get_results_dir()
     selection_metric = "mae"
     target_metric = "pearson_r"
@@ -442,16 +505,43 @@ def main():
     )
 
     # ----------------
-    # Analyse the hyperparameters
+    # Get the hyperparameter importance scores
     # ----------------
-    for dataset_name, study in studies.items():
-        print(f"\n=== {PRETTY_NAME[dataset_name]} ===")
-        for param_name, param_value in study.best_params.items():
-            print(f"{param_name}: {param_value}")
+    print(f"Evaluator: {evaluator}")
+    importances = {"Dataset": [], "Importance": [], "Hyperparameter": []}
+    for i in range(num_evaluations):
+        print(f"\nEvaluation {i + 1}/{num_evaluations}")
+        for dataset_name, study in studies.items():
+            # Maybe some printing
+            if i == 0:
+                print(f"\n=== {PRETTY_NAME[dataset_name]} ===")
+                for param_name, param_value in study.best_params.items():
+                    print(f"{param_name}: {param_value}")
 
-        # Plotting
-        fig = optuna.visualization.plot_param_importances(study, params=list(hyperparameters.keys()))
-        fig.show()
+            # Get HP importance
+            hp_importance = get_param_importances(study, evaluator=EVALUATORS[evaluator])
+
+            # Add to dict
+            for param_name, importance in hp_importance.items():
+                importances["Dataset"].append(PRETTY_NAME[dataset_name])
+                importances["Importance"].append(importance)
+                importances["Hyperparameter"].append(param_name)
+
+    # ----------------
+    # Plotting
+    # ----------------
+    df = pandas.DataFrame.from_dict(importances)
+    pyplot.figure(figsize=FIGSIZE, layout="constrained")
+    seaborn.barplot(df, hue="Dataset", y="Hyperparameter", x="Importance", order=hyperparameters.keys(),
+                    errorbar=ERRORBAR)
+
+    # Cosmetics
+    pyplot.grid(axis="x")
+    pyplot.xlim(0, None)
+    pyplot.tick_params(labelsize=FONTSIZE)
+    pyplot.yticks(rotation=Y_ROTATION)
+
+    pyplot.show()
 
 
 if __name__ == "__main__":
