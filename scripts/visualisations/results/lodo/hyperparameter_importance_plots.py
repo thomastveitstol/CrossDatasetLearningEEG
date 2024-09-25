@@ -276,11 +276,11 @@ def _config_dist_to_optuna_dist(distribution, hp_name):
     """Convert from how the distributions are specified in the sampling config file to Optuna compatible instances"""
     if hp_name == "DL Architecture":
         return _get_mts_module_dist(distribution)
-    elif hp_name == "DomainAdaptation":
+    elif hp_name == "Domain Adaptation":
         return _get_domain_adaptation_dist()
     elif hp_name == "Spatial Dimension Handling":
         return _get_spatial_dim_choices()
-    elif hp_name == "Band pass":
+    elif hp_name == "Band-pass filter":
         return _get_band_pass_dist()
     elif hp_name == "Sampling frequency":
         return _get_sampling_freq_dist()
@@ -445,9 +445,9 @@ _HYPERPARAMETERS = {
     # Spatial dimension mismatch
     "Spatial Dimension Handling": _HP(key_path="spatial_dimension", preprocessing=False, in_dist_config=False),
     # Domain discriminator
-    "DomainAdaptation": _HP(key_path="domain_adaptation", preprocessing=False, in_dist_config=False),
+    "Domain Adaptation": _HP(key_path="domain_adaptation", preprocessing=False, in_dist_config=False),
     # Pre-processing / feature extraction
-    "Band pass": _HP(key_path="band_pass", preprocessing=True, in_dist_config=False),
+    "Band-pass filter": _HP(key_path="band_pass", preprocessing=True, in_dist_config=False),
     "Sampling frequency": _HP(key_path="sampling_freq_multiple", preprocessing=True, in_dist_config=False),
     "Normalisation": _HP(key_path="normalisation", preprocessing=False, in_dist_config=False),
     "Input length": _HP(key_path="num_seconds", preprocessing=True, in_dist_config=False),
@@ -477,8 +477,8 @@ def main():
     # ----------------
     # A few design choices for the analysis
     # ----------------
-    num_evaluations = 5  # Running fANOVA does not always yield the same results. This determines the number of times to
-    # run HP importance
+    num_evaluations = 10  # Running fANOVA does not always yield the same results. This determines the number of times
+    # to run HP importance
     datasets = ("TDBrain", "MPILemon", "HatlestadHall")
     evaluator = "fanova"
     results_dir = get_results_dir()
@@ -486,7 +486,7 @@ def main():
     target_metric = "pearson_r"
     direction = "maximize" if higher_is_better(target_metric) else "minimize"
     balance_validation_performance = False
-    hyperparameters = _HYPERPARAMETERS
+    hyperparameters = _HYPERPARAMETERS.copy()
     runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)  # [:40]
     config_dist_path = os.path.join(  # todo: not very elegant...
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "models", "training",
