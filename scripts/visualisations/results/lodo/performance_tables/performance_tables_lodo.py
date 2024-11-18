@@ -213,22 +213,23 @@ def main():
     selection_metrics = ("mae", "mse", "pearson_r", "r2_score")
     all_metrics = ("mae", "mse", "mape", "pearson_r", "spearman_rho", "r2_score")
     balance_validation_performance = False
-    refit_intercept = False
     target = "age"
     verbose = False
 
     # Print results
-    for selection_metric in selection_metrics:
-        print(f"\n\n{f' Selection metric: {selection_metric} ':=^50}\n")
-        df = _get_best_lodo_performances(
-            results_dir=get_results_dir(), main_metric=selection_metric, refit_intercept=refit_intercept,
-            balance_validation_performance=balance_validation_performance, target=target, metrics=all_metrics,
-            verbose=verbose
-        )
-        print(df)
+    for refit_intercept in (True, False):
+        for selection_metric in selection_metrics:
+            print(f"\n\n{f' Selection metric: {selection_metric} ':=^50}\n")
+            df = _get_best_lodo_performances(
+                results_dir=get_results_dir(), main_metric=selection_metric, refit_intercept=refit_intercept,
+                balance_validation_performance=balance_validation_performance, target=target, metrics=all_metrics,
+                verbose=verbose
+            )
+            print(df)
 
-        # Save the results
-        df.to_csv(os.path.join(os.path.dirname(__file__), f"results_{selection_metric}.csv"))
+            # Save the results
+            df.to_csv(os.path.join(os.path.dirname(__file__), f"results_{selection_metric}_refit_intercept_"
+                                                              f"{refit_intercept}.csv"))
 
 
 if __name__ == "__main__":
