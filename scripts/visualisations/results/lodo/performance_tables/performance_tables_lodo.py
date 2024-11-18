@@ -198,8 +198,7 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
         for metric, performance in test_performance.items():
             results[metric].append(performance)
 
-    df = pandas.DataFrame.from_dict(results).round(DECIMALS)
-    print(df)
+    return pandas.DataFrame.from_dict(results).round(DECIMALS)
 
 
 # -------------
@@ -211,7 +210,7 @@ DATASET_ORDER = ("TDBrain", "MPILemon", "HatlestadHall", "Miltiadous", "YulinWan
 
 def main():
     # Hyperparameters
-    selection_metrics = ("pearson_r", "r2_score", "mae")
+    selection_metrics = ("mae", "mse", "pearson_r", "r2_score")
     all_metrics = ("mae", "mse", "mape", "pearson_r", "spearman_rho", "r2_score")
     balance_validation_performance = False
     refit_intercept = False
@@ -221,11 +220,15 @@ def main():
     # Print results
     for selection_metric in selection_metrics:
         print(f"\n\n{f' Selection metric: {selection_metric} ':=^50}\n")
-        _get_best_lodo_performances(
+        df = _get_best_lodo_performances(
             results_dir=get_results_dir(), main_metric=selection_metric, refit_intercept=refit_intercept,
             balance_validation_performance=balance_validation_performance, target=target, metrics=all_metrics,
             verbose=verbose
         )
+        print(df)
+
+        # Save the results
+        df.to_csv(os.path.join(os.path.dirname(__file__), f"results_{selection_metric}.csv"))
 
 
 if __name__ == "__main__":
