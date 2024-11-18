@@ -12,7 +12,8 @@ import torch
 
 from cdl_eeg.data.datasets.getter import get_dataset
 from cdl_eeg.data.paths import get_results_dir
-from cdl_eeg.data.analysis.results_analysis import is_better, higher_is_better, get_all_lodo_runs, get_lodo_dataset_name
+from cdl_eeg.data.analysis.results_analysis import is_better, higher_is_better, get_all_lodo_runs, \
+    get_lodo_dataset_name, PRETTY_NAME
 from cdl_eeg.models.metrics import Histories
 
 
@@ -194,7 +195,7 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
         test_performance = _get_lodo_test_performance(
             path=model.path, refit_intercept=refit_intercept, epoch=model.val_epoch, target=target, metrics=metrics
         )
-        results["target_dataset"].append(dataset)
+        results["target_dataset"].append(PRETTY_NAME[dataset])
 
         for metric, performance in test_performance.items():
             results[metric].append(performance)
