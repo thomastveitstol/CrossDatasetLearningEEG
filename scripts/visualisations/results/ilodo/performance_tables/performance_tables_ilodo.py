@@ -167,10 +167,10 @@ def get_best_ilodo_performances(results_dir, *, main_metric, metrics_to_print, v
                 else:
                     results[metric][_pretty_test_name].append(generalisation_performances[test_dataset][metric])
 
-    dfs = {metric: pandas.DataFrame(results_table) for metric, results_table in results.items()}
-    df = pandas.concat(dfs, names=("metric", "original_index")).reset_index("original_index", drop=True).round(DECIMALS)
+    dfs = {metric: pandas.DataFrame(results_table).round(DECIMALS) for metric, results_table in results.items()}
+    df = pandas.concat(dfs, names=("metric", "original_index")).reset_index("original_index", drop=True)
 
-    return df
+    return df, dfs
 
 
 # -------------
@@ -190,12 +190,18 @@ def main():
     # Print results
     for selection_metric in selection_metrics:
         print(f"\n\n{f' Selection metric: {selection_metric} ':=^50}\n")
-        df = get_best_ilodo_performances(
+        df, dfs = get_best_ilodo_performances(
             results_dir=get_results_dir(), main_metric=selection_metric, metrics_to_print=all_metrics, verbose=verbose
         )
 
-        # Print the results for easy copy/paste into overleaf document
-        print(df.to_csv(sys.stdout, sep="&"))
+        # Print the results for easy copy/paste into overleaf document (some changes are still needed, but it still
+        # speeds up the process and is less error-prone)
+        for metric, results_table in dfs.items():
+            print("\hline")
+            print(f"\multirow{r'{5}'}{r'{*}'}{r'{'}{PRETTY_NAME[metric]}{r'}'}")
+            results_table.to_csv(sys.stdout, sep="&", header=False)
+
+        print("\hline")
 
         # Save the results  todo: must add refitting of intercept
         df.to_csv(os.path.join(os.path.dirname(__file__), f"results_{selection_metric}.csv"))
