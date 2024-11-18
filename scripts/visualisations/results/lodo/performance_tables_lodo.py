@@ -133,7 +133,7 @@ def _get_lodo_val_metrics_and_epoch(path, *, main_metric, balance_validation_per
 
 
 def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_performance, refit_intercept, target,
-                                metrics):
+                                metrics, verbose):
     # Get all runs for LODO
     runs = get_all_lodo_runs(results_dir, successful_only=True)
 
@@ -174,39 +174,57 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
                 )
 
                 # Update best metrics
-                if test_dataset in best_val_metrics:
+                if test_dataset in best_val_metrics and verbose:
                     print(f"{test_dataset}: {best_val_metrics[test_dataset]:.2f} < {val_metric:.2f}")
                 best_val_metrics[test_dataset] = val_metric
 
     # --------------
-    # Print results
+    # Get results to a dataframe
     # --------------
-    print(f"{' Results ':=^30}")
+    # Sort the dict first
+    best_models = {dataset: best_models[dataset] for dataset in DATASET_ORDER}
+
+    results = {"target_dataset": [], **{metric: [] for metric in metrics}}
     for dataset, model in best_models.items():
         assert dataset == model.test_dataset
 
-        print(f"{f' {dataset} ':-^20}")
-        print(f"Best run: {model.path}")
+        best_run = model.path.split("/")[-3]
+        print(f"Best run ({dataset}): {best_run}")
         test_performance = _get_lodo_test_performance(
             path=model.path, refit_intercept=refit_intercept, epoch=model.val_epoch, target=target, metrics=metrics
         )
+        results["target_dataset"].append(dataset)
+
         for metric, performance in test_performance.items():
-            print(f"\t{metric}: {performance:.2f}")
+            results[metric].append(performance)
+
+    df = pandas.DataFrame.from_dict(results).round(DECIMALS)
+    print(df)
+
+
+# -------------
+# Globals
+# -------------
+DECIMALS = 2
+DATASET_ORDER = ("TDBrain", "MPILemon", "HatlestadHall", "Miltiadous", "YulinWang")
 
 
 def main():
     # Hyperparameters
-    main_metrics = ("pearson_r", "r2_score", "mae")
+    selection_metrics = ("pearson_r", "r2_score", "mae")
+    all_metrics = ("mae", "mse", "mape", "pearson_r", "spearman_rho", "r2_score")
     balance_validation_performance = False
-    refit_intercept = True
+    refit_intercept = False
     target = "age"
+    verbose = False
 
     # Print results
-    for main_metric in main_metrics:
-        print(f"{f' Main metric: {main_metric} ':=^30}")
+    for selection_metric in selection_metrics:
+        print(f"\n\n{f' Selection metric: {selection_metric} ':=^50}\n")
         _get_best_lodo_performances(
-            results_dir=get_results_dir(), main_metric=main_metric, refit_intercept=refit_intercept,
-            balance_validation_performance=balance_validation_performance, target=target, metrics=main_metrics
+            results_dir=get_results_dir(), main_metric=selection_metric, refit_intercept=refit_intercept,
+            balance_validation_performance=balance_validation_performance, target=target, metrics=all_metrics,
+            verbose=verbose
         )
 
 
