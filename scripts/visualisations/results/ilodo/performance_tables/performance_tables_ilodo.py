@@ -157,8 +157,7 @@ def get_best_ilodo_performances(results_dir, *, main_metric, metrics_to_print, v
     for train_dataset, generalisation_performances in test_performances.items():
         model = best_models[train_dataset]
 
-        print(f"{f' {train_dataset} ':-^20}")
-        print(f"Best run: {model.path}")
+        print(f"Best run ({train_dataset}): {model.path.split('/')[-3]}")
         for metric in metrics_to_print:
             results[metric]["source_dataset"].append(PRETTY_NAME[train_dataset])
             for test_dataset in DATASET_ORDER + ("Pooled",):
