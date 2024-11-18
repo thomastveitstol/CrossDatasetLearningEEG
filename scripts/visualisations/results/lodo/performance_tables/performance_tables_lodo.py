@@ -232,7 +232,7 @@ def main():
             )
 
             # Print the results for easy copy/paste into overleaf document
-            print(df.to_csv(sys.stdout, sep="&"))
+            df.to_csv(sys.stdout, sep="&")
 
             # Save the results
             df.to_csv(os.path.join(os.path.dirname(__file__), f"results_{selection_metric}_refit_intercept_"
