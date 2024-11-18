@@ -3,6 +3,7 @@ Script for printing and creating performance metric tables
 """
 import dataclasses
 import os
+import sys
 from typing import Dict
 
 import numpy
@@ -220,7 +221,7 @@ def main():
     verbose = False
 
     # Print results
-    for refit_intercept in (True, False):
+    for refit_intercept in (False, True):
         for selection_metric in selection_metrics:
             print(f"\n\n{f' Selection metric: {selection_metric} ':=^50}\n")
             df = _get_best_lodo_performances(
@@ -228,7 +229,9 @@ def main():
                 balance_validation_performance=balance_validation_performance, target=target, metrics=all_metrics,
                 verbose=verbose
             )
-            print(df)
+
+            # Print the results for easy copy/paste into overleaf document
+            print(df.to_csv(sys.stdout, sep="&"))
 
             # Save the results
             df.to_csv(os.path.join(os.path.dirname(__file__), f"results_{selection_metric}_refit_intercept_"
