@@ -7,30 +7,31 @@ import numpy
 import pandas
 import yaml  # type: ignore[import]
 
-
 # ----------------
 # Globals
 # ----------------
-PRETTY_NAME = {"pearson_r": "Pearson's r",
-               "spearman_rho": "Spearman's rho",
-               "r2_score": r"$R^2$",
-               "mae": "MAE",
-               "mse": "MSE",
-               "HatlestadHall": "SRM",
-               "Miltiadous": "Miltiadous",
-               "YulinWang": "Wang",
-               "MPILemon": "LEMON",
-               "TDBrain": "TDBRAIN",
-               "Pooled": "Pooled",
-               "MSELoss": "MSE",
-               "L1Loss": "MAE",
-               "ShallowFBCSPNetMTS": "ShallowFBCSPNet",
-               "Deep4NetMTS": "Deep4Net",
-               "spline": "Spline",
-               "2 * f max": r"$2 \cdot f_{max}$",
-               "4 * f max": r"$4 \cdot f_{max}$",
-               "8 * f max": r"$8 \cdot f_{max}$"
-               }
+PRETTY_NAME = {
+    "pearson_r": "Pearson's r",
+    "spearman_rho": "Spearman's rho",
+    "r2_score": r"$R^2$",
+    "mae": "MAE",
+    "mse": "MSE",
+    "mape": "MAPE",
+    "HatlestadHall": "SRM",
+    "Miltiadous": "Miltiadous",
+    "YulinWang": "Wang",
+    "MPILemon": "LEMON",
+    "TDBrain": "TDBRAIN",
+    "Pooled": "Pooled",
+    "MSELoss": "MSE",
+    "L1Loss": "MAE",
+    "ShallowFBCSPNetMTS": "ShallowFBCSPNet",
+    "Deep4NetMTS": "Deep4Net",
+    "spline": "Spline",
+    "2 * f max": r"$2 \cdot f_{max}$",
+    "4 * f max": r"$4 \cdot f_{max}$",
+    "8 * f max": r"$8 \cdot f_{max}$"
+}
 
 
 # ----------------
