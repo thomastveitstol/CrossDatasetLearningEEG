@@ -198,7 +198,10 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
         for metric, performance in test_performance.items():
             results[metric].append(performance)
 
-    return pandas.DataFrame.from_dict(results).round(DECIMALS)
+    df = pandas.DataFrame(results).round(DECIMALS)
+    df.set_index("target_dataset", inplace=True)
+
+    return df
 
 
 # -------------
