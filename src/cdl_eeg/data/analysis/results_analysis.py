@@ -100,7 +100,11 @@ def get_all_lodo_runs(results_dir, successful_only: bool = True):
     else:
         # I mistakenly quit this run by exiting Pycharm. I think it is best to just exclude it for that reason
         _mistake_exit = "age_cv_experiments_2024-09-30_130737"
-        return tuple(run for run in os.listdir(results_dir) if "inverted_cv" not in run and run != _mistake_exit)
+
+        # This was terminated after the first two months of running by KeyboardInterrupt
+        _keybord_exit = "age_cv_experiments_2024-07-31_090027"
+        return tuple(run for run in os.listdir(results_dir) if "inverted_cv" not in run
+                     and run not in (_mistake_exit, _keybord_exit))
 
 
 def get_all_ilodo_runs(results_dir, successful_only: bool = True):
