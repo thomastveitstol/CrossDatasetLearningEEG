@@ -17,10 +17,10 @@ reasonable to not add it to the final count.
 
 The following was printed:
 -- Number of runs --
-Total number of runs: 2175
-Total number of LODO runs: 1111
+Total number of runs: 2174
+Total number of LODO runs: 1110
 Total number of iLODO runs: 1064
-Total number of unsuccessful LODO runs: 191
+Total number of unsuccessful LODO runs: 190
 Total number of unsuccessful iLODO runs: 174
 Total number of successful LODO runs: 920
 Total number of successful iLODO runs: 890
@@ -33,7 +33,6 @@ finished_successfully: 920
 Nothing: 90
 OutOfMemoryError: 74
 RuntimeError: 25
-KeyboardInterrupt: 1
 ValueError: 1
 
 Messages iLODO:
