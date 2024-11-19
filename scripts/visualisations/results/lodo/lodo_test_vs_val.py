@@ -164,8 +164,8 @@ def main():
     datasets = ("HatlestadHall", "MPILemon", "TDBrain", "Miltiadous", "YulinWang")
     balance_validation_performance = False
 
-    x_lims = {"pearson_r": (-0.25, 1), "mae": (0, None), "r2_score": (None, 1)}  # Limits selected post-hoc
-    y_lims = {"pearson_r": (-0.45, 1), "mae": (0, None), "r2_score": (None, 1)}  # Limits selected post-hoc
+    x_lims = {"pearson_r": (-0.28, 1), "mae": (0, None), "r2_score": (None, 1)}  # Limits selected post-hoc
+    y_lims = {"pearson_r": (-0.6, 1), "mae": (0, None), "r2_score": (None, 1)}  # Limits selected post-hoc
     x_lim = x_lims[main_metric]
 
     # Plot results
