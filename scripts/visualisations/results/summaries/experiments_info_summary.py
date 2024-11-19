@@ -17,10 +17,10 @@ reasonable to not add it to the final count.
 
 The following was printed:
 -- Number of runs --
-Total number of runs: 2176
-Total number of LODO runs: 1112
+Total number of runs: 2175
+Total number of LODO runs: 1111
 Total number of iLODO runs: 1064
-Total number of unsuccessful LODO runs: 192
+Total number of unsuccessful LODO runs: 191
 Total number of unsuccessful iLODO runs: 174
 Total number of successful LODO runs: 920
 Total number of successful iLODO runs: 890
@@ -30,7 +30,7 @@ Unexpected message (ValueError): age_cv_experiments_2024-06-06_062551
 
 Messages LODO:
 finished_successfully: 920
-Nothing: 91
+Nothing: 90
 OutOfMemoryError: 74
 RuntimeError: 25
 KeyboardInterrupt: 1

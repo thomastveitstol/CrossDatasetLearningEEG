@@ -98,7 +98,9 @@ def get_all_lodo_runs(results_dir, successful_only: bool = True):
                                                                                            "finished_successfully.txt"))
                      and "inverted_cv" not in run)
     else:
-        return tuple(run for run in os.listdir(results_dir) if "inverted_cv" not in run)
+        # I mistakenly quit this run by exiting Pycharm. I think it is best to just exclude it for that reason
+        _mistake_exit = "age_cv_experiments_2024-09-30_130737"
+        return tuple(run for run in os.listdir(results_dir) if "inverted_cv" not in run and run != _mistake_exit)
 
 
 def get_all_ilodo_runs(results_dir, successful_only: bool = True):
