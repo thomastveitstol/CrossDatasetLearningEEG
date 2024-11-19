@@ -162,7 +162,7 @@ def plot_test_vs_val_ilodo(results_dir, *, main_metric, metrics_to_plot, dataset
             pyplot.ylabel(f"Test performance ({PRETTY_NAME[metric]})", fontsize=_FONTSIZE)
             pyplot.xlabel(f"Validation performance ({PRETTY_NAME[main_metric]})", fontsize=_FONTSIZE)
             pyplot.tick_params(labelsize=_FONTSIZE)
-            pyplot.xlim(-0.6, 1)
+            pyplot.xlim(-0.75, 1)
             pyplot.ylim(-0.6, 1)
             pyplot.legend(fontsize=_FONTSIZE)
             pyplot.grid()
