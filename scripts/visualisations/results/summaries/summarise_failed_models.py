@@ -252,7 +252,7 @@ def main():
     # Add experiment type
     num_lodo_runs = tuple(lodo_run_lengths)[0]
     num_ilodo_runs = tuple(ilodo_run_lengths)[0]
-    summary["Experiment"] = ["LODO"] * num_lodo_runs + ["iLODO"] * num_ilodo_runs
+    summary["Experiment"] = ["LODO"] * num_lodo_runs + ["LODI"] * num_ilodo_runs
 
     # ---------------
     # Plotting
@@ -260,7 +260,7 @@ def main():
     for param_name, param_description in hyperparameters.items():
         pyplot.figure(figsize=FIGSIZE)
         seaborn.countplot(data=summary, x=param_name, hue="Experiment", order=param_description.order, stat=STAT,
-                          hue_order=("LODO", "iLODO"))
+                          hue_order=("LODO", "LODI"))
 
         # Cosmetics
         pyplot.grid(axis="y")
