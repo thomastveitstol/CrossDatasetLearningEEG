@@ -10,32 +10,37 @@ The KeyboardInterrupt is expected because that's how I terminated the experiment
 The RuntimeErrors seem to be a CUDA problem, I'm getting the following when calling loss.backward:
 'RuntimeError: GET was unable to find an engine to execute this computation'
 
-The following was printed:
----Number of runs---
-Total number of runs: 1088
-Total number of LODO runs: 550
-Total number of iLODO runs: 538
-Total number of unsuccessful LODO runs: 77
-Total number of unsuccessful iLODO runs: 84
-Total number of successful LODO runs: 473
-Total number of successful iLODO runs: 454
+When there are no files, it is because the run was killed. This occurred due to memory issues on the CPU
 
----Error messages---
+On the last 2 months of running, I made a mistake by exiting Pycharm. However, a folder was created, but I think it is
+reasonable to not add it to the final count.
+
+The following was printed:
+-- Number of runs --
+Total number of runs: 2176
+Total number of LODO runs: 1112
+Total number of iLODO runs: 1064
+Total number of unsuccessful LODO runs: 192
+Total number of unsuccessful iLODO runs: 174
+Total number of successful LODO runs: 920
+Total number of successful iLODO runs: 890
+
+-- Error messages --
 Unexpected message (ValueError): age_cv_experiments_2024-06-06_062551
 
 Messages LODO:
-finished_successfully: 473
-Nothing: 36
-OutOfMemoryError: 26
-RuntimeError: 13
+finished_successfully: 920
+Nothing: 91
+OutOfMemoryError: 74
+RuntimeError: 25
 KeyboardInterrupt: 1
 ValueError: 1
 
 Messages iLODO:
-OutOfMemoryError: 40
-finished_successfully: 454
-Nothing: 33
-RuntimeError: 11
+finished_successfully: 890
+OutOfMemoryError: 61
+RuntimeError: 16
+Nothing: 97
 """
 import os
 from typing import Dict
