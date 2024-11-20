@@ -178,7 +178,7 @@ def _get_summary(results_dir, runs, hyperparameters):
 # Constants
 # --------------
 # Plot cosmetics
-STAT = "count"
+STAT = "percent"
 FIGSIZE = (7, 5)
 FONTSIZE = 18
 rcParams["legend.fontsize"] = FONTSIZE
@@ -266,7 +266,10 @@ def main():
         pyplot.grid(axis="y")
         pyplot.xlabel(param_name, fontsize=FONTSIZE)
         pyplot.ylabel(STAT.capitalize(), fontsize=FONTSIZE)
-        pyplot.ylim(0, max(num_lodo_runs, num_ilodo_runs))
+        if STAT == "count":
+            pyplot.ylim(0, max(num_lodo_runs, num_ilodo_runs))
+        elif STAT == "percent":
+            pyplot.ylim(0, 50)
         pyplot.tick_params(labelsize=FONTSIZE)
         pyplot.tight_layout()
 
