@@ -157,7 +157,6 @@ class _HP:
     # don't think I can use it... :(
 
 
-
 def _get_cmmn(config):
     # How to extract CMMN depends on the method for handling the different electrode configurations
     if config["Varied Numbers of Channels"]["name"] == "RegionBasedPooling":
