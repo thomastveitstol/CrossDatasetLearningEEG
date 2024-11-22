@@ -2,11 +2,14 @@
 Functions and stuff for analysing the impact of different hyperparameters using Optuna
 
 I think the best way is to define a 'Study' object
+
+This script also contains copied code from Optuna
 """
 import dataclasses
 import os
 import random
-from typing import Dict, Tuple, Union, Optional, Set
+import warnings
+from typing import Dict, Tuple, Union, Optional, Set, Callable
 
 import numpy
 import optuna
@@ -14,15 +17,135 @@ import pandas
 import seaborn
 import yaml
 from matplotlib import pyplot, rcParams
+from matplotlib.axes import Axes
+from matplotlib.contour import ContourSet
 from optuna import Study
 from optuna.distributions import BaseDistribution, FloatDistribution, CategoricalDistribution, IntDistribution
+from optuna.exceptions import ExperimentalWarning
 from optuna.importance import get_param_importances, FanovaImportanceEvaluator
+from optuna.trial import FrozenTrial
+# noinspection PyProtectedMember
+from optuna.visualization._contour import _get_contour_info, _logger, _ContourInfo
+# noinspection PyProtectedMember
+from optuna.visualization.matplotlib._contour import _set_cmap, _generate_contour_subplot  # type: ignore
 
 from cdl_eeg.data.analysis.results_analysis import get_config_file, get_lodo_dataset_name, SkipFold, higher_is_better, \
     get_all_lodo_runs, PRETTY_NAME
 from cdl_eeg.data.paths import get_results_dir
 
 
+# ---------------
+# Slightly modified code from Optuna (see their MIT license in LICENSE.txt file)
+# ---------------
+def plot_contour(
+    study: Study,
+    params: list[str] | None = None,
+    *,
+    title: str,  # This is not actually in optuna
+    target: Callable[[FrozenTrial], float] | None = None,
+    target_name: str = "Objective Value",
+    verbose: bool = False  # Not in optuna
+) -> Axes:
+    """Plot the parameter relationship as contour plot in a study with Matplotlib.
+
+    Note that, if a parameter contains missing values, a trial with missing values is not plotted.
+
+    .. seealso::
+        Please refer to :func:`optuna.visualization.plot_contour` for an example.
+
+    Warnings:
+        Output figures of this Matplotlib-based
+        :func:`~optuna.visualization.matplotlib.plot_contour` function would be different from
+        those of the Plotly-based :func:`~optuna.visualization.plot_contour`.
+
+    Args:
+        study:
+            A :class:`~optuna.study.Study` object whose trials are plotted for their target values.
+        params:
+            Parameter list to visualize. The default is all parameters.
+        title:
+            The title of the plots
+        target:
+            A function to specify the value to display. If it is :obj:`None` and ``study`` is being
+            used for single-objective optimization, the objective values are plotted.
+
+            .. note::
+                Specify this argument if ``study`` is being used for multi-objective optimization.
+        target_name:
+            Target's name to display on the color bar.
+        verbose:
+            To use logging or not
+
+    Returns:
+        A :class:`matplotlib.axes.Axes` object.
+
+    .. note::
+        The colormap is reversed when the ``target`` argument isn't :obj:`None` or ``direction``
+        of :class:`~optuna.study.Study` is ``minimize``.
+    """
+    # _imports.check()
+    if verbose:
+        _logger.warning(
+            "Output figures of this Matplotlib-based `plot_contour` function would be different from "
+            "those of the Plotly-based `plot_contour`."
+        )
+    info = _get_contour_info(study, params, target, target_name)
+    return _get_contour_plot(info, title)  # Using slightly modified from optuna
+
+
+def _get_contour_plot(info: _ContourInfo, title) -> Axes:
+    sorted_params = info.sorted_params
+    sub_plot_infos = info.sub_plot_infos
+    reverse_scale = info.reverse_scale
+    target_name = info.target_name
+
+    # (deviating from Optuna)
+    print(sorted_params)
+    print(sub_plot_infos[0])
+
+    if len(sorted_params) <= 1:
+        _, ax = pyplot.subplots()
+        return ax
+    n_params = len(sorted_params)
+
+    pyplot.style.use("ggplot")  # Use ggplot style sheet for similar outputs to plotly.
+    if n_params == 2:
+        # Set up the graph style.
+        fig, axs = pyplot.subplots()
+        axs.set_title("Contour Plot")
+        cmap = _set_cmap(reverse_scale)
+
+        cs = _generate_contour_subplot(sub_plot_infos[0][0], axs, cmap)
+        if isinstance(cs, ContourSet):
+            axcb = fig.colorbar(cs)
+            axcb.set_label(target_name)
+    else:
+        # TT: This is where I've deviated from Optuna, as I prefer to have the subplots saved separately rather than
+        # together
+        # Set up the graph style.
+        cmap = _set_cmap(reverse_scale)
+
+        # Draw contour plots.
+        for x_i in range(1, len(sorted_params)):
+            for y_i in range(x_i):
+                fig, ax = pyplot.subplots(figsize=FIGSIZE)
+
+                cs = _generate_contour_subplot(sub_plot_infos[x_i][y_i], ax, cmap)
+
+                # Cosmetics
+                ax.set_title(title, fontsize=TITLE_FONTSIZE)
+                ax.tick_params(labelsize=FONTSIZE, color="black", labelcolor="black")
+                ax.set_xlabel(ax.get_xlabel(), color="black", fontsize=FONTSIZE)
+                ax.set_ylabel(ax.get_ylabel(), color="black", fontsize=FONTSIZE)
+
+                cbar = fig.colorbar(cs, ax=ax)
+                cbar.set_label(target_name, fontsize=FONTSIZE, color="black")
+                cbar.ax.tick_params(labelsize=FONTSIZE, labelcolor="black")
+
+
+# ---------------
+# Getting configurations
+# ---------------
 @dataclasses.dataclass(frozen=True)
 class _HP:
     key_path: Union[Tuple[str, ...], str]
@@ -418,6 +541,22 @@ def create_studies(*, datasets, runs, direction, results_dir, target_metric, sel
     return studies
 
 
+# --------------
+# Plot functions
+# --------------
+def _plot_hp_importance(importances, hyperparameters):
+    df = pandas.DataFrame.from_dict(importances)
+    pyplot.figure(figsize=FIGSIZE, layout="constrained")
+    seaborn.barplot(df, hue="Dataset", y="Hyperparameter", x="Importance", order=hyperparameters.keys(),
+                    errorbar=ERRORBAR)
+
+    # Cosmetics
+    pyplot.grid(axis="x")
+    pyplot.xlim(0, None)
+    pyplot.tick_params(labelsize=FONTSIZE)
+    pyplot.yticks(rotation=Y_ROTATION)
+
+
 INV_FREQUENCY_BANDS = {(1.0, 4.0): "Delta",
                        (4.0, 8.0): "Theta",
                        (8.0, 12.0): "Alpha",
@@ -460,7 +599,8 @@ _HYPERPARAMETERS = {
 
 EVALUATORS = {"fanova": FanovaImportanceEvaluator()}
 FONTSIZE = 18
-FIGSIZE = (20, 17)
+TITLE_FONTSIZE = FONTSIZE + 4
+FIGSIZE = (16, 9)
 Y_ROTATION = None
 ERRORBAR = "sd"
 rcParams["legend.fontsize"] = FONTSIZE
@@ -477,9 +617,13 @@ def main():
     # ----------------
     # A few design choices for the analysis
     # ----------------
-    num_evaluations = 10  # Running fANOVA does not always yield the same results. This determines the number of times
+    num_evaluations = 1  # Running fANOVA does not always yield the same results. This determines the number of times
     # to run HP importance
     datasets = ("TDBrain", "MPILemon", "HatlestadHall")
+    hp_interactions = ("Band-pass filter", "DL Architecture", "Spatial Dimension Handling",
+                       "Normalisation")  # HPs for checking interactions
+    plot_individual_importance = True
+    plot_hp_interactions = False
     evaluator = "fanova"
     results_dir = get_results_dir()
     selection_metric = "mae"
@@ -487,7 +631,7 @@ def main():
     direction = "maximize" if higher_is_better(target_metric) else "minimize"
     balance_validation_performance = False
     hyperparameters = _HYPERPARAMETERS.copy()
-    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)  # [:40]
+    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)[:40]
     config_dist_path = os.path.join(  # todo: not very elegant...
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "models", "training",
         "config_files", "hyperparameter_random_search.yml"
@@ -504,9 +648,25 @@ def main():
         hyperparameters=hyperparameters, dist_config=config_dist
     )
 
+    if plot_hp_interactions:
+        print("Plotting HP interactions...")
+        for dataset, study in studies.items():
+            print(f"\t{PRETTY_NAME[dataset]}")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=ExperimentalWarning)
+
+                # Make contour plots (note that we are here using modified Optuna code)
+                plot_contour(study, params=list(hp_interactions), title=PRETTY_NAME[dataset],
+                             target_name=PRETTY_NAME[target_metric])
+
+        pyplot.show()
+
     # ----------------
     # Get the hyperparameter importance scores
     # ----------------
+    if not plot_individual_importance:
+        return None
+
     print(f"Evaluator: {evaluator}")
     importances = {"Dataset": [], "Importance": [], "Hyperparameter": []}
     for i in range(num_evaluations):
@@ -520,6 +680,8 @@ def main():
 
             # Get HP importance
             hp_importance = get_param_importances(study, evaluator=EVALUATORS[evaluator])
+            print(tuple(hp_importance.keys()))
+            print(EVALUATORS[evaluator].evaluate())
 
             # Add to dict
             for param_name, importance in hp_importance.items():
@@ -530,16 +692,7 @@ def main():
     # ----------------
     # Plotting
     # ----------------
-    df = pandas.DataFrame.from_dict(importances)
-    pyplot.figure(figsize=FIGSIZE, layout="constrained")
-    seaborn.barplot(df, hue="Dataset", y="Hyperparameter", x="Importance", order=hyperparameters.keys(),
-                    errorbar=ERRORBAR)
-
-    # Cosmetics
-    pyplot.grid(axis="x")
-    pyplot.xlim(0, None)
-    pyplot.tick_params(labelsize=FONTSIZE)
-    pyplot.yticks(rotation=Y_ROTATION)
+    _plot_hp_importance(importances, hyperparameters)
 
     pyplot.show()
 
