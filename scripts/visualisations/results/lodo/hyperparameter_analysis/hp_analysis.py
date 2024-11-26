@@ -9,6 +9,7 @@ import dataclasses
 import os
 import pickle
 import random
+import sys
 from typing import Dict, Tuple, Union, Optional, Set, Any, List
 
 import matplotlib
@@ -16,7 +17,8 @@ import numpy
 import optuna
 import pandas
 import yaml
-from ConfigSpace import UniformFloatHyperparameter, UniformIntegerHyperparameter, ConfigurationSpace
+from ConfigSpace import UniformFloatHyperparameter, UniformIntegerHyperparameter, ConfigurationSpace, \
+    OrdinalHyperparameter
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, Hyperparameter, NumericalHyperparameter
 from fanova import fANOVA
 from fanova.visualizer import Visualizer
@@ -172,7 +174,12 @@ class _HPCResult:
 # ---------------
 _ENCODING = {"spatial_method": {"RBP": 0, "spline": 1, "MNE": 2},
              "band_pass": {"Delta": 0, "Theta": 1, "Alpha": 2, "Beta": 3, "Gamma": 4, "All": 5},
-             "dl_architecture": {"InceptionNetwork": 0, "ShallowFBCSPNetMTS": 1, "Deep4NetMTS": 2}}
+             "dl_architecture": {"InceptionNetwork": 0, "ShallowFBCSPNetMTS": 1, "Deep4NetMTS": 2},
+             "sampling_freq": {"2 * f max": 0, "4 * f max": 1, "8 * f max": 2},
+             "normalisation": {False: 0, True: 1},
+             "input_length": {"5s": 0, "10s": 1},
+             "loss": {"L1Loss": 0, "MSELoss": 1},
+             "autoreject": {False: 0, True: 1}}
 
 
 def _get_cmmn(config):
@@ -230,9 +237,10 @@ def _get_band_pass_filter(preprocessing_config):
 
 def _get_normalisation(config):
     if config["Varied Numbers of Channels"]["name"] == "Interpolation":
-        return config["DL Architecture"]["normalise"]
+        return _ENCODING["normalisation"][config["DL Architecture"]["normalise"]]
     elif config["Varied Numbers of Channels"]["name"] == "RegionBasedPooling":
-        return config["Varied Numbers of Channels"]["kwargs"]["normalise_region_representations"]
+        return _ENCODING["normalisation"][config["Varied Numbers of Channels"]["kwargs"][("normalise_region_"
+                                                                                          "representations")]]
     else:
         raise ValueError
 
@@ -248,6 +256,14 @@ def _get_dl_architecture(config):
     return _ENCODING["dl_architecture"][config["DL Architecture"]["model"]]
 
 
+def _get_loss(config):
+    return _ENCODING["loss"][config["Training"]["Loss"]["loss"]]
+
+
+def _get_autoreject(config):
+    return _ENCODING["autoreject"][config["general"]["autoreject"]]
+
+
 def _get_hyperparameter(config, hparam: _HP, dist):
     if hparam.key_path == "domain_adaptation" and not dist:
         return _get_domain_adaptation(config)
@@ -256,15 +272,21 @@ def _get_hyperparameter(config, hparam: _HP, dist):
     elif hparam.key_path == "band_pass":
         return _get_band_pass_filter(config)
     elif hparam.key_path == "sampling_freq_multiple":
-        return f"{int(config['general']['resample'] // config['general']['filtering'][-1])} * f max"
+        _enc = _ENCODING["sampling_freq"]
+        return _enc[f"{int(config['general']['resample'] // config['general']['filtering'][-1])} * f max"]
     elif hparam.key_path == "normalisation":
         return _get_normalisation(config)
     elif hparam.key_path == "num_seconds":
-        return f"{int(config['general']['num_time_steps'] // config['general']['resample'])}s"
+        _enc = _ENCODING["input_length"]
+        return _enc[f"{int(config['general']['num_time_steps'] // config['general']['resample'])}s"]
     elif hparam.key_path == "weighted_loss":
         return _get_weighted_loss(config)
     elif hparam.key_path == "dl_architecture" and not dist:
         return _get_dl_architecture(config)
+    elif hparam.key_path == "loss" and not dist:
+        return _get_loss(config)
+    elif hparam.key_path == "autoreject" and not dist:
+        return _get_autoreject(config)
 
     hyperparameter = config.copy()
     keys = hparam.dist_path if dist and hparam.dist_path is not None else hparam.key_path
@@ -388,7 +410,7 @@ def _get_domain_adaptation_dist(hp_name):
 
 def _get_spatial_dim_choices(hp_name):
     # I don't think I need to specify the weights
-    return CategoricalHyperparameter(name=hp_name, choices=("spline", "MNE", "RBP"))
+    return CategoricalHyperparameter(name=hp_name, choices=("spline", "MNE", "RBP"), weights=(0.25, 0.25, 0.5))
 
 
 def _get_band_pass_dist(hp_name):
@@ -396,7 +418,7 @@ def _get_band_pass_dist(hp_name):
 
 
 def _get_sampling_freq_dist(hp_name):
-    return CategoricalHyperparameter(name=hp_name, choices=("2 * f max", "4 * f max", "8 * f max"))
+    return OrdinalHyperparameter(name=hp_name, sequence=("2 * f max", "4 * f max", "8 * f max"))
 
 
 def _get_normalisation_dist(hp_name):
@@ -404,7 +426,7 @@ def _get_normalisation_dist(hp_name):
 
 
 def _get_input_length_dist(hp_name):
-    return CategoricalHyperparameter(name=hp_name, choices=("5s", "10s"))
+    return OrdinalHyperparameter(name=hp_name, sequence=("5s", "10s"))
 
 
 def _get_loss_dist(hp_name):
@@ -412,8 +434,9 @@ def _get_loss_dist(hp_name):
 
 
 def _get_weighted_loss_dist(hp_name):
-    # todo: it's not uniform, what to do then?
-    return UniformIntegerHyperparameter(name=hp_name, lower=0, upper=1)
+    # Looks to me like only the upper and lower bounds are used anyway (all instances of type NumericalHyperparameter
+    # seem to be treated equally). Changing to a normal distribution doesn't change the outcome neither
+    return UniformFloatHyperparameter(name=hp_name, lower=0, upper=1)
 
 
 def _get_autoreject_dist(hp_name):
@@ -637,6 +660,45 @@ def _hp_interaction_analysis(studies, *, num_pairwise_marginals, plot_hp_interac
             visualiser.plot_pairwise_marginal(hp_pair, show=True, resolution=resolution, three_d=plot_3d)
 
 
+def _hp_marginals_analysis(studies, *, performance_df, percentiles, investigated_hps, datasets, verbose):
+    marginal_importance: Dict[str, Dict[str, Dict[str, str]]] = {
+        dataset_name: {hp_name: {} for hp_name in investigated_hps} for dataset_name in datasets
+    }
+    for dataset_name, fanova in studies.items():
+        if verbose:
+            print(f"\n\n--- HP Marginals ({PRETTY_NAME[dataset_name]}) ---")
+        for percentile in percentiles:
+            # Compute cutoff (assuming correlation coefficient)
+            lower_cutoff = numpy.percentile(performance_df[dataset_name], percentile)
+
+            if verbose:
+                print(f"Percentile: {percentile} (Cutoff at {lower_cutoff:.2%})")
+            fanova.set_cutoffs(cutoffs=(lower_cutoff, numpy.inf))
+            for hp_name in investigated_hps:
+                summary = fanova.quantify_importance(dims=(hp_name,))[(hp_name,)]
+                importance = summary["individual importance"] * 100  # Get to percentages
+                std = summary["individual std"] * 100
+                if verbose:
+                    print(f"\t\t{hp_name}: {importance:.2%}")
+
+                marginal_importance[dataset_name][hp_name][f"{percentile}"] = f"{importance:.2f} ({std:.2f})"
+
+    # Saving and printing
+    for dataset, analysis in marginal_importance.items():
+        df = pandas.DataFrame.from_dict(analysis, orient="index")
+
+        # Save .csv file
+        results_folder = os.path.join(os.path.dirname(__file__), "marginals")
+        if not os.path.isdir(results_folder):
+            os.mkdir(results_folder)
+
+        df.to_csv(os.path.join(results_folder, f"marginals_{PRETTY_NAME[dataset].lower()}.csv"))
+
+        # Print so that it's easy to copypaste to overleaf
+        print(f"\n\n{PRETTY_NAME[dataset]}:")
+        df.to_csv(sys.stdout, sep="&", header=True)
+
+
 INV_FREQUENCY_BANDS = {(1.0, 4.0): "Delta",
                        (4.0, 8.0): "Theta",
                        (8.0, 12.0): "Alpha",
@@ -653,14 +715,6 @@ _HYPERPARAMETERS = {
     r"$\epsilon$": _HP(key_path=("Training", "eps"), preprocessing=False),
     # DL architecture
     "DL Architecture": _HP(key_path="dl_architecture", dist_path=("MTS Module",), preprocessing=False),
-    #"IN:depth": _HP(key_path=("DL Architecture", "kwargs", "depth"), dist_path=("InceptionNetwork", "sample", "depth"),
-    #                preprocessing=False, is_conditional=True),
-    #"IN:cnn_units": _HP(key_path=("DL Architecture", "kwargs", "cnn_units"),
-    #                    dist_path=("InceptionNetwork", "sample", "cnn_units"), preprocessing=False,
-    #                    is_conditional=True),
-    #"SN:n_filters": _HP(key_path=("DL Architecture", "kwargs", "n_filters"),
-    #                    dist_path=("ShallowFBCSPNetMTS", "sample", "n_filters"),
-    #                    preprocessing=False, is_conditional=True),
     # Spatial dimension mismatch
     "Spatial Dimension Handling": _HP(key_path="spatial_dimension", preprocessing=False, in_dist_config=False),
     # Domain discriminator
@@ -670,9 +724,9 @@ _HYPERPARAMETERS = {
     "Sampling frequency": _HP(key_path="sampling_freq_multiple", preprocessing=True, in_dist_config=False),
     "Normalisation": _HP(key_path="normalisation", preprocessing=False, in_dist_config=False),
     "Input length": _HP(key_path="num_seconds", preprocessing=True, in_dist_config=False),
-    "Autoreject": _HP(key_path=("general", "autoreject"), preprocessing=True, in_dist_config=False),
+    "Autoreject": _HP(key_path="autoreject", preprocessing=True, in_dist_config=False),
     # Loss
-    "Loss": _HP(key_path=("Training", "Loss", "loss"), preprocessing=False, in_dist_config=False),
+    "Loss": _HP(key_path="loss", preprocessing=False, in_dist_config=False),
     r"Weighted loss ($\tau$)": _HP(key_path="weighted_loss", preprocessing=False, in_dist_config=False)
 }
 
@@ -696,16 +750,14 @@ def main():
     # ----------------
     # A few design choices for the analysis
     # ----------------
-    num_evaluations = 1  # Running fANOVA does not always yield the same results. This determines the number of times
-    # to run HP importance
     num_pairwise_marginals = 10
     datasets = ("TDBrain", "MPILemon", "HatlestadHall")
-    investigated_hps = ("Learning rate", r"$\beta_1$", r"$\beta_2$", r"$\epsilon$", "Domain Adaptation",
-                        "Spatial Dimension Handling", "DL Architecture", "Band-pass filter")
+    investigated_hps = tuple(_HYPERPARAMETERS)
     plot_3d = False
     fanova_kwargs = {"n_trees": 64, "max_depth": 64}
     resolution = 50
     verbose = False
+    marginals_verbose = False
     percentiles = (0, 50, 75, 90, 95)
     plot_hp_interactions = False
     results_dir = get_results_dir()
@@ -714,7 +766,7 @@ def main():
     balance_validation_performance = False
     hyperparameters = _HYPERPARAMETERS.copy()
     hyperparameters = {hp: hyperparameters[hp] for hp in investigated_hps}
-    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)  # [:100]
+    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)[:20]
     config_dist_path = os.path.join(  # not very elegant...
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "models",
         "training", "config_files", "hyperparameter_random_search.yml"
@@ -740,27 +792,18 @@ def main():
     numpy.float = float
 
     # HP marginals
-    marginal_importance: Dict[str, Dict[str, Dict[float, float]]] = {
-        dataset_name: {hp_name: {} for hp_name in investigated_hps} for dataset_name in datasets
-    }
-    for dataset_name, fanova in studies.items():
-        print(f"\n\n--- HP Marginals ({PRETTY_NAME[dataset_name]}) ---")
-        for percentile in percentiles:
-            # Compute cutoff (assuming correlation coefficient)
-            lower_cutoff = numpy.percentile(performance_df[dataset_name], percentile)
-
-            print(f"Percentile: {percentile} (Cutoff at {lower_cutoff:.2%})")
-            fanova.set_cutoffs(cutoffs=(lower_cutoff, numpy.inf))
-            for hp_name in investigated_hps:
-                importance = fanova.quantify_importance(dims=(hp_name,))[(hp_name,)]
-                print(f"\t\t{hp_name}: {importance['individual importance']:.2%}")
-
-                marginal_importance[dataset_name][hp_name][percentile] = importance
-    print(pandas.DataFrame(marginal_importance))
+    print("\n----- Marginals -----")
+    _hp_marginals_analysis(
+        studies, performance_df=performance_df, percentiles=percentiles, investigated_hps=investigated_hps,
+        datasets=datasets, verbose=marginals_verbose
+    )
 
     # HP interaction analysis
-    _hp_interaction_analysis(studies, num_pairwise_marginals=num_pairwise_marginals,
-                             plot_hp_interactions=plot_hp_interactions, plot_3d=plot_3d, resolution=resolution)
+    print("\n----- Interaction terms -----")
+    _hp_interaction_analysis(
+        studies, num_pairwise_marginals=num_pairwise_marginals, plot_hp_interactions=plot_hp_interactions,
+        plot_3d=plot_3d, resolution=resolution
+    )
 
 
 if __name__ == "__main__":
