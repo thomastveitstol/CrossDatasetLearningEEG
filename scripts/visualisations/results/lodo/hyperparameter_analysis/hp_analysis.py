@@ -766,7 +766,7 @@ def main():
     balance_validation_performance = False
     hyperparameters = _HYPERPARAMETERS.copy()
     hyperparameters = {hp: hyperparameters[hp] for hp in investigated_hps}
-    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)[:20]
+    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)
     config_dist_path = os.path.join(  # not very elegant...
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "models",
         "training", "config_files", "hyperparameter_random_search.yml"
@@ -799,7 +799,7 @@ def main():
     )
 
     # HP interaction analysis
-    print("\n----- Interaction terms -----")
+    print("\n\n----- Interaction terms -----")
     _hp_interaction_analysis(
         studies, num_pairwise_marginals=num_pairwise_marginals, plot_hp_interactions=plot_hp_interactions,
         plot_3d=plot_3d, resolution=resolution
