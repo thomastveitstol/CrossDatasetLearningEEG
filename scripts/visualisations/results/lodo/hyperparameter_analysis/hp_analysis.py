@@ -494,7 +494,7 @@ def create_fanova(*, datasets, runs, results_dir, target_metric, selection_metri
                   dist_config, hyperparameters=None, fanova_kwargs=None, verbose):
     """
     Function for creating a fANOVA object per dataset. Once these are obtained, hyperparameter importance can be
-    assessedconfig_space
+    assessed config_space
 
     Parameters
     ----------
@@ -520,7 +520,7 @@ def create_fanova(*, datasets, runs, results_dir, target_metric, selection_metri
 
     Returns
     -------
-    dict[str, fANOVA]
+    tuple[dict[str, fANOVA], dict[str, pandas.DataFrame]]
     """
     fanova_kwargs = dict() if fanova_kwargs is None else fanova_kwargs
 
@@ -604,8 +604,9 @@ def create_fanova(*, datasets, runs, results_dir, target_metric, selection_metri
                              **fanova_kwargs)
         for dataset_name, df in dfs.items()
     }
+    performance_df: Dict[str, pandas.DataFrame] = {dataset_name: df[target_metric] for dataset_name, df in dfs.items()}
 
-    return fanovas
+    return fanovas, performance_df
 
 
 # --------------
@@ -702,9 +703,10 @@ def main():
     investigated_hps = ("Learning rate", r"$\beta_1$", r"$\beta_2$", r"$\epsilon$", "Domain Adaptation",
                         "Spatial Dimension Handling", "DL Architecture", "Band-pass filter")
     plot_3d = False
+    fanova_kwargs = {"n_trees": 64, "max_depth": 64}
     resolution = 50
     verbose = False
-    # plot_individual_importance = True
+    percentiles = (0, 50, 75, 90, 95)
     plot_hp_interactions = False
     results_dir = get_results_dir()
     selection_metric = "mae"
@@ -723,10 +725,11 @@ def main():
     # ----------------
     # Create the fANOVA objects
     # ----------------
-    studies = create_fanova(
+    studies: Dict[str, fANOVA]
+    studies, performance_df = create_fanova(
         datasets=datasets, runs=runs, results_dir=results_dir, target_metric=target_metric,
         selection_metric=selection_metric, balance_validation_performance=balance_validation_performance,
-        hyperparameters=hyperparameters, dist_config=config_dist, verbose=verbose
+        hyperparameters=hyperparameters, dist_config=config_dist, verbose=verbose, fanova_kwargs=fanova_kwargs
     )
 
     # ----------------
@@ -737,11 +740,23 @@ def main():
     numpy.float = float
 
     # HP marginals
+    marginal_importance: Dict[str, Dict[str, Dict[float, float]]] = {
+        dataset_name: {hp_name: {} for hp_name in investigated_hps} for dataset_name in datasets
+    }
     for dataset_name, fanova in studies.items():
         print(f"\n\n--- HP Marginals ({PRETTY_NAME[dataset_name]}) ---")
-        for hp_name in investigated_hps:
-            importance = fanova.quantify_importance(dims=(hp_name,))[(hp_name,)]
-            print(f"\t{hp_name}: {importance['individual importance']:.2%}")
+        for percentile in percentiles:
+            # Compute cutoff (assuming correlation coefficient)
+            lower_cutoff = numpy.percentile(performance_df[dataset_name], percentile)
+
+            print(f"Percentile: {percentile} (Cutoff at {lower_cutoff:.2%})")
+            fanova.set_cutoffs(cutoffs=(lower_cutoff, numpy.inf))
+            for hp_name in investigated_hps:
+                importance = fanova.quantify_importance(dims=(hp_name,))[(hp_name,)]
+                print(f"\t\t{hp_name}: {importance['individual importance']:.2%}")
+
+                marginal_importance[dataset_name][hp_name][percentile] = importance
+    print(pandas.DataFrame(marginal_importance))
 
     # HP interaction analysis
     _hp_interaction_analysis(studies, num_pairwise_marginals=num_pairwise_marginals,
