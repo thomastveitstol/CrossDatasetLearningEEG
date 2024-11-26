@@ -635,19 +635,7 @@ def create_fanova(*, datasets, runs, results_dir, target_metric, selection_metri
 # --------------
 # Plot functions
 # --------------
-def _hp_interaction_analysis(studies, *, num_pairwise_marginals, plot_hp_interactions, plot_3d, resolution):
-    # Compute pairwise marginals
-    for dataset_name, fanova in studies.items():
-        print(f"\n\n--- HP Interactions ({PRETTY_NAME[dataset_name]}) ---")
-
-        hp_interaction_ranking = fanova.get_most_important_pairwise_marginals(n=num_pairwise_marginals)
-        for i, (hp_pair, importance) in enumerate(hp_interaction_ranking.items()):
-            print(f"\t({i + 1}) {hp_pair}: {importance:.2%}")
-
-    # Make marginal plots
-    if not plot_hp_interactions:
-        return
-
+def _plot_hp_interactions(studies, *, plot_3d, num_pairwise_marginals, resolution):
     for dataset_name, fanova in studies.items():
         # Select visualiser (had to make some changes for 3D)
         if plot_3d:
@@ -658,6 +646,61 @@ def _hp_interaction_analysis(studies, *, num_pairwise_marginals, plot_hp_interac
         # Plot the most important hyperparameter pairs
         for hp_pair in fanova.get_most_important_pairwise_marginals(n=num_pairwise_marginals):
             visualiser.plot_pairwise_marginal(hp_pair, show=True, resolution=resolution, three_d=plot_3d)
+
+
+def _hp_interaction_analysis(studies, *, performance_df, percentiles, num_pairwise_marginals, plot_hp_interactions,
+                             plot_3d, resolution, verbose, datasets):
+    pairwise_marginals: Dict[str, Dict[float, Dict[str, List[Union[float, Tuple[str, str]]]]]] = {
+        dataset_name: dict() for dataset_name in datasets
+    }
+
+    # Compute pairwise marginals
+    for dataset_name, fanova in studies.items():
+        if verbose:
+            print(f"\n\n--- HP Interactions ({PRETTY_NAME[dataset_name]}) ---")
+
+        for percentile in percentiles:
+            pairwise_marginals[dataset_name][percentile] = {"pair": [], "importance": []}
+
+            # Compute cutoff (assuming correlation coefficient)
+            lower_cutoff = numpy.percentile(performance_df[dataset_name], percentile)
+
+            if verbose:
+                print(f"Percentile: {percentile} (Cutoff at {lower_cutoff:.2%})")
+            fanova.set_cutoffs(cutoffs=(lower_cutoff, numpy.inf))
+
+            # Compute interactions
+            hp_interaction_ranking = fanova.get_most_important_pairwise_marginals(n=num_pairwise_marginals)
+            for i, (hp_pair, importance) in enumerate(hp_interaction_ranking.items()):
+                if verbose:
+                    print(f"\t({i + 1}) {hp_pair}: {importance:.2%}")
+
+                pairwise_marginals[dataset_name][percentile]["pair"].append(hp_pair)  # Ranked naturally
+                pairwise_marginals[dataset_name][percentile]["importance"].append(importance)
+
+    # Maybe make marginal plots
+    if plot_hp_interactions:
+        _plot_hp_interactions(studies, plot_3d=plot_3d, num_pairwise_marginals=num_pairwise_marginals,
+                              resolution=resolution)
+
+    # Saving and printing
+    for dataset, complete_analysis in pairwise_marginals.items():
+        for percentile, analysis in complete_analysis.items():
+            # Create dataframe
+            df = pandas.DataFrame(analysis)
+            df.set_index("pair", inplace=True)
+
+            # Save .csv file
+            results_folder = os.path.join(os.path.dirname(__file__), "interactions")
+            if not os.path.isdir(results_folder):
+                os.mkdir(results_folder)
+            df.to_csv(os.path.join(results_folder,
+                                   f"interactions_{PRETTY_NAME[dataset].lower()}_percentile_{percentile}.csv"))
+
+            # Print so that it's easy to copypaste to overleaf
+            df *= 100  # to percentages
+            print(f"\n\n{PRETTY_NAME[dataset]} (Percentile ({percentile})):")
+            df.to_csv(sys.stdout, sep="&", header=True)
 
 
 def _hp_marginals_analysis(studies, *, performance_df, percentiles, investigated_hps, datasets, verbose):
@@ -696,6 +739,7 @@ def _hp_marginals_analysis(studies, *, performance_df, percentiles, investigated
 
         # Print so that it's easy to copypaste to overleaf
         print(f"\n\n{PRETTY_NAME[dataset]}:")
+        df = df.round(2)
         df.to_csv(sys.stdout, sep="&", header=True)
 
 
@@ -758,6 +802,7 @@ def main():
     resolution = 50
     verbose = False
     marginals_verbose = False
+    interactions_verbose = False
     percentiles = (0, 50, 75, 90, 95)
     plot_hp_interactions = False
     results_dir = get_results_dir()
@@ -802,7 +847,8 @@ def main():
     print("\n\n----- Interaction terms -----")
     _hp_interaction_analysis(
         studies, num_pairwise_marginals=num_pairwise_marginals, plot_hp_interactions=plot_hp_interactions,
-        plot_3d=plot_3d, resolution=resolution
+        plot_3d=plot_3d, resolution=resolution, performance_df=performance_df, percentiles=percentiles,
+        verbose=interactions_verbose, datasets=datasets
     )
 
 
