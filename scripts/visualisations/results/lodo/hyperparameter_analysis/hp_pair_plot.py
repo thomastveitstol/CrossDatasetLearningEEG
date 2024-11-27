@@ -24,7 +24,7 @@ from matplotlib import pyplot, rcParams
 from matplotlib.ticker import FuncFormatter
 
 from cdl_eeg.data.analysis.results_analysis import get_config_file, get_lodo_dataset_name, SkipFold, higher_is_better, \
-    get_all_lodo_runs
+    get_all_lodo_runs, PRETTY_NAME
 from cdl_eeg.data.paths import get_results_dir
 
 
@@ -229,8 +229,9 @@ class UpdatedVisualizer(Visualizer):
                 if not os.path.isdir(results_dir):
                     os.mkdir(results_dir)
 
-                pyplot.savefig(os.path.join(results_dir, f"{dataset_name.lower()}_percentile_{percentile}.png"),
-                               dpi=DPI)
+                pyplot.savefig(os.path.join(
+                    results_dir, f"{PRETTY_NAME[dataset_name].lower()}_percentile_{percentile}.png"
+                ), dpi=DPI)
 
         if show:
             pyplot.show()
@@ -815,7 +816,7 @@ def main():
     balance_validation_performance = False
     hyperparameters = _HYPERPARAMETERS.copy()
     hyperparameters = {hp: hyperparameters[hp] for hp in investigated_hps}
-    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)[:20]
+    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)
     config_dist_path = os.path.join(  # not very elegant...
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "models",
         "training", "config_files", "hyperparameter_random_search.yml"
