@@ -699,6 +699,7 @@ def _hp_interaction_analysis(studies, *, performance_df, percentiles, num_pairwi
 
             # Print so that it's easy to copypaste to overleaf
             df *= 100  # to percentages
+            df = df.round(2)
             print(f"\n\n{PRETTY_NAME[dataset]} (Percentile ({percentile})):")
             df.to_csv(sys.stdout, sep="&", header=True)
 
