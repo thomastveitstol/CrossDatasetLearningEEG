@@ -824,7 +824,7 @@ def main():
     balance_validation_performance = False
     hyperparameters = _HYPERPARAMETERS.copy()
     hyperparameters = {hp: hyperparameters[hp] for hp in investigated_hps}
-    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)[:20]
+    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)  # [:20]
     config_dist_path = os.path.join(  # not very elegant...
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "models",
         "training", "config_files", "hyperparameter_random_search.yml"
