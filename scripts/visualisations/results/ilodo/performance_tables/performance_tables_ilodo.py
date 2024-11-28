@@ -107,7 +107,8 @@ def _get_ilodo_refit_scores(path, epoch, metrics) -> Dict[str, Dict[str, float]]
             # getting the results from a scientific paper, even when it makes sense. So, violating some best practice
             # instead
             test_metrics[dataset][metric] = Histories._compute_metric(
-                metric=metric, y_pred=torch.tensor(df["adjusted_pred"]), y_true=torch.tensor(df["ground_truth"])
+                metric=metric, y_pred=torch.tensor(df["adjusted_pred"].to_numpy()),
+                y_true=torch.tensor(df["ground_truth"].to_numpy())
             )
 
     # ------------
@@ -136,7 +137,8 @@ def _get_ilodo_refit_scores(path, epoch, metrics) -> Dict[str, Dict[str, float]]
     test_metrics["Pooled"] = dict()
     for metric in metrics:
         test_metrics["Pooled"][metric] = Histories._compute_metric(
-            metric=metric, y_pred=torch.tensor(df["adjusted_pred"]), y_true=torch.tensor(df["ground_truth"])
+            metric=metric, y_pred=torch.tensor(df["adjusted_pred"].to_numpy()),
+            y_true=torch.tensor(df["ground_truth"].to_numpy())
         )
     return test_metrics
 
