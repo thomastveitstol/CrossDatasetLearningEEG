@@ -1,3 +1,12 @@
+"""
+Script for generating distributions of top configurations. It is not used in the paper, but I used it for finding the
+best models.
+
+Best models:
+TDBrain: age_cv_experiments_2024-10-08_163158/leave_one_dataset_out/Fold_1
+HatlestadHall: age_cv_experiments_2024-07-05_141413/leave_one_dataset_out/Fold_4
+MPILemon: age_cv_experiments_2024-07-20_064633/leave_one_dataset_out/Fold_2
+"""
 import dataclasses
 import os
 import warnings
