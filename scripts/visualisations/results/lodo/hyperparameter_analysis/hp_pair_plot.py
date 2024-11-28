@@ -115,8 +115,8 @@ class UpdatedVisualizer(Visualizer):
         return grid_orig, zz
 
     # noinspection PyMethodOverriding
-    def plot_pairwise_marginal(self, param_list, dataset_name, percentile, resolution=20, show=False, three_d=True,
-                               colormap=matplotlib.cm.jet, add_colorbar=True, title=None):  # type: ignore
+    def plot_pairwise_marginal(self, param_list, dataset_name, percentile, supplementary, resolution=20, show=False,
+                               three_d=True, colormap=matplotlib.cm.jet, add_colorbar=True, title=None):  # type: ignore
         """
         Creates a plot of pairwise marginal of a selected parameters
 
@@ -139,6 +139,7 @@ class UpdatedVisualizer(Visualizer):
         add_colorbar: bool
             whether to add the colorbar for 3d plots
         title : str
+        supplementary : bool
         """
         if len(set(param_list)) != 2:
             raise ValueError("You have to specify 2 (different) parameters")
@@ -149,7 +150,7 @@ class UpdatedVisualizer(Visualizer):
         second_is_numerical = isinstance(params[1], NumericalHyperparameter)
 
         pyplot.close()
-        fig = pyplot.figure(figsize=FIGSIZE)
+        fig = pyplot.figure(figsize=FIGSIZE["SUPP" if supplementary else "RES"])
 
         title = '%s and %s' % (param_names[0], param_names[1]) if title is None else title
         pyplot.title(title, fontsize=TITLE_FONTSIZE)
@@ -220,11 +221,11 @@ class UpdatedVisualizer(Visualizer):
                 # if PRETTY_NAME[dataset_name] == "SRM":
                 pyplot.xlabel(param_names[0])
 
-                if percentile == 0:  # This is a quick fix
+                if percentile == 0 or not supplementary:  # This is a quick fix
                     pyplot.ylabel(param_names[1])
 
                 cbar = pyplot.colorbar()
-                if percentile == 95:  # This is a quick fix
+                if percentile == 95 or not supplementary:  # This is a quick fix
                     cbar.set_label(self._y_label, fontsize=FONTSIZE)
                 cbar.ax.tick_params(labelsize=FONTSIZE)
                 cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.2f}"))
@@ -236,7 +237,7 @@ class UpdatedVisualizer(Visualizer):
                     os.mkdir(results_dir)
 
                 pyplot.savefig(os.path.join(
-                    results_dir, f"{PRETTY_NAME[dataset_name].lower()}_percentile_{percentile}.png"
+                    results_dir, f"{PRETTY_NAME[dataset_name].lower()}_percentile_{percentile}_supp_{supplementary}.png"
                 ), dpi=DPI)
 
         if show:
@@ -731,7 +732,8 @@ def create_fanova(*, datasets, runs, results_dir, target_metric, selection_metri
 # --------------
 # Plot functions
 # --------------
-def _plot_hp_interactions(studies, *, plot_3d, performance_df, percentiles, resolution, hps_to_plot, show):
+def _plot_hp_interactions(studies, *, plot_3d, performance_df, percentiles, resolution, hps_to_plot, show,
+                          supplementary):
     for dataset_name, fanova in studies.items():
         for percentile in percentiles:
             # Compute cutoff (assuming correlation coefficient)
@@ -746,10 +748,14 @@ def _plot_hp_interactions(studies, *, plot_3d, performance_df, percentiles, reso
 
             # Plot the hyperparameter pairs
             for hp_pair in hps_to_plot:  # fanova.get_most_important_pairwise_marginals(n=num_pairwise_marginals):
-                title = f"Percentile {percentile}%"
+                if supplementary:
+                    title = f"Percentile {percentile}"
+                else:
+                    title = f"{PRETTY_NAME[dataset_name]} (Percentile {percentile})"
+
                 visualiser.plot_pairwise_marginal(
                     hp_pair, show=show, resolution=resolution, three_d=plot_3d, title=title, dataset_name=dataset_name,
-                    percentile=percentile
+                    percentile=percentile, supplementary=supplementary
                 )
 
 
@@ -785,9 +791,9 @@ _HYPERPARAMETERS = {
 }
 
 
-FONTSIZE = 18
+FONTSIZE = 20
 TITLE_FONTSIZE = FONTSIZE + 4
-FIGSIZE = (7.1, 9)
+FIGSIZE = {"SUPP": (7.1, 9), "RES": (7.1, 9)}
 DPI = 300
 Y_ROTATION = None
 COLORMAP = "viridis"
@@ -850,10 +856,11 @@ def main():
     numpy.float = float
 
     # HP interaction analysis
-    _plot_hp_interactions(
-        studies, plot_3d=plot_3d, performance_df=performance_df, resolution=resolution, hps_to_plot=hps_to_plot,
-        percentiles=percentiles, show=show_plots
-    )
+    for supplementary in (True, False):  # Quick fix
+        _plot_hp_interactions(
+            studies, plot_3d=plot_3d, performance_df=performance_df, resolution=resolution, hps_to_plot=hps_to_plot,
+            percentiles=percentiles, show=show_plots, supplementary=supplementary
+        )
 
 
 if __name__ == "__main__":
