@@ -290,7 +290,7 @@ def main():
 
             print("\hline")
 
-            # Save the results  todo: must add refitting of intercept
+            # Save the results
             df.to_csv(os.path.join(os.path.dirname(__file__),
                                    f"results_{selection_metric}_intercept_{refit_intercept}.csv"))
 
