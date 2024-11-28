@@ -204,7 +204,7 @@ class UpdatedVisualizer(Visualizer):
                 pyplot.ylabel(self._y_label)
                 pyplot.xlabel(param_names[numerical_idx])  # x-axis displays numerical
                 pyplot.legend()
-                # pyplot.tight_layout()
+                pyplot.tight_layout()
 
             else:
                 # Both parameters are categorical -> create hotmap
@@ -216,10 +216,16 @@ class UpdatedVisualizer(Visualizer):
                 _y_choices = tuple(LABEL_NAMES.get(choice, choice) for choice in choices[1])
                 pyplot.xticks(numpy.arange(0, len(choices[0])), _x_choices, fontsize=FONTSIZE)
                 pyplot.yticks(numpy.arange(0, len(choices[1])), _y_choices, fontsize=FONTSIZE)
+                # Better to fix this afterward
+                # if PRETTY_NAME[dataset_name] == "SRM":
                 pyplot.xlabel(param_names[0])
-                pyplot.ylabel(param_names[1])
+
+                if percentile == 0:  # This is a quick fix
+                    pyplot.ylabel(param_names[1])
+
                 cbar = pyplot.colorbar()
-                cbar.set_label(self._y_label, fontsize=FONTSIZE)
+                if percentile == 95:  # This is a quick fix
+                    cbar.set_label(self._y_label, fontsize=FONTSIZE)
                 cbar.ax.tick_params(labelsize=FONTSIZE)
                 cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.2f}"))
                 pyplot.tight_layout()
@@ -789,7 +795,9 @@ ERRORBAR = "sd"
 rcParams["legend.fontsize"] = FONTSIZE
 rcParams["legend.title_fontsize"] = FONTSIZE
 rcParams["axes.labelsize"] = FONTSIZE
-LABEL_NAMES = {"InceptionNetwork": "IN", "ShallowFBCSPNetMTS": "SN", "Deep4NetMTS": "DN"}
+_GREEK = {"Delta": r"$\delta$", "Theta": r"$\theta$", "Alpha": r"$\alpha$", "Beta": r"$\beta$", "Gamma": r"$\gamma$",
+          "All": "All"}
+LABEL_NAMES = {"InceptionNetwork": "IN", "ShallowFBCSPNetMTS": "SN", "Deep4NetMTS": "DN", **_GREEK}
 
 
 def main():
@@ -816,7 +824,7 @@ def main():
     balance_validation_performance = False
     hyperparameters = _HYPERPARAMETERS.copy()
     hyperparameters = {hp: hyperparameters[hp] for hp in investigated_hps}
-    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)
+    runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)[:20]
     config_dist_path = os.path.join(  # not very elegant...
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "models",
         "training", "config_files", "hyperparameter_random_search.yml"
