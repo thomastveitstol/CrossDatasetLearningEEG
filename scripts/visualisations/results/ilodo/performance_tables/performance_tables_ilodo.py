@@ -1,10 +1,3 @@
-"""
-Best run (TDBrain): age_inverted_cv_experiments_2024-05-31_132152
-Best run (MPILemon): age_inverted_cv_experiments_2024-06-19_041154
-Best run (HatlestadHall): age_inverted_cv_experiments_2024-06-24_224405
-Best run (Miltiadous): age_inverted_cv_experiments_2024-10-06_173909
-Best run (YulinWang): age_inverted_cv_experiments_2024-10-19_114119
-"""
 import dataclasses
 import os
 import sys
