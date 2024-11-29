@@ -379,27 +379,6 @@ def _get_test_performance(path,  *, target_metric, selection_metric, datasets, b
     return test_performance, dataset_name
 
 
-def _create_trial(parameters, distributions, score):
-    """Create a trial to be added to the study"""
-    score = 0 if numpy.isnan(score) else score  # todo: not a good solution, what if 0 is good?
-
-    # ----------------
-    # Remove unused HPs from distribution to avoid ValueError for conditional HPs
-    # ----------------
-    reduced_distributions = {param_name: distributions[param_name] for param_name in parameters}
-
-    # ----------------
-    # Create trial object
-    # ----------------
-    trial = optuna.trial.create_trial(
-        params=parameters,
-        distributions=reduced_distributions,
-        value=score
-    )
-    return trial
-
-
-
 def _get_mts_module_dist(hp_name, *, distribution):
     return CategoricalHyperparameter(name=hp_name, choices=distribution.keys())
 
