@@ -114,18 +114,19 @@ def _get_ilodo_refit_scores(path, epoch, metrics) -> Dict[str, Dict[str, float]]
     # ------------
     # Now, fix the pooled dataset
     # ------------
-    df = test_predictions
+    df = test_predictions.copy()
 
     # Average the predictions per EEG epoch
     df = _get_average_prediction(df=df, epoch=epoch)
 
     # Sorting makes life easier
     df.sort_values(by=["dataset"], inplace=True)
+    df.reset_index(inplace=True, drop=True)
 
     # Add the targets (age)
     target = "age"  # quick-fixed hard coding
     ground_truths = []
-    for dataset in datasets:
+    for dataset in sorted(datasets):  # Needs to be sorted as in the df
         ground_truths.append(
             get_dataset(dataset).load_targets(target=target, subject_ids=df["sub_id"][df["dataset"] == dataset])
         )
@@ -177,7 +178,7 @@ def _get_ilodo_test_metrics(path, epoch, refit_intercept):
 
 def get_best_ilodo_performances(results_dir, *, main_metric, metrics_to_print, verbose, refit_intercept):
     # Get all runs for inverted LODO
-    runs = get_all_ilodo_runs(results_dir)
+    runs = get_all_ilodo_runs(results_dir)[:20]
 
     # Initialisation
     best_val_metrics: Dict[str, float] = {}
