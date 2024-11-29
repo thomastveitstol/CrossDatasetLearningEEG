@@ -723,7 +723,6 @@ _HYPERPARAMETERS = {
     "Autoreject": _HP(key_path="autoreject", preprocessing=True, in_dist_config=False),
     # Loss
     "Loss": _HP(key_path="loss", preprocessing=False, in_dist_config=False),
-    r"Weighted loss ($\tau$)": _HP(key_path="weighted_loss", preprocessing=False, in_dist_config=False)
 }
 
 
