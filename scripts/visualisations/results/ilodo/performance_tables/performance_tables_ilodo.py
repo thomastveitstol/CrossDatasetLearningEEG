@@ -1,3 +1,10 @@
+"""
+Best run (TDBrain): age_inverted_cv_experiments_2024-05-31_132152
+Best run (MPILemon): age_inverted_cv_experiments_2024-06-19_041154
+Best run (HatlestadHall): age_inverted_cv_experiments_2024-06-24_224405
+Best run (Miltiadous): age_inverted_cv_experiments_2024-10-06_173909
+Best run (YulinWang): age_inverted_cv_experiments_2024-10-19_114119
+"""
 import dataclasses
 import os
 import sys
@@ -168,11 +175,9 @@ def _get_ilodo_test_metrics(path, epoch, refit_intercept):
                 # Add the test performance
                 test_metrics[dataset][metric] = df[dataset][epoch]
 
-    # -----------------
-    # Add the test metrics on the pooled dataset
-    # -----------------
-    pooled_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
-    test_metrics["Pooled"] = {metric: pooled_df[metric][epoch] for metric in pooled_df.columns}
+        # Add the test metrics on the pooled dataset
+        pooled_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
+        test_metrics["Pooled"] = {metric: pooled_df[metric][epoch] for metric in pooled_df.columns}
 
     return test_metrics
 
