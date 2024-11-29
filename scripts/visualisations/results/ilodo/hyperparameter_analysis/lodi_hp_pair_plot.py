@@ -234,7 +234,8 @@ class UpdatedVisualizer(Visualizer):
                     os.mkdir(results_dir)
 
                 pyplot.savefig(os.path.join(
-                    results_dir, f"{PRETTY_NAME[dataset_name].lower()}_percentile_{percentile}_supp_{supplementary}.png"
+                    results_dir, f"{param_names[0]}_{param_names[1]}_{PRETTY_NAME[dataset_name].lower()}_percentile_"
+                                 f"{percentile}_supp_{supplementary}.png"
                 ), dpi=DPI)
 
         if show:
@@ -764,7 +765,8 @@ def main():
     # A few design choices for the analysis
     # ----------------
     datasets = ("TDBrain", "MPILemon", "HatlestadHall")
-    hps_to_plot = (("DL Architecture", "Band-pass filter"),)  # Determined after running 'hp_analysis' script
+    hps_to_plot = (("DL Architecture", "Band-pass filter"), ("Normalisation", "Band-pass filter"))  # Determined after
+    # running 'hp_analysis' script
     investigated_hps = tuple(_HYPERPARAMETERS)
     percentiles = (0, 50, 75, 90, 95)
     plot_3d = False
