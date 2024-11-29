@@ -178,7 +178,7 @@ def _get_ilodo_test_metrics(path, epoch, refit_intercept):
 
 def get_best_ilodo_performances(results_dir, *, main_metric, metrics_to_print, verbose, refit_intercept):
     # Get all runs for inverted LODO
-    runs = get_all_ilodo_runs(results_dir)[:20]
+    runs = get_all_ilodo_runs(results_dir)  # [:20]
 
     # Initialisation
     best_val_metrics: Dict[str, float] = {}
