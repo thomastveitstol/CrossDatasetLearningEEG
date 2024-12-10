@@ -10,9 +10,9 @@ ROUND = {"mae": 1, "mse": 0, "mape": 2, "pearson_r": 2, "r2_score": 2, "spearman
 
 def main():
     # L = Lower the better, H = Higher the better
-    intercept = False
-    scores = {"results_mae_intercept_False": "L", "results_mse_intercept_False": "L",
-              "results_pearson_r_intercept_False": "H", f"results_r2_score_intercept_{intercept}": "H"}
+    intercept = True
+    scores = {f"results_mae_intercept_{intercept}": "L", f"results_mse_intercept_{intercept}": "L",
+              f"results_pearson_r_intercept_{intercept}": "H", f"results_r2_score_intercept_{intercept}": "H"}
 
     # Get dataframes
     dataframes = []
