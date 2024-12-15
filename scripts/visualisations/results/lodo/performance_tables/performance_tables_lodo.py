@@ -192,7 +192,7 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
         for dataset, model in best_models.items():
             assert dataset == model.test_dataset
 
-            best_run = model.path.split("/")[-3]
+            best_run = "/".join(model.path.split("/")[-3:])
             file.write(f"Best run ({dataset}): {best_run}\n")
             test_performance = _get_lodo_test_performance(
                 path=model.path, refit_intercept=refit_intercept, epoch=model.val_epoch, target=target, metrics=metrics
