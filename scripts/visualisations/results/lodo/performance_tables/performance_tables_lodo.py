@@ -187,18 +187,20 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
     best_models = {dataset: best_models[dataset] for dataset in DATASET_ORDER}
 
     results = {"target_dataset": [], **{metric: [] for metric in metrics}}
-    for dataset, model in best_models.items():
-        assert dataset == model.test_dataset
+    with open(os.path.join(os.path.dirname(__file__), f"{main_metric}_refit_intercept_{refit_intercept}.txt"),
+              "w") as file:
+        for dataset, model in best_models.items():
+            assert dataset == model.test_dataset
 
-        best_run = model.path.split("/")[-3]
-        print(f"Best run ({dataset}): {best_run}")
-        test_performance = _get_lodo_test_performance(
-            path=model.path, refit_intercept=refit_intercept, epoch=model.val_epoch, target=target, metrics=metrics
-        )
-        results["target_dataset"].append(PRETTY_NAME[dataset])
+            best_run = model.path.split("/")[-3]
+            file.write(f"Best run ({dataset}): {best_run}\n")
+            test_performance = _get_lodo_test_performance(
+                path=model.path, refit_intercept=refit_intercept, epoch=model.val_epoch, target=target, metrics=metrics
+            )
+            results["target_dataset"].append(PRETTY_NAME[dataset])
 
-        for metric, performance in test_performance.items():
-            results[metric].append(performance)
+            for metric, performance in test_performance.items():
+                results[metric].append(performance)
 
     df = pandas.DataFrame(results).round(DECIMALS)
     df.set_index("target_dataset", inplace=True)
