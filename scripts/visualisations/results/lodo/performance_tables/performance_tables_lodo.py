@@ -35,7 +35,7 @@ def _estimate_intercept(df: pandas.DataFrame):
     return (df["ground_truth"] - df["pred"]).mean()
 
 
-def _get_average_prediction(df: pandas.DataFrame, epoch):
+def get_average_prediction(df: pandas.DataFrame, epoch):
     new_df = {"dataset": df["dataset"], "sub_id": df["sub_id"],
               "pred": df.iloc[:, (5 * epoch + 2):(5 * epoch + 7)].mean(axis=1)}
     return pandas.DataFrame.from_dict(data=new_df)
@@ -57,7 +57,7 @@ def _get_lodo_test_performance(path, refit_intercept, epoch, target, metrics):
     dataset_name = tuple(datasets)[0]
 
     # Average the predictions per EEG epoch
-    df = _get_average_prediction(test_predictions, epoch=epoch)
+    df = get_average_prediction(test_predictions, epoch=epoch)
 
     # Add the targets
     df["ground_truth"] = get_dataset(dataset_name).load_targets(target=target, subject_ids=test_predictions["sub_id"])
@@ -193,7 +193,7 @@ def _get_best_lodo_performances(results_dir, *, main_metric, balance_validation_
             assert dataset == model.test_dataset
 
             best_run = "/".join(model.path.split("/")[-3:])
-            file.write(f"Best run ({dataset}): {best_run}\n")
+            file.write(f"Best run ({dataset}) |epoch {model.val_epoch}|: {best_run}\n")
             test_performance = _get_lodo_test_performance(
                 path=model.path, refit_intercept=refit_intercept, epoch=model.val_epoch, target=target, metrics=metrics
             )
