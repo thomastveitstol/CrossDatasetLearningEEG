@@ -240,18 +240,22 @@ def get_best_ilodo_performances(results_dir, *, main_metric, metrics_to_print, v
     test_performances = {dataset_name: test_performances[dataset_name] for dataset_name in DATASET_ORDER}
 
     # Loop through
-    for train_dataset, generalisation_performances in test_performances.items():
-        model = best_models[train_dataset]
+    with open(os.path.join(os.path.dirname(__file__), "models_selected",
+                           f"{main_metric}_refit_intercept_{refit_intercept}.txt"), "w") as file:
+        for train_dataset, generalisation_performances in test_performances.items():
+            model = best_models[train_dataset]
 
-        print(f"Best run ({train_dataset}): {model.path.split('/')[-3]}")
-        for metric in metrics_to_print:
-            results[metric]["source_dataset"].append(PRETTY_NAME[train_dataset])
-            for test_dataset in DATASET_ORDER + ("Pooled",):
-                _pretty_test_name = PRETTY_NAME[test_dataset]
-                if test_dataset == train_dataset:
-                    results[metric][_pretty_test_name].append(numpy.nan)
-                else:
-                    results[metric][_pretty_test_name].append(generalisation_performances[test_dataset][metric])
+            best_run = "/".join(model.path.split("/")[-3:])
+            file.write(f"Best run ({train_dataset}) |epoch {model.best_epoch}|: {best_run}\n")
+            print(f"Best run ({train_dataset}): {model.path.split('/')[-3]}")
+            for metric in metrics_to_print:
+                results[metric]["source_dataset"].append(PRETTY_NAME[train_dataset])
+                for test_dataset in DATASET_ORDER + ("Pooled",):
+                    _pretty_test_name = PRETTY_NAME[test_dataset]
+                    if test_dataset == train_dataset:
+                        results[metric][_pretty_test_name].append(numpy.nan)
+                    else:
+                        results[metric][_pretty_test_name].append(generalisation_performances[test_dataset][metric])
 
     dfs = {metric: pandas.DataFrame(results_table).round(DECIMALS) for metric, results_table in results.items()}
     df = pandas.concat(dfs, names=("metric", "original_index")).reset_index("original_index", drop=True)
