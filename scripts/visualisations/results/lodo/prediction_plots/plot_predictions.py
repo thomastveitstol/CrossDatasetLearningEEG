@@ -41,7 +41,6 @@ def _read_dataset_and_epoch(line):
     return dataset, epoch
 
 
-
 def _get_predictions(dataset_name, path, epoch):
     # Load csv file
     test_predictions = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
