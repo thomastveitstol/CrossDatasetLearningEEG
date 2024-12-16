@@ -123,7 +123,6 @@ def main():
                     pyplot.tick_params(left=False, labelleft=False)
                 pyplot.grid()
 
-
                 # Save the figure
                 _to_path = os.path.join(
                     os.path.dirname(__file__), "plots",
