@@ -96,23 +96,23 @@ def main():
     results_dir = get_results_dir()
     target_metrics = ("pearson_r", "spearman_rho", "r2_score", "mae", "mse", "mape")
     datasets = ("TDBrain", "MPILemon", "HatlestadHall", "Miltiadous", "YulinWang")
-    selection_metric = "pearson_r"
+    selection_metrics = ("pearson_r", "spearman_rho", "r2_score", "mae", "mse", "mape")
     balance_validation_performance = False
     refit_intercept = False
-
-    df_name = f"all_test_results_selection_metric_{selection_metric}"
-    save_to_path = pathlib.Path(os.path.dirname(__file__))
 
     # -------------
     # Generate and save dataframe
     # -------------
-    df = _generate_dataframe(
-        results_dir, target_metrics=target_metrics, balance_validation_performance=balance_validation_performance,
-        datasets=datasets, selection_metric=selection_metric, refit_intercept=refit_intercept
-    )
+    for selection_metric in selection_metrics:
+        df = _generate_dataframe(
+            results_dir, target_metrics=target_metrics, balance_validation_performance=balance_validation_performance,
+            datasets=datasets, selection_metric=selection_metric, refit_intercept=refit_intercept
+        )
 
-    df.to_csv((save_to_path / df_name).with_suffix(".csv"))
+        df_name = f"all_test_results_selection_metric_{selection_metric}"
+        save_to_path = pathlib.Path(os.path.dirname(__file__))
 
+        df.to_csv((save_to_path / df_name).with_suffix(".csv"))
 
 
 if __name__ == "__main__":
