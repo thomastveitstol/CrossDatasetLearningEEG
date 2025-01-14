@@ -18,12 +18,15 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
     # --------------
     # Get all runs for LODO
     lodo_runs = get_all_lodo_runs(results_dir, successful_only=True)
-    num_runs = len(lodo_runs)
     skipped = {dataset: 0 for dataset in datasets}
-    for i, run in enumerate(lodo_runs):
-        if i % 10 == 0:  # Not the best way...
-            print(f"Run {i + 1}/{num_runs}")
-
+    try:
+        from progressbar import progressbar  # type: ignore
+        lodo_loop = progressbar(lodo_runs, redirect_stdout=True, prefix="Run ")
+        using_progressbar = True
+    except ImportError:
+        lodo_loop = lodo_runs
+        using_progressbar = False
+    for run in lodo_loop:
         run_path = os.path.join(results_dir, run, "leave_one_dataset_out")
 
         # Get the performances per fold
@@ -54,12 +57,13 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
     # Obtain all test results from the LODI runs
     # --------------
     lodi_runs = get_all_ilodo_runs(results_dir, successful_only=True)
-    num_runs = len(lodi_runs)
     skipped = {dataset: 0 for dataset in datasets}
-    for i, run in enumerate(lodi_runs):
-        if i % 10 == 0:  # Not the best way...
-            print(f"Run {i + 1}/{num_runs}")
-
+    if using_progressbar:
+        # noinspection PyUnboundLocalVariable
+        lodi_loop = progressbar(lodi_runs, redirect_stdout=True, prefix="Run ")
+    else:
+        lodi_loop = lodi_runs
+    for run in lodi_loop:
         run_path = os.path.join(results_dir, run, "leave_one_dataset_out")
 
         # Get the performances per fold
