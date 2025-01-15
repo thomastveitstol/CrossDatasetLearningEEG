@@ -28,6 +28,7 @@ def main():
               "DL architecture": ("InceptionNetwork", "Deep4NetMTS", "ShallowFBCSPNetMTS")}
 
     results_dir = Path(get_results_dir())
+    conditions = {"Source dataset": "Pooled"}
 
     # ------------
     # Create dataframes with all information we want
@@ -35,6 +36,12 @@ def main():
     # Load the results df
     path = Path(os.path.dirname(__file__)) / "all_test_results_selection_metric_pearson_r.csv"
     results_df = pandas.read_csv(path)
+
+    # Extract subset
+    combined_conditions = True
+    for column, category in conditions.items():
+        combined_conditions &= results_df[column] == category
+    results_df = results_df[combined_conditions]
 
     # Add the configurations
     df = add_hp_configurations_to_dataframe(results_df, hps=(color_hp, row_figure_hp), results_dir=results_dir)
@@ -67,7 +74,11 @@ def main():
                 data=subset_df, ax=ax, jitter=True, dodge=True, size=3, alpha=0.5, marker='o'
             )
             ax.set_xlim(*limits[x_axis])
-            ax.get_legend().remove()
+            try:
+                ax.get_legend().remove()
+            except AttributeError:
+                # This can happen with conditions
+                pass
             if row_number == 0:
                 ax.set_title(x_fig_category)
             ax.grid()
@@ -75,7 +86,7 @@ def main():
 
     fig.suptitle(col_figure_hp, fontsize=title_fontsize)
 
-    handles, labels = axes[-1][-1].get_legend_handles_labels()
+    handles, labels = axes[0][0].get_legend_handles_labels()
     _legend_names = set(df[color_hp])
     fig.legend(
         handles[:len(_legend_names)], labels[:len(_legend_names)],

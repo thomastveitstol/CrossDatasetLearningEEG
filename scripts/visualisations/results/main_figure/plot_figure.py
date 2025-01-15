@@ -13,6 +13,7 @@ def main():
     metrics = ("pearson_r", "mae", "r2_score")
     limits = {"pearson_r": (-0.2, 1), "mae": (0, 70), "r2_score": (-4, 1), "spearman_rho": (-0.2, 1)}
     dataset_order = ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang", "Pooled")
+    conditions = {"Source dataset": "Pooled"}
 
     # ------------
     # Plotting
@@ -20,6 +21,12 @@ def main():
     # Load df
     path = Path(os.path.dirname(__file__)) / "all_test_results_selection_metric_pearson_r.csv"
     df = pandas.read_csv(path)
+
+    # Extract subset
+    combined_conditions = True
+    for column, category in conditions.items():
+        combined_conditions &= df[column] == category
+    df = df[combined_conditions]
 
     # Get all dataset names (needed for legends)
     dataset_names = set(df["Source dataset"])
