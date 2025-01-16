@@ -11,7 +11,8 @@ from cdl_eeg.data.paths import get_results_dir
 def _generate_dataframe(results_dir, *, target_metrics, balance_validation_performance, datasets, selection_metric,
                         refit_intercept):
     # Initialise dict which will be used for plotting
-    results = {"Target dataset": [], "Source dataset": [], "run": [], **{metric: [] for metric in target_metrics}}
+    results = {"Target dataset": [], "Source dataset": [], "run": [], "Val score": [],
+               **{metric: [] for metric in target_metrics}}
 
     # --------------
     # Obtain all test results from the LODO runs
@@ -33,7 +34,7 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
         folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")  # type: ignore
         for fold in folds:
             try:
-                test_performance, test_dataset = get_lodo_test_performance(
+                test_performance, test_dataset, val_performance = get_lodo_test_performance(
                     path=os.path.join(run_path, fold), selection_metric=selection_metric,  # type: ignore
                     datasets=datasets, balance_validation_performance=balance_validation_performance,
                     target_metrics=target_metrics
@@ -50,6 +51,7 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
             results["Target dataset"].append(PRETTY_NAME[test_dataset])
             results["Source dataset"].append("Pooled")
             results["run"].append(run)
+            results["Val score"].append(val_performance)
             for metric, performance in test_performance.items():
                 results[metric].append(performance)
 
@@ -70,7 +72,7 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
         folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")  # type: ignore
         for fold in folds:
             try:
-                test_performance, train_dataset = get_lodi_test_performance(
+                test_performance, train_dataset, val_performance = get_lodi_test_performance(
                     path=os.path.join(run_path, fold), selection_metric=selection_metric,  # type: ignore
                     datasets=datasets, target_metrics=target_metrics, refit_intercept=refit_intercept
                 )
@@ -87,6 +89,7 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
                 results["Target dataset"].append(PRETTY_NAME[test_dataset_name])
                 results["Source dataset"].append(PRETTY_NAME[train_dataset])
                 results["run"].append(run)
+                results["Val score"].append(val_performance)
                 for metric, score in performance_scores.items():
                     results[metric].append(score)
 
