@@ -244,7 +244,7 @@ def get_lodo_test_performance(path, *, target_metrics, selection_metric, dataset
     test_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
     test_performance = {target_metric: test_df[target_metric][epoch] for target_metric in target_metrics}
 
-    return test_performance, dataset_name
+    return test_performance, dataset_name, val_performance
 
 
 def get_lodi_test_performance(path, *, target_metrics, selection_metric, datasets, refit_intercept):
@@ -276,7 +276,7 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
     # --------------
     # Get optimal epoch (as evaluated on the validation set)
     # --------------
-    _, best_epoch = get_lodi_validation_performance(path=path, main_metric=selection_metric)
+    val_performance, best_epoch = get_lodi_validation_performance(path=path, main_metric=selection_metric)
 
     # -----------------
     # Get the test metrics per test dataset
@@ -306,7 +306,7 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
         pooled_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
         test_metrics["Pooled"] = {metric: pooled_df[metric][best_epoch] for metric in metrics}  # pooled_df.columns
 
-    return test_metrics, train_dataset_name
+    return test_metrics, train_dataset_name, val_performance
 
 
 # -------------------
@@ -394,7 +394,7 @@ def _load_config_files(*, normal_config_needed, preprocessing_config_needed, res
     return config_files
 
 
-def add_hp_configurations_to_dataframe(df, hps, results_dir):
+def add_hp_configurations_to_dataframe(df, hps, results_dir, skip_if_exists=True):
     """
     Function for adding hyperparameter configurations to a dataframe.
 
@@ -405,11 +405,17 @@ def add_hp_configurations_to_dataframe(df, hps, results_dir):
     hps : tuple[str, ...]
         Hyperparameter configurations to add to the dataframe
     results_dir : patlib.Path
+    skip_if_exists : bool
+        To skip the HP if it already exists in the dataframe
 
     Returns
     -------
     pandas.DataFrame
     """
+    # (Maybe) skipping HPs which are already in the dataframe
+    if skip_if_exists:
+        hps = tuple(hp for hp in hps if hp not in df.columns)
+
     # --------------
     # Load the HPCs
     # --------------
