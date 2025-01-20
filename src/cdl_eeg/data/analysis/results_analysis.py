@@ -4,7 +4,7 @@ Functions for analysing the results
 import dataclasses
 import os
 from collections.abc import Iterable
-from typing import Dict, Literal, Callable, Tuple, Union, Any
+from typing import Dict, Literal, Callable, Tuple, Union, Any, Optional, List
 
 import numpy
 import pandas
@@ -57,6 +57,53 @@ class SkipFold(Exception):
 # ----------------
 # Smaller convenient functions
 # ----------------
+def get_label_orders(renamed_df_mapping: Optional[Dict[str, Dict[str, str]]] = None):
+    """Function for getting the default order of the labels when making plots"""
+    orders = {"Target dataset": ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang", "Pooled"),
+              "Source dataset": ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang", "Pooled"),
+              "Band-pass filter": ("All", "Delta", "Theta", "Alpha", "Beta", "Gamma"),
+              "DL architecture": ("InceptionNetwork", "Deep4NetMTS", "ShallowFBCSPNetMTS"),
+              "Normalisation": ("True", "False")}
+    if renamed_df_mapping is None:
+        return orders
+
+    for column, mapping in renamed_df_mapping.items():
+        if column in orders:
+            updated_order = []
+            for value in orders[column]:
+                if value in mapping:
+                    updated_order.append(mapping[value])
+                else:
+                    updated_order.append(value)
+            orders[column] = tuple(updated_order)
+    return orders
+
+
+def get_formats():
+    """Function for getting the default formats when making plots heatmaps"""
+    return {"pearson_r": ".2f", "mae": ".1f", "r2_score": ".2f"}
+
+
+def get_rename_mapping():
+    """Function for getting a renaming of the labels when making plots"""
+    return {"DL architecture": {"InceptionNetwork": "IN", "Deep4NetMTS": "DN", "ShallowFBCSPNetMTS": "SN"}}
+
+
+def combine_conditions(df: pandas.DataFrame, conditions):
+    # Input check
+    if not conditions:
+        raise RuntimeError("Tried to combine conditions, but there were none passed")
+
+    # Combine conditions
+    combined_conditions = True
+    for column, category in conditions.items():
+        if isinstance(category, (tuple, list, set)):
+            combined_conditions &= df[column].isin(category)
+        else:  # Try the '==' operator
+            combined_conditions &= df[column] == category
+    return combined_conditions
+
+
 def higher_is_better(metric):
     if metric in ("pearson_r", "spearman_rho", "r2_score"):
         return True
@@ -204,7 +251,8 @@ def get_lodi_validation_performance(path, *, main_metric):
     return val_metric, best_epoch
 
 
-def get_lodo_test_performance(path, *, target_metrics, selection_metric, datasets, balance_validation_performance):
+def get_lodo_test_performance(path, *, target_metrics, selection_metric, datasets, balance_validation_performance,
+                              refit_metrics):
     """
     Function for getting the test score
 
@@ -215,6 +263,8 @@ def get_lodo_test_performance(path, *, target_metrics, selection_metric, dataset
     selection_metric : str
     datasets : tuple[str, ...]
     balance_validation_performance : bool
+    refit_metrics : tuple[str, ...]
+        Same as for LODI
 
     Returns
     -------
@@ -232,9 +282,20 @@ def get_lodo_test_performance(path, *, target_metrics, selection_metric, dataset
     # --------------
     # Get validation performance and optimal epoch
     # --------------
-    val_performance, epoch = get_lodo_validation_performance(
-        path=path, main_metric=selection_metric, balance_validation_performance=balance_validation_performance
-    )
+    try:
+        val_performance, epoch = get_lodo_validation_performance(
+            path=path, main_metric=selection_metric, balance_validation_performance=balance_validation_performance
+        )
+    except KeyError:
+        # If the prediction model guessed that all subjects have the same age, for all folds, model selection
+        # 'fails'. We'll verify that the selection metric is a correlation metric, set the performance to zero, and the
+        # 'best epoch' to the last epoch
+        _corr_metrics = ("pearson_r", "spearman_rho")
+        assert selection_metric in ("pearson_r", "spearman_rho"), \
+            (f"Model selection failed with a selection metric that is not a registered correlation metric. The failed "
+             f"metric was {selection_metric}, the registered correlation metrics are {_corr_metrics}")
+        epoch = -1
+        val_performance = 0
 
     # --------------
     # Get test performance
@@ -244,10 +305,13 @@ def get_lodo_test_performance(path, *, target_metrics, selection_metric, dataset
     test_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
     test_performance = {target_metric: test_df[target_metric][epoch] for target_metric in target_metrics}
 
-    return test_performance, dataset_name, val_performance
+    # Get refit performance scores
+    refit_performance = _get_lodo_refit_scores(path=path, epoch=epoch, metrics=refit_metrics)
+
+    return {**test_performance, **refit_performance}, dataset_name, val_performance
 
 
-def get_lodi_test_performance(path, *, target_metrics, selection_metric, datasets, refit_intercept):
+def get_lodi_test_performance(path, *, target_metrics, selection_metric, datasets, refit_metrics):
     """
     Get the LODI test performance
 
@@ -257,8 +321,8 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
     target_metrics : tuple[str, ...]
     selection_metric : str
     datasets : tuple[str, ...]
-    refit_intercept : bool
-        todo: should be recognised by the metric names itself
+    refit_metrics : tuple[str, ...]
+        Metrics which you want to refit the intercept for prior to computing them as well
 
     Returns
     -------
@@ -286,25 +350,29 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
     metrics = os.listdir(subgroup_path) if target_metrics is None else target_metrics
 
     # Get all metrics
-    if refit_intercept:
-        test_metrics = _get_lodi_refit_scores(path, best_epoch, metrics)
-    else:
-        test_metrics = {}
-        for metric in metrics:
-            df = pandas.read_csv(os.path.join(subgroup_path, metric, f"test_{metric}.csv"))
+    test_metrics = {}
+    for metric in metrics:
+        df = pandas.read_csv(os.path.join(subgroup_path, metric, f"test_{metric}.csv"))
 
-            # Loop through all the test datasets
-            datasets = df.columns
-            for dataset in datasets:
-                if dataset not in test_metrics:
-                    test_metrics[dataset] = {}
+        # Loop through all the test datasets
+        datasets = df.columns
+        for dataset in datasets:
+            if dataset not in test_metrics:
+                test_metrics[dataset] = {}
 
-                # Add the test performance
-                test_metrics[dataset][metric] = df[dataset][best_epoch]
+            # Add the test performance
+            test_metrics[dataset][metric] = df[dataset][best_epoch]
 
-        # Add the test metrics on the pooled dataset
-        pooled_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
-        test_metrics["Pooled"] = {metric: pooled_df[metric][best_epoch] for metric in metrics}  # pooled_df.columns
+    # Add the test metrics on the pooled dataset
+    pooled_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
+    test_metrics["Pooled"] = {metric: pooled_df[metric][best_epoch] for metric in metrics}  # pooled_df.columns
+
+    # Get refit performance scores
+    refit_test_metrics = _get_lodi_refit_scores(path, best_epoch, refit_metrics)
+
+    for dataset_name, performances in refit_test_metrics.items():
+        for metric, performance in performances.items():
+            test_metrics[dataset_name][f"{metric}_refit"] = performance
 
     return test_metrics, train_dataset_name, val_performance
 
@@ -358,10 +426,19 @@ def _get_band_pass_filter(config):
     l_freq, h_freq = config["general"]["filtering"]
     return INV_FREQUENCY_BANDS[(l_freq, h_freq)]
 
+def _get_normalisation(config):
+    if config["Varied Numbers of Channels"]["name"] == "Interpolation":
+        return str(config["DL Architecture"]["normalise"])
+    elif config["Varied Numbers of Channels"]["name"] == "RegionBasedPooling":
+        return str(config["Varied Numbers of Channels"]["kwargs"]["normalise_region_representations"])
+    else:
+        raise ValueError
+
 
 HYPERPARAMETERS = {
     "DL architecture": HP(config_file="normal", location=("DL Architecture", "model")),
-    "Band-pass filter": HP(config_file="preprocessing", location=_get_band_pass_filter)
+    "Band-pass filter": HP(config_file="preprocessing", location=_get_band_pass_filter),
+    "Normalisation": HP(config_file="normal", location=_get_normalisation)
 }
 
 
@@ -404,7 +481,7 @@ def add_hp_configurations_to_dataframe(df, hps, results_dir, skip_if_exists=True
          The input dataframe needs the 'run' column to know which run to extract the HPC from
     hps : tuple[str, ...]
         Hyperparameter configurations to add to the dataframe
-    results_dir : patlib.Path
+    results_dir : pathlib.Path
     skip_if_exists : bool
         To skip the HP if it already exists in the dataframe
 
@@ -451,6 +528,54 @@ def add_hp_configurations_to_dataframe(df, hps, results_dir, skip_if_exists=True
     # Add to the dataframe
     # --------------
     return df.merge(pandas.DataFrame(hpcs), on="run")
+
+
+def extract_selected_best_scores(df, *, selection_metric, target_metrics, target_datasets, source_datasets,
+                                 include_std=False, additional_columns=()):
+    """Function for getting the selected best test results"""
+    # ------------
+    # Get the best performing models only
+    # ------------
+    test_scores: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Run": [],
+                                         **{f"Performance ({PRETTY_NAME[metric]})": [] for metric in target_metrics},
+                                         **{column: [] for column in additional_columns}}
+    if include_std:
+        test_scores = {**test_scores, **{f"Std ({PRETTY_NAME[metric]})": [] for metric in target_metrics}}
+
+    for source_dataset in source_datasets:
+        # Loop through all target datasets
+        for target_dataset in target_datasets:
+            if target_dataset == source_dataset:
+                continue
+
+            # Select the row based on validation performance
+            subset_cond = (df["Source dataset"] == source_dataset) & (df["Target dataset"] == target_dataset)
+            subset_results_df = df[subset_cond]
+            if higher_is_better(selection_metric):
+                best_val_run = subset_results_df["run"].loc[subset_results_df["Val score"].idxmax()]
+            else:
+                best_val_run = subset_results_df["run"].loc[subset_results_df["Val score"].idxmin()]
+
+            # Add the results
+            test_scores["Target dataset"].append(target_dataset)
+            test_scores["Source dataset"].append(source_dataset)
+            test_scores["Run"].append(best_val_run)
+            for target_metric in target_metrics:
+                # Compute source to target score
+                score = subset_results_df[subset_results_df["run"] == best_val_run][target_metric].iloc[0]
+
+                # Add it
+                test_scores[f"Performance ({PRETTY_NAME[target_metric]})"].append(score)
+                if include_std:
+                    test_scores[f"Std ({PRETTY_NAME[target_metric]})"].append(
+                        numpy.std(subset_results_df[target_metric])
+                    )
+
+            # Add any other columns if passed
+            for column in additional_columns:
+                test_scores[column].append(subset_results_df[subset_results_df["run"] == best_val_run][column].iloc[0])
+
+    return test_scores
 
 
 # ----------------
@@ -530,6 +655,39 @@ def _get_lodi_refit_scores(path, epoch, metrics) -> Dict[str, Dict[str, float]]:
         test_metrics["Pooled"][metric] = Histories._compute_metric(
             metric=metric, y_pred=torch.tensor(df["adjusted_pred"].to_numpy()),
             y_true=torch.tensor(df["ground_truth"].to_numpy())
+        )
+    return test_metrics
+
+
+def _get_lodo_refit_scores(path, epoch, metrics):
+    test_predictions = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
+
+    # Check the number of datasets in the test set
+    datasets = set(test_predictions["dataset"])
+    if len(datasets) != 1:
+        raise ValueError(f"Expected only one dataset to be present in the test set predictions, but that was not "
+                         f"the case for the path {path}. Found {set(test_predictions['dataset'])}")
+    dataset_name = tuple(datasets)[0]
+
+    # Average the predictions per EEG epoch
+    df = get_average_prediction(test_predictions, epoch=epoch)
+
+    # Add the targets
+    target = "age"  # quick-fixed hard coding
+    df["ground_truth"] = get_dataset(dataset_name).load_targets(target=target, subject_ids=test_predictions["sub_id"])
+
+    # Estimate the intercept
+    new_intercept = _estimate_intercept(df=df)
+    df["adjusted_pred"] = df["pred"] + new_intercept
+
+    # Add the performance
+    test_metrics: Dict[str, float] = dict()
+    for metric in metrics:
+        # Normally, I'd add a 'compute_metric' method to Histories, but I don't like to change the code too much after
+        # getting the results from a scientific paper, even when it makes sense. So, violating some best practice
+        # instead
+        test_metrics[metric] = Histories._compute_metric(
+            metric=metric, y_pred=torch.tensor(df["adjusted_pred"]), y_true=torch.tensor(df["ground_truth"])
         )
     return test_metrics
 

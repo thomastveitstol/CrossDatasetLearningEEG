@@ -4,22 +4,21 @@ import pathlib
 import pandas
 
 from cdl_eeg.data.analysis.results_analysis import get_all_lodo_runs, SkipFold, get_lodo_test_performance, \
-    get_lodo_dataset_name, PRETTY_NAME, get_all_ilodo_runs, get_lodi_test_performance, get_ilodo_val_dataset_name
+    PRETTY_NAME, get_all_ilodo_runs, get_lodi_test_performance
 from cdl_eeg.data.paths import get_results_dir
 
 
 def _generate_dataframe(results_dir, *, target_metrics, balance_validation_performance, datasets, selection_metric,
-                        refit_intercept):
+                        refit_metrics):
     # Initialise dict which will be used for plotting
     results = {"Target dataset": [], "Source dataset": [], "run": [], "Val score": [],
-               **{metric: [] for metric in target_metrics}}
+               **{metric: [] for metric in target_metrics}, **{f"metric_{metric}": [] for metric in refit_metrics}}
 
     # --------------
     # Obtain all test results from the LODO runs
     # --------------
     # Get all runs for LODO
     lodo_runs = get_all_lodo_runs(results_dir, successful_only=True)
-    skipped = {dataset: 0 for dataset in datasets}
     try:
         from progressbar import progressbar  # type: ignore
         lodo_loop = progressbar(lodo_runs, redirect_stdout=True, prefix="Run ")
@@ -37,14 +36,9 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
                 test_performance, test_dataset, val_performance = get_lodo_test_performance(
                     path=os.path.join(run_path, fold), selection_metric=selection_metric,  # type: ignore
                     datasets=datasets, balance_validation_performance=balance_validation_performance,
-                    target_metrics=target_metrics
+                    target_metrics=target_metrics, refit_metrics=refit_metrics
                 )
             except SkipFold:
-                continue
-            except KeyError:
-                # If the prediction model guessed that all subjects have the same age, for all folds, model selection
-                # 'fails'. We'll just skip them
-                skipped[get_lodo_dataset_name(os.path.join(run_path, fold))] += 1  # type: ignore
                 continue
 
             # Add to test performances
@@ -59,7 +53,6 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
     # Obtain all test results from the LODI runs
     # --------------
     lodi_runs = get_all_ilodo_runs(results_dir, successful_only=True)
-    skipped = {dataset: 0 for dataset in datasets}
     if using_progressbar:
         # noinspection PyUnboundLocalVariable
         lodi_loop = progressbar(lodi_runs, redirect_stdout=True, prefix="Run ")
@@ -74,14 +67,9 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
             try:
                 test_performance, train_dataset, val_performance = get_lodi_test_performance(
                     path=os.path.join(run_path, fold), selection_metric=selection_metric,  # type: ignore
-                    datasets=datasets, target_metrics=target_metrics, refit_intercept=refit_intercept
+                    datasets=datasets, target_metrics=target_metrics, refit_metrics=refit_metrics
                 )
             except SkipFold:
-                continue
-            except KeyError:
-                # If the prediction model guessed that all subjects have the same age, for all folds, model selection
-                # 'fails'. We'll just skip them
-                skipped[get_ilodo_val_dataset_name(os.path.join(run_path, fold))] += 1  # type: ignore
                 continue
 
             # Add to test performances
@@ -105,7 +93,7 @@ def main():
     datasets = ("TDBrain", "MPILemon", "HatlestadHall", "Miltiadous", "YulinWang")
     selection_metrics = ("pearson_r", "spearman_rho", "r2_score", "mae", "mse", "mape")
     balance_validation_performance = False
-    refit_intercept = False
+    refit_metrics = ("r2_score", "mae", "mse")
 
     # -------------
     # Generate and save dataframe
@@ -113,7 +101,7 @@ def main():
     for selection_metric in selection_metrics:
         df = _generate_dataframe(
             results_dir, target_metrics=target_metrics, balance_validation_performance=balance_validation_performance,
-            datasets=datasets, selection_metric=selection_metric, refit_intercept=refit_intercept
+            datasets=datasets, selection_metric=selection_metric, refit_metrics=refit_metrics
         )
 
         df_name = f"all_test_results_selection_metric_{selection_metric}"
