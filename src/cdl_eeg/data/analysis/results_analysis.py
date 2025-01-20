@@ -23,6 +23,9 @@ PRETTY_NAME = {
     "r2_score": r"$R^2$",
     "mae": "MAE",
     "mse": "MSE",
+    "mae_refit": r"$MAE_{refit}$",
+    "mse_refit": r"$MSE_{refit}$",
+    "r2_score_refit": r"$R^2_{refit}$",
     "mape": "MAPE",
     "HatlestadHall": "SRM",
     "Miltiadous": "Miltiadous",
@@ -81,7 +84,7 @@ def get_label_orders(renamed_df_mapping: Optional[Dict[str, Dict[str, str]]] = N
 
 def get_formats():
     """Function for getting the default formats when making plots heatmaps"""
-    return {"pearson_r": ".2f", "mae": ".1f", "r2_score": ".2f"}
+    return {"pearson_r": ".2f", "mae": ".1f", "r2_score": ".2f", "r2_score_refit": ".2f"}
 
 
 def get_rename_mapping():
@@ -294,7 +297,7 @@ def get_lodo_test_performance(path, *, target_metrics, selection_metric, dataset
         assert selection_metric in ("pearson_r", "spearman_rho"), \
             (f"Model selection failed with a selection metric that is not a registered correlation metric. The failed "
              f"metric was {selection_metric}, the registered correlation metrics are {_corr_metrics}")
-        epoch = -1
+        epoch = 99  # Last epoch. Got KeyError when using -1, don't know why
         val_performance = 0
 
     # --------------
@@ -305,10 +308,12 @@ def get_lodo_test_performance(path, *, target_metrics, selection_metric, dataset
     test_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
     test_performance = {target_metric: test_df[target_metric][epoch] for target_metric in target_metrics}
 
-    # Get refit performance scores
+    # Get refit performance scores and add to results
     refit_performance = _get_lodo_refit_scores(path=path, epoch=epoch, metrics=refit_metrics)
+    for metric, score in refit_performance.items():
+        test_performance[f"{metric}_refit"] = score
 
-    return {**test_performance, **refit_performance}, dataset_name, val_performance
+    return test_performance, dataset_name, val_performance
 
 
 def get_lodi_test_performance(path, *, target_metrics, selection_metric, datasets, refit_metrics):
@@ -340,7 +345,18 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
     # --------------
     # Get optimal epoch (as evaluated on the validation set)
     # --------------
-    val_performance, best_epoch = get_lodi_validation_performance(path=path, main_metric=selection_metric)
+    try:
+        val_performance, best_epoch = get_lodi_validation_performance(path=path, main_metric=selection_metric)
+    except KeyError:
+        # If the prediction model guessed that all subjects have the same age, for all folds, model selection
+        # 'fails'. We'll verify that the selection metric is a correlation metric, set the performance to zero, and the
+        # 'best epoch' to the last epoch
+        _corr_metrics = ("pearson_r", "spearman_rho")
+        assert selection_metric in ("pearson_r", "spearman_rho"), \
+            (f"Model selection failed with a selection metric that is not a registered correlation metric. The failed "
+             f"metric was {selection_metric}, the registered correlation metrics are {_corr_metrics}")
+        best_epoch = 99  # Last epoch. Got KeyError when using -1, don't know why
+        val_performance = 0
 
     # -----------------
     # Get the test metrics per test dataset
@@ -621,10 +637,11 @@ def _get_lodi_refit_scores(path, epoch, metrics) -> Dict[str, Dict[str, float]]:
             # Normally, I'd add a 'compute_metric' method to Histories, but I don't like to change the code too much
             # after getting the results from a scientific paper, even when it makes sense. So, violating some best
             # practice instead
-            test_metrics[dataset][metric] = Histories._compute_metric(
+            score = Histories._compute_metric(
                 metric=metric, y_pred=torch.tensor(df["adjusted_pred"].to_numpy()),
                 y_true=torch.tensor(df["ground_truth"].to_numpy())
             )
+            test_metrics[dataset][metric] = round(score, 3)  # This is what is used for non-refit intercepts
 
     # ------------
     # Now, fix the pooled dataset
@@ -652,10 +669,11 @@ def _get_lodi_refit_scores(path, epoch, metrics) -> Dict[str, Dict[str, float]]:
     # Add the performance
     test_metrics["Pooled"] = dict()
     for metric in metrics:
-        test_metrics["Pooled"][metric] = Histories._compute_metric(
+        score = Histories._compute_metric(
             metric=metric, y_pred=torch.tensor(df["adjusted_pred"].to_numpy()),
             y_true=torch.tensor(df["ground_truth"].to_numpy())
         )
+        test_metrics["Pooled"][metric] = round(score, 3)  # This is what is used for non-refit intercepts
     return test_metrics
 
 
@@ -686,9 +704,10 @@ def _get_lodo_refit_scores(path, epoch, metrics):
         # Normally, I'd add a 'compute_metric' method to Histories, but I don't like to change the code too much after
         # getting the results from a scientific paper, even when it makes sense. So, violating some best practice
         # instead
-        test_metrics[metric] = Histories._compute_metric(
+        score = Histories._compute_metric(
             metric=metric, y_pred=torch.tensor(df["adjusted_pred"]), y_true=torch.tensor(df["ground_truth"])
         )
+        test_metrics[metric] = round(score, 3)  # This is what is used for non-refit intercepts
     return test_metrics
 
 

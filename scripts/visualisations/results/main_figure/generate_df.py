@@ -12,7 +12,7 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
                         refit_metrics):
     # Initialise dict which will be used for plotting
     results = {"Target dataset": [], "Source dataset": [], "run": [], "Val score": [],
-               **{metric: [] for metric in target_metrics}, **{f"metric_{metric}": [] for metric in refit_metrics}}
+               **{metric: [] for metric in target_metrics}, **{f"{metric}_refit": [] for metric in refit_metrics}}
 
     # --------------
     # Obtain all test results from the LODO runs
@@ -47,6 +47,9 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
             results["run"].append(run)
             results["Val score"].append(val_performance)
             for metric, performance in test_performance.items():
+                if not isinstance(performance, float):
+                    raise TypeError(f"Expected performance score to be float, but found ({type(performance)}): "
+                                    f"{performance}")
                 results[metric].append(performance)
 
     # --------------
@@ -79,6 +82,9 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
                 results["run"].append(run)
                 results["Val score"].append(val_performance)
                 for metric, score in performance_scores.items():
+                    if not isinstance(score, float):
+                        raise TypeError(f"Expected performance score to be float, but found ({type(score)}): "
+                                        f"{score}")
                     results[metric].append(score)
 
     return pandas.DataFrame(results)
