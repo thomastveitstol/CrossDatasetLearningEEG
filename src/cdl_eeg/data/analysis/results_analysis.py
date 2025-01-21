@@ -369,7 +369,7 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
     metrics = os.listdir(subgroup_path) if target_metrics is None else target_metrics
 
     # Get all metrics
-    test_metrics = {}
+    test_metrics: Dict[str, Dict[str, float]] = {}
     for metric in metrics:
         df = pandas.read_csv(os.path.join(subgroup_path, metric, f"test_{metric}.csv"))
 
@@ -440,7 +440,7 @@ class HP:
     # How to find the HPC in the config file
     location: Union[Tuple[str, ...], Callable]  # type: ignore[type-arg]
     # The HP distribution or where to find it
-    distribution: Union[Hyperparameter, Tuple[str, ...]]
+    distribution: Union[Hyperparameter, Tuple[str, ...]]  # type: ignore[type-arg]
 
 
 def _get_band_pass_filter(config):
@@ -546,7 +546,7 @@ def _get_all_and_average_age(datasets):
     # ------------
     # Make all desired combinations
     # ------------
-    age_averages: Dict[Union[str, Tuple[str, ...]]: float] = dict()
+    age_averages: Dict[Union[str, Tuple[str, ...]], float] = dict()
     # LODO
     for dataset_name in dataset_age:
         all_but_current_ages = {d_name: age_vals for d_name, age_vals in dataset_age.items() if d_name != dataset_name}
@@ -569,8 +569,10 @@ def get_dummy_performance(datasets, metrics):
     # ------------
     # Compute dummy performance scores
     # ------------
-    dummy_performance = {"Target dataset": [], "Source dataset": [],
-                         **{f"Performance ({PRETTY_NAME[metric]})": [] for metric in metrics}}
+    dummy_performance: Dict[str, List[Union[str, float]]] = {
+        "Target dataset": [], "Source dataset": [],
+        **{f"Performance ({PRETTY_NAME[metric]})": [] for metric in metrics}
+    }
 
     # LODO
     for target_dataset, ground_truth in dataset_age.items():
