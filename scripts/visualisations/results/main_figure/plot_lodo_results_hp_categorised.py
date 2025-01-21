@@ -6,30 +6,70 @@ import seaborn
 from matplotlib import pyplot
 
 from cdl_eeg.data.analysis.results_analysis import add_hp_configurations_to_dataframe, PRETTY_NAME, combine_conditions, \
-    get_label_orders, get_rename_mapping
+    get_label_orders, get_rename_mapping, extract_selected_best_scores, get_dummy_performance, INV_PRETTY_NAME
 from cdl_eeg.data.paths import get_results_dir
 
 
 def _fill_subplot(ax, *, col_figure_hp, color_hp, df, limits, orders, row_figure_hp, row_number, x_axis, x_fig_category,
-                  y_axis, y_fig_category, add_y_category_to_label):
+                  y_axis, y_fig_category, add_y_category_to_label, selection_metric, dummy_performance):
     # Select the correct dataframe subset
     subset_df = df[(df[row_figure_hp] == y_fig_category) & (df[col_figure_hp] == x_fig_category)]
 
+    # Fix orders
+    hue_order = tuple(val for val in orders[color_hp] if val in set(subset_df[color_hp]))
+    y_order = tuple(val for val in orders[y_axis] if val in set(subset_df[y_axis]))
+
+    # -------------
     # Plotting
+    # -------------
+    # Box-plot and strip-plot
     seaborn.boxplot(
-        x=subset_df[x_axis], y=y_axis, hue=color_hp, hue_order=orders[color_hp], order=orders[y_axis],
-        data=subset_df, ax=ax, linewidth=1.2, dodge=True, showfliers=False, fill=False
+        data=subset_df, x=x_axis, y=y_axis, hue=color_hp, hue_order=hue_order, order=y_order, ax=ax,
+        linewidth=1.2, dodge=True, showfliers=False, fill=False
     )
     seaborn.stripplot(
-        x=subset_df[x_axis], y=y_axis, hue=color_hp, hue_order=orders[color_hp], order=orders[y_axis],
-        data=subset_df, ax=ax, jitter=True, dodge=True, size=3, alpha=0.5, marker='o'
+        data=subset_df, x=x_axis, y=y_axis, hue=color_hp, hue_order=hue_order, order=y_order, ax=ax, jitter=True,
+        dodge=True, size=3, alpha=0.5, marker='o'
     )
 
+    # Plot the selected model
+    # Get the best score (selected by maximising performance on validation set)
+    selected_df = extract_selected_best_scores(
+        df=subset_df, selection_metric=selection_metric, target_metrics=(x_axis,),  # Assumes x-axis is target metric
+        target_datasets=set(subset_df["Target dataset"]), source_datasets=set(subset_df["Source dataset"]),
+        additional_columns=(color_hp, y_axis)
+    )
+    seaborn.stripplot(
+        data=selected_df, x=f"Performance ({PRETTY_NAME[x_axis]})", y=y_axis, hue=color_hp, hue_order=hue_order,
+        ax=ax, jitter=True, dodge=True, size=9, alpha=1, marker="*", palette="dark:black"
+    )
+
+    # Add a dummy performance line
+    _target_datasets = set(subset_df["Target dataset"])
+    _source_datasets = set(subset_df["Source dataset"])
+    assert len(_target_datasets) == len(_source_datasets) == 1
+    target_dataset = tuple(_target_datasets)[0]
+    source_dataset = tuple(_source_datasets)[0]
+
+    condition = ((dummy_performance["Target dataset"] == target_dataset)
+                 & (dummy_performance["Source dataset"] == source_dataset))
+    dummy_score = dummy_performance[f"Performance ({PRETTY_NAME[x_axis]})"][condition]
+    ax.plot((dummy_score, dummy_score), (-0.5, len(y_order) - 0.5), color="black", linewidth=1.5, linestyle="--",
+            alpha=0.8, zorder=5)
+
+    # ------------
+    # Plot cosmetics
+    # ------------
+    # Theme (shading with grey)
+    for i, _ in enumerate(y_order):
+        if i % 2 == 0:  # Shade alternate categories
+            ax.axhspan(i - 0.5, i + 0.5, color="lightgrey", alpha=0.5)
+
+    # Normal cosmetics
     ax.set_xlim(*limits[x_axis])
     try:
         ax.get_legend().remove()  # This may raise an AttributeError
-    except AttributeError:
-        # This happens if plots are empty
+    except AttributeError:  # This happens if plots are empty
         pass
     if row_number == 0:
         ax.set_title(x_fig_category)
@@ -38,6 +78,8 @@ def _fill_subplot(ax, *, col_figure_hp, color_hp, df, limits, orders, row_figure
         ax.set_ylabel(f"{y_fig_category}\n{y_axis}")
     else:
         ax.set_ylabel(y_axis)
+    if x_axis in PRETTY_NAME:
+        ax.set_xlabel(PRETTY_NAME[x_axis])
 
 
 def main():
@@ -47,29 +89,21 @@ def main():
     y_axis = "DL architecture"
     x_axis = "mae"
     color_hp = "Band-pass filter"  # The HP which will be used as 'hue'
-    row_figure_hp = "Target dataset"  # One figure per category of this HP. Figures will be stacked i y direction
-    col_figure_hp = "Source dataset"  # One figure per category of this HP. Figures will be stacked i x direction
-    selection_metrics = ("mae", "pearson_r")
-    figsize = (10, 5)
-    conditions = {"Target dataset": ("Pooled",)}
+    row_figure_hp = "Source dataset"  # One figure per category of this HP. Figures will be stacked i y direction
+    col_figure_hp = "Target dataset"  # One figure per category of this HP. Figures will be stacked i x direction
+    selection_metrics = (x_axis,)
+    figsize = (11.5, 5)
+    conditions = {"Source dataset": ("Pooled",)}
     renamed_df_mapping = get_rename_mapping()
 
     title_fontsize = 14
 
     limits = {"pearson_r": (-0.2, 1), "mae": (0, 40), "r2_score": (-3, 1), "spearman_rho": (-0.2, 1)}
-    orders = get_label_orders()
-    # Update 'orders' with the 'renamed_df_mapping'
-    for column, mapping in renamed_df_mapping.items():
-        if column in orders:
-            updated_order = []
-            for value in orders[column]:
-                if value in mapping:
-                    updated_order.append(mapping[value])
-                else:
-                    updated_order.append(value)
-            orders[column] = tuple(updated_order)
+    orders = get_label_orders(renamed_df_mapping)
 
     results_dir = Path(get_results_dir())
+    _datasets = tuple(INV_PRETTY_NAME[name] for name in ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang"))
+    dummy_performance = get_dummy_performance(datasets=_datasets, metrics=(x_axis,))
 
     for selection_metric in selection_metrics:
         # ------------
@@ -81,13 +115,19 @@ def main():
 
         # Extract subset
         if conditions:
-            combined_conditions = combine_conditions(df=results_df, conditions=conditions)
+            _current_conditions = {col: values for col, values in conditions.items() if col in results_df.columns}
+            combined_conditions = combine_conditions(df=results_df, conditions=_current_conditions)
             results_df = results_df[combined_conditions]
 
         # Add the configurations
-        df = add_hp_configurations_to_dataframe(results_df, hps=(color_hp, row_figure_hp, y_axis),
+        df = add_hp_configurations_to_dataframe(results_df, hps={color_hp, row_figure_hp, y_axis, *conditions.keys()},
                                                 results_dir=results_dir)
         df.replace(renamed_df_mapping, inplace=True)
+
+        # Extract subset again
+        if conditions:
+            combined_conditions = combine_conditions(df=df, conditions=conditions)
+            df = df[combined_conditions]
 
         # Get all dataset names
         y_fig_categories = orders[row_figure_hp] if row_figure_hp in orders else set(df[row_figure_hp])
@@ -101,8 +141,8 @@ def main():
         # Plotting
         # ------------
         # Create the plot
-        fig, axes = pyplot.subplots(len(y_fig_categories), len(x_fig_categories), figsize=figsize, sharex=True,
-                                    sharey=True)
+        fig, axes = pyplot.subplots(len(y_fig_categories), len(x_fig_categories), figsize=figsize,
+                                    sharex=True, sharey=True)  # type: ignore
         axes = (axes,) if axes.ndim == 1 else axes  # Fix the spe
 
         # Loop through the axes to create subplots
@@ -113,7 +153,8 @@ def main():
                     ax, col_figure_hp=col_figure_hp, color_hp=color_hp, df=df, limits=limits, orders=orders,
                     row_figure_hp=row_figure_hp, row_number=row_number, x_axis=x_axis,
                     x_fig_category=x_fig_category, y_axis=y_axis, y_fig_category=y_fig_category,
-                    add_y_category_to_label=len(y_fig_categories) > 1
+                    add_y_category_to_label=len(y_fig_categories) > 1, selection_metric=selection_metric,
+                    dummy_performance=dummy_performance
                 )
 
 
