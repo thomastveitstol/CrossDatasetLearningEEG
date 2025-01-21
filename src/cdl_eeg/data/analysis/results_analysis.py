@@ -10,6 +10,8 @@ import numpy
 import pandas
 import torch
 import yaml  # type: ignore[import]
+from ConfigSpace import UniformFloatHyperparameter, UniformIntegerHyperparameter, CategoricalHyperparameter
+from ConfigSpace.hyperparameters import Hyperparameter
 
 from cdl_eeg.data.datasets.getter import get_dataset
 from cdl_eeg.models.metrics import Histories
@@ -42,6 +44,7 @@ PRETTY_NAME = {
     "4 * f max": r"$4 \cdot f_{max}$",
     "8 * f max": r"$8 \cdot f_{max}$"
 }
+INV_PRETTY_NAME = {pretty: ugly for ugly, pretty in PRETTY_NAME.items()}
 INV_FREQUENCY_BANDS = {(1.0, 4.0): "Delta",
                        (4.0, 8.0): "Theta",
                        (8.0, 12.0): "Alpha",
@@ -436,11 +439,14 @@ class HP:
     config_file: Literal["normal", "preprocessing"]  # Indicates which config file to open to find the HPC
     # How to find the HPC in the config file
     location: Union[Tuple[str, ...], Callable]  # type: ignore[type-arg]
+    # The HP distribution or where to find it
+    distribution: Union[Hyperparameter, Tuple[str, ...]]
 
 
 def _get_band_pass_filter(config):
     l_freq, h_freq = config["general"]["filtering"]
     return INV_FREQUENCY_BANDS[(l_freq, h_freq)]
+
 
 def _get_normalisation(config):
     if config["Varied Numbers of Channels"]["name"] == "Interpolation":
@@ -451,10 +457,49 @@ def _get_normalisation(config):
         raise ValueError
 
 
+def _config_dist_to_fanova_dist(distribution, hp_name):
+    """Function which maps a distribution as specified in the config file to fANOVA distribution"""
+    # Not a very elegant function... should preferably use the sampling distribution functions
+    dist_name = distribution["dist"]
+    if dist_name == "uniform":
+        low = distribution["kwargs"]["a"]
+        high = distribution["kwargs"]["b"]
+        return UniformFloatHyperparameter(name=hp_name, lower=low, upper=high, log=False)
+    elif dist_name == "log_uniform":
+        base = distribution["kwargs"]["base"]
+        low = base ** distribution["kwargs"]["a"]
+        high = base ** distribution["kwargs"]["b"]
+        return UniformFloatHyperparameter(name=hp_name, lower=low, upper=high, log=True)
+    if dist_name == "uniform_int":
+        low = distribution["kwargs"]["a"]
+        high = distribution["kwargs"]["b"]
+        return UniformIntegerHyperparameter(name=hp_name, lower=low, upper=high, log=False)
+    elif dist_name == "log_uniform_int":
+        base = distribution["kwargs"]["base"]
+        low = base ** distribution["kwargs"]["a"]
+        high = base ** distribution["kwargs"]["b"]
+        return UniformIntegerHyperparameter(name=hp_name, lower=low, upper=high, log=True)
+    elif dist_name == "n_log_uniform_int":
+        # I'll register it as a log scale
+        n = distribution["kwargs"]["n"]
+        base = distribution["kwargs"]["base"]
+        low = n * round(base ** distribution["kwargs"]["a"])
+        high = n * round(base ** distribution["kwargs"]["b"])
+        return UniformIntegerHyperparameter(name=hp_name, lower=low, upper=high, log=True)
+    else:
+        raise ValueError(f"Unrecognised distribution: {dist_name}")
+
+
+CHP = CategoricalHyperparameter
 HYPERPARAMETERS = {
-    "DL architecture": HP(config_file="normal", location=("DL Architecture", "model")),
-    "Band-pass filter": HP(config_file="preprocessing", location=_get_band_pass_filter),
-    "Normalisation": HP(config_file="normal", location=_get_normalisation)
+    "DL architecture": HP(config_file="normal", location=("DL Architecture", "model"),
+                          distribution=CHP(name="DL architecture", choices=("IN", "DN", "SN"))),
+    "Band-pass filter": HP(config_file="preprocessing", location=_get_band_pass_filter,
+                           distribution=CHP(name="Band-pass filter", choices=get_label_orders()["Band-pass filter"])),
+    "Normalisation": HP(config_file="normal", location=_get_normalisation,
+                        distribution=CHP(name="Normalisation", choices=(True, False))),
+    "Learning rate": HP(config_file="normal", location=("Training", "learning_rate"),
+                        distribution=("Training", "learning_rate"))
 }
 
 
@@ -485,6 +530,94 @@ def _load_config_files(*, normal_config_needed, preprocessing_config_needed, res
     # Make sure at least one was added, and return as tuple
     assert config_files
     return config_files
+
+
+def _get_all_and_average_age(datasets):
+    # Get age of all subjects in all datasets
+    dataset_age = dict()
+    for dataset_name in datasets:
+        dataset = get_dataset(dataset_name=dataset_name)
+        subject_ids = dataset.get_subject_ids()
+
+        # Add ages (but remove nan values first)
+        age_array = dataset.load_targets(target="age", subject_ids=subject_ids)
+        dataset_age[dataset_name] = age_array[~numpy.isnan(age_array)]
+
+    # ------------
+    # Make all desired combinations
+    # ------------
+    age_averages: Dict[Union[str, Tuple[str, ...]]: float] = dict()
+    # LODO
+    for dataset_name in dataset_age:
+        all_but_current_ages = {d_name: age_vals for d_name, age_vals in dataset_age.items() if d_name != dataset_name}
+        dataset_combination = tuple(all_but_current_ages)
+        dataset_combination_avg = numpy.mean(numpy.concatenate(tuple(all_but_current_ages.values())))
+
+        # Add
+        age_averages[dataset_combination] = dataset_combination_avg
+
+    # LODI
+    for dataset_name, age_values in dataset_age.items():
+        age_averages[dataset_name] = numpy.mean(age_values)
+
+    return dataset_age, age_averages
+
+
+def get_dummy_performance(datasets, metrics):
+    dataset_age, age_average = _get_all_and_average_age(datasets=datasets)
+
+    # ------------
+    # Compute dummy performance scores
+    # ------------
+    dummy_performance = {"Target dataset": [], "Source dataset": [],
+                         **{f"Performance ({PRETTY_NAME[metric]})": [] for metric in metrics}}
+
+    # LODO
+    for target_dataset, ground_truth in dataset_age.items():
+        # Make the dummy guess
+        guess = numpy.mean(
+            numpy.concatenate([age_vals for d_name, age_vals in dataset_age.items() if d_name != target_dataset])
+        )
+
+        # Compute dummy performance
+        dummy_performance["Source dataset"].append("Pooled")
+        dummy_performance["Target dataset"].append(PRETTY_NAME[target_dataset])
+        for metric in metrics:
+            dummy_score = Histories._compute_metric(metric=metric, y_pred=torch.tensor([guess] * ground_truth.shape[0]),
+                                                    y_true=torch.tensor(ground_truth))
+            dummy_performance[f"Performance ({PRETTY_NAME[metric]})"].append(dummy_score)
+
+    # LODI (single source dataset to single target dataset)
+    for source_dataset in dataset_age:
+        for target_dataset, ground_truth in dataset_age.items():
+            if source_dataset == target_dataset:
+                continue
+
+            # Add to dict
+            dummy_performance["Source dataset"].append(PRETTY_NAME[source_dataset])
+            dummy_performance["Target dataset"].append(PRETTY_NAME[target_dataset])
+
+            guess = age_average[source_dataset]
+            for metric in metrics:
+                dummy_score = Histories._compute_metric(
+                    metric=metric, y_pred=torch.tensor([guess] * ground_truth.shape[0]),
+                    y_true=torch.tensor(ground_truth)
+                )
+                dummy_performance[f"Performance ({PRETTY_NAME[metric]})"].append(dummy_score)
+
+    # LODI (single source dataset to pooled target dataset)
+    for source_dataset in dataset_age:
+        ground_truth = numpy.concatenate([ages for dataset, ages in dataset_age.items() if dataset != source_dataset])
+        guess = numpy.mean(age_average[source_dataset])
+
+        dummy_performance["Source dataset"].append(PRETTY_NAME[source_dataset])
+        dummy_performance["Target dataset"].append("Pooled")
+        for metric in metrics:
+            dummy_score = Histories._compute_metric(metric=metric, y_pred=torch.tensor([guess] * ground_truth.shape[0]),
+                                                    y_true=torch.tensor(ground_truth))
+            dummy_performance[f"Performance ({PRETTY_NAME[metric]})"].append(dummy_score)
+
+    return pandas.DataFrame(dummy_performance)
 
 
 def add_hp_configurations_to_dataframe(df, hps, results_dir, skip_if_exists=True):
