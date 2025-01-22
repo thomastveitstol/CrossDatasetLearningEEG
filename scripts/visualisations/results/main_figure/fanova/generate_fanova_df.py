@@ -15,15 +15,18 @@ from cdl_eeg.data.paths import get_results_dir
 
 
 def main():
+    numpy.random.seed(1)
+
     # ----------------
     # A few design choices for the analysis
     # ----------------
     experiment_type = "lodo"
     hps = ("DL architecture", "Band-pass filter", "Normalisation", "Learning rate")
-    percentiles = (95,)
-    selection_metric = "pearson_r"
+    percentiles = (0, 50, 75, 90, 95)
+    selection_metric = "mae"
     target_metric = selection_metric
     fanova_kwargs = {"n_trees": 64, "max_depth": 64}
+    decimals = 5
 
     results_path = Path(get_results_dir())
     save_path = Path(os.path.dirname(__file__))
@@ -43,6 +46,7 @@ def main():
     _root_path = os.path.dirname(os.path.dirname(__file__))
     path = Path(_root_path) / f"all_test_results_selection_metric_{selection_metric}.csv"
     df = pandas.read_csv(path)
+    df.fillna(0.0, inplace=True)
 
     # Extract subset
     if conditions:
@@ -95,6 +99,7 @@ def main():
     # safe
     numpy.float = float
 
+    print("Computing marginals...")
     # Marginal importance
     marginal_importance: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Percentile": [],
                                                  **{f"{hp_name} (mean)": [] for hp_name in hps},
@@ -127,7 +132,7 @@ def main():
             marginal_importance["Percentile"].append(percentile)
 
     # Save the results
-    pandas.DataFrame(marginal_importance).to_csv(
+    pandas.DataFrame(marginal_importance).round(decimals).to_csv(
         save_path / f"marginal_importance_{experiment_type}_{selection_metric}_{target_metric}.csv"
     )
 
