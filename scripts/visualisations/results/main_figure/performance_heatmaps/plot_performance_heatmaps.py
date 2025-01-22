@@ -26,13 +26,13 @@ def main():
         _Metric(selection_metric="pearson_r", target_metric="pearson_r", subtract_dummy_performance=False)
     )
 
-    conditions = {"Source dataset": ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang", "Pooled"),
-                  "Target dataset": ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang", "Pooled")}
+    conditions = {}
     value_ranges = {"r2_score": (-3, 1), "pearson_r": (-1, 1), "mae": (None, None), "r2_score_refit": (-3, 1)}
 
 
     orders = get_label_orders()
     formats = get_formats()
+    save_path = Path(os.path.dirname(__file__))
 
     # Maybe load the dummy performance
     subtract_metrics = tuple(metric.target_metric for metric in metrics if metric.subtract_dummy_performance)
@@ -109,8 +109,8 @@ def main():
         else:
             pyplot.title("Test scores")
             # pyplot.title(f"Test scores (Selection metric: {PRETTY_NAME[selection_metric]})")
-
-    pyplot.show()
+        pyplot.savefig(save_path / f"heatmap_{metric.target_metric}.png")
+    # pyplot.show()
 
 
 if __name__ == "__main__":

@@ -86,18 +86,19 @@ def main():
     # ------------
     # Some choices
     # ------------
-    experiment_type = "lodi"
+    experiment_type = "lodo"
 
     y_axis = "DL architecture"
-    x_axis = "mae"
+    x_axes = ("mae", "pearson_r")
     color_hp = "Band-pass filter"  # The HP which will be used as 'hue'
-    selection_metrics = (x_axis,)
+    selection_metrics = x_axes
     figsize = (11.5, 5)
     title_fontsize = 12
 
     renamed_df_mapping = get_rename_mapping()
     limits = {"pearson_r": (-0.2, 1), "mae": (0, 40), "r2_score": (-3, 1), "spearman_rho": (-0.2, 1)}
     orders = get_label_orders(renamed_df_mapping)
+    save_path = Path(os.path.dirname(__file__))
 
     # Conditions and columns and rows
     if experiment_type.lower() == "lodo":
@@ -113,14 +114,15 @@ def main():
 
     results_dir = Path(get_results_dir())
     _datasets = tuple(INV_PRETTY_NAME[name] for name in ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang"))
-    dummy_performance = get_dummy_performance(datasets=_datasets, metrics=(x_axis,))
+    dummy_performance = get_dummy_performance(datasets=_datasets, metrics=x_axes)
 
-    for selection_metric in selection_metrics:
+    for selection_metric, x_axis in zip(selection_metrics, x_axes):
         # ------------
         # Create dataframes with all information we want
         # ------------
         # Load the results df
-        path = Path(os.path.dirname(__file__)) / f"all_test_results_selection_metric_{selection_metric}.csv"
+        folder_path = Path(os.path.dirname(os.path.dirname(__file__)))
+        path = folder_path / f"all_test_results_selection_metric_{selection_metric}.csv"
         results_df = pandas.read_csv(path)
 
         # Extract subset
@@ -168,7 +170,8 @@ def main():
                 )
 
 
-        fig.suptitle(f"{col_figure_hp} (Selection metric: {PRETTY_NAME[selection_metric]})", fontsize=title_fontsize)
+        # fig.suptitle(f"{col_figure_hp} (Selection metric: {PRETTY_NAME[selection_metric]})", fontsize=title_fontsize)
+        fig.suptitle(col_figure_hp, fontsize=title_fontsize)
         if len(y_fig_categories) > 1:
             fig.supylabel(row_figure_hp)
 
@@ -183,7 +186,8 @@ def main():
         # Layout and display
         fig.tight_layout()
         fig.subplots_adjust(right=0.9)  # Adjust space for the global legend
-    pyplot.show()
+
+        pyplot.savefig(save_path / f"{experiment_type.lower()}_distributions_{x_axis}.png")
 
 
 if __name__ == "__main__":
