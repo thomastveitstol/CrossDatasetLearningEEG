@@ -86,20 +86,30 @@ def main():
     # ------------
     # Some choices
     # ------------
+    experiment_type = "lodi"
+
     y_axis = "DL architecture"
     x_axis = "mae"
     color_hp = "Band-pass filter"  # The HP which will be used as 'hue'
-    row_figure_hp = "Source dataset"  # One figure per category of this HP. Figures will be stacked i y direction
-    col_figure_hp = "Target dataset"  # One figure per category of this HP. Figures will be stacked i x direction
     selection_metrics = (x_axis,)
     figsize = (11.5, 5)
-    conditions = {"Source dataset": ("Pooled",)}
+    title_fontsize = 12
+
     renamed_df_mapping = get_rename_mapping()
-
-    title_fontsize = 14
-
     limits = {"pearson_r": (-0.2, 1), "mae": (0, 40), "r2_score": (-3, 1), "spearman_rho": (-0.2, 1)}
     orders = get_label_orders(renamed_df_mapping)
+
+    # Conditions and columns and rows
+    if experiment_type.lower() == "lodo":
+        row_figure_hp = "Source dataset"  # One figure per category of this HP. Figures will be stacked i y direction
+        col_figure_hp = "Target dataset"  # One figure per category of this HP. Figures will be stacked i x direction
+        conditions = {"Source dataset": ("Pooled",)}
+    elif experiment_type.lower() == "lodi":
+        row_figure_hp = "Target dataset"  # One figure per category of this HP. Figures will be stacked i y direction
+        col_figure_hp = "Source dataset"  # One figure per category of this HP. Figures will be stacked i x direction
+        conditions = {"Target dataset": ("Pooled",)}
+    else:
+        raise ValueError(f"Unexpected experiment type: {experiment_type}")
 
     results_dir = Path(get_results_dir())
     _datasets = tuple(INV_PRETTY_NAME[name] for name in ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang"))
