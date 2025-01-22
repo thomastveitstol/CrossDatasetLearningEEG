@@ -585,8 +585,13 @@ def get_dummy_performance(datasets, metrics):
         dummy_performance["Source dataset"].append("Pooled")
         dummy_performance["Target dataset"].append(PRETTY_NAME[target_dataset])
         for metric in metrics:
-            dummy_score = Histories._compute_metric(metric=metric, y_pred=torch.tensor([guess] * ground_truth.shape[0]),
-                                                    y_true=torch.tensor(ground_truth))
+            if metric in ("pearson_r", "spearman_rho"):
+                dummy_score = 0
+            else:
+                dummy_score = Histories._compute_metric(
+                    metric=metric, y_pred=torch.tensor([guess] * ground_truth.shape[0]),
+                    y_true=torch.tensor(ground_truth)
+                )
             dummy_performance[f"Performance ({PRETTY_NAME[metric]})"].append(dummy_score)
 
     # LODI (single source dataset to single target dataset)
@@ -601,10 +606,13 @@ def get_dummy_performance(datasets, metrics):
 
             guess = age_average[source_dataset]
             for metric in metrics:
-                dummy_score = Histories._compute_metric(
-                    metric=metric, y_pred=torch.tensor([guess] * ground_truth.shape[0]),
-                    y_true=torch.tensor(ground_truth)
-                )
+                if metric in ("pearson_r", "spearman_rho"):
+                    dummy_score = 0
+                else:
+                    dummy_score = Histories._compute_metric(
+                        metric=metric, y_pred=torch.tensor([guess] * ground_truth.shape[0]),
+                        y_true=torch.tensor(ground_truth)
+                    )
                 dummy_performance[f"Performance ({PRETTY_NAME[metric]})"].append(dummy_score)
 
     # LODI (single source dataset to pooled target dataset)
@@ -615,8 +623,13 @@ def get_dummy_performance(datasets, metrics):
         dummy_performance["Source dataset"].append(PRETTY_NAME[source_dataset])
         dummy_performance["Target dataset"].append("Pooled")
         for metric in metrics:
-            dummy_score = Histories._compute_metric(metric=metric, y_pred=torch.tensor([guess] * ground_truth.shape[0]),
-                                                    y_true=torch.tensor(ground_truth))
+            if metric in ("pearson_r", "spearman_rho"):
+                dummy_score = 0
+            else:
+                dummy_score = Histories._compute_metric(
+                    metric=metric, y_pred=torch.tensor([guess] * ground_truth.shape[0]),
+                    y_true=torch.tensor(ground_truth)
+                )
             dummy_performance[f"Performance ({PRETTY_NAME[metric]})"].append(dummy_score)
 
     return pandas.DataFrame(dummy_performance)
