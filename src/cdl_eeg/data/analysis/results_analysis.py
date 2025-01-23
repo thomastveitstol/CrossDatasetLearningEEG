@@ -457,6 +457,9 @@ def _get_normalisation(config):
         raise ValueError
 
 
+# ----------------
+# Functions for fANOVA
+# ----------------
 def _config_dist_to_fanova_dist(distribution, hp_name):
     """Function which maps a distribution as specified in the config file to fANOVA distribution"""
     # Not a very elegant function... should preferably use the sampling distribution functions
@@ -490,6 +493,66 @@ def _config_dist_to_fanova_dist(distribution, hp_name):
         raise ValueError(f"Unrecognised distribution: {dist_name}")
 
 
+def _get_single_hp_distribution(hp, hp_name, hpd_config):
+    """
+    Get the distribution of an HP, with specified location and the HP distribution config file
+
+    Parameters
+    ----------
+    hp : HP
+    hp_name : str
+    hpd_config : dict[str, Any]
+
+    Returns
+    -------
+    Hyperparameter
+    """
+    if isinstance(hp.distribution, Hyperparameter):
+        return hp.distribution
+
+    hyperparameter_distribution = hpd_config.copy()
+    for key in hp.distribution:
+        hyperparameter_distribution = hyperparameter_distribution[key]
+    return _config_dist_to_fanova_dist(distribution=hyperparameter_distribution, hp_name=hp_name)
+
+
+def get_fanova_hp_distributions(hp_names, hpd_config):
+    """
+    Function for getting the fANOVA distributions to be passed to ConfigurationSpace
+
+    Parameters
+    ----------
+    hp_names: Iterable[str]
+    hpd_config : dict[str, Any]
+        The configuration file which contains the HP distributions
+    Returns
+    -------
+    dict[str, Hyperparameter]
+    """
+    hp_distributions: Dict[str, Hyperparameter] = dict()  # type: ignore[type-arg]
+    for hp_name in hp_names:
+        # Get the HP info
+        hp = HYPERPARAMETERS[hp_name]
+
+        # Get the distribution
+        hp_distributions[hp_name] = _get_single_hp_distribution(hp=hp, hp_name=hp_name, hpd_config=hpd_config)
+
+    return hp_distributions
+
+
+def get_fanova_encoding():
+    return {
+        "RBP": 0, "spline": 1, "MNE": 2,  # Spatial dim
+        "All": 0, "Delta": 1, "Theta": 2, "Alpha": 3, "Beta": 4, "Gamma": 5,  # Filters
+        "InceptionNetwork": 0, "Deep4NetMTS": 1, "ShallowFBCSPNetMTS": 2,  # Architecture
+        "IN": 0, "DN": 1, "SN": 2,  # Architecture acronyms
+        "2 * f max": 0, "4 * f max": 1, "8 * f max": 2,  # Sampling frequency
+        "False": 0, "True": 1,  # Autoreject and normalisation
+        "5s": 0, "10s": 1,  # Input length
+        "L1Loss": 0, "MSELoss": 1  # Loss
+    }
+
+
 CHP = CategoricalHyperparameter
 HYPERPARAMETERS = {
     "DL architecture": HP(config_file="normal", location=("DL Architecture", "model"),
@@ -497,7 +560,7 @@ HYPERPARAMETERS = {
     "Band-pass filter": HP(config_file="preprocessing", location=_get_band_pass_filter,
                            distribution=CHP(name="Band-pass filter", choices=get_label_orders()["Band-pass filter"])),
     "Normalisation": HP(config_file="normal", location=_get_normalisation,
-                        distribution=CHP(name="Normalisation", choices=(True, False))),
+                        distribution=CHP(name="Normalisation", choices=(False, True))),
     "Learning rate": HP(config_file="normal", location=("Training", "learning_rate"),
                         distribution=("Training", "learning_rate"))
 }
