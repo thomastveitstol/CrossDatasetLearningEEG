@@ -98,35 +98,9 @@ def _generate_pairwise_df(df, *, decimals, experiment_type, fanovas, num_pairwis
     )
 
 
-def main():
-    meaining_of_life = 42
-    numpy.random.seed(meaining_of_life)
-
-    # ----------------
-    # A few design choices for the analysis
-    # ----------------
-    experiment_type = "lodo"
-    percentiles = (0, 50, 75, 90, 95)
-    hps = ("DL architecture", "Band-pass filter", "Normalisation", "Learning rate", r"$\beta_1$", r"$\beta_2$",
-           r"$\epsilon$", "Spatial method", "Sampling frequency", "Input length", "Autoreject", "Loss",
-           r"Weighted loss ($\tau$)")  # , "Domain Adaptation")
-    selection_metric = "pearson_r"
-    target_metric = selection_metric
-    fanova_kwargs = {"n_trees": 64, "max_depth": 64}
-    decimals = 5
-    num_pairwise_marginals = 10
-
-    results_path = Path(get_results_dir())
-    save_path = Path(os.path.dirname(__file__))
-
-    # Conditions and columns and rows
-    if experiment_type.lower() == "lodo":
-        conditions = {"Source dataset": ("Pooled",)}
-    elif experiment_type.lower() == "lodi":
-        conditions = {"Target dataset": ("Pooled",)}
-    else:
-        raise ValueError(f"Unexpected experiment type: {experiment_type}")
-
+def _generate_dataframes(*, conditions, decimals, experiment_type, fanova_kwargs, hps, num_pairwise_marginals,
+                         percentiles, results_path, save_path, selection_metric, skip_pairwise_importance,
+                         target_metric):
     # ----------------
     # Get the data
     # ----------------
@@ -160,7 +134,9 @@ def main():
         hpd_config = yaml.safe_load(file)
 
     # Get the distibutions and make config space
-    config_space = ConfigurationSpace(get_fanova_hp_distributions(hps, hpd_config=hpd_config))
+    config_space = ConfigurationSpace(get_fanova_hp_distributions(hps, hpd_config=hpd_config,
+                                                                  experiment_type=experiment_type))
+    print(config_space)
 
     # Create fanova objects per
     source_datasets = set(df["Source dataset"])
@@ -178,8 +154,6 @@ def main():
         fanovas[(source_dataset, target_dataset)] = fANOVA(X=subset_df[list(hps)], Y=subset_df[target_metric],
                                                            config_space=config_space, **fanova_kwargs)
 
-    print(config_space)
-
     # ----------------
     # fANOVA analysis
     # ----------------
@@ -188,19 +162,62 @@ def main():
     numpy.float = float
 
     print("Computing marginals...")
-    # Marginal importance
+    # Compute marginal importance
     _generate_marginals_df(
         df, decimals=decimals, experiment_type=experiment_type, fanovas=fanovas, hps=hps, percentiles=percentiles,
         save_path=save_path, selection_metric=selection_metric, target_metric=target_metric
     )
 
-    print("Computing pairwise importance...")
-    # Interactions
-    _generate_pairwise_df(
-        df, decimals=decimals, experiment_type=experiment_type, fanovas=fanovas,
-        num_pairwise_marginals=num_pairwise_marginals, percentiles=percentiles, save_path=save_path,
-        selection_metric=selection_metric, target_metric=target_metric
-    )
+    # (Maybe) compute interactions
+    if not skip_pairwise_importance:
+        print("Computing pairwise importance...")
+        _generate_pairwise_df(
+            df, decimals=decimals, experiment_type=experiment_type, fanovas=fanovas,
+            num_pairwise_marginals=num_pairwise_marginals, percentiles=percentiles, save_path=save_path,
+            selection_metric=selection_metric, target_metric=target_metric
+        )
+
+def main():
+    meaning_of_life = 42
+    numpy.random.seed(meaning_of_life)
+
+    # ----------------
+    # A few design choices for the analysis
+    # ----------------
+    skip_pairwise_importance = False
+    experiment_types = ("lodo", "lodi")
+    percentiles = (0, 50, 75, 90, 95)
+    selection_metric = "pearson_r"
+    target_metric = selection_metric
+    fanova_kwargs = {"n_trees": 64, "max_depth": 64}
+    decimals = 5
+    num_pairwise_marginals = 10
+
+    results_path = Path(get_results_dir())
+    save_path = Path(os.path.dirname(__file__))
+
+    for experiment_type in experiment_types:
+        hps = ("DL architecture", "Band-pass filter", "Domain Adaptation", "Normalisation", "Learning rate",
+               r"$\beta_1$", r"$\beta_2$", r"$\epsilon$", "Spatial method", "Sampling frequency", "Input length",
+               "Autoreject", "Loss")
+        if experiment_type.lower() == "lodo":
+            hps += (r"Weighted loss ($\tau$)",)
+
+        # Conditions and columns and rows
+        if experiment_type.lower() == "lodo":
+            conditions = {"Source dataset": ("Pooled",)}
+        elif experiment_type.lower() == "lodi":
+            conditions = {"Target dataset": ("Pooled",)}
+            # conditions = {"Source dataset": ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang")}
+        else:
+            raise ValueError(f"Unexpected experiment type: {experiment_type}")
+
+        _generate_dataframes(
+            conditions=conditions, decimals=decimals, experiment_type=experiment_type, fanova_kwargs=fanova_kwargs,
+            hps=hps, num_pairwise_marginals=num_pairwise_marginals, percentiles=percentiles, results_path=results_path,
+            save_path=save_path, selection_metric=selection_metric, skip_pairwise_importance=skip_pairwise_importance,
+            target_metric=target_metric
+        )
 
 
 if __name__ == "__main__":
