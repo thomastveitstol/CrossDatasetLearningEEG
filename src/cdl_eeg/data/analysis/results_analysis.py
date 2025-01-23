@@ -4,7 +4,7 @@ Functions for analysing the results
 import dataclasses
 import os
 from collections.abc import Iterable
-from typing import Dict, Literal, Callable, Tuple, Union, Any, Optional, List, Set
+from typing import Dict, Literal, Callable, Tuple, Union, Any, Optional, List, Set, NamedTuple
 
 import numpy
 import pandas
@@ -437,13 +437,19 @@ def get_lodo_dataset_name(path) -> str:
 # ----------------
 # Functions for getting HP configurations
 # ----------------
+class DistTuple(NamedTuple):
+    """This can be used if the distribution is different for LODO and LODI"""
+    lodo: Hyperparameter
+    lodi: Hyperparameter
+
+
 @dataclasses.dataclass(frozen=True)
 class HP:
     config_file: Literal["normal", "preprocessing"]  # Indicates which config file to open to find the HPC
     # How to find the HPC in the config file
     location: Union[Tuple[str, ...], Callable]  # type: ignore[type-arg]
     # The HP distribution or where to find it
-    distribution: Union[Hyperparameter, Tuple[str, ...]]  # type: ignore[type-arg]
+    distribution: Union[Hyperparameter, Tuple[str, ...], DistTuple]  # type: ignore[type-arg]
 
 
 def _get_band_pass_filter(config):
@@ -496,7 +502,7 @@ def _config_dist_to_fanova_dist(distribution, hp_name):
         raise ValueError(f"Unrecognised distribution: {dist_name}")
 
 
-def _get_single_hp_distribution(hp, hp_name, hpd_config):
+def _get_single_hp_distribution(hp, hp_name, hpd_config, experiment_type):
     """
     Get the distribution of an HP, with specified location and the HP distribution config file
 
@@ -510,16 +516,23 @@ def _get_single_hp_distribution(hp, hp_name, hpd_config):
     -------
     Hyperparameter
     """
+    # If distribution is already specified, just use that
     if isinstance(hp.distribution, Hyperparameter):
         return hp.distribution
+    elif isinstance(hp.distribution, DistTuple):
+        # Sometimes, the distribution depends on LODO or LODI
+        if experiment_type.lower() == "lodo":
+            return hp.distribution.lodo
+        elif experiment_type.lower() == "lodi":
+            return hp.distribution.lodi
 
+    # Otherwise, just try to loop
     hyperparameter_distribution = hpd_config.copy()
     for key in hp.distribution:
         hyperparameter_distribution = hyperparameter_distribution[key]
     return _config_dist_to_fanova_dist(distribution=hyperparameter_distribution, hp_name=hp_name)
 
-
-def get_fanova_hp_distributions(hp_names, hpd_config):
+def get_fanova_hp_distributions(hp_names, hpd_config, experiment_type):
     """
     Function for getting the fANOVA distributions to be passed to ConfigurationSpace
 
@@ -528,6 +541,7 @@ def get_fanova_hp_distributions(hp_names, hpd_config):
     hp_names: Iterable[str]
     hpd_config : dict[str, Any]
         The configuration file which contains the HP distributions
+    experiment_type : {'lodo', 'lodi'}
     Returns
     -------
     dict[str, Hyperparameter]
@@ -538,7 +552,8 @@ def get_fanova_hp_distributions(hp_names, hpd_config):
         hp = HYPERPARAMETERS[hp_name]
 
         # Get the distribution
-        hp_distributions[hp_name] = _get_single_hp_distribution(hp=hp, hp_name=hp_name, hpd_config=hpd_config)
+        hp_distributions[hp_name] = _get_single_hp_distribution(hp=hp, hp_name=hp_name, hpd_config=hpd_config,
+                                                                experiment_type=experiment_type)
 
     return hp_distributions
 
@@ -640,7 +655,11 @@ HYPERPARAMETERS = {
     "Spatial method": HP(config_file="normal", location=_get_spatial_method,
                          distribution=CHP(name="Spatial method", choices=("spline", "MNE", "RBP"),
                                           weights=(0.25, 0.25, 0.5))),
-    "Domain Adaptation": HP(config_file="normal", location=_get_domain_adaptation, distribution=NotImplemented),
+    "Domain Adaptation": HP(config_file="normal", location=_get_domain_adaptation,
+                            distribution=DistTuple(
+                                lodo=CHP(name="Domain Adaptation", choices=("Nothing", "CMMN", "DD", "CMMN + DD")),
+                                lodi=CHP(name="Domain Adaptation", choices=("Nothing", "CMMN"))
+                            )),
     "Sampling frequency": HP(config_file="preprocessing", location=_get_sampling_freq,
                              distribution=OHP(name="Sampling frequency",
                                               sequence=("2 * f max", "4 * f max", "8 * f max"))),
