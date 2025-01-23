@@ -568,7 +568,7 @@ def get_fanova_encoding():
         False: 0, True: 1,  # Autoreject and normalisation
         "5s": 0, "10s": 1,  # Input length
         "L1Loss": 0, "MSELoss": 1,  # Loss
-        "Nothing": 0, "DD": 1, "CMMN": 2, "CMMN + DD": 3,  # Domain adaptation
+        "Nothing": 0, "CMMN": 1, "DD": 2, "CMMN + DD": 3,  # Domain adaptation
     }
 
 
