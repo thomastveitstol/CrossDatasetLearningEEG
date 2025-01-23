@@ -453,9 +453,9 @@ def _get_band_pass_filter(config):
 
 def _get_normalisation(config):
     if config["Varied Numbers of Channels"]["name"] == "Interpolation":
-        return str(config["DL Architecture"]["normalise"])
+        return config["DL Architecture"]["normalise"]
     elif config["Varied Numbers of Channels"]["name"] == "RegionBasedPooling":
-        return str(config["Varied Numbers of Channels"]["kwargs"]["normalise_region_representations"])
+        return config["Varied Numbers of Channels"]["kwargs"]["normalise_region_representations"]
     else:
         raise ValueError
 
@@ -550,7 +550,7 @@ def get_fanova_encoding():
         "InceptionNetwork": 0, "Deep4NetMTS": 1, "ShallowFBCSPNetMTS": 2,  # Architecture
         "IN": 0, "DN": 1, "SN": 2,  # Architecture acronyms
         "2 * f max": 0, "4 * f max": 1, "8 * f max": 2,  # Sampling frequency
-        "False": 0, "True": 1,  # Autoreject and normalisation
+        False: 0, True: 1,  # Autoreject and normalisation
         "5s": 0, "10s": 1,  # Input length
         "L1Loss": 0, "MSELoss": 1,  # Loss
         "Nothing": 0, "DD": 1, "CMMN": 2, "CMMN + DD": 3,  # Domain adaptation
