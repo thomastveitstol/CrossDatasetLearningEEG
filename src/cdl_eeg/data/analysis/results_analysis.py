@@ -439,8 +439,8 @@ def get_lodo_dataset_name(path) -> str:
 # ----------------
 class DistTuple(NamedTuple):
     """This can be used if the distribution is different for LODO and LODI"""
-    lodo: Hyperparameter
-    lodi: Hyperparameter
+    lodo: Hyperparameter  # type: ignore[type-arg]
+    lodi: Hyperparameter  # type: ignore[type-arg]
 
 
 @dataclasses.dataclass(frozen=True)
