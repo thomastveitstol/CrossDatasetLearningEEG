@@ -14,6 +14,78 @@ from cdl_eeg.data.analysis.results_analysis import add_hp_configurations_to_data
 from cdl_eeg.data.paths import get_results_dir
 
 
+def _generate_marginals_df(df, *, decimals, experiment_type, fanovas, hps, percentiles, save_path, selection_metric,
+                           target_metric):
+    marginal_importance: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Percentile": [],
+                                                 **{f"{hp_name} (mean)": [] for hp_name in hps},
+                                                 **{f"{hp_name} (std)": [] for hp_name in hps}}
+    for (source_dataset, target_dataset), fanova_object in fanovas.items():
+        for percentile in percentiles:
+            # Compute cutoffs
+            subset_df = df[(df["Source dataset"] == source_dataset) & (df["Target dataset"] == target_dataset)]
+            if higher_is_better(target_metric):
+                lower_cutoff = numpy.percentile(subset_df[target_metric], percentile)
+                upper_cutoff = numpy.inf
+            else:
+                lower_cutoff = -numpy.inf
+                upper_cutoff = numpy.percentile(subset_df[target_metric], 100 - percentile)
+            fanova_object.set_cutoffs(cutoffs=(lower_cutoff, upper_cutoff))
+
+            # Loop though all desired HPs
+            for hp_name in hps:
+                summary = fanova_object.quantify_importance(dims=(hp_name,))[(hp_name,)]
+                importance = summary["individual importance"]
+                std = summary["individual std"]
+
+                # Add to marginal importance
+                marginal_importance[f"{hp_name} (mean)"].append(importance)
+                marginal_importance[f"{hp_name} (std)"].append(std)
+
+            # Add the rest of the info to marginal importance results
+            marginal_importance["Target dataset"].append(target_dataset)
+            marginal_importance["Source dataset"].append(source_dataset)
+            marginal_importance["Percentile"].append(percentile)
+
+    # Save the results
+    pandas.DataFrame(marginal_importance).round(decimals).to_csv(
+        save_path / f"marginal_importance_{experiment_type}_{selection_metric}_{target_metric}.csv"
+    )
+
+
+def _generate_pairwise_df(df, *, decimals, experiment_type, fanovas, num_pairwise_marginals, percentiles, save_path,
+                          selection_metric, target_metric):
+    pairwise_marginals: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Percentile": [], "HP1": [],
+                                                "HP2": [], "Importance": [], "Rank": []}
+    for (source_dataset, target_dataset), fanova_object in fanovas.items():
+        for percentile in percentiles:
+            # Compute cutoffs
+            subset_df = df[(df["Source dataset"] == source_dataset) & (df["Target dataset"] == target_dataset)]
+            if higher_is_better(target_metric):
+                lower_cutoff = numpy.percentile(subset_df[target_metric], percentile)
+                upper_cutoff = numpy.inf
+            else:
+                lower_cutoff = -numpy.inf
+                upper_cutoff = numpy.percentile(subset_df[target_metric], 100 - percentile)
+            fanova_object.set_cutoffs(cutoffs=(lower_cutoff, upper_cutoff))
+
+            # Compute interactions
+            hp_interaction_ranking = fanova_object.get_most_important_pairwise_marginals(n=num_pairwise_marginals)
+            for rank, (hp_1, hp_2), importance in enumerate(hp_interaction_ranking.items()):
+                # Add results. The HPs are ranked naturally
+                pairwise_marginals["HP1"].append(hp_1)
+                pairwise_marginals["HP2"].append(hp_2)
+                pairwise_marginals["Rank"].append(rank)
+                pairwise_marginals["Target dataset"].append(target_dataset)
+                pairwise_marginals["Source dataset"].append(source_dataset)
+                pairwise_marginals["Percentile"].append(percentile)
+                pairwise_marginals["Importance"].append(importance)
+
+    # Save the results
+    pandas.DataFrame(pairwise_marginals).round(decimals).to_csv(
+        save_path / f"pairwise_importance_{experiment_type}_{selection_metric}_{target_metric}.csv"
+    )
+
+
 def main():
     numpy.random.seed(1)
 
@@ -27,6 +99,7 @@ def main():
     target_metric = selection_metric
     fanova_kwargs = {"n_trees": 64, "max_depth": 64}
     decimals = 5
+    num_pairwise_marginals = 10
 
     results_path = Path(get_results_dir())
     save_path = Path(os.path.dirname(__file__))
@@ -101,40 +174,19 @@ def main():
 
     print("Computing marginals...")
     # Marginal importance
-    marginal_importance: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Percentile": [],
-                                                 **{f"{hp_name} (mean)": [] for hp_name in hps},
-                                                 **{f"{hp_name} (std)": [] for hp_name in hps}}
-    for (source_dataset, target_dataset), fanova_object in fanovas.items():
-        for percentile in percentiles:
-            # Compute cutoffs
-            subset_df = df[(df["Source dataset"] == source_dataset) & (df["Target dataset"] == target_dataset)]
-            if higher_is_better(target_metric):
-                lower_cutoff = numpy.percentile(subset_df[target_metric], percentile)
-                upper_cutoff = numpy.inf
-            else:
-                lower_cutoff = -numpy.inf
-                upper_cutoff = numpy.percentile(subset_df[target_metric], 100 - percentile)
-            fanova_object.set_cutoffs(cutoffs=(lower_cutoff, upper_cutoff))
-
-            # Loop though all desired HPs
-            for hp_name in hps:
-                summary = fanova_object.quantify_importance(dims=(hp_name,))[(hp_name,)]
-                importance = summary["individual importance"]
-                std = summary["individual std"]
-
-                # Add to marginal importance
-                marginal_importance[f"{hp_name} (mean)"].append(importance)
-                marginal_importance[f"{hp_name} (std)"].append(std)
-
-            # Add the rest of the info to marginal importance results
-            marginal_importance["Target dataset"].append(target_dataset)
-            marginal_importance["Source dataset"].append(source_dataset)
-            marginal_importance["Percentile"].append(percentile)
-
-    # Save the results
-    pandas.DataFrame(marginal_importance).round(decimals).to_csv(
-        save_path / f"marginal_importance_{experiment_type}_{selection_metric}_{target_metric}.csv"
+    _generate_marginals_df(
+        df, decimals=decimals, experiment_type=experiment_type, fanovas=fanovas, hps=hps, percentiles=percentiles,
+        save_path=save_path, selection_metric=selection_metric, target_metric=target_metric
     )
+
+    print("Computing pairwise importance...")
+    # Interactions
+    _generate_pairwise_df(
+        df, decimals=decimals, experiment_type=experiment_type, fanovas=fanovas,
+        num_pairwise_marginals=num_pairwise_marginals, percentiles=percentiles, save_path=save_path,
+        selection_metric=selection_metric, target_metric=target_metric
+    )
+
 
 if __name__ == "__main__":
     main()
