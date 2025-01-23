@@ -4,13 +4,14 @@ Functions for analysing the results
 import dataclasses
 import os
 from collections.abc import Iterable
-from typing import Dict, Literal, Callable, Tuple, Union, Any, Optional, List
+from typing import Dict, Literal, Callable, Tuple, Union, Any, Optional, List, Set
 
 import numpy
 import pandas
 import torch
 import yaml  # type: ignore[import]
-from ConfigSpace import UniformFloatHyperparameter, UniformIntegerHyperparameter, CategoricalHyperparameter
+from ConfigSpace import UniformFloatHyperparameter, UniformIntegerHyperparameter, CategoricalHyperparameter, \
+    OrdinalHyperparameter
 from ConfigSpace.hyperparameters import Hyperparameter
 
 from cdl_eeg.data.datasets.getter import get_dataset
@@ -65,11 +66,13 @@ class SkipFold(Exception):
 # ----------------
 def get_label_orders(renamed_df_mapping: Optional[Dict[str, Dict[str, str]]] = None):
     """Function for getting the default order of the labels when making plots"""
-    orders = {"Target dataset": ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang", "Pooled"),
-              "Source dataset": ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang", "Pooled"),
-              "Band-pass filter": ("All", "Delta", "Theta", "Alpha", "Beta", "Gamma"),
-              "DL architecture": ("InceptionNetwork", "Deep4NetMTS", "ShallowFBCSPNetMTS"),
-              "Normalisation": ("True", "False")}
+    orders: Dict[str, Tuple[str, ...]] = {
+        "Target dataset": ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang", "Pooled"),
+        "Source dataset": ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang", "Pooled"),
+        "Band-pass filter": ("All", "Delta", "Theta", "Alpha", "Beta", "Gamma"),
+        "DL architecture": ("InceptionNetwork", "Deep4NetMTS", "ShallowFBCSPNetMTS"),
+        "Normalisation": ("True", "False")
+    }
     if renamed_df_mapping is None:
         return orders
 
@@ -549,11 +552,77 @@ def get_fanova_encoding():
         "2 * f max": 0, "4 * f max": 1, "8 * f max": 2,  # Sampling frequency
         "False": 0, "True": 1,  # Autoreject and normalisation
         "5s": 0, "10s": 1,  # Input length
-        "L1Loss": 0, "MSELoss": 1  # Loss
+        "L1Loss": 0, "MSELoss": 1,  # Loss
+        "Nothing": 0, "DD": 1, "CMMN": 2, "CMMN + DD": 3,  # Domain adaptation
     }
 
 
+def _get_spatial_method(config):
+    method = config["Varied Numbers of Channels"]["name"]
+    if method == "RegionBasedPooling":
+        return "RBP"
+    elif method == "Interpolation":
+        return config["Varied Numbers of Channels"]["kwargs"]["method"]
+    else:
+        raise ValueError(f"Unexpected method for handling varied numbers of channels: {method}")
+
+
+def _get_cmmn(config):
+    # How to extract CMMN depends on the method for handling the different electrode configurations
+    if config["Varied Numbers of Channels"]["name"] == "RegionBasedPooling":
+        use_cmmn: Set[bool] = set()
+        for rbp_design in config["Varied Numbers of Channels"]["kwargs"]["RBPDesigns"].values():
+            use_cmmn.add(rbp_design["use_cmmn_layer"])
+
+        if len(use_cmmn) != 1:
+            raise ValueError(f"Expected all or none of the RBP layers to use CMMN, but found {use_cmmn}")
+
+        # Return the only element in the set
+        return tuple(use_cmmn)[0]
+
+    elif config["Varied Numbers of Channels"]["name"] == "Interpolation":
+        return config["DL Architecture"]["CMMN"]["use_cmmn_layer"]
+    else:
+        raise ValueError(f"Unexpected method for handling different electrode configurations: "
+                         f"{config['Varied Numbers of Channels']['name']}")
+
+
+def _get_domain_adaptation(config):
+    # Extracting CMMN
+    use_cmmn = _get_cmmn(config)
+
+    # Extract use of domain discriminator
+    use_domain_discriminator = False if config["DomainDiscriminator"] is None else True
+
+    # Combine outputs and return
+    if use_cmmn and use_domain_discriminator:
+        return "CMMN + DD"
+    elif use_cmmn:
+        return "CMMN"
+    elif use_domain_discriminator:
+        return "DD"
+    else:
+        return "Nothing"
+
+
+def _get_sampling_freq(config):
+    return f"{int(config['general']['resample'] // config['general']['filtering'][-1])} * f max"
+
+
+def _get_input_length(config):
+    return f"{int(config['general']['num_time_steps'] // config['general']['resample'])}s"
+
+
+def _get_weighted_loss(config):
+    loss_config = config["Training"]["Loss"]  # tau in the paper (as per now, at least)
+
+    # Not using weighted loss is equivalent to tau = 0
+    return 0 if loss_config["weighter"] is None else loss_config["weighter_kwargs"]["weight_power"]
+
+
 CHP = CategoricalHyperparameter
+OHP = OrdinalHyperparameter
+UFHP = UniformFloatHyperparameter
 HYPERPARAMETERS = {
     "DL architecture": HP(config_file="normal", location=("DL Architecture", "model"),
                           distribution=CHP(name="DL architecture", choices=("IN", "DN", "SN"))),
@@ -562,7 +631,30 @@ HYPERPARAMETERS = {
     "Normalisation": HP(config_file="normal", location=_get_normalisation,
                         distribution=CHP(name="Normalisation", choices=(False, True))),
     "Learning rate": HP(config_file="normal", location=("Training", "learning_rate"),
-                        distribution=("Training", "learning_rate"))
+                        distribution=("Training", "learning_rate")),
+    r"$\beta_1$": HP(config_file="normal", location=("Training", "beta_1"),
+                     distribution=("Training", "beta_1")),
+    r"$\beta_2$": HP(config_file="normal", location=("Training", "beta_2"),
+                         distribution=("Training", "beta_2")),
+    r"$\epsilon$": HP(config_file="normal", location=("Training", "eps"), distribution=("Training", "eps")),
+    "Spatial method": HP(config_file="normal", location=_get_spatial_method,
+                         distribution=CHP(name="Spatial method", choices=("spline", "MNE", "RBP"),
+                                          weights=(0.25, 0.25, 0.5))),
+    "Domain Adaptation": HP(config_file="normal", location=_get_domain_adaptation, distribution=NotImplemented),
+    "Sampling frequency": HP(config_file="preprocessing", location=_get_sampling_freq,
+                             distribution=OHP(name="Sampling frequency",
+                                              sequence=("2 * f max", "4 * f max", "8 * f max"))),
+    "Input length": HP(config_file="preprocessing", location=_get_input_length,
+                       distribution=OHP(name="Input length", sequence=("5s", "10s"))),
+    "Autoreject": HP(config_file="preprocessing", location=("general", "autoreject"),
+                     distribution=CHP(name="Autoreject", choices=(False, True))),
+    "Loss": HP(config_file="normal", location=("Training", "Loss", "loss"),
+               distribution=CHP(name="Loss", choices=("L1Loss", "MSELoss"))),
+    r"Weighted loss ($\tau$)": HP(config_file="normal", location=_get_weighted_loss,
+                                  distribution=UFHP(name=r"Weighted loss ($\tau$)", lower=0, upper=1))
+    # On the weighted loss: Looks to me like only the upper and lower bounds are used anyway (all instances of type
+    # NumericalHyperparameter seem to be treated equally). Changing to a normal distribution doesn't change the outcome
+    # neither
 }
 
 
@@ -617,7 +709,7 @@ def _get_all_and_average_age(datasets):
         dataset_combination_avg = numpy.mean(numpy.concatenate(tuple(all_but_current_ages.values())))
 
         # Add
-        age_averages[dataset_combination] = dataset_combination_avg
+        age_averages[dataset_combination] = dataset_combination_avg  # type: ignore
 
     # LODI
     for dataset_name, age_values in dataset_age.items():

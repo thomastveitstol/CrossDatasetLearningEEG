@@ -19,7 +19,13 @@ def _generate_marginals_df(df, *, decimals, experiment_type, fanovas, hps, perce
     marginal_importance: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Percentile": [],
                                                  **{f"{hp_name} (mean)": [] for hp_name in hps},
                                                  **{f"{hp_name} (std)": [] for hp_name in hps}}
-    for (source_dataset, target_dataset), fanova_object in fanovas.items():
+
+    try:
+        from progressbar import progressbar  # type: ignore
+        fanova_loop = progressbar(fanovas.items(), redirect_stdout=True, prefix="Source/target combination ")
+    except ImportError:
+        fanova_loop = fanovas.items()
+    for (source_dataset, target_dataset), fanova_object in fanova_loop:
         for percentile in percentiles:
             # Compute cutoffs
             subset_df = df[(df["Source dataset"] == source_dataset) & (df["Target dataset"] == target_dataset)]
@@ -56,7 +62,13 @@ def _generate_pairwise_df(df, *, decimals, experiment_type, fanovas, num_pairwis
                           selection_metric, target_metric):
     pairwise_marginals: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Percentile": [], "HP1": [],
                                                 "HP2": [], "Importance": [], "Rank": []}
-    for (source_dataset, target_dataset), fanova_object in fanovas.items():
+
+    try:
+        from progressbar import progressbar  # type: ignore
+        fanova_loop = progressbar(fanovas.items(), redirect_stdout=True, prefix="Source/target combination ")
+    except ImportError:
+        fanova_loop = fanovas.items()
+    for (source_dataset, target_dataset), fanova_object in fanova_loop:
         for percentile in percentiles:
             # Compute cutoffs
             subset_df = df[(df["Source dataset"] == source_dataset) & (df["Target dataset"] == target_dataset)]
@@ -70,7 +82,7 @@ def _generate_pairwise_df(df, *, decimals, experiment_type, fanovas, num_pairwis
 
             # Compute interactions
             hp_interaction_ranking = fanova_object.get_most_important_pairwise_marginals(n=num_pairwise_marginals)
-            for rank, (hp_1, hp_2), importance in enumerate(hp_interaction_ranking.items()):
+            for rank, ((hp_1, hp_2), importance) in enumerate(hp_interaction_ranking.items()):
                 # Add results. The HPs are ranked naturally
                 pairwise_marginals["HP1"].append(hp_1)
                 pairwise_marginals["HP2"].append(hp_2)
@@ -87,15 +99,18 @@ def _generate_pairwise_df(df, *, decimals, experiment_type, fanovas, num_pairwis
 
 
 def main():
-    numpy.random.seed(1)
+    meaining_of_life = 42
+    numpy.random.seed(meaining_of_life)
 
     # ----------------
     # A few design choices for the analysis
     # ----------------
     experiment_type = "lodo"
-    hps = ("DL architecture", "Band-pass filter", "Normalisation", "Learning rate")
     percentiles = (0, 50, 75, 90, 95)
-    selection_metric = "mae"
+    hps = ("DL architecture", "Band-pass filter", "Normalisation", "Learning rate", r"$\beta_1$", r"$\beta_2$",
+           r"$\epsilon$", "Spatial method", "Sampling frequency", "Input length", "Autoreject", "Loss",
+           r"Weighted loss ($\tau$)")  # , "Domain Adaptation")
+    selection_metric = "pearson_r"
     target_metric = selection_metric
     fanova_kwargs = {"n_trees": 64, "max_depth": 64}
     decimals = 5
