@@ -1,6 +1,8 @@
 import itertools
 import os
+from collections import OrderedDict
 from pathlib import Path
+import random
 from typing import Dict, Tuple, Any, List
 
 import numpy
@@ -14,6 +16,69 @@ from cdl_eeg.data.analysis.results_analysis import add_hp_configurations_to_data
 from cdl_eeg.data.paths import get_results_dir
 
 
+# ------------
+# Updated classes
+# ------------
+class UpdatedFANOVA(fANOVA):
+    """
+    Just need make some changes to a method, original fANOVA (parent class) is found at
+    https://github.com/automl/fanova/blob/master/fanova/fanova.py
+    """
+
+    def get_most_important_pairwise_marginals(self, params=None, n=None):
+        """
+        Similar to base class, but returns all pairwise marginals and returns the standard
+        deviations too.
+
+        Most is taken from the original function, see:
+        https://github.com/automl/fanova/blob/master/fanova/fanova.py
+        """
+        tot_imp_dict = OrderedDict()
+        pairwise_marginals = []
+        if params is None:
+            dimensions = range(self.n_dims)
+        else:
+            if type(params[0]) == str:
+                idx = []
+                for i, param in enumerate(params):
+                    idx.append(self.cs.get_idx_by_hyperparameter_name(param))
+                dimensions = idx
+
+            else:
+                dimensions = params
+        # pairs = it.combinations(dimensions,2)
+        pairs = [x for x in itertools.combinations(dimensions, 2)]
+        if params:
+            n = len(list(pairs))
+
+        try:
+            from progressbar import progressbar  # type: ignore
+            hp_pair_loop = progressbar(pairs, redirect_stdout=True, prefix="HP pairs ")
+        except ImportError:
+            hp_pair_loop = pairs
+        for combi in hp_pair_loop:
+            pairwise_marginal_performance = self.quantify_importance(combi)
+            tot_imp = pairwise_marginal_performance[combi]['individual importance']  # Importance
+            std = pairwise_marginal_performance[combi]['individual std']  # std (added)
+            combi_names = [self.cs_params[combi[0]].name, self.cs_params[combi[1]].name]  # HP names
+            pairwise_marginals.append((tot_imp, std, combi_names[0], combi_names[1]))
+
+        pairwise_marginal_performance = sorted(pairwise_marginals, reverse=True)
+
+        if n is None:
+            for marginal, std, p1, p2 in pairwise_marginal_performance:
+                tot_imp_dict[(p1, p2)] = marginal, std
+        else:
+            for marginal, std, p1, p2 in pairwise_marginal_performance[:n]:
+                tot_imp_dict[(p1, p2)] = marginal, std
+        self._dict = True
+
+        return tot_imp_dict
+
+
+# ------------
+# Functions for generating dataframes
+# ------------
 def _generate_marginals_df(df, *, decimals, experiment_type, fanovas, hps, percentiles, save_path, selection_metric,
                            target_metric):
     marginal_importance: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Percentile": [],
@@ -60,8 +125,8 @@ def _generate_marginals_df(df, *, decimals, experiment_type, fanovas, hps, perce
 
 def _generate_pairwise_df(df, *, decimals, experiment_type, fanovas, num_pairwise_marginals, percentiles, save_path,
                           selection_metric, target_metric):
-    pairwise_marginals: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Percentile": [], "HP1": [],
-                                                "HP2": [], "Importance": [], "Rank": []}
+    pairwise_marginals: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Percentile": [],
+                                                "Rank": [], "HP1": [], "HP2": [], "Importance": [], "Std": []}
 
     try:
         from progressbar import progressbar  # type: ignore
@@ -82,7 +147,7 @@ def _generate_pairwise_df(df, *, decimals, experiment_type, fanovas, num_pairwis
 
             # Compute interactions
             hp_interaction_ranking = fanova_object.get_most_important_pairwise_marginals(n=num_pairwise_marginals)
-            for rank, ((hp_1, hp_2), importance) in enumerate(hp_interaction_ranking.items()):
+            for rank, ((hp_1, hp_2), (importance, std)) in enumerate(hp_interaction_ranking.items()):
                 # Add results. The HPs are ranked naturally
                 pairwise_marginals["HP1"].append(hp_1)
                 pairwise_marginals["HP2"].append(hp_2)
@@ -91,6 +156,7 @@ def _generate_pairwise_df(df, *, decimals, experiment_type, fanovas, num_pairwis
                 pairwise_marginals["Source dataset"].append(source_dataset)
                 pairwise_marginals["Percentile"].append(percentile)
                 pairwise_marginals["Importance"].append(importance)
+                pairwise_marginals["Std"].append(std)
 
     # Save the results
     pandas.DataFrame(pairwise_marginals).round(decimals).to_csv(
@@ -141,7 +207,7 @@ def _generate_dataframes(*, conditions, decimals, experiment_type, fanova_kwargs
     # Create fanova objects per
     source_datasets = set(df["Source dataset"])
     target_datasets = set(df["Target dataset"])
-    fanovas: Dict[Tuple[str, str], fANOVA] = dict()
+    fanovas: Dict[Tuple[str, str], UpdatedFANOVA] = dict()
     for source_dataset, target_dataset in itertools.product(source_datasets, target_datasets):
         if source_dataset == target_dataset:
             continue
@@ -151,8 +217,9 @@ def _generate_dataframes(*, conditions, decimals, experiment_type, fanova_kwargs
         subset_df = subset_df.reset_index(inplace=False)
 
         # Create fANOVA object
-        fanovas[(source_dataset, target_dataset)] = fANOVA(X=subset_df[list(hps)], Y=subset_df[target_metric],
-                                                           config_space=config_space, **fanova_kwargs)
+        fanovas[(source_dataset, target_dataset)] = UpdatedFANOVA(
+            X=subset_df[list(hps)], Y=subset_df[target_metric], config_space=config_space, **fanova_kwargs
+        )
 
     # ----------------
     # fANOVA analysis
@@ -179,6 +246,8 @@ def _generate_dataframes(*, conditions, decimals, experiment_type, fanova_kwargs
 
 def main():
     meaning_of_life = 42
+
+    random.seed(meaning_of_life)
     numpy.random.seed(meaning_of_life)
 
     # ----------------
@@ -191,7 +260,7 @@ def main():
     target_metric = selection_metric
     fanova_kwargs = {"n_trees": 64, "max_depth": 64}
     decimals = 5
-    num_pairwise_marginals = 10
+    num_pairwise_marginals = None
 
     results_path = Path(get_results_dir())
     save_path = Path(os.path.dirname(__file__))
