@@ -1,6 +1,9 @@
 """
 Script for plotting age distribution of the datasets
 """
+import os
+from pathlib import Path
+
 import seaborn
 from matplotlib import pyplot
 
@@ -18,20 +21,20 @@ def main():
     # ----------------
     # Load data
     # ----------------
-    age_distributions = {"Age": [], "Dataset": []}
+    age_distributions = {"Age [years]": [], "Dataset": []}
     for dataset in datasets:
         # Use all subjects
         subjects = dataset.get_subject_ids()
 
         # Add ages and dataset
-        age_distributions["Age"].extend(dataset.age(subject_ids=subjects))
+        age_distributions["Age [years]"].extend(dataset.age(subject_ids=subjects))
         age_distributions["Dataset"].extend([PRETTY_NAME[type(dataset).__name__]] * len(subjects))
 
     # ----------------
     # Plotting
     # ----------------
     pyplot.figure(figsize=(16, 5))
-    ax = seaborn.kdeplot(age_distributions, hue="Dataset", x="Age", fill=True)
+    ax = seaborn.kdeplot(age_distributions, hue="Dataset", x="Age [years]", fill=True)
 
     # Cosmetics
     fontsize = 17
@@ -48,7 +51,7 @@ def main():
 
     pyplot.tight_layout()
 
-    pyplot.show()
+    pyplot.savefig(Path(os.path.dirname(__file__)) / "age_distributions.png")
 
 
 if __name__ == "__main__":
