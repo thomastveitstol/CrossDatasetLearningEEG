@@ -71,7 +71,8 @@ def get_label_orders(renamed_df_mapping: Optional[Dict[str, Dict[str, str]]] = N
         "Source dataset": ("TDBRAIN", "LEMON", "SRM", "Miltiadous", "Wang", "Pooled"),
         "Band-pass filter": ("All", "Delta", "Theta", "Alpha", "Beta", "Gamma"),
         "DL architecture": ("InceptionNetwork", "Deep4NetMTS", "ShallowFBCSPNetMTS"),
-        "Normalisation": ("True", "False")
+        "Normalisation": ("True", "False"),
+        "Spatial method": ("RBP", "spline", "MNE")
     }
     if renamed_df_mapping is None:
         return orders
@@ -532,6 +533,7 @@ def _get_single_hp_distribution(hp, hp_name, hpd_config, experiment_type):
         hyperparameter_distribution = hyperparameter_distribution[key]
     return _config_dist_to_fanova_dist(distribution=hyperparameter_distribution, hp_name=hp_name)
 
+
 def get_fanova_hp_distributions(hp_names, hpd_config, experiment_type):
     """
     Function for getting the fANOVA distributions to be passed to ConfigurationSpace
@@ -649,8 +651,7 @@ HYPERPARAMETERS = {
                         distribution=("Training", "learning_rate")),
     r"$\beta_1$": HP(config_file="normal", location=("Training", "beta_1"),
                      distribution=("Training", "beta_1")),
-    r"$\beta_2$": HP(config_file="normal", location=("Training", "beta_2"),
-                         distribution=("Training", "beta_2")),
+    r"$\beta_2$": HP(config_file="normal", location=("Training", "beta_2"), distribution=("Training", "beta_2")),
     r"$\epsilon$": HP(config_file="normal", location=("Training", "eps"), distribution=("Training", "eps")),
     "Spatial method": HP(config_file="normal", location=_get_spatial_method,
                          distribution=CHP(name="Spatial method", choices=("spline", "MNE", "RBP"),
