@@ -2,6 +2,7 @@ import dataclasses
 import os
 from pathlib import Path
 
+import matplotlib
 import pandas
 import seaborn
 from matplotlib import pyplot
@@ -28,7 +29,11 @@ def main():
 
     conditions = {}
     value_ranges = {"r2_score": (-3, 1), "pearson_r": (-1, 1), "mae": (None, None), "r2_score_refit": (-3, 1)}
-
+    plot_kwargs = {
+        "r2_score": {"cmap": "coolwarm", "norm": matplotlib.colors.TwoSlopeNorm(vcenter=0, vmin=-3, vmax=1)},
+        "pearson_r": {"cmap": "coolwarm", "center": 0},
+        "mae": {"cmap": "coolwarm", "center": 0},
+        "r2_score_refit": {"cmap": "coolwarm", "norm": matplotlib.colors.TwoSlopeNorm(vcenter=0, vmin=-3, vmax=1)}}
 
     orders = get_label_orders()
     formats = get_formats()
@@ -100,8 +105,9 @@ def main():
         # Plotting
         pyplot.figure()
         seaborn.heatmap(
-            test_scores_df, annot=True, cmap="viridis", cbar_kws={"label": PRETTY_NAME[target_metric]},
-            fmt=formats[target_metric], vmin=value_ranges[target_metric][0], vmax=value_ranges[target_metric][1]
+            test_scores_df, annot=True, cbar_kws={"label": PRETTY_NAME[target_metric]},
+            fmt=formats[target_metric], vmin=value_ranges[target_metric][0], vmax=value_ranges[target_metric][1],
+            **plot_kwargs[target_metric]
         )
         if metric.subtract_dummy_performance:
             pyplot.title("Improvement to dummy baseline")
