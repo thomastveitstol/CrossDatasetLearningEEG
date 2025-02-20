@@ -124,6 +124,7 @@ def main():
         folder_path = Path(os.path.dirname(os.path.dirname(__file__)))
         path = folder_path / f"all_test_results_selection_metric_{selection_metric}.csv"
         results_df = pandas.read_csv(path)
+        results_df.fillna(0.0, inplace=True)  # Needed for Pearson's r with constant array
 
         # Extract subset
         if conditions:
@@ -180,7 +181,7 @@ def main():
         fig.legend(
             handles[:len(_legend_names)], labels[:len(_legend_names)],
             loc="right", # ncol=len(_legend_names),
-            bbox_to_anchor=(1.01, 0.5), frameon=False
+            bbox_to_anchor=(1, 0.5), frameon=False
         )
 
         # Layout and display
