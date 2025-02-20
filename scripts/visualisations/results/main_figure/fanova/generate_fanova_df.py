@@ -25,6 +25,58 @@ class UpdatedFANOVA(fANOVA):
     https://github.com/automl/fanova/blob/master/fanova/fanova.py
     """
 
+    def quantify_importance(self, dims):
+        if type(dims[0]) == str:
+            idx = []
+            for i, param in enumerate(dims):
+                idx.append(self.cs.get_idx_by_hyperparameter_name(param))
+            dimensions = idx
+        # make sure that all the V_U values are computed for each tree
+        else:
+            dimensions = dims
+
+        self._fANOVA__compute_marginals(dimensions)
+
+        importance_dict = {}
+
+        for k in range(1, len(dimensions) + 1):
+            for sub_dims in itertools.combinations(dimensions, k):
+                if type(dims[0]) == str:
+                    dim_names = []
+                    for j, dim in enumerate(sub_dims):
+                        dim_names.append(self.cs.get_hyperparameter_by_idx(dim))
+                    dim_names = tuple(dim_names)
+                    importance_dict[dim_names] = {}
+                else:
+                    importance_dict[sub_dims] = {}
+                # clean here to catch zero variance in a trees
+                non_zero_idx = numpy.nonzero([self.trees_total_variance[t] for t in range(self.n_trees)])
+                if len(non_zero_idx[0]) == 0:
+                    raise RuntimeError('Encountered zero total variance in all trees.')
+
+                fractions_total = numpy.array([self.V_U_total[sub_dims][t] / self.trees_total_variance[t]
+                                               for t in non_zero_idx[0]])
+                fractions_individual = numpy.array([self.V_U_individual[sub_dims][t] / self.trees_total_variance[t]
+                                                    for t in non_zero_idx[0]])
+
+                if type(dims[0]) == str:
+                    importance_dict[dim_names]['individual importance'] = numpy.mean(fractions_individual)
+                    importance_dict[dim_names]['total importance'] = numpy.mean(fractions_total)
+                    importance_dict[dim_names]['individual std'] = numpy.std(fractions_individual)
+                    importance_dict[dim_names]['total std'] = numpy.std(fractions_total)
+                    for tree, fraction in enumerate(fractions_individual):
+                        importance_dict[dim_names][f"Tree {tree}"] = fraction
+
+                else:
+                    importance_dict[sub_dims]['individual importance'] = numpy.mean(fractions_individual)
+                    importance_dict[sub_dims]['total importance'] = numpy.mean(fractions_total)
+                    importance_dict[sub_dims]['individual std'] = numpy.std(fractions_individual)
+                    importance_dict[sub_dims]['total std'] = numpy.std(fractions_total)
+                    for tree, fraction in enumerate(fractions_individual):
+                        importance_dict[sub_dims][f"Tree {tree}"] = fraction
+
+        return importance_dict
+
     def get_most_important_pairwise_marginals(self, params=None, n=None):
         """
         Similar to base class, but returns all pairwise marginals and returns the standard
@@ -60,17 +112,20 @@ class UpdatedFANOVA(fANOVA):
             pairwise_marginal_performance = self.quantify_importance(combi)
             tot_imp = pairwise_marginal_performance[combi]['individual importance']  # Importance
             std = pairwise_marginal_performance[combi]['individual std']  # std (added)
+            trees = {}
+            for tree in range(self.n_trees):
+                trees[f"Tree {tree}"] = pairwise_marginal_performance[combi][f"Tree {tree}"]
             combi_names = [self.cs_params[combi[0]].name, self.cs_params[combi[1]].name]  # HP names
-            pairwise_marginals.append((tot_imp, std, combi_names[0], combi_names[1]))
+            pairwise_marginals.append((tot_imp, std, trees, combi_names[0], combi_names[1]))
 
         pairwise_marginal_performance = sorted(pairwise_marginals, reverse=True)
 
         if n is None:
-            for marginal, std, p1, p2 in pairwise_marginal_performance:
-                tot_imp_dict[(p1, p2)] = marginal, std
+            for marginal, std, all_trees, p1, p2 in pairwise_marginal_performance:
+                tot_imp_dict[(p1, p2)] = marginal, std, all_trees
         else:
-            for marginal, std, p1, p2 in pairwise_marginal_performance[:n]:
-                tot_imp_dict[(p1, p2)] = marginal, std
+            for marginal, std, all_trees, p1, p2 in pairwise_marginal_performance[:n]:
+                tot_imp_dict[(p1, p2)] = marginal, std, all_trees
         self._dict = True
 
         return tot_imp_dict
@@ -80,10 +135,11 @@ class UpdatedFANOVA(fANOVA):
 # Functions for generating dataframes
 # ------------
 def _generate_marginals_df(df, *, decimals, experiment_type, fanovas, hps, percentiles, save_path, selection_metric,
-                           target_metric):
-    marginal_importance: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Percentile": [],
-                                                 **{f"{hp_name} (mean)": [] for hp_name in hps},
-                                                 **{f"{hp_name} (std)": [] for hp_name in hps}}
+                           target_metric, num_trees):
+    marginal_importance: Dict[str, List[Any]] = {
+        "Target dataset": [], "Source dataset": [], "Percentile": [], "HP": [], "Mean": [], "Std": [],
+        **{f"Tree {i}": [] for i in range(num_trees)}
+    }
 
     try:
         from progressbar import progressbar  # type: ignore
@@ -109,13 +165,17 @@ def _generate_marginals_df(df, *, decimals, experiment_type, fanovas, hps, perce
                 std = summary["individual std"]
 
                 # Add to marginal importance
-                marginal_importance[f"{hp_name} (mean)"].append(importance)
-                marginal_importance[f"{hp_name} (std)"].append(std)
+                marginal_importance["Mean"].append(importance)
+                marginal_importance["Std"].append(std)
 
-            # Add the rest of the info to marginal importance results
-            marginal_importance["Target dataset"].append(target_dataset)
-            marginal_importance["Source dataset"].append(source_dataset)
-            marginal_importance["Percentile"].append(percentile)
+                # Add the rest of the info to marginal importance results
+                marginal_importance["HP"].append(hp_name)
+                marginal_importance["Target dataset"].append(target_dataset)
+                marginal_importance["Source dataset"].append(source_dataset)
+                marginal_importance["Percentile"].append(percentile)
+
+                for tree in range(num_trees):
+                    marginal_importance[f"Tree {tree}"].append(summary[f"Tree {tree}"])
 
     # Save the results
     pandas.DataFrame(marginal_importance).round(decimals).to_csv(
@@ -124,9 +184,10 @@ def _generate_marginals_df(df, *, decimals, experiment_type, fanovas, hps, perce
 
 
 def _generate_pairwise_df(df, *, decimals, experiment_type, fanovas, num_pairwise_marginals, percentiles, save_path,
-                          selection_metric, target_metric):
-    pairwise_marginals: Dict[str, List[Any]] = {"Target dataset": [], "Source dataset": [], "Percentile": [],
-                                                "Rank": [], "HP1": [], "HP2": [], "Importance": [], "Std": []}
+                          selection_metric, target_metric, num_trees):
+    pairwise_marginals: Dict[str, List[Any]] = {
+        "Target dataset": [], "Source dataset": [], "Percentile": [], "Rank": [], "HP1": [], "HP2": [], "Mean": [],
+        "Std": [], **{f"Tree {i}": [] for i in range(num_trees)}}
 
     try:
         from progressbar import progressbar  # type: ignore
@@ -147,7 +208,7 @@ def _generate_pairwise_df(df, *, decimals, experiment_type, fanovas, num_pairwis
 
             # Compute interactions
             hp_interaction_ranking = fanova_object.get_most_important_pairwise_marginals(n=num_pairwise_marginals)
-            for rank, ((hp_1, hp_2), (importance, std)) in enumerate(hp_interaction_ranking.items()):
+            for rank, ((hp_1, hp_2), (importance, std, all_trees)) in enumerate(hp_interaction_ranking.items()):
                 # Add results. The HPs are ranked naturally
                 pairwise_marginals["HP1"].append(hp_1)
                 pairwise_marginals["HP2"].append(hp_2)
@@ -155,8 +216,10 @@ def _generate_pairwise_df(df, *, decimals, experiment_type, fanovas, num_pairwis
                 pairwise_marginals["Target dataset"].append(target_dataset)
                 pairwise_marginals["Source dataset"].append(source_dataset)
                 pairwise_marginals["Percentile"].append(percentile)
-                pairwise_marginals["Importance"].append(importance)
+                pairwise_marginals["Mean"].append(importance)
                 pairwise_marginals["Std"].append(std)
+                for tree, imp in all_trees.items():
+                    pairwise_marginals[tree].append(imp)
 
     # Save the results
     pandas.DataFrame(pairwise_marginals).round(decimals).to_csv(
@@ -232,7 +295,8 @@ def _generate_dataframes(*, conditions, decimals, experiment_type, fanova_kwargs
     # Compute marginal importance
     _generate_marginals_df(
         df, decimals=decimals, experiment_type=experiment_type, fanovas=fanovas, hps=hps, percentiles=percentiles,
-        save_path=save_path, selection_metric=selection_metric, target_metric=target_metric
+        save_path=save_path, selection_metric=selection_metric, target_metric=target_metric,
+        num_trees=fanova_kwargs["n_trees"]
     )
 
     # (Maybe) compute interactions
@@ -241,7 +305,7 @@ def _generate_dataframes(*, conditions, decimals, experiment_type, fanova_kwargs
         _generate_pairwise_df(
             df, decimals=decimals, experiment_type=experiment_type, fanovas=fanovas,
             num_pairwise_marginals=num_pairwise_marginals, percentiles=percentiles, save_path=save_path,
-            selection_metric=selection_metric, target_metric=target_metric
+            selection_metric=selection_metric, target_metric=target_metric, num_trees=fanova_kwargs["n_trees"]
         )
 
 def main():

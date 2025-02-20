@@ -14,23 +14,8 @@ def _get_marginal_importance_df(experiment_type, *, percentile, selection_metric
     path = Path(os.path.dirname(__file__)) / file_name
     df = pandas.read_csv(path, index_col=0)
 
-    # Not using the standard deviations for now
-    df.drop(labels=[col_name for col_name in df.columns if col_name.endswith("(std)")], axis="columns", inplace=True)
-
-    # For LODI, just using source dataset to pooled target
-    if experiment_type.lower() == "lodi":
-        df = df[df["Target dataset"] == "Pooled"]
-
-    # Also, remove '(mean)'
-    _suffix = " (mean)"
-    df.rename(columns={col_name: col_name[:-len(_suffix)] for col_name in df.columns if col_name.endswith(_suffix)},
-              inplace=True)
-
-    # To long format
-    df = df.melt(id_vars=("Target dataset", "Source dataset", "Percentile"), var_name="HP", value_name=value_name)
-
     # To percentage
-    df[value_name] *= 100
+    df.loc[:, ~df.columns.isin(("Target dataset", "Source dataset", "Percentile", "HP"))] *= 100
 
     # Select percentile
     if percentile not in df["Percentile"]:
@@ -41,23 +26,54 @@ def _get_marginal_importance_df(experiment_type, *, percentile, selection_metric
     return df
 
 
+def _get_pairwise_importance_df(experiment_type, *, percentile, selection_metric, target_metric, hp_pairs, value_name):
+    file_name = f"pairwise_importance_{experiment_type}_{selection_metric}_{target_metric}.csv"
+    path = Path(os.path.dirname(__file__)) / file_name
+    df = pandas.read_csv(path, index_col=0)
+
+    df.rename(columns={"Importance": value_name}, inplace=True)
+
+    # For LODI, just using source dataset to pooled target
+    if experiment_type.lower() == "lodi":
+        df = df[df["Target dataset"] == "Pooled"]
+
+    # To percentage
+    df.loc[:, ~df.columns.isin(("Target dataset", "Source dataset", "Percentile", "Rank", "HP1", "HP2"))] *= 100
+
+    # Select percentile
+    if percentile not in df["Percentile"]:
+        raise ValueError(f"The HP importance for the selected percentile ({percentile}) has not been computed. Either "
+                         f"use an available percentile {set(df['Percentile'])} or re-run the fANOVA analysis")
+    df = df[df["Percentile"] == percentile]
+
+    # Select pair
+    sorted_hp_pairs = tuple(tuple(sorted(hp_pair)) for hp_pair in hp_pairs)
+    df = pandas.concat((df[(df["HP1"] == hp_1) & (df["HP2"] == hp_2)] for hp_1, hp_2 in sorted_hp_pairs), axis="rows")
+
+    df["HP"] = df["HP1"] + "\n+ " + df["HP2"]
+    df.drop(["HP1", "HP2"], inplace=True, axis="columns")
+    return df
+
+
 def main():
     # -------------
     # Some selections
     # -------------
     experiment_types = ("lodo", "lodi")
-    selection_metric = "pearson_r"
+    selection_metric = "mae"
     target_metric = selection_metric
     percentiles = (0, 50, 75, 90, 95)
 
-    y_lim = (0, 18)
+    y_lim = (0, None)
     fontsize = 12
     title_fontsize = fontsize + 3
-    figsize = (14, 7)
-    palette = "Spectral"
+    figsize = (14, 6.25)
+    palette = "tab20"
     linewidth = 1
     value_name = "Importance (%)"
     save_path = Path(os.path.dirname(__file__)) / "marginal_importance_plots"
+    hp_pairs = (("DL architecture", "Band-pass filter"), ("Band-pass filter", "Normalisation"),
+                ("Band-pass filter", "Spatial method"))
 
     for percentile in percentiles:
         # -------------
@@ -65,10 +81,30 @@ def main():
         # -------------
         dataframes = {}
         for experiment_type in experiment_types:
-            dataframes[experiment_type] = _get_marginal_importance_df(
+            # Get the marginal effects
+            marginal_df = _get_marginal_importance_df(
                 experiment_type, percentile=percentile, selection_metric=selection_metric, target_metric=target_metric,
                 value_name=value_name
             )
+            if not hp_pairs:
+                df = marginal_df
+            else:
+                # Get the pairwise effects
+                pairwise_df = _get_pairwise_importance_df(
+                    experiment_type, percentile=percentile, selection_metric=selection_metric, target_metric=target_metric,
+                    hp_pairs=hp_pairs, value_name=value_name
+                )
+                pairwise_df.drop("Rank", inplace=True, axis="columns")
+
+                df = pandas.concat((marginal_df, pairwise_df), axis="rows")
+
+            dataframes[experiment_type] = df.melt(
+                id_vars=("Target dataset", "Source dataset", "Percentile", "Mean", "Std", "HP"), var_name="Tree",
+                value_name=value_name
+            )
+            print(dataframes[experiment_type])
+
+
 
         # Use the color palette from LODO because it has more HPs (tau)
         unique_hps = []  # Use sorting as in the df
@@ -82,7 +118,8 @@ def main():
         # Plotting
         # -------------
         matplotlib.rcParams.update({'font.size': fontsize})
-        fig, axes = pyplot.subplots(len(experiment_types), 1, figsize=figsize)
+        # noinspection PyTypeChecker
+        fig, axes = pyplot.subplots(1, len(experiment_types), figsize=figsize, sharey=True)
         for ax, (experiment_type, df) in zip(axes, dataframes.items()):
             if experiment_type.lower() == "lodo":
                 x_axis = "Target dataset"
@@ -92,13 +129,16 @@ def main():
                 raise ValueError(f"Unexpected experiment type: {experiment_type}")
 
             # Plot
-            seaborn.barplot(df, x=x_axis, y=value_name, hue="HP", order=get_label_orders()[x_axis], linewidth=linewidth,
-                            edgecolor="black", ax=ax, palette=palette_mapping)
+            _all_x_levels = set(df[x_axis])
+            x_axis_order = tuple(x for x in get_label_orders()[x_axis] if x in _all_x_levels)
+            seaborn.boxplot(df, x=x_axis, y=value_name, hue="HP", order=x_axis_order, linewidth=linewidth, ax=ax,
+                            palette=palette_mapping, showfliers=False)
             ax.get_legend().remove()
 
             # Cosmetics
             ax.set_title(experiment_type.upper(), weight="bold", fontsize=title_fontsize)
             ax.grid()
+            ax.set_xlim(-0.5, len(set(df[x_axis])) - 0.5)
             ax.set_ylim(*y_lim)
             ax.tick_params(labelsize=fontsize)
 
