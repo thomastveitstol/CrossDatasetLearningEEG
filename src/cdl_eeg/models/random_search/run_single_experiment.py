@@ -278,10 +278,11 @@ class Experiment:
         # -----------------
         # Test model (but only if continuous testing was not used)
         # -----------------
-        test_estimates: Optional[Dict[str, Histories]] = dict()
+        test_estimates: Optional[Dict[str, Histories]]
         if not self.train_config["continuous_testing"]:
             print(f"\n{' Testing ':-^20}")
             assert best_model_state_dicts is not None
+            test_estimates = dict()
             with torch.no_grad():
                 for metric, best_model_state in best_model_state_dicts.items():
                     model.load_state_dict({k: v.to(model.device) for k, v in best_model_state.items()})
