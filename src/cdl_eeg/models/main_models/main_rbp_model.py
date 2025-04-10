@@ -246,8 +246,11 @@ class MainRBPModel(nn.Module):
         # ------------------------
         # Fit model
         # ------------------------
-        best_metrics = None
-        best_model_state = {k: v.cpu() for k, v in self.state_dict().items()}
+        main_metrics = (main_metric,) if isinstance(main_metric, str) else main_metric
+        del main_metric
+
+        best_metrics = {metric: None for metric in main_metrics}
+        best_model_state = {metric: {k: v.cpu() for k, v in self.state_dict().items()} for metric in main_metrics}
         for epoch in range(num_epochs):
             # Start progress bar
             pbar = enlighten.Counter(total=int(len(train_loader.dataset) / train_loader.batch_size + 1),
@@ -423,19 +426,17 @@ class MainRBPModel(nn.Module):
             # ----------------
             # If this is the highest performing model, store it
             # ----------------
-            if is_improved_model(old_metrics=best_metrics, new_metrics=val_history.newest_metrics,
-                                 main_metric=main_metric):
-                # Store the model on the cpu
-                best_model_state = copy.deepcopy({k: v.cpu() for k, v in self.state_dict().items()})
+            for metric in main_metrics:
+                if is_improved_model(old_metrics=best_metrics[metric], new_metrics=val_history.newest_metrics,
+                                     main_metric=metric):
+                    # Store the model on the cpu
+                    best_model_state[metric] = copy.deepcopy({k: v.cpu() for k, v in self.state_dict().items()})
 
-                # Update the best metrics
-                best_metrics = val_history.newest_metrics
-
-            # Set the parameters back to those of the best model
-        self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})  # type: ignore[arg-type]
+                    # Update the best metrics
+                    best_metrics[metric] = val_history.newest_metrics
 
         # Return the histories
-        return train_history, val_history, test_history, dd_train_history, dd_val_history
+        return (train_history, val_history, test_history, dd_train_history, dd_val_history), best_model_state
 
     def _train_model(self, *, train_loader, val_loader, test_loader=None, metrics, main_metric, num_epochs, criterion,
                      optimiser, device, channel_name_to_index, prediction_activation_function=None, verbose=True,
@@ -449,8 +450,8 @@ class MainRBPModel(nn.Module):
         val_loader : torch.utils.data.DataLoader
         test_loader : torch.utils.data.DataLoader
         metrics : str | tuple[str, ...]
-        main_metric : str
-            Main metric for model selection
+        main_metric : str | tuple[str, ...]
+            Main metric(s) for model selection
         num_epochs : int
         criterion : cdl_eeg.models.losses.CustomWeightedLoss
         optimiser : torch.optim.Optimizer
@@ -473,8 +474,11 @@ class MainRBPModel(nn.Module):
         # ------------------------
         # Fit model
         # ------------------------
-        best_metrics = None
-        best_model_state = {k: v.cpu() for k, v in self.state_dict().items()}
+        main_metrics = (main_metric,) if isinstance(main_metric, str) else main_metric
+        del main_metric
+
+        best_metrics = {metric: None for metric in main_metrics}
+        best_model_state = {metric: {k: v.cpu() for k, v in self.state_dict().items()} for metric in main_metrics}
         for epoch in range(num_epochs):
             # Start progress bar
             pbar = enlighten.Counter(total=int(len(train_loader.dataset) / train_loader.batch_size + 1),
@@ -625,19 +629,17 @@ class MainRBPModel(nn.Module):
             # ----------------
             # If this is the highest performing model, as evaluated on the validation set, store it
             # ----------------
-            if is_improved_model(old_metrics=best_metrics, new_metrics=val_history.newest_metrics,
-                                 main_metric=main_metric):
-                # Store the model on the cpu
-                best_model_state = copy.deepcopy({k: v.cpu() for k, v in self.state_dict().items()})
+            for metric in main_metrics:
+                if is_improved_model(old_metrics=best_metrics[metric], new_metrics=val_history.newest_metrics,
+                                     main_metric=metric):
+                    # Store the model on the cpu
+                    best_model_state[metric] = copy.deepcopy({k: v.cpu() for k, v in self.state_dict().items()})
 
-                # Update the best metrics
-                best_metrics = val_history.newest_metrics
-
-        # Set the parameters back to those of the best model
-        self.load_state_dict({k: v.to(device) for k, v in best_model_state.items()})  # type: ignore[arg-type]
+                    # Update the best metrics
+                    best_metrics[metric] = val_history.newest_metrics
 
         # Return the histories
-        return train_history, val_history, test_history
+        return (train_history, val_history, test_history), best_model_state
 
     def test_model(self, *, data_loader, metrics, device, channel_name_to_index, prediction_activation_function=None,
                    verbose=True, target_scaler=None, sub_group_splits, sub_groups_verbose):
