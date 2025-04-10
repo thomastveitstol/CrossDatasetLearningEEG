@@ -186,7 +186,7 @@ class Experiment:
             # -----------------
             # Run the current fold
             # -----------------
-            histories = self._run_single_fold(
+            self._run_single_fold(
                 train_subjects=train_subjects, val_subjects=val_subjects, test_subjects=test_subjects,
                 results_path=fold_path, channel_systems=channel_systems, channel_name_to_index=channel_name_to_index,
                 combined_dataset=combined_dataset
