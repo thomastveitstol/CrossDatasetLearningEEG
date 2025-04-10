@@ -26,7 +26,7 @@ def _get_affected_runs_summary(runs, results_dir):
     num_unaffected = 0
     num_partly_affected  = 0
     num_fully_affected  = 0
-    for  run in progressbar(runs):
+    for run in progressbar(runs):
         # Get config file
         config_path = os.path.join(results_dir,  run)
         config = get_config_file(results_folder=config_path, preprocessing=False)
