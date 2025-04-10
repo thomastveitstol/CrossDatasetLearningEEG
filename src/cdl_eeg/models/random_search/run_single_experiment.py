@@ -285,7 +285,7 @@ class Experiment:
             test_estimates = dict()
             with torch.no_grad():
                 for metric, best_model_state in best_model_state_dicts.items():
-                    model.load_state_dict({k: v.to(model.device) for k, v in best_model_state.items()})
+                    model.load_state_dict({k: v.to(self._device) for k, v in best_model_state.items()})
 
                     # Get test loader
                     test_loader = self._load_test_data_loader(
