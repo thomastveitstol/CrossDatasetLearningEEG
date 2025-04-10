@@ -195,7 +195,6 @@ def dummy_eeg_dataset_1(dummy_data_1):
     return DummyDataset1()
 
 
-
 @pytest.fixture
 def dummy_eeg_dataset_2(dummy_data_2):
     _, _, dummy_num_time_steps = dummy_data_2.shape
