@@ -6,6 +6,7 @@ already been re-run.
 """
 import copy
 import os
+import time
 from datetime import datetime, date
 from pathlib import Path
 
@@ -38,6 +39,12 @@ def _suggest_run(results_dir) -> str:
 
     # Get a set of new potential experiments to run
     potential_new_runs = set(affected_runs) - set(completed_runs)
+
+    # If there are no more new runs, just sleep for a while
+    if not potential_new_runs:
+        time.sleep(60)
+        raise RuntimeError("There are no more experiments to re-run :)")
+
     return next(iter(potential_new_runs))
 
 
@@ -62,17 +69,26 @@ def main():
     with open(_previous_path / "preprocessing_config.yml", "r") as file:
         pre_processed_config = yaml.safe_load(file)
 
+    # Set continuous testing to False and override the 'main_metric'
+    config["Training"]["continuous_testing"] = False
+    config["Training"]["main_metric"] = ("mae", "mse", "r2_score", "pearson_r")
+
+    # Save the config files as it was originally done because it makes life easier when analysing HPs
+    with open(os.path.join(experiment_path, "config.yml"), "w") as file:
+        yaml.safe_dump(config, file)
+
+    with open(os.path.join(experiment_path, "preprocessing_config.yml"), "w") as file:
+        yaml.safe_dump(pre_processed_config, file)
+
     # Add some details for domain discriminator (as in single_experiments)
     experiment_config = copy.deepcopy(config)
     if experiment_config["DomainDiscriminator"] is not None:
         num_train_datasets = len(experiment_config["Datasets"]) - 1
         experiment_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
 
-    # todo: how to quit if we have finished?
-    raise NotImplementedError("Uncomment below to run")
-    #with Experiment(config=experiment_config, pre_processing_config=pre_processed_config,
-    #                results_path=os.path.join(experiment_path, "leave_one_dataset_out")) as experiment:
-    #    experiment.run_experiment()
+    with Experiment(config=experiment_config, pre_processing_config=pre_processed_config,
+                    results_path=os.path.join(experiment_path, "leave_one_dataset_out")) as experiment:
+        experiment.run_experiment()
 
 
 if __name__ == "__main__":
