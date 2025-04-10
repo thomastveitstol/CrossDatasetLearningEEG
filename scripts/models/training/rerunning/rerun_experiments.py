@@ -60,6 +60,7 @@ def main():
     # Fix the new directory and stuff
     today = f"{date.today()}_{datetime.now().strftime('%H%M%S')}"
     experiment_path = os.path.join(results_root_dir, f"{run}--{today}_rerun")
+    os.mkdir(experiment_path)
 
     # Get the config files
     _previous_path = Path(results_root_dir) / run
