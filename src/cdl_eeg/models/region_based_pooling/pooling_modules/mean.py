@@ -82,9 +82,8 @@ class MultiMSMean(MultiMontageSplitsPoolingBase):
                 allowed_node_indices = channel_names_to_indices(ch_names=channels,
                                                                 channel_name_to_index=channel_name_to_index)
 
-                # Compute region representation by averaging and insert it
-                region_representations[:, i] = torch.mean(x[:, allowed_node_indices])  # Consider to keep dim in the
-                # future
+                # Compute region representation by averaging and insert it. Just the channel dimension
+                region_representations[:, i] = torch.mean(x[:, allowed_node_indices, :], dim=1)
 
             # Append as montage split output
             output_channel_splits.append(region_representations)
