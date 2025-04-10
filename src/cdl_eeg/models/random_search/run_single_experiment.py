@@ -164,7 +164,6 @@ class Experiment:
         save_test_histories_plots(path=self._results_path, histories=test_histories)
 
     def run_cross_validation(self, *, folds, channel_systems, channel_name_to_index, combined_dataset):
-        test_histories: Dict[str, Histories] = dict()
 
         # Loop through all folds
         for i, test_subjects in enumerate(folds):
@@ -192,30 +191,6 @@ class Experiment:
                 results_path=fold_path, channel_systems=channel_systems, channel_name_to_index=channel_name_to_index,
                 combined_dataset=combined_dataset
             )
-
-            # -----------------
-            # Save test history
-            # -----------------
-            # Extract the test history (should only be one)
-            _test_histories = tuple(history for history in histories if history.name[:4] == "test")
-
-            if not _test_histories:
-                continue
-            if len(_test_histories) != 1:
-                raise RuntimeError(f"Expected only one test history per fold, but found {len(_test_histories)}")
-
-            test_history = tuple(_test_histories)[0]
-
-            # If there is only one dataset in the test fold, name it as the dataset name, otherwise just use fold number
-            test_datasets = set(subject.dataset_name for subject in test_subjects)
-            test_name = tuple(test_datasets)[0] if len(test_datasets) == 1 else f"Fold {i}"
-
-            # Add histories object to dict
-            if test_name in test_histories:
-                raise RuntimeError  # todo: add message
-            test_histories[test_name] = test_history
-
-        save_test_histories_plots(path=self._results_path, histories=test_histories)
 
     def _train_val_split(self, dataset_subjects):
         # Get the subject split
