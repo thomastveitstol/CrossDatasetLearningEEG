@@ -31,7 +31,7 @@ def generate_config_file(config):
 
     Returns
     -------
-    dict[str, typing.Any]
+    tuple[dict[str, typing.Any], dict[str, typing.Any]]
     """
     # -----------------
     # Add details for splitting in folds
