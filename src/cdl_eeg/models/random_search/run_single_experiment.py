@@ -260,7 +260,7 @@ class Experiment:
         channel_name_to_index_kwarg = {"channel_name_to_index": channel_name_to_index} \
             if self.spatial_dimension_handling_config["name"] == "RegionBasedPooling" else dict()
 
-        histories = model.train_model(
+        outputs = model.train_model(
             method=self.train_config["method"], train_loader=train_loader, val_loader=val_loader,
             test_loader=test_loader, metrics=self.train_config["metrics"], main_metric=self.train_config["main_metric"],
             classifier_criterion=criterion, optimiser=optimiser, **discriminator_kwargs,
@@ -270,46 +270,70 @@ class Experiment:
             sub_group_splits=self.sub_groups_config["sub_groups"], sub_groups_verbose=self.sub_groups_config["verbose"]
         )
 
+        if isinstance(model, MainFixedChannelsModel):
+            histories = outputs
+            best_model_state_dicts = None
+        elif isinstance(model, MainRBPModel):
+            histories, best_model_state_dicts = outputs
+        else:
+            raise ValueError(f"Unexpected model type: {type(model)}")
+
         # -----------------
         # Test model (but only if continuous testing was not used)
         # -----------------
-        test_estimate: Optional[Histories]
+        test_estimates: Optional[Dict[str, Histories]] = dict()
         if not self.train_config["continuous_testing"]:
             print(f"\n{' Testing ':-^20}")
+            assert best_model_state_dicts is not None
+            with torch.no_grad():
+                for metric, best_model_state in best_model_state_dicts.items():
+                    model.load_state_dict({k: v.to(model.device) for k, v in best_model_state.items()})
 
-            # Get test loader
-            test_loader = self._load_test_data_loader(model=model, test_subjects=test_subjects,
-                                                      combined_dataset=combined_dataset, target_scaler=target_scaler)
+                    # Get test loader
+                    test_loader = self._load_test_data_loader(
+                        model=model, test_subjects=test_subjects, combined_dataset=combined_dataset,
+                        target_scaler=target_scaler)
 
-            # Also, maybe fit the CMMN monge filters
-            if model.any_rbp_cmmn_layers:
-                self._fit_cmmn_layers_test_data(model=model, test_data=combined_dataset.get_data(test_subjects),
-                                                channel_systems=channel_systems)
+                    # Also, maybe fit the CMMN monge filters
+                    if model.any_rbp_cmmn_layers:
+                        self._fit_cmmn_layers_test_data(
+                            model=model, test_data=combined_dataset.get_data(test_subjects),
+                            channel_systems=channel_systems)
 
-            # Test model on test data
-            test_estimate = model.test_model(
-                data_loader=test_loader, metrics=self.train_config["metrics"], verbose=self.train_config["verbose"],
-                channel_name_to_index=channel_name_to_index, device=self._device, target_scaler=target_scaler,
-                sub_group_splits=self.sub_groups_config["sub_groups"],
-                sub_groups_verbose=self.sub_groups_config["verbose"]
-            )
+                    # Test model on test data
+                    test_estimate = model.test_model(
+                        data_loader=test_loader, metrics=self.train_config["metrics"], verbose=self.train_config["verbose"],
+                        channel_name_to_index=channel_name_to_index, device=self._device, target_scaler=target_scaler,
+                        sub_group_splits=self.sub_groups_config["sub_groups"],
+                        sub_groups_verbose=self.sub_groups_config["verbose"]
+                    )
+                    test_estimates[metric] = test_estimate
         else:
-            test_estimate = None
+            test_estimates = None
 
         # -----------------
         # Save results
         # -----------------
-        self._save_results(histories=histories, test_estimate=test_estimate, results_path=results_path)
+        self._save_results(histories=histories, test_estimates=test_estimates, results_path=results_path)
 
         return histories
 
     # -------------
     # Methods for saving results
     # -------------
-    def _save_results(self, *, histories, test_estimate, results_path):
+    def _save_results(self, *, histories, test_estimates: Optional[Dict[str, Histories]], results_path):
         decimals = 3
 
+        # -------------
+        # Maybe save test estimates (added after implementation of the re-running)
+        # -------------
+        if test_estimates is not None:
+            for metric, history in test_estimates.items():
+                history.save_main_history(history_name=f"test_history_{metric}", path=results_path, decimals=decimals)
+
+        # -------------
         # Save prediction histories
+        # -------------
         if self.domain_discriminator_config is None:
             train_history, val_history, test_history = histories
 
@@ -346,9 +370,10 @@ class Experiment:
         if test_history is not None:
             test_history.save_subgroup_metrics(history_name="test", path=sub_group_path, decimals=decimals)
 
-        # Save plots
-        save_histories_plots(path=results_path, train_history=train_history, val_history=val_history,
-                             test_estimate=test_estimate, test_history=test_history)
+        # And the test estimates
+        if test_estimates is not None:
+            for metric, history in test_estimates.items():
+                history.save_subgroup_metrics(history_name=f"test_{metric}", path=sub_group_path, decimals=decimals)
 
     # -------------
     # Method for creating optimisers and loss
