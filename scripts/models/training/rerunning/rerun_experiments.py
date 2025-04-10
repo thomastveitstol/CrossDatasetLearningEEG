@@ -68,6 +68,7 @@ def main():
         num_train_datasets = len(experiment_config["Datasets"]) - 1
         experiment_config["DomainDiscriminator"]["discriminator"]["kwargs"]["num_classes"] = num_train_datasets
 
+    # todo: how to quit if we have finished?
     raise NotImplementedError("Uncomment below to run")
     #with Experiment(config=experiment_config, pre_processing_config=pre_processed_config,
     #                results_path=os.path.join(experiment_path, "leave_one_dataset_out")) as experiment:
