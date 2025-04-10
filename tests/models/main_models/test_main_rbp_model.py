@@ -64,3 +64,45 @@ def test_forward_shape(fitted_rbp_model, all_datasets, dummy_data, rbp_model_con
     batch_size = sum(data.size()[0] for data in dummy_data.values())
     expected_size = torch.Size((batch_size, rbp_model_configs[1]["kwargs"]["num_classes"]))
     assert outputs.size() == expected_size, f"Expected output to have shape {expected_size}, but found {outputs.size()}"
+
+
+def test_forward_manipulation(dummy_data_1, dummy_data_2, dummy_fitted_rbp_model, dummy_eeg_dataset_1,
+                              dummy_eeg_dataset_2):
+    """Test if manipulating the input of an EEG changes the predictions made on that and only that EEG"""
+    channel_name_to_index = {dataset.name: dataset.channel_name_to_index()
+                             for dataset in (dummy_eeg_dataset_1, dummy_eeg_dataset_2)}
+    input_data = {dummy_eeg_dataset_1.name: dummy_data_1,
+                  dummy_eeg_dataset_2.name: dummy_data_2}
+
+    assert isinstance(dummy_fitted_rbp_model, MainRBPModel)
+    if dummy_fitted_rbp_model.supports_precomputing:
+        pre_computed = dummy_fitted_rbp_model.pre_compute(input_data)
+    else:
+        pre_computed = None
+
+    # --------------
+    # Test
+    # --------------
+    dummy_fitted_rbp_model.eval()
+    outputs_1 = dummy_fitted_rbp_model(
+        input_data, pre_computed=pre_computed, channel_name_to_index=channel_name_to_index,
+        use_domain_discriminator=False)
+
+    # Make a change to the input data. The keys should ("DummyDataset", "DummyDataset2"), in that order
+    new_input_data = {"DummyDataset1": input_data["DummyDataset1"].clone(),
+                      "DummyDataset2": input_data["DummyDataset2"].clone()}
+    new_input_data["DummyDataset2"][-3] = torch.rand(size=(new_input_data["DummyDataset2"][-3].size()))
+
+    outputs_2 = dummy_fitted_rbp_model(
+        new_input_data, pre_computed=pre_computed, channel_name_to_index=channel_name_to_index,
+        use_domain_discriminator=False)
+
+    assert not torch.equal(outputs_1[-3], outputs_2[-3]), \
+        (f"Model prediction was the same after changing the input of the model {dummy_fitted_rbp_model}"
+         f"\n{outputs_1-outputs_2}")
+    assert torch.equal(outputs_1[:-3], outputs_2[:-3]), \
+        (f"Changing the input of a subject lead to changes for other subjects for model {dummy_fitted_rbp_model}\n"
+         f"{outputs_1-outputs_2}")
+    assert torch.equal(outputs_1[-2:], outputs_2[-2:]), \
+        (f"Changing the input of a subject lead to changes for other subjects for model {dummy_fitted_rbp_model}\n"
+         f"{outputs_1-outputs_2}")
