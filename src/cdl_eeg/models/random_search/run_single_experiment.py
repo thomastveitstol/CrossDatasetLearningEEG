@@ -12,13 +12,12 @@ from torch.utils.data import DataLoader
 from cdl_eeg.data.combined_datasets import CombinedDatasets
 from cdl_eeg.data.data_generators.data_generator import RBPDataGenerator, InterpolationDataGenerator
 from cdl_eeg.data.datasets.getter import get_dataset
-from cdl_eeg.data.subject_split import get_data_split, leave_1_fold_out, TrainValBase
 from cdl_eeg.data.scalers.target_scalers import get_target_scaler
+from cdl_eeg.data.subject_split import get_data_split, leave_1_fold_out, TrainValBase
 from cdl_eeg.models.losses import CustomWeightedLoss, get_activation_function
 from cdl_eeg.models.main_models.main_fixed_channels_model import MainFixedChannelsModel
 from cdl_eeg.models.main_models.main_rbp_model import MainRBPModel
-from cdl_eeg.models.metrics import save_discriminator_histories_plots, save_histories_plots, Histories, \
-    save_test_histories_plots
+from cdl_eeg.models.metrics import save_discriminator_histories_plots, Histories
 from cdl_eeg.models.utils import tensor_dict_to_device
 
 
