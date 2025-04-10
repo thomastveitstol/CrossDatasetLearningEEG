@@ -138,9 +138,7 @@ class Experiment:
                 combined_dataset=combined_dataset
             )
 
-
     def run_cross_validation(self, *, folds, channel_systems, channel_name_to_index, combined_dataset):
-
         # Loop through all folds
         for i, test_subjects in enumerate(folds):
             print(f"\nFold {i + 1}/{len(folds)}")
@@ -301,8 +299,9 @@ class Experiment:
 
                     # Test model on test data
                     test_estimate = model.test_model(
-                        data_loader=test_loader, metrics=self.train_config["metrics"], verbose=self.train_config["verbose"],
-                        channel_name_to_index=channel_name_to_index, device=self._device, target_scaler=target_scaler,
+                        data_loader=test_loader, metrics=self.train_config["metrics"],
+                        verbose=self.train_config["verbose"], channel_name_to_index=channel_name_to_index,
+                        device=self._device, target_scaler=target_scaler,
                         sub_group_splits=self.sub_groups_config["sub_groups"],
                         sub_groups_verbose=self.sub_groups_config["verbose"]
                     )
