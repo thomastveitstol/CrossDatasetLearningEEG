@@ -4,6 +4,7 @@ Functions for analysing the results
 import dataclasses
 import os
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Dict, Literal, Callable, Tuple, Union, Any, Optional, List, Set, NamedTuple
 
 import numpy
@@ -158,12 +159,24 @@ def get_config_file(results_folder, preprocessing):
 # -------------------
 # Function for getting run folder names
 # -------------------
+def _get_affected_runs():
+    curr_path = Path(__file__).resolve()
+    for parent in curr_path.parents:
+        if parent.name == "CrossDatasetLearningEEG":
+            project_dir = parent
+            break
+    else:
+        raise ValueError("Directory 'CrossDatasetLearningEEG' not found in path.")
+    path = project_dir / "scripts" / "models" / "training" / "rerunning" / "affected_runs.csv"
+    return tuple(pandas.read_csv(path)["affected"])
+
+
 def get_all_lodo_runs(results_dir, successful_only: bool = True):
     """Function for getting all runs available for leave-one-dataset-out"""
     assert isinstance(successful_only, bool)
 
     if successful_only:
-        return tuple(run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
+        runs = tuple(run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
                                                                                            "leave_one_dataset_out",
                                                                                            "finished_successfully.txt"))
                      and "inverted_cv" not in run)
@@ -173,8 +186,11 @@ def get_all_lodo_runs(results_dir, successful_only: bool = True):
 
         # This was terminated after the first two months of running by KeyboardInterrupt
         _keybord_exit = "age_cv_experiments_2024-07-31_090027"
-        return tuple(run for run in os.listdir(results_dir) if "inverted_cv" not in run
+        runs = tuple(run for run in os.listdir(results_dir) if "inverted_cv" not in run
                      and run not in (_mistake_exit, _keybord_exit))
+
+    # Remove the affected ones, with wrong MultiMSMean implementation
+    return tuple(run for run in runs if run not in _get_affected_runs())
 
 
 def get_all_ilodo_runs(results_dir, successful_only: bool = True):
@@ -182,12 +198,15 @@ def get_all_ilodo_runs(results_dir, successful_only: bool = True):
     assert isinstance(successful_only, bool)
 
     if successful_only:
-        return tuple(run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
+        runs = tuple(run for run in os.listdir(results_dir) if os.path.isfile(os.path.join(results_dir, run,
                                                                                            "leave_one_dataset_out",
                                                                                            "finished_successfully.txt"))
                      and "inverted_cv" in run)
     else:
-        return tuple(run for run in os.listdir(results_dir) if "inverted_cv" in run)
+        runs = tuple(run for run in os.listdir(results_dir) if "inverted_cv" in run)
+
+    # Remove the affected ones, with wrong MultiMSMean implementation
+    return tuple(run for run in runs if run not in _get_affected_runs())
 
 
 # -------------------
@@ -307,16 +326,27 @@ def get_lodo_test_performance(path, *, target_metrics, selection_metric, dataset
         epoch = 99  # Last epoch. Got KeyError when using -1, don't know why
         val_performance = 0
 
+    # If the run was part of the 're-run' experiments, there is only one epoch, which is the correct one (selected at
+    # runtime)
+    is_affected = path.split("/")[-3].endswith("_rerun")
+    if is_affected:
+        epoch = 0
+
     # --------------
     # Get test performance
     # --------------
     target_metrics = (target_metrics,) if isinstance(target_metrics, str) else target_metrics
 
-    test_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
-    test_performance = {target_metric: test_df[target_metric][epoch] for target_metric in target_metrics}
+    if is_affected:
+        test_df = pandas.read_csv(os.path.join(path, f"test_history_{selection_metric}_metrics.csv"))
+        test_performance = {target_metric: test_df[target_metric][0] for target_metric in target_metrics}
+    else:
+        test_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
+        test_performance = {target_metric: test_df[target_metric][epoch] for target_metric in target_metrics}
 
     # Get refit performance scores and add to results
-    refit_performance = _get_lodo_refit_scores(path=path, epoch=epoch, metrics=refit_metrics)
+    refit_performance = _get_lodo_refit_scores(path=path, epoch=epoch, metrics=refit_metrics,
+                                               selection_metric=selection_metric)
     for metric, score in refit_performance.items():
         test_performance[f"{metric}_refit"] = score
 
@@ -365,6 +395,12 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
         best_epoch = 99  # Last epoch. Got KeyError when using -1, don't know why
         val_performance = 0
 
+    # If the run was part of the 're-run' experiments, there is only one epoch, which is the correct one (selected at
+    # runtime)
+    is_affected = path.endswith("_rerun")
+    if is_affected:
+        best_epoch = 0
+
     # -----------------
     # Get the test metrics per test dataset
     # -----------------
@@ -375,7 +411,10 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
     # Get all metrics
     test_metrics: Dict[str, Dict[str, float]] = {}
     for metric in metrics:
-        df = pandas.read_csv(os.path.join(subgroup_path, metric, f"test_{metric}.csv"))
+        if is_affected:
+            df = pandas.read_csv(os.path.join(subgroup_path, metric, f"test_{selection_metric}_{metric}.csv"))
+        else:
+            df = pandas.read_csv(os.path.join(subgroup_path, metric, f"test_{metric}.csv"))
 
         # Loop through all the test datasets
         datasets = df.columns
@@ -387,11 +426,14 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
             test_metrics[dataset][metric] = df[dataset][best_epoch]
 
     # Add the test metrics on the pooled dataset
-    pooled_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
+    if is_affected:
+        pooled_df = pandas.read_csv(os.path.join(path, f"test_history_{selection_metric}_metrics.csv"))
+    else:
+        pooled_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
     test_metrics["Pooled"] = {metric: pooled_df[metric][best_epoch] for metric in metrics}  # pooled_df.columns
 
     # Get refit performance scores
-    refit_test_metrics = _get_lodi_refit_scores(path, best_epoch, refit_metrics)
+    refit_test_metrics = _get_lodi_refit_scores(path, best_epoch, refit_metrics, selection_metric=selection_metric)
 
     for dataset_name, performances in refit_test_metrics.items():
         for metric, performance in performances.items():
@@ -423,7 +465,10 @@ def get_lodo_dataset_name(path) -> str:
     """Function for getting the name of the test dataset. A test is also made to ensure that the test set only contains
     one dataset"""
     # Load the test predictions
-    test_df = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
+    if path.split("/")[-3].endswith("_rerun"):
+        test_df = pandas.read_csv(os.path.join(path, "test_history_pearson_r_predictions.csv"), usecols=["dataset"])
+    else:
+        test_df = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"), usecols=["dataset"])
 
     # Check the number of datasets in the test set
     if len(set(test_df["dataset"])) != 1:
@@ -931,8 +976,11 @@ def get_average_prediction(df: pandas.DataFrame, epoch):
     return pandas.DataFrame.from_dict(data=new_df)
 
 
-def _get_lodi_refit_scores(path, epoch, metrics) -> Dict[str, Dict[str, float]]:
-    test_predictions = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
+def _get_lodi_refit_scores(path, epoch, metrics, selection_metric) -> Dict[str, Dict[str, float]]:
+    if path.split("/")[-3].endswith("_rerun"):
+        test_predictions = pandas.read_csv(os.path.join(path, f"test_history_{selection_metric}_predictions.csv"))
+    else:
+        test_predictions = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
     test_metrics: Dict[str, Dict[str, float]] = dict()
 
     # ------------
@@ -1000,8 +1048,11 @@ def _get_lodi_refit_scores(path, epoch, metrics) -> Dict[str, Dict[str, float]]:
     return test_metrics
 
 
-def _get_lodo_refit_scores(path, epoch, metrics):
-    test_predictions = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
+def _get_lodo_refit_scores(path, epoch, metrics, selection_metric: Optional[str]):
+    if path.split("/")[-3].endswith("_rerun"):
+        test_predictions = pandas.read_csv(os.path.join(path, f"test_history_{selection_metric}_predictions.csv"))
+    else:
+        test_predictions = pandas.read_csv(os.path.join(path, "test_history_predictions.csv"))
 
     # Check the number of datasets in the test set
     datasets = set(test_predictions["dataset"])
