@@ -22,7 +22,7 @@ def _get_completed(*, results_dir):
     completed_reruns = []
     for run in os.listdir(results_dir):
         if (run.endswith("_rerun") and
-                os.path.isfile(results_dir / run / "leave_one_dataset_out" / "finished_successfully.txt")):
+                os.path.isfile(Path(results_dir) / run / "leave_one_dataset_out" / "finished_successfully.txt")):
             completed_reruns.append("".join(run.split("--")[:-1]))
     return tuple(completed_reruns)
 
