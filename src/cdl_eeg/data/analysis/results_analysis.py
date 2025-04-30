@@ -1085,7 +1085,7 @@ def _get_lodo_refit_scores(path, epoch, metrics, selection_metric: Optional[str]
     return test_metrics
 
 
-def _get_lodi_test_metrics(path, epoch, refit_intercept):
+def _get_lodi_test_metrics(path, epoch, refit_intercept, selection_metric):
     # -----------------
     # Get the test metrics per test dataset
     # -----------------
@@ -1095,7 +1095,7 @@ def _get_lodi_test_metrics(path, epoch, refit_intercept):
 
     # Get all metrics
     if refit_intercept:
-        test_metrics = _get_lodi_refit_scores(path, epoch, metrics)
+        test_metrics = _get_lodi_refit_scores(path, epoch, metrics, selection_metric=selection_metric)
     else:
         test_metrics = {}
         for metric in metrics:
