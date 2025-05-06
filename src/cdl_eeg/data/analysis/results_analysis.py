@@ -328,8 +328,8 @@ def get_lodo_test_performance(path, *, target_metrics, selection_metric, dataset
 
     # If the run was part of the 're-run' experiments, there is only one epoch, which is the correct one (selected at
     # runtime)
-    is_affected = path.split("/")[-3].endswith("_rerun")
-    if is_affected:
+    is_rerun_experiment = path.split("/")[-3].endswith("_rerun")
+    if is_rerun_experiment:
         epoch = 0
 
     # --------------
@@ -337,7 +337,7 @@ def get_lodo_test_performance(path, *, target_metrics, selection_metric, dataset
     # --------------
     target_metrics = (target_metrics,) if isinstance(target_metrics, str) else target_metrics
 
-    if is_affected:
+    if is_rerun_experiment:
         test_df = pandas.read_csv(os.path.join(path, f"test_history_{selection_metric}_metrics.csv"))
         test_performance = {target_metric: test_df[target_metric][0] for target_metric in target_metrics}
     else:
@@ -397,8 +397,8 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
 
     # If the run was part of the 're-run' experiments, there is only one epoch, which is the correct one (selected at
     # runtime)
-    is_affected = path.endswith("_rerun")
-    if is_affected:
+    is_rerun_experiment = path.split("/")[-3].endswith("_rerun")
+    if is_rerun_experiment:
         best_epoch = 0
 
     # -----------------
@@ -411,7 +411,7 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
     # Get all metrics
     test_metrics: Dict[str, Dict[str, float]] = {}
     for metric in metrics:
-        if is_affected:
+        if is_rerun_experiment:
             df = pandas.read_csv(os.path.join(subgroup_path, metric, f"test_{selection_metric}_{metric}.csv"))
         else:
             df = pandas.read_csv(os.path.join(subgroup_path, metric, f"test_{metric}.csv"))
@@ -426,7 +426,7 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
             test_metrics[dataset][metric] = df[dataset][best_epoch]
 
     # Add the test metrics on the pooled dataset
-    if is_affected:
+    if is_rerun_experiment:
         pooled_df = pandas.read_csv(os.path.join(path, f"test_history_{selection_metric}_metrics.csv"))
     else:
         pooled_df = pandas.read_csv(os.path.join(path, "test_history_metrics.csv"))
@@ -449,7 +449,7 @@ def get_ilodo_val_dataset_name(path) -> str:
     """Function for getting the name of the validation dataset. A test is also made to ensure that the validation set
     only contains one dataset"""
     # Load the validation predictions
-    val_df = pandas.read_csv(os.path.join(path, "val_history_predictions.csv"))
+    val_df = pandas.read_csv(os.path.join(path, "val_history_predictions.csv"), usecols=["dataset"])
 
     # Check the number of datasets in the validation set
     if len(set(val_df["dataset"])) != 1:
