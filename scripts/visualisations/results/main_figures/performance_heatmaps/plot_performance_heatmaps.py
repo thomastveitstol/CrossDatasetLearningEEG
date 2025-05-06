@@ -19,6 +19,14 @@ class _Metric:
     subtract_dummy_performance: bool  # If dummy performance should be subtracted from the performance score
 
 
+def _print_selected_runs(df):
+    print(f"{'Source dataset':<20} {'Target dataset':<20} {'Run':<80} {df.columns[-1]:<30}")
+    assert tuple(df.columns[:3]) == ("Target dataset", "Source dataset", "Run")
+    for _, (target_dataset, source_dataset, run, performance) in df.iterrows():
+        print(f"{source_dataset:<20} {target_dataset:<20} {run:<80} {performance:<30}")
+
+
+
 def main():
     metrics = (
         _Metric(selection_metric="mae", target_metric="mae", subtract_dummy_performance=True),
@@ -58,6 +66,7 @@ def main():
         _root_path = os.path.dirname(os.path.dirname(__file__))
         path = Path(_root_path) / f"all_test_results_selection_metric_{selection_metric}.csv"
         results_df = pandas.read_csv(path)
+        results_df.fillna(0.0, inplace=True)  # Needed for Pearson's r with constant array
 
         # Extract subset
         if conditions:
@@ -79,6 +88,9 @@ def main():
             target_datasets=target_datasets, source_datasets=source_datasets
         )
         test_scores_df = pandas.DataFrame(test_scores)
+
+        # Print selected runs
+        _print_selected_runs(df=test_scores_df)
 
         # test_scores_df.set_index("Source dataset", inplace=True)
         test_scores_df = test_scores_df.pivot(columns="Target dataset", index="Source dataset",
