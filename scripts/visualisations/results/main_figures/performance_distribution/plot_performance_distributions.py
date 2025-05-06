@@ -86,7 +86,7 @@ def main():
     # ------------
     # Some choices
     # ------------
-    experiment_type = "lodi"  # switch to 'lodo' for producing LODO results instead
+    experiment_type = "lodo"  # switch to 'lodo' for producing LODO results instead
 
     y_axis = "DL architecture"
     x_axes = ("mae", "pearson_r")
