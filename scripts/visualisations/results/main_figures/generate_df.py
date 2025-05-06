@@ -97,7 +97,7 @@ def main():
     results_dir = get_results_dir()
     target_metrics = ("pearson_r", "spearman_rho", "r2_score", "mae", "mse", "mape")
     datasets = ("TDBrain", "MPILemon", "HatlestadHall", "Miltiadous", "YulinWang")
-    selection_metrics = ("pearson_r", "spearman_rho", "r2_score", "mae", "mse", "mape")
+    selection_metrics = ("pearson_r", "r2_score", "mae", "mse")
     balance_validation_performance = False
     refit_metrics = ("r2_score", "mae", "mse")
 
