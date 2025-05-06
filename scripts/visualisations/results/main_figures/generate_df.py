@@ -11,7 +11,7 @@ from cdl_eeg.data.paths import get_results_dir
 def _generate_dataframe(results_dir, *, target_metrics, balance_validation_performance, datasets, selection_metric,
                         refit_metrics):
     # Initialise dict which will be used for plotting
-    results = {"Target dataset": [], "Source dataset": [], "run": [], "Val score": [],
+    results = {"Target dataset": [], "Source dataset": [], "run": [], "Val score": [], "Epoch": [],
                **{metric: [] for metric in target_metrics}, **{f"{metric}_refit": [] for metric in refit_metrics}}
 
     # --------------
@@ -33,7 +33,7 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
         folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")  # type: ignore
         for fold in folds:
             try:
-                test_performance, test_dataset, val_performance = get_lodo_test_performance(
+                test_performance, test_dataset, val_performance, best_epoch = get_lodo_test_performance(
                     path=os.path.join(run_path, fold), selection_metric=selection_metric,  # type: ignore
                     datasets=datasets, balance_validation_performance=balance_validation_performance,
                     target_metrics=target_metrics, refit_metrics=refit_metrics
@@ -46,6 +46,7 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
             results["Source dataset"].append("Pooled")
             results["run"].append(run)
             results["Val score"].append(val_performance)
+            results["Epoch"].append(best_epoch)
             for metric, performance in test_performance.items():
                 if not isinstance(performance, float):
                     raise TypeError(f"Expected performance score to be float, but found ({type(performance)}): "
@@ -68,7 +69,7 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
         folds = (path for path in os.listdir(run_path) if path[:5] == "Fold_")  # type: ignore
         for fold in folds:
             try:
-                test_performance, train_dataset, val_performance = get_lodi_test_performance(
+                test_performance, train_dataset, val_performance, best_epoch = get_lodi_test_performance(
                     path=os.path.join(run_path, fold), selection_metric=selection_metric,  # type: ignore
                     datasets=datasets, target_metrics=target_metrics, refit_metrics=refit_metrics
                 )
@@ -81,6 +82,7 @@ def _generate_dataframe(results_dir, *, target_metrics, balance_validation_perfo
                 results["Source dataset"].append(PRETTY_NAME[train_dataset])
                 results["run"].append(run)
                 results["Val score"].append(val_performance)
+                results["Epoch"].append(best_epoch)
                 for metric, score in performance_scores.items():
                     if not isinstance(score, float):
                         raise TypeError(f"Expected performance score to be float, but found ({type(score)}): "

@@ -350,7 +350,7 @@ def get_lodo_test_performance(path, *, target_metrics, selection_metric, dataset
     for metric, score in refit_performance.items():
         test_performance[f"{metric}_refit"] = score
 
-    return test_performance, dataset_name, val_performance
+    return test_performance, dataset_name, val_performance, epoch
 
 
 def get_lodi_test_performance(path, *, target_metrics, selection_metric, datasets, refit_metrics):
@@ -366,10 +366,6 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
     refit_metrics : tuple[str, ...]
         Metrics which you want to refit the intercept for prior to computing them as well
 
-    Returns
-    -------
-    tuple[dict[str, [str, float]], str]
-        Performance per dataset, per metric. And the name of the training dataset
     """
     # --------------
     # Get training dataset name
@@ -439,7 +435,7 @@ def get_lodi_test_performance(path, *, target_metrics, selection_metric, dataset
         for metric, performance in performances.items():
             test_metrics[dataset_name][f"{metric}_refit"] = performance
 
-    return test_metrics, train_dataset_name, val_performance
+    return test_metrics, train_dataset_name, val_performance, best_epoch
 
 
 # -------------------
