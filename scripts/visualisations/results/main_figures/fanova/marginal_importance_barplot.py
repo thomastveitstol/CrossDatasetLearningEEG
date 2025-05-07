@@ -60,7 +60,7 @@ def main():
     # Some selections
     # -------------
     experiment_types = ("lodo", "lodi")
-    selection_metric = "mae"
+    selection_metric = "pearson_r"
     target_metric = selection_metric
     percentiles = (0, 50, 75, 90, 95)
 
