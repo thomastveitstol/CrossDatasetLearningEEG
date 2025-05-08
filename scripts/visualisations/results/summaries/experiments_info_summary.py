@@ -15,7 +15,7 @@ When there are no files, it is because the run was killed. This occurred due to 
 On the last 2 months of running, I made a mistake by exiting Pycharm. However, a folder was created, but I think it is
 reasonable to not add it to the final count.
 
-The following was printed:
+The following was printed before the re-running of some wrong experiments:
 -- Number of runs --
 Total number of runs: 2174
 Total number of LODO runs: 1110
@@ -40,6 +40,33 @@ finished_successfully: 890
 OutOfMemoryError: 61
 RuntimeError: 16
 Nothing: 97
+
+
+The following was printed after the re-running of some previously wrong experiments:
+-- Number of runs --
+Total number of runs: 2174
+Total number of LODO runs: 1110
+Total number of LODI runs: 1064
+Total number of unsuccessful LODO runs: 191
+Total number of unsuccessful LODI runs: 178
+Total number of successful LODO runs: 919
+Total number of successful LODI runs: 886
+
+-- Error messages --
+Unexpected message (ValueError): age_cv_experiments_2024-06-06_062551
+
+Messages LODO:
+finished_successfully: 919
+Nothing: 91
+OutOfMemoryError: 74
+RuntimeError: 25
+ValueError: 1
+
+Messages LODI:
+finished_successfully: 886
+OutOfMemoryError: 62
+RuntimeError: 16
+Nothing: 100
 """
 import os
 from typing import Dict
@@ -84,46 +111,59 @@ def main():
     # -----------------
     # Number of runs
     # -----------------
-    num_tot_lodo = len(get_all_lodo_runs(results_dir, successful_only=False))
-    num_tot_ilodo = len(get_all_ilodo_runs(results_dir, successful_only=False))
+    lodo_runs_all = get_all_lodo_runs(results_dir, successful_only=False)
+    lodi_runs_all = get_all_ilodo_runs(results_dir, successful_only=False)
 
-    num_successful_lodo = len(get_all_lodo_runs(results_dir, successful_only=True))
-    num_successful_ilodo = len(get_all_ilodo_runs(results_dir, successful_only=True))
+    # There were multiple attempts to re-run some experiments, but all those failed, so to avoid duplicates, they are
+    # ignored
+    lodo_runs_all = tuple(run for run in lodo_runs_all if len(run.split("--")) != 3)
+    lodi_runs_all = tuple(run for run in lodi_runs_all if len(run.split("--")) != 3)
+
+    num_tot_lodo = len(lodo_runs_all)
+    num_tot_ilodo = len(lodi_runs_all)
+
+    lodo_runs_success = get_all_lodo_runs(results_dir, successful_only=True)
+    lodi_runs_success = get_all_ilodo_runs(results_dir, successful_only=True)
+
+    # There were multiple attempts to re-run some experiments, but all those failed, so to avoid duplicates, they are
+    # ignored
+    lodo_runs_success = tuple(run for run in lodo_runs_success if len(run.split("--")) != 3)
+    lodi_runs_success = tuple(run for run in lodi_runs_success if len(run.split("--")) != 3)
+
+    num_successful_lodo = len(lodo_runs_success)
+    num_successful_ilodo = len(lodi_runs_success)
 
     print(f"{' Number of runs ':-^20}")
     print(f"Total number of runs: {num_tot_lodo + num_tot_ilodo}")
 
     print(f"Total number of LODO runs: {num_tot_lodo}")
-    print(f"Total number of iLODO runs: {num_tot_ilodo}")
+    print(f"Total number of LODI runs: {num_tot_ilodo}")
 
     print(f"Total number of unsuccessful LODO runs: {num_tot_lodo - num_successful_lodo}")
-    print(f"Total number of unsuccessful iLODO runs: {num_tot_ilodo - num_successful_ilodo}")
+    print(f"Total number of unsuccessful LODI runs: {num_tot_ilodo - num_successful_ilodo}")
 
     print(f"Total number of successful LODO runs: {num_successful_lodo}")
-    print(f"Total number of successful iLODO runs: {num_successful_ilodo}")
+    print(f"Total number of successful LODI runs: {num_successful_ilodo}")
 
     # -----------------
     # Analysing the failed experiments
     # -----------------
     print(f"\n{' Error messages ':-^20}")
 
-    lodo_runs = get_all_lodo_runs(results_dir, successful_only=False)
-    ilodo_runs = get_all_ilodo_runs(results_dir, successful_only=False)
-
     # Defining some expected messages, the others I would like to print. KeyboardInterrupt is expected because that's
     # how I terminated the experiments after 2 months
     expected_messages = {"finished_successfully", "Nothing", "OutOfMemoryError", "RuntimeError", "KeyboardInterrupt"}
 
-    lodo_message_count = _count_finalised_messages(lodo_runs, results_dir=results_dir,
+    lodo_message_count = _count_finalised_messages(lodo_runs_all, results_dir=results_dir,
                                                    expected_messages=expected_messages)
-    ilodo_message_count = _count_finalised_messages(ilodo_runs, results_dir=results_dir,
+    ilodo_message_count = _count_finalised_messages(lodi_runs_all, results_dir=results_dir,
                                                     expected_messages=expected_messages)
 
     print("\nMessages LODO:")
     for message, count in lodo_message_count.items():
         print(f"{message}: {count}")
 
-    print("\nMessages iLODO:")
+    print("\nMessages LODI:")
     for message, count in ilodo_message_count.items():
         print(f"{message}: {count}")
 
