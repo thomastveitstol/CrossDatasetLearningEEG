@@ -4,6 +4,7 @@ Script for making plots which summarise the failed models
 import dataclasses
 import enum
 import os
+from pathlib import Path
 from typing import Any, Optional, Tuple, Union, Dict, Set, List
 
 import seaborn
@@ -45,9 +46,17 @@ def _get_filtered_runs(results_dir, experiment_type, successful):
         # Here, we rather summarise the unsuccessful ones
         if experiment_type == _ExperimentType.LODO:
             all_runs = get_all_lodo_runs(results_dir=results_dir, successful_only=False)
+
+            # There were multiple attempts to re-run some experiments, but all those failed, so to avoid duplicates, they are
+            # ignored
+            all_runs = tuple(run for run in all_runs if len(run.split("--")) != 3)
             successful_runs = get_all_lodo_runs(results_dir=results_dir, successful_only=True)
         elif experiment_type == _ExperimentType.ILODO:
             all_runs = get_all_ilodo_runs(results_dir=results_dir, successful_only=False)
+
+            # There were multiple attempts to re-run some experiments, but all those failed, so to avoid duplicates, they are
+            # ignored
+            all_runs = tuple(run for run in all_runs if len(run.split("--")) != 3)
             successful_runs = get_all_ilodo_runs(results_dir=results_dir, successful_only=True)
         else:
             raise ValueError(f"Unexpected experiment type: {experiment_type}")
@@ -215,6 +224,7 @@ def main():
     results_dir = get_results_dir()
     hyperparameters = HYPERPARAMETERS.copy()
     summarise_successful_runs = False
+    save_path = Path(os.path.dirname(__file__)) / "failed_models"
 
     # ---------------
     # Get summaries
@@ -273,7 +283,9 @@ def main():
         pyplot.tick_params(labelsize=FONTSIZE)
         pyplot.tight_layout()
 
-    pyplot.show()
+        file_name = param_name.lower().replace(" ", "_").replace("(", "").replace(")", "").replace("-", "")
+
+        pyplot.savefig((save_path / file_name).with_suffix(".png"))
 
 
 if __name__ == "__main__":
