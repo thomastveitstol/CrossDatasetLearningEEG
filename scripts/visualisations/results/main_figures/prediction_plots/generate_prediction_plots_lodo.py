@@ -138,11 +138,11 @@ def main():
             pyplot.title(f"Selection metric: {PRETTY_NAME[selection_metric]}", fontsize=TITLE_FONTSIZE)
             pyplot.tick_params(labelsize=FONTSIZE)
             if target_dataset == target_datasets[-1]:
-                pyplot.xlabel("Ground truth", fontsize=FONTSIZE)
+                pyplot.xlabel("Ground truth age [years]", fontsize=FONTSIZE)
             else:
                 pyplot.tick_params(bottom=False, labelbottom=False)
             if selection_metric == selection_metrics[0]:
-                pyplot.ylabel("Predicted", fontsize=FONTSIZE)
+                pyplot.ylabel("Predicted age [years]", fontsize=FONTSIZE)
             else:
                 pyplot.tick_params(left=False, labelleft=False)
             pyplot.grid()
