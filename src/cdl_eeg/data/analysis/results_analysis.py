@@ -73,7 +73,8 @@ def get_label_orders(renamed_df_mapping: Optional[Dict[str, Dict[str, str]]] = N
         "Band-pass filter": ("All", "Delta", "Theta", "Alpha", "Beta", "Gamma"),
         "DL architecture": ("InceptionNetwork", "Deep4NetMTS", "ShallowFBCSPNetMTS"),
         "Normalisation": ("True", "False"),
-        "Spatial method": ("RBP", "spline", "MNE")
+        "Spatial method": ("RBP", "spline", "MNE"),
+        "Domain Adaptation": ("CMMN", "DD", "CMMN + DD", "Nothing")
     }
     if renamed_df_mapping is None:
         return orders

@@ -88,12 +88,13 @@ def main():
     # ------------
     experiment_type = "lodo"  # switch to 'lodo' for producing LODO results instead
 
-    y_axis = "DL architecture"
+    y_axis = "Band-pass filter"
     x_axes = ("mae", "pearson_r")
-    color_hp = "Band-pass filter"  # The HP which will be used as 'hue'
+    color_hp = "Domain Adaptation"  # "Band-pass filter"  # The HP which will be used as 'hue'
     selection_metrics = x_axes
     figsize = (11.5, 5)
     title_fontsize = 12
+    subplot_adjust_right = 0.874
 
     renamed_df_mapping = get_rename_mapping()
     limits = {"pearson_r": (-0.2, 1), "mae": (0, 40), "r2_score": (-3, 1), "spearman_rho": (-0.2, 1)}
@@ -186,9 +187,12 @@ def main():
 
         # Layout and display
         fig.tight_layout()
-        fig.subplots_adjust(right=0.9)  # Adjust space for the global legend
+        fig.subplots_adjust(right=subplot_adjust_right)  # Adjust space for the global legend
 
-        pyplot.savefig(save_path / f"{experiment_type.lower()}_distributions_{x_axis}.png")
+        fig_name = (f"{experiment_type.lower()}_distributions_{y_axis.replace(' ', '_')}_"
+                    f"{color_hp.replace(' ', '_')}_{x_axis}.png")
+        pyplot.savefig(save_path / fig_name)
+        # pyplot.show()
 
 
 if __name__ == "__main__":
