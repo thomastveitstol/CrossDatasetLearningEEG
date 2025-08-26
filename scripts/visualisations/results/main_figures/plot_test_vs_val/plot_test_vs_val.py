@@ -41,6 +41,8 @@ def main():
         # -----------
         path = Path(os.path.dirname(os.path.dirname(__file__))) / f"all_test_results_selection_metric_{metric}.csv"
         df = pandas.read_csv(path)
+        if metric in ("pearson_r", "spearman_rho"):
+            df.fillna(0.0, inplace=True)
 
         # Extract subset
         if conditions:
