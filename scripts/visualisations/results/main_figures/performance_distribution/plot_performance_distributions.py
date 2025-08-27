@@ -86,7 +86,7 @@ def main():
     # ------------
     # Some choices
     # ------------
-    experiment_type = "lodo"  # switch to 'lodo' for producing LODO results instead
+    experiment_type = "lodo"  # switch to 'lodi' for producing LODI results instead
 
     y_axis = "Band-pass filter"
     x_axes = ("mae", "pearson_r")
